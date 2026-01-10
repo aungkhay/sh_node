@@ -1,10 +1,47 @@
 [
     { "model": "设置管理", "title": "设置列表", "name": "config-list" },
     { "model": "设置管理", "title": "编辑设置", "name": "config-update" },
+
     { "model": "角色管理", "title": "角色列表", "name": "role-list" },
     { "model": "角色管理", "title": "添加角色", "name": "role-add" },
     { "model": "角色管理", "title": "编辑角色", "name": "role-update" },
     { "model": "角色管理", "title": "删除角色", "name": "role-delete" },
     { "model": "角色管理", "title": "分配权限", "name": "role-assign-permission" },
-    { "model": "用户管理", "title": "用户列表", "name": "user-list" }
+
+    { "model": "用户管理", "title": "用户列表", "name": "user-list" },
+    { "model": "用户管理", "title": "汇总", "name": "user-child-summary" },
+    { "model": "用户管理", "title": "查看上级内部账号", "name": "user-view-superior" },
+    { "model": "用户管理", "title": "上下分", "name": "user-add-substract" },
+    { "model": "用户管理", "title": "查看下级注册", "name": "user-view-subordinate" },
+    { "model": "用户管理", "title": "通过放款协议", "name": "user-approve-loan-agreement" },
+    { "model": "用户管理", "title": "拒绝放款协议", "name": "user-reject-loan-agreement" },
+    { "model": "用户管理", "title": "设为内部账号", "name": "user-set-internal-account" },
+    { "model": "用户管理", "title": "设置中奖次数", "name": "user-set-winning-count" },
+    { "model": "用户管理", "title": "改密码", "name": "user-change-password" },
+    { "model": "用户管理", "title": "联系方式", "name": "user-change-contact" },
+    { "model": "用户管理", "title": "禁用、启用用户", "name": "user-disable-enable" },
+
+    { "model": "实名认证管理", "title": "实名认证列表", "name": "kyc-list" },
+    { "model": "实名认证管理", "title": "添加", "name": "kyc-add" },
+    { "model": "实名认证管理", "title": "编辑", "name": "kyc-update" },
+    { "model": "实名认证管理", "title": "删除", "name": "kyc-delete" },
+    { "model": "实名认证管理", "title": "查看", "name": "kyc-view-detail" },
+    { "model": "实名认证管理", "title": "通过", "name": "kyc-approve" },
+    { "model": "实名认证管理", "title": "拒绝", "name": "kyc-reject" },
+    { "model": "实名认证管理", "title": "批量通过", "name": "kyc-multiple-approve" },
+    { "model": "实名认证管理", "title": "批量拒绝", "name": "kyc-multiple-reject" },
+
+    { "model": "银行卡认证", "title": "列表", "name": "bankcard-list" },
+    { "model": "银行卡认证", "title": "查看", "name": "bankcard-view-detail" },
+    { "model": "银行卡认证", "title": "修改银行卡", "name": "bankcard-update" },
+    { "model": "银行卡认证", "title": "修改支付宝", "name": "alipay-update" },
+
+    { "model": "推荐奖励", "title": "列表", "name": "referral-bonus-list" },
+
+    { "model": "用户经验值", "title": "列表", "name": "user-rankpoint-list" },
+
+    { "model": "转让继承管理", "title": "列表", "name": "transfer-inheritance-list" },
+    { "model": "转让继承管理", "title": "查看", "name": "transfer-inheritance-view" },
+    { "model": "转让继承管理", "title": "通过", "name": "transfer-inheritance-approve" },
+    { "model": "转让继承管理", "title": "拒绝", "name": "transfer-inheritance-reject" }
 ]

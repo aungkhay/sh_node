@@ -205,6 +205,13 @@ const data = {
     nrc_hold_pic: ""
 }
 
+// [POST] KYC Sign URL
+const url = `${baseURL}/kyc/get-kyc-sign-url`;
+const data = {
+    filename: '1768312345678.png',
+    content_type: 'image/png'
+}
+
 // [POST] Upload KYC
 const type = 'front | back | hold';
 const url = `${baseURL}/kyc/${type}/upload`;

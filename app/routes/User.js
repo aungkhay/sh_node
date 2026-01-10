@@ -74,6 +74,7 @@ class UserRoute extends express.Router {
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);
         this.post('/kyc/verify', FormValidator.verify_kyc(), middleware.isLoggedIn, UserCtrl.VERIFY_KYC);
+        this.post('/kyc/get-kyc-sign-url', FormValidator.get_kyc_sign_url(), middleware.isLoggedIn, UserCtrl.GET_KYC_SIGN_URL);
         this.post('/kyc/:type/upload', middleware.isLoggedIn, UserCtrl.UPLOAD_KYC);
         this.get('/kyc/info', middleware.isLoggedIn, UserCtrl.KYC_INFO);
         // this.post('/payment-method/bind', FormValidator.bind_payment_method(), middleware.isLoggedIn, UserCtrl.BIND_PAYMENT_METHOD);

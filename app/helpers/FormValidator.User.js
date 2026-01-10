@@ -92,6 +92,13 @@ exports.verify_kyc = () => {
     ]
 }
 
+exports.get_kyc_sign_url = () => {
+    return [
+        check('filename', { msg: '文件名不能为空' }).not().isEmpty(),
+        check('content_type', { msg: '内容类型不能为空' }).not().isEmpty(),
+    ]
+}
+
 exports.bind_payment_method = () => {
     return [
         check('bank_card_number', { msg: '银行卡号不能为空' }).not().isEmpty(),

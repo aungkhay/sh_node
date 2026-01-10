@@ -337,6 +337,24 @@ class Controller {
         }
     }
 
+    GET_KYC_SIGN_URL = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { filename, content_type } = req.body;
+            const userId = req.user_id;
+            const filePath = `/uploads/kyc/${userId}/${filename}`;
+            const url = await this.OSS.SIGN_URL(filePath, content_type);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { sign_url: url, file_url: filePath });
+        } catch (error) {
+            errLogger(`[KYC][GET_KYC_SIGN_URL]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     UPLOAD_KYC = async (req, res) => {
         try {
             const type = req.params.type;
