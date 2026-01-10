@@ -10,7 +10,8 @@ class AliOSS {
             accessKeyId: process.env.ALIOSS_ACCESS_KEY_ID,
             accessKeySecret: process.env.ALIOSS_ACCESS_KEY_SECRET,
             bucket: 'chinamainland',
-            endpoint: 'oss-cn-hongkong.aliyuncs.com'
+            endpoint: 'oss-cn-hongkong.aliyuncs.com',
+            secure: true
         });
     }
 
