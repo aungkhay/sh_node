@@ -848,6 +848,35 @@ const url = `${baseURL}/users/${userId}/disable-2fa`;
 const data = {
     token: '' // google 6 digit OTP
 }
+
+// [GET] Find User by phone
+const url = `${baseURL}/users/find-user-by-phone?phone=${phoneNumber}`;
+
+// [POST] Upload KYC
+const type = 'front | back | hold';
+const url = `${baseURL}/users/${userId}/upload-kyc/${type}`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [POST] Add KYC
+const url = `${baseURL}/users/${userId}/add-kyc`;
+const data = {
+    nrc_name: "AA",
+    nrc_number: "0123456789",
+    nrc_front_pic: "", 
+    nrc_back_pic: "", 
+    nrc_hold_pic: ""
+}
 ```
 ### Logs 操作日志
 ``` js

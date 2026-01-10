@@ -25,21 +25,6 @@ class Controller {
         this.WANYI_ACCESS_ID = process.env.WANYI_ACCESS_ID;
         this.WANYI_ACCESS_KEY = process.env.WANYI_ACCESS_KEY;
         this.WANYI_BUSINESS_ID = process.env.WANYI_BUSINESS_ID;
-        this.getDOB = (idCardNumber) => {
-            if (!idCardNumber) return null;
-
-            if (idCardNumber.length === 18) {
-                const birth = idCardNumber.substring(6, 14);
-                return `${birth.slice(0,4)}-${birth.slice(4,6)}-${birth.slice(6,8)}`;
-            }
-
-            if (idCardNumber.length === 15) {
-                const birth = idCardNumber.substring(6, 12);
-                return `19${birth.slice(0,2)}-${birth.slice(2,4)}-${birth.slice(4,6)}`;
-            }
-
-            return null;
-        }
     }
 
     encryptCBC = (plaintext, hexKey) => {
@@ -214,7 +199,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '身份证号码和姓名不匹配', {}); 
             }
 
-            const dob = this.getDOB(nrc_number);
+            const dob = this.commonHelper.getDOB(nrc_number);
             const t = await db.transaction();
             try {
 
@@ -379,7 +364,7 @@ class Controller {
             upload(req, res, async (err) => {
                 if (err instanceof multer.MulterError) {
                     if (err.code == 'LIMIT_FILE_SIZE') {
-                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件过大', { allow_size: '10MB' });
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件过大', { allow_size: '20MB' });
                     }
                     if (err.code == 'ENOENT') {
                         return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, 'ENOENT', {});

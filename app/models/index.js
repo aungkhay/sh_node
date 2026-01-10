@@ -1,6 +1,8 @@
 // models/index.js
 const db = require('../connections/Mysql');
 
+const Role = require('./Role');
+const Permission = require('./Permission');
 const Config = require('./Config');
 const Rank = require('./Rank');
 const User = require('./User');
@@ -40,6 +42,14 @@ const NewsLikes = require('./NewsLikes');
 const NewsReports = require('./NewsReports');
 const RankHistory = require('./RankHistory')
 const RedemptCode = require('./RedemptCode');
+
+// ========== Role ↔️ Permission ========== 
+Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
+Permission.belongsToMany(Role, { through: 'role_has_permissions', foreignKey: 'PermissionId' });
+
+// Admin ↔️ Role
+User.belongsToMany(Role, { as: 'roles', through: 'admin_has_roles', foreignKey: 'AdminId' });
+Role.belongsToMany(User, { through: 'admin_has_roles', foreignKey: 'RoleId' });
 
 // ========== USER ↔️ USER (1:1) ==========
 User.belongsTo(User, { foreignKey: 'parent_id', as: 'parent' });
@@ -174,6 +184,8 @@ User.hasMany(RedemptCode, { foreignKey: 'user_id', as: 'redempt_codes', onDelete
 RedemptCode.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
 const models = {
+    Role,
+    Permission,
     Config,
     Rank,
     User,

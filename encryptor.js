@@ -154,7 +154,7 @@ const startEncrypt = () => {
         content_type: 'image/png'
     });
     const setup2FAData = JSON.stringify({
-        email: "saiaungkhaylamm@gmail.com"
+        email: ""
     });
     const verify2FAData = JSON.stringify({
         token: "488186"

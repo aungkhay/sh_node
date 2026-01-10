@@ -1,4 +1,4 @@
-const { User, AdminLog, RedemptCode, Deposit, Withdraw } = require('../models');
+const { User, AdminLog, RedemptCode, Deposit, Withdraw, Role, Permission } = require('../models');
 const { decrypt } = require('../helpers/AESHelper');
 const { errLogger } = require('./Logger');
 
@@ -248,6 +248,54 @@ class Helper {
             });
         } catch (error) {
             errLogger(`[AdminLogger]: ${error.stack}`);
+        }
+    }
+
+    getDOB = (idCardNumber) => {
+        if (!idCardNumber) return null;
+
+        if (idCardNumber.length === 18) {
+            const birth = idCardNumber.substring(6, 14);
+            return `${birth.slice(0,4)}-${birth.slice(4,6)}-${birth.slice(6,8)}`;
+        }
+
+        if (idCardNumber.length === 15) {
+            const birth = idCardNumber.substring(6, 12);
+            return `19${birth.slice(0,2)}-${birth.slice(2,4)}-${birth.slice(4,6)}`;
+        }
+
+        return null;
+    }
+
+    getAllPermissions = async (adminId) => {
+        try {
+            const admin = await User.findOne({
+                where: { id: adminId, type: 1 },
+                include: {
+                    model: Role,
+                    as: 'roles',
+                    through: { attributes: [] },
+                    attributes: ['id'],
+                    include: {
+                        model: Permission,
+                        as: 'permissions',
+                        through: { attributes: [] },
+                        attributes: ['id', 'name']
+                    }
+                },
+                attributes: ['id']
+            });
+
+            const permissions = [];
+            admin.roles.forEach(role => {
+                role.permissions.forEach(perm => {
+                    permissions.push(perm.name);
+                });
+            });
+
+            return permissions;
+        } catch (error) {
+            return [];
         }
     }
 }

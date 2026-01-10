@@ -156,6 +156,10 @@ class AdminRoute extends express.Router {
         this.post('/users/:id/setup-2fa', FormValidator.setup_2fa(), middleware.isLoggedIn, UserCtrl.SETUP_2FA);
         this.post('/users/:id/disable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn, UserCtrl.DISABLE_2FA);
         this.post('/users/:id/enable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn, UserCtrl.VERIFY_2FA);
+        // Add KYC
+        this.get('/users/find-user-by-phone', middleware.isLoggedIn, UserCtrl.FIND_USER);
+        this.post('/users/:id/upload-kyc/:type', middleware.isLoggedIn, UserCtrl.UPLOAD_KYC);
+        this.post('/users/:id/add-kyc', FormValidator.verify_kyc(), middleware.isLoggedIn, UserCtrl.ADD_KYC);
 
         let LogController = require('../controllers/admins/LogController');
         let LogCtrl = new LogController();
@@ -185,6 +189,12 @@ class AdminRoute extends express.Router {
         let MerchantCtrl = new MerchantController(app);
         this.get('/merchants', middleware.isLoggedIn, MerchantCtrl.INDEX);
         this.post('/merchants/:id/change-status', FormValidator.update_status(), middleware.isLoggedIn, MerchantCtrl.CHANGE_STATUS);
+
+        let RoleController = require('../controllers/admins/RoleController');
+        let RoleCtrl = new RoleController();
+        this.get('/roles/list', middleware.isLoggedIn, RoleCtrl.ROLES);
+        this.get('/roles/permission-list', middleware.isLoggedIn, RoleCtrl.PERMISSIONS);
+        this.get('/roles/:id/permissions', middleware.isLoggedIn, RoleCtrl.ROLE_HAS_PERMISSIONS);
     }
 }
 

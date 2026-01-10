@@ -3,6 +3,8 @@ require('dotenv').config({ path: `./.env` })
 const { connect } = require('../models');
 connect();
 
+const RoleSeeder = require('./RoleSeeder');
+const PermissionSeeder = require('./PermissionSeeder');
 const RankSeeder = require('./RankSeeder');
 const ConfigSeeder = require('./ConfigSeeder');
 const UserSeeder = require('./UserSeeder');
@@ -11,6 +13,8 @@ const TicketSeeder = require('./TicketSeeder');
 const MasonicSeeder = require('./MasonicSeeder');
 
 const seed = async () => {
+    await RoleSeeder();
+    await PermissionSeeder();
     await RankSeeder();
     await ConfigSeeder();
     await UserSeeder();

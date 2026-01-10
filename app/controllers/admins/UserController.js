@@ -1662,6 +1662,203 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    FIND_USER = async (req, res) => {
+        try {
+            const phone = req.query.phone || '';
+            const user = await User.findOne({
+                where: { phone_number: phone },
+                attributes: ['id', 'name']
+            });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', user);
+        } catch (error) {
+            errLogger(`[User][FIND_USER]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    UPLOAD_KYC = async (req, res) => {
+        try {
+            const type = req.params.type;
+            if (!['front', 'back', 'hold'].includes(type)) {
+                const recaptchaError = { field: 'type', msg: '类型不正确' };
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [recaptchaError]);
+            }
+            const userId = req.params.id;
+            req.uploadDir = `./uploads/kyc/${userId}`;
+
+            const userKYC = await UserKYC.findOne({
+                where: { user_id: userId },
+                attributes: ['id', 'status']
+            })
+            if (!userKYC) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到用户', {});
+            }
+            if (userKYC.status === 'PENDING') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中', {});
+            }
+            if (userKYC.status === 'APPROVED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已通过', {});
+            }
+
+            const upload = require('../../middlewares/UploadImage');
+            upload(req, res, async (err) => {
+                if (err instanceof multer.MulterError) {
+                    if (err.code == 'LIMIT_FILE_SIZE') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件过大', { allow_size: '20MB' });
+                    }
+                    if (err.code == 'ENOENT') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, 'ENOENT', {});
+                    }
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, err.message, {});
+                } else if (err) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '上传失败', {});
+                }
+
+                if (req.file == null) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请选图片', {});
+                }
+
+                // Upload to AliOSS
+                const dir = `uploads/kyc/${userId}/`;
+                const fileName = req.file.filename;
+                const localFile = path.resolve(__dirname, `../../../uploads/kyc/${userId}/${fileName}`);
+                const { success } = await this.OSS.PUT(dir, fileName, localFile);
+                if (success) {
+                    return MyResponse(res, this.ResCode.SUCCESS.code, true, '上传成功', { url: `/uploads/kyc/${userId}/${fileName}` });
+                } else {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '上传失败', {});
+                }
+            })
+        } catch (error) {
+            errLogger(`[UPLOAD_KYC]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ADD_KYC = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.params.id;
+            const { nrc_name, nrc_number, nrc_front_pic, nrc_back_pic, nrc_hold_pic } = req.body;
+
+            const kycExist = await UserKYC.findOne({ 
+                where: { user_id: userId }, 
+                attributes: ['id'] 
+            });
+
+            if (kycExist) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该身份证号码已存在', {});
+            }
+
+            // const dob = this.commonHelper.getDOB(nrc_number);
+            const t = await db.transaction();
+            try {
+
+                const user = await User.findByPk(userId, {
+                    include: {
+                        model: UserKYC,
+                        as: 'kyc',
+                        attributes: ['status']
+                    },
+                    attributes: ['id', 'relation'],
+                    transaction: t,
+                    lock: t.LOCK.UPDATE
+                });
+                if (user.kyc) {
+                    if (user.kyc.status === 'PENDING') {
+                        throw new Error('实名认证审核中');
+                    }
+                    if (user.kyc.status === 'APPROVED') {
+                        throw new Error('实名认证已通过');
+                    }
+                }
+
+                const obj = {
+                    user_id: userId,
+                    relation: user.relation,
+                    nrc_name: nrc_name,
+                    nrc_number: nrc_number,
+                    // dob: dob,
+                    nrc_front_pic: nrc_front_pic,
+                    nrc_back_pic: nrc_back_pic,
+                    nrc_hold_pic: nrc_hold_pic,
+                    status: 'APPROVED'
+                };
+
+                let kyc = await UserKYC.findOne({ where: { user_id: userId }, attributes: ['id'], transaction: t });
+                if (!kyc) {
+                    kyc = await UserKYC.create(obj, { transaction: t })
+                } else {
+                    await kyc.update(obj, { transaction: t });
+                }
+
+                await user.update({ name: nrc_name }, { transaction: t });
+
+                // Referral bonus settings [推荐金]
+                let lv1_bonus = await this.redisHelper.get_referral_bonus_lv(1); // 10
+                let lv2_bonus = await this.redisHelper.get_referral_bonus_lv(2); // 5
+                let lv3_bonus = await this.redisHelper.get_referral_bonus_lv(3); // 1
+                const bonusArr = [lv1_bonus, lv2_bonus, lv3_bonus];
+                commonLogger(`[ADD_KYC] Referral Bonus Settings: LV1=${lv1_bonus}, LV2=${lv2_bonus}, LV3=${lv3_bonus}`);
+
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3); // remove first & last empty string (limit to 3 levels)
+                const bonuses = [];
+                commonLogger(`[ADD_KYC] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type'],
+                    transaction: t,
+                    lock: t.LOCK.UPDATE
+                });
+
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = Number(bonusArr[index]);
+                    if (bonus <= 0) {
+                        continue;
+                    }
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[ADD_KYC] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    await upLevelUser.increment({ referral_bonus: bonus }, { transaction: t });
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await UserBonus.bulkCreate(bonuses, { transaction: t });
+                }
+
+                await t.commit();
+            } catch (error) {
+                errLogger(`[ADD_KYC]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.BAD_REQUEST.msg, {});
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '绑定实名认证成功', {});
+        } catch (error) {
+            errLogger(`[User][ADD_KYC]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;

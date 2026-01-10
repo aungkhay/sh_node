@@ -1,6 +1,4 @@
-const { encrypt } = require('../helpers/AESHelper');
 const { RewardType } = require('../models');
-
 
 module.exports = async () => {
     const types = [

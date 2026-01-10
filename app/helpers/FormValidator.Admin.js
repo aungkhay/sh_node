@@ -427,3 +427,51 @@ exports.update_alipay = () => {
         check('ali_account_number', { msg: '支付宝账号不能为空' }).not().isEmpty(),
     ];
 }
+
+exports.verify_kyc = () => {
+    return [
+        check('nrc_name', { msg: '姓名不能为空' }).not().isEmpty(),
+        check('nrc_number').not().isEmpty().withMessage('身份证号不能为空')
+            .isLength({ min: 18, max: 18 }).withMessage('身份证号必须为18位')
+            .custom(value => {
+                const city = {
+                    11: '北京', 12: '天津', 13: '河北', 14: '山西', 15: '内蒙古',
+                    21: '辽宁', 22: '吉林', 23: '黑龙江', 31: '上海', 32: '江苏',
+                    33: '浙江', 34: '安徽', 35: '福建', 36: '江西', 37: '山东',
+                    41: '河南', 42: '湖北', 43: '湖南', 44: '广东', 45: '广西',
+                    46: '海南', 50: '重庆', 51: '四川', 52: '贵州', 53: '云南',
+                    54: '西藏', 61: '陕西', 62: '甘肃', 63: '青海', 64: '宁夏',
+                    65: '新疆', 71: '台湾', 81: '香港', 82: '澳门', 91: '国外'
+                };
+                // 身份证格式（18位）
+                const idCardReg = /^[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$/i;
+                if (!idCardReg.test(value)) {
+                    throw new Error('身份证号格式错误');
+                }
+                // 地区码
+                if (!city[value.substring(0, 2)]) {
+                    throw new Error('身份证号格式错误');
+                }
+                // 校验位
+                const factor = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+                const parity = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+                
+                const chars = value.toUpperCase().split('');
+                let sum = 0;
+                for (let i = 0; i < 17; i++) {
+                    sum += parseInt(chars[i], 10) * factor[i];
+                }
+
+                const last = parity[sum % 11];
+
+                if (last !== chars[17]) {
+                    throw new Error('身份证号格式错误');
+                }
+
+                return true;
+            }),
+        check('nrc_front_pic', { msg: '请上传身份证正面照片' }).not().isEmpty(),
+        check('nrc_back_pic', { msg: '请上传身份证背面照片' }).not().isEmpty(),
+        check('nrc_hold_pic', { msg: '请上传手持身份证照片' }).not().isEmpty(),
+    ]
+}
