@@ -27,6 +27,7 @@ class UserRoute extends express.Router {
         this.get('/notifications/:id/details', middleware.isLoggedIn, HomeCtrl.NOTIFICATION_DETAIL);
         this.post('/notifications/:id/mark-read', middleware.isLoggedIn, HomeCtrl.MARK_NOTIFICATION_READ);
         this.get('/news', middleware.isLoggedIn, HomeCtrl.GET_NEWS);
+        this.post('/news/get-sign-url', FormValidator.get_kyc_sign_url(), middleware.isLoggedIn, HomeCtrl.GET_NEWS_SIGN_URL);
         this.post('/news/upload', middleware.isLoggedIn, HomeCtrl.UPLOAD_NEWS_PIC);
         this.post('/news/post', FormValidator.post_news(), middleware.isLoggedIn, HomeCtrl.POST_NEWS);
         this.get('/news/:id/details', middleware.isLoggedIn, HomeCtrl.NEWS_DETAILS);
@@ -78,6 +79,7 @@ class UserRoute extends express.Router {
         this.post('/kyc/:type/upload', middleware.isLoggedIn, UserCtrl.UPLOAD_KYC);
         this.get('/kyc/info', middleware.isLoggedIn, UserCtrl.KYC_INFO);
         // this.post('/payment-method/bind', FormValidator.bind_payment_method(), middleware.isLoggedIn, UserCtrl.BIND_PAYMENT_METHOD);
+        this.post('/payment-method/get-sign-url', FormValidator.get_kyc_sign_url(), middleware.isLoggedIn, UserCtrl.GET_PAYMENT_METHOD_SIGN_URL);
         this.post('/payment-method/:type/upload', middleware.isLoggedIn, UserCtrl.UPLOAD_PAYMENT_METHOD);
         this.post('/payment-method/bind-bank', FormValidator.bind_bank(), middleware.isLoggedIn, UserCtrl.BIND_BANK);
         this.post('/payment-method/bind-alipay', FormValidator.bind_alipay(), middleware.isLoggedIn, UserCtrl.BIND_ALIPAY);

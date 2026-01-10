@@ -247,6 +247,13 @@ const data = {
     ali_home_page_screenshot: ""
 }
 
+// [POST] Get payment Sign URL
+const url = `${baseURL}/payment-method/get-sign-url`;
+const data = {
+    filename: '',
+    content_type: ''
+}
+
 // [POST] Bind Bank
 const url = `${baseURL}/payment-method/bind-bank`;
 const data = {
@@ -325,6 +332,13 @@ const params = {
 
 // [GET] Detail
 const url = `${baseURL}/news/${newsID}/details`;
+
+// [POST] Get News Sign URL
+const url = `${baseURL}/news/get-sign-url`;
+const data = {
+    filename: '',
+    content_type: ''
+}
 
 // [POST] Upload [Image or Video]
 const url = `${baseURL}/news/upload`;
