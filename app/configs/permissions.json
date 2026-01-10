@@ -1,9 +1,10 @@
 [
-    { "model": "系统设置", "title": "设置列表", "name": "config-list" },
-    { "model": "系统设置", "title": "编辑设置", "name": "config-update" },
+    { "model": "设置管理", "title": "设置列表", "name": "config-list" },
+    { "model": "设置管理", "title": "编辑设置", "name": "config-update" },
     { "model": "角色管理", "title": "角色列表", "name": "role-list" },
     { "model": "角色管理", "title": "添加角色", "name": "role-add" },
     { "model": "角色管理", "title": "编辑角色", "name": "role-update" },
     { "model": "角色管理", "title": "删除角色", "name": "role-delete" },
-    { "model": "角色管理", "title": "分配权限", "name": "role-assign-permission" }
+    { "model": "角色管理", "title": "分配权限", "name": "role-assign-permission" },
+    { "model": "用户管理", "title": "用户列表", "name": "user-list" }
 ]
