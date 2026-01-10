@@ -132,6 +132,10 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    ASSIGN_PERMISSIONS_TO_ROLE = async (req, res) => {
+        
+    }
 }
 
 module.exports = Controller;

@@ -8,6 +8,8 @@ const { encrypt } = require('../../helpers/AESHelper');
 const { Op } = require('sequelize');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
+const multer = require('multer');
+const path = require('path');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
