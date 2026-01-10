@@ -475,3 +475,16 @@ exports.verify_kyc = () => {
         check('nrc_hold_pic', { msg: '请上传手持身份证照片' }).not().isEmpty(),
     ]
 }
+
+exports.create_role = () => {
+    return [
+        check('code', { msg: '角色代码不能为空' }).not().isEmpty(),
+        check('name', { msg: '角色名称不能为空' }).not().isEmpty(),
+    ]
+}
+
+exports.update_role = () => {
+    return [
+        check('name', { msg: '角色名称不能为空' }).not().isEmpty(),
+    ]
+}

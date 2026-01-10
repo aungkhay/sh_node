@@ -1,11 +1,13 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const { Role, Permission } = require('../../models');
+let { validationResult } = require('express-validator');
 
 class Controller {
     constructor() {
         this.commonHelper = new CommonHelper();
         this.ResCode = this.commonHelper.ResCode;
+        this.adminLogger = this.commonHelper.adminLogger;
     }
 
     ROLES = async (req, res) => {
@@ -57,6 +59,75 @@ class Controller {
             const permissions = (await role.getPermissions()).map(p => p.id);
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', permissions);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    CREATE_ROLE = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { code, name } = req.body;
+            const roleCode = await Role.findOne({ where: { code } });
+            if (roleCode) {
+                return MyResponse(res, this.ResCode.ALREADY_EXISTS.code, false, '角色已存在', {});
+            }
+            const roleName = await Role.findOne({ where: { name } });
+            if (roleName) {
+                return MyResponse(res, this.ResCode.ALREADY_EXISTS.code, false, '角色名称已存在', {});
+            }
+            const newRole = await Role.create({ code, name });
+
+            // Log
+            await this.adminLogger(req, 'Role', 'create');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '角色创建成功', newRole);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    UPDATE_ROLE = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const roleId = req.params.id;
+            const role = await Role.findByPk(roleId);
+            if (!role) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到角色', {});
+            }
+            const { name } = req.body;
+            const roleName = await Role.findOne({ where: { name, id: { $ne: roleId } } });
+            if (roleName) {
+                return MyResponse(res, this.ResCode.ALREADY_EXISTS.code, false, '角色名称已存在', {});
+            }
+            await role.update({ name });
+
+            // Log
+            await this.adminLogger(req, 'Role', 'update');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '角色更新成功', {});
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    DELETE_ROLE = async (req, res) => {
+        try {
+            const roleId = req.params.id;
+            const role = await Role.findByPk(roleId);
+            if (!role) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到角色', {});
+            }
+            await role.destroy();
+            // Log
+            await this.adminLogger(req, 'Role', 'delete');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '角色删除成功', {});
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }

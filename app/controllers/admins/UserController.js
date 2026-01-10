@@ -1694,14 +1694,8 @@ class Controller {
                 where: { user_id: userId },
                 attributes: ['id', 'status']
             })
-            if (!userKYC) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到用户', {});
-            }
-            if (userKYC.status === 'PENDING') {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中', {});
-            }
-            if (userKYC.status === 'APPROVED') {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已通过', {});
+            if (userKYC) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证信息已存在', {});
             }
 
             const upload = require('../../middlewares/UploadImage');
