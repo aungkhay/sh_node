@@ -134,7 +134,25 @@ class Controller {
     }
 
     ASSIGN_PERMISSIONS_TO_ROLE = async (req, res) => {
-        
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const roleId = req.params.id;
+            const role = await Role.findByPk(roleId);
+            if (!role) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到角色', {});
+            }
+            const { permissions } = req.body;
+            await role.setPermissions(permissions);
+            // Log
+            await this.adminLogger(req, 'Role', 'assign-permission');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '权限分配成功', {});
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
     }
 }
 

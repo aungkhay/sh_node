@@ -10,6 +10,7 @@ const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const multer = require('multer');
 const path = require('path');
+const AliOSS = require('../../helpers/AliOSS');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -23,6 +24,7 @@ class Controller {
         this.adminLogger = this.commonHelper.adminLogger;
         this.getOffset = this.commonHelper.getOffset;
         this.redisHelper = new RedisHelper(app);
+        this.OSS = new AliOSS();
     }
 
     INDEX = async (req, res) => {
