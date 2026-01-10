@@ -154,7 +154,7 @@ class AdminRoute extends express.Router {
         this.post('/users/:id/update-contact-info', FormValidator.update_contact_info(), middleware.isLoggedIn, UserCtrl.UPDATE_CONTACT_INFO);
         // 2FA
         this.post('/users/:id/setup-2fa', FormValidator.setup_2fa(), middleware.isLoggedIn, UserCtrl.SETUP_2FA);
-        this.post('/users/:id/disable-2fa', middleware.isLoggedIn, UserCtrl.DISABLE_2FA);
+        this.post('/users/:id/disable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn, UserCtrl.DISABLE_2FA);
         this.post('/users/:id/enable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn, UserCtrl.VERIFY_2FA);
 
         let LogController = require('../controllers/admins/LogController');

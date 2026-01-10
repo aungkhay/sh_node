@@ -845,6 +845,9 @@ const data = {
 
 // [POST] Disable 2FA
 const url = `${baseURL}/users/${userId}/disable-2fa`;
+const data = {
+    token: '' // google 6 digit OTP
+}
 ```
 ### Logs 操作日志
 ``` js
