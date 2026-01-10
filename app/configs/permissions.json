@@ -43,5 +43,47 @@
     { "model": "转让继承管理", "title": "列表", "name": "transfer-inheritance-list" },
     { "model": "转让继承管理", "title": "查看", "name": "transfer-inheritance-view" },
     { "model": "转让继承管理", "title": "通过", "name": "transfer-inheritance-approve" },
-    { "model": "转让继承管理", "title": "拒绝", "name": "transfer-inheritance-reject" }
+    { "model": "转让继承管理", "title": "拒绝", "name": "transfer-inheritance-reject" },
+
+    { "model": "公告管理", "title": "列表", "name": "announcement-list" },
+    { "model": "公告管理", "title": "添加", "name": "announcement-add" },
+    { "model": "公告管理", "title": "编辑", "name": "announcement-update" },
+    { "model": "公告管理", "title": "删除", "name": "announcement-delete" },
+    { "model": "公告管理", "title": "禁用、启用", "name": "announcement-change-status" },
+
+    { "model": "视讯管理", "title": "列表", "name": "news-list" },
+    { "model": "视讯管理", "title": "发布", "name": "news-add" },
+    { "model": "视讯管理", "title": "编辑", "name": "news-update" },
+    { "model": "视讯管理", "title": "删除", "name": "news-delete" },
+    { "model": "视讯管理", "title": "禁用、启用", "name": "news-change-status" },
+
+    { "model": "资讯投诉", "title": "列表", "name": "news-report-list" },
+    { "model": "资讯投诉", "title": "通过", "name": "news-report-approve" },
+    { "model": "资讯投诉", "title": "驳回", "name": "news-report-reject" },
+
+    { "model": "素材管理", "title": "列表", "name": "material-list" },
+    { "model": "素材管理", "title": "添加", "name": "material-add" },
+    { "model": "素材管理", "title": "编辑", "name": "material-update" },
+    { "model": "素材管理", "title": "删除", "name": "material-delete" },
+
+    { "model": "轮播图管理", "title": "列表", "name": "carousel-list" },
+    { "model": "轮播图管理", "title": "添加", "name": "carousel-add" },
+    { "model": "轮播图管理", "title": "删除", "name": "carousel-delete" },
+
+    { "model": "红包记录", "title": "列表", "name": "redpacket-list" },
+    
+    { "model": "余额宝收益记录", "title": "列表", "name": "yuebao-income-list" },
+
+    { "model": "钱包转账记录", "title": "列表", "name": "wallet-transfer-list" },
+    { "model": "钱包转账记录", "title": "通过", "name": "wallet-transfer-approve" },
+    { "model": "钱包转账记录", "title": "驳回", "name": "wallet-transfer-reject" },
+
+    { "model": "共济基金记录", "title": "列表", "name": "masonic-fund-list" },
+    { "model": "共济基金记录", "title": "通过", "name": "masonic-fund-approve" },
+    { "model": "共济基金记录", "title": "拒绝", "name": "masonic-fund-reject" },
+    { "model": "共济基金记录", "title": "导入扣除", "name": "masonic-fund-import-deduction" },
+    { "model": "共济基金记录", "title": " 没有注册账号的导入记录", "name": "masonic-fund-user-not-register-list" },
+
+    { "model": "操作记录", "title": " 列表", "name": "log-list" }
+    
 ]

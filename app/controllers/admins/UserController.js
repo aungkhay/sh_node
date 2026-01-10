@@ -5,7 +5,7 @@ const RedisHelper = require('../../helpers/RedisHelper');
 const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
-const { Op } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const multer = require('multer');
@@ -39,6 +39,7 @@ class Controller {
             const endTime = req.query.endTime;
             const isInternalAccount = req.query.isInternalAccount || 0;
             const politicalVettingStatus = req.query.politicalVettingStatus;
+            const inviteCode = req.query.inviteCode || '';
             // const viewChild = req.query.viewChild || 0; // 1 => adjacent child | 2 => all child
             const userId = req.user_id;
 
@@ -65,6 +66,9 @@ class Controller {
             }
             if (politicalVettingStatus) {
                 condition.political_vetting_status = politicalVettingStatus;
+            }
+            if (inviteCode) {
+                condition.invite_code = inviteCode;
             }
 
             const { rows, count } = await User.findAndCountAll({
@@ -1249,7 +1253,7 @@ class Controller {
 
     CHILD_SUMMARY = async (req, res) => {
         try {
-            const phone = req.query.phone || '';
+            const phone = '13914725800' || req.query.phone || '';
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
 
@@ -1290,7 +1294,8 @@ class Controller {
                 where: {
                     user_id : { [Op.ne]: user.id },
                     ...condition
-                } 
+                },
+                group: [fn('DATE', col('createdAt'))]
             });
 
             let rawQuery = '';
@@ -1340,7 +1345,7 @@ class Controller {
             const data = {
                 total_register: parseInt(registerCount || 0),
                 total_verified_kyc: parseInt(kycCount || 0),
-                total_logged_in: parseInt(loginCount || 0),
+                total_logged_in: parseInt(loginCount.length || 0),
                 total_actived: parseInt(activeCount || 0),
                 total_sign: parseInt(result.length > 0 ? result[0].totalCount : 0),
                 total_personal_deposit: parseFloat(total_personal_deposit),
