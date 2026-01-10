@@ -1,0 +1,489 @@
+openapi: 3.0.0
+info:
+  title: REST API
+  description: ShangHe
+  version: 1.0.0
+servers:
+  - url: http://localhost:2580/api/
+    description: Development server
+  - url: http://test.com/api/
+    description: Deployment server
+
+tags:
+  - name: Auth
+    description: Authentication related endpoints
+  - name: Home
+    description: Home page endpoints
+  - name: Certificate
+    description: Certificate page endpoints
+  - name: Information
+    description: Information page endpoints
+
+components:
+  securitySchemes:
+    ApiKeyAuth: # arbitrary name for the security scheme
+      type: apiKey
+      in: header # can be "header", "query" or "cookie"
+      name: authorization
+
+  schemas:
+    Response:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1000
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: 'SUCCESS'
+        data:
+          oneOf:
+            - type: object
+              example: {}
+            - type: array
+              example: []
+          description: Can be an object or an array
+        errors:
+          type: object
+          example: {}
+    Register:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            phone:
+              type: string
+            password:
+              type: string
+            invite_code:
+              type: string
+            uuid:
+              type: string
+            verification_code:
+              type: string
+    Login:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            phone:
+              type: string
+            password:
+              type: string
+            uuid:
+              type: string
+            verification_code:
+              type: string
+    News:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        type:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Test"
+        subtitle:
+          type: string
+          example: "Trump has been killed recently"
+        content:
+          type: string
+          example: "<p>Hello world!</p>"
+        pic:
+          type: string
+          example: "/uploads/news/1.png"
+        status:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-10-15T06:13:25.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-10-15T06:13:26.000Z"
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Test"
+        subtitle:
+          type: string
+          example: "Trump has been killed recently"
+        content:
+          type: string
+          example: "<p>Hello world!</p>"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-10-15T06:13:25.000Z"
+    Certificate:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Certificate 1"
+        pic:
+          type: string
+          example: "/uploads/certificates/1.png"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-10-15T06:13:25.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-10-15T06:13:25.000Z"
+    MyCertificate:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        certificate_id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Certificate 1"
+        pic:
+          type: string
+          example: "/uploads/certificates/1.png"
+        get_time:
+          type: string
+          format: date-time
+          example: "2025-10-15T06:13:25.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: null
+    Information:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Information 1"
+        subtitle:
+          type: string
+          example: "Information 1"
+        content:
+          type: string
+          example: "<p>Information 1</p>"
+        pic:
+          type: string
+          example: "/uploads/certificates/1.png"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-10-15T06:13:25.000Z"
+
+paths:
+  /get-recaptcha:
+    get:
+      tags:
+        - Auth
+      summary: Get a reCAPTCHA token
+      description: Returns a new reCAPTCHA key for client validation.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new User
+      description: Register a new User in the database
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Register"
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: Login Authentication
+      description: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Login"
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /profile:
+    get:
+      tags:
+        - Auth
+      summary: Profile
+      description: Get the profile information
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout
+      description: Logout from the system
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /news:
+    get:
+      tags:
+        - Home
+      summary: News
+      description: News List
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number (default: 1)
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          required: false
+          description: Number of items per page (default: 10)
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /notifications:
+    get:
+      tags:
+        - Home
+      summary: Notification
+      description: Notification List
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number (default: 1)
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          required: false
+          description: Number of items per page (default: 10)
+          schema:
+            type: integer
+            example: 10
+        - name: unRead
+          in: query
+          required: false
+          description: 1 => For unread notifications (default: 0)
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /notifications/1/mark-read:
+    post:
+      tags:
+        - Home
+      summary: Read Notification
+      description: Read Notification
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /certificates:
+    get:
+      tags:
+        - Certificate
+      summary: Certificate
+      description: Certificate List
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number (default: 1)
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          required: false
+          description: Number of items per page (default: 10)
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /my-certificates:
+    get:
+      tags:
+        - Certificate
+      summary: My Certificate
+      description: My Certificate List
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number (default: 1)
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          required: false
+          description: Number of items per page (default: 10)
+          schema:
+            type: integer
+            example: 10
+        - name: historyTab
+          in: query
+          required: false
+          description: 1 => Not Use | 2 => Already Used (default: 1)
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /certificates/1/pick:
+    post:
+      tags:
+        - Certificate
+      summary: Pick Certificate
+      description: Pick Certificate
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /certificates/1/use:
+    post:
+      tags:
+        - Certificate
+      summary: Use Certificate
+      description: Use Certificate
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /informations:
+    get:
+      tags:
+        - Information
+      summary: Information
+      description: Information List
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number (default: 1)
+          schema:
+            type: integer
+            example: 1
+        - name: perPage
+          in: query
+          required: false
+          description: Number of items per page (default: 10)
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'

@@ -1,0 +1,1002 @@
+const MyResponse = require('../../helpers/MyResponse');
+const CommonHelper = require('../../helpers/CommonHelper');
+const RedisHelper = require('../../helpers/RedisHelper');
+const { errLogger, commonLogger } = require('../../helpers/Logger');
+let { validationResult } = require('express-validator');
+const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant } = require('../../models');
+const { Op, Sequelize } = require('sequelize');
+const Decimal = require('decimal.js');
+const axios = require('axios');
+const MerchantController = require('./MerchantController');
+
+class Controller {
+    constructor(app) {
+        this.commonHelper = new CommonHelper();
+        this.redisHelper = new RedisHelper(app);
+        this.ResCode = this.commonHelper.ResCode;
+        this.merchantController = new MerchantController();
+        this.getOffset = this.commonHelper.getOffset;
+    }
+
+    RECHARGE_CALLBACK = async (req, res) => {
+        try {
+            commonLogger(`[RECHARGE_CALLBACK] Received callback => ${JSON.stringify(req.body)}`);
+            return 'success';
+        } catch (error) {
+            return 'success';
+        }
+    }
+
+    DEPOSIT = async (req, res) => {
+        const lockKey = `lock:deposit:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const can_deposit = await this.redisHelper.getValue('can_deposit');
+            if (!can_deposit || can_deposit != '1') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '充值未开通！', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            let deposit_time = await this.redisHelper.getValue('deposit_time'); // 12:00:00-17:00:00
+            if (!deposit_time) {
+                const config = await Config.findOne({ where: { type: 'deposit_time' }, attributes: ['val'] });
+                await this.redisHelper.setValue('deposit_time', config.val);
+                deposit_time = config.val;
+            }
+            // Parse start and end times
+            const [startTime, endTime] = deposit_time.split('-'); // ['12:00:00', '17:00:00']
+            const today = new Date();
+            const currentTime = today.toTimeString().split(' ')[0]; // "HH:mm:ss"
+            if (currentTime < startTime || currentTime >= endTime) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不允许充值', { allow: { start: startTime, end: endTime } });
+            }
+
+            const userId = req.user_id;
+            const { type, amount } = req.body;
+
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'reserve_fund', 'relation']
+            });
+
+            if (!user.kyc) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+
+            // Generate Payment URL
+            const merchant = await DepositMerchant.findOne({
+                where: { status: 1 },
+                attributes: ['id', 'api', 'app_id', 'app_code', 'app_key'],
+                order: db.random()
+            });
+            if (!merchant) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无可用的充值通道', {});
+            }
+
+            let payload = null;
+            switch (merchant.id) {
+                case 1:
+                    payload = await this.merchantController.MERCHANT1(merchant, amount, userId);
+                    break;
+            
+                default:
+                    break;
+            }
+            if (!payload) {
+                return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, '生成充值订单失败，请稍后再试', {});
+            }
+
+            console.log(payload);
+            // const res = await axios.post(merchant.api, payload, {
+            //     headers: { "Content-Type": "application/json" }
+            // });
+
+            // Reserve Fund
+            const t = await db.transaction();
+            try {
+                await Deposit.create({
+                    deposit_merchant_id: merchant.id,
+                    order_no: orderNo,
+                    type: type,
+                    user_id: user.id,
+                    relation: user.relation,
+                    amount: amount,
+                    before_amount: Number(user.reserve_fund),
+                    after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
+                    status: 1
+                }, { transaction: t });
+                await user.increment({ reserve_fund: Number(amount) }, { transaction: t });
+
+                await t.commit();
+            } catch (error) {
+                console.log(error);
+                errLogger(`[DEPOSIT][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '充值成功', {});
+        } catch (error) {
+            console.log(error)
+            errLogger(`[DEPOSIT][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    DEPOSIT_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+
+            const { rows, count } = await Deposit.findAndCountAll({
+                where: { user_id: req.user_id },
+                attributes: ['id', 'type', 'amount', 'status', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset
+            });
+
+            const data = {
+                records: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    WITHDRAW = async (req, res) => {
+        const lockKey = `lock:withdraw:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const today = new Date();
+            const day = today.getDay();
+            if (day === 0 || day === 6) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请于工作日取款', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const amount = req.body.amount;
+            const withdrawBy = req.body.withdrawBy;
+            const order_no = await this.commonHelper.generateWithdrawOrderNo();
+
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: PaymentMethod,
+                    as: 'payment_method'
+                },
+                attributes: ['id', 'balance']
+            });
+
+            if (parseFloat(amount) < 100) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '最低提现金额为100', {});
+            }
+
+            if (parseFloat(amount) > parseFloat(user.balance)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '余额不足', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await Withdraw.create({
+                    order_no: order_no,
+                    type: withdrawBy,
+                    user_id: userId,
+                    amount: amount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(parseFloat(user.balance) - parseFloat(amount)),
+                }, { transaction: t });
+                await user.increment({ balance: -amount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '提现成功', {});
+            } catch (error) {
+                errLogger(`[WITHDRAW][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[WITHDRAW][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    WITHDRAW_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+
+            const { rows, count } = await Withdraw.findAndCountAll({
+                where: { user_id: req.user_id },
+                attributes: ['id', 'type', 'amount', 'status', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset
+            });
+
+            const data = {
+                records: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_BALANCE_TO_RESERVE_FUND = async (req, res) => {
+        const lockKey = `lock:transfer_balance_to_reserve_fund:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const amount = req.body.amount;
+
+            const t = await db.transaction();
+            try {
+                const user = await User.findByPk(userId, {
+                    attributes: ['id', 'relation', 'reserve_fund', 'balance'],
+                    transaction: t,
+                    lock: t.LOCK.UPDATE
+                });
+
+                if (amount > user.balance) {
+                    throw new Error('余额不足');
+                }
+                
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 2, // balance
+                    amount: amount,
+                    from: 2, // balance
+                    to: 1, // reserve_fund
+                    before_from_amount: Number(user.balance),
+                    after_from_amount: Number(parseFloat(user.balance) - parseFloat(amount)),
+                    before_to_amount: Number(user.reserve_fund),
+                    after_to_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+                await user.increment({ reserve_fund: amount, balance: -amount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_BALANCE_TO_RESERVE_FUND][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_BALANCE_TO_RESERVE_FUND][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    // Not Used
+    TRANSFER_REFERRAL_BONUS_TO_BALANCE = async (req, res) => {
+        const lockKey = `lock:transfer_referral_bonus_to_balance:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const today = new Date();
+            const day = today.getDay();
+            // if (day < 6) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请于周日转账', {});
+            // }
+
+            let refConf = await this.redisHelper.getValue('withdrawal_time_for_referral_bonus'); // 12:00:00-17:00:00
+            if (!refConf) {
+                const config = await Config.findOne({ where: { type: 'withdrawal_time_for_referral_bonus' }, attributes: ['val'] });
+                await this.redisHelper.setValue('withdrawal_time_for_referral_bonus', config.val);
+                refConf = config.val;
+            }
+            // Parse start and end times
+            const [startTime, endTime] = refConf.split('-'); // ['12:00:00', '17:00:00']
+            const currentTime = today.toTimeString().split(' ')[0]; // "HH:mm:ss"
+
+            if (currentTime < startTime || currentTime >= endTime) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不允许转让', { allow: { start: startTime, end: endTime } });
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const amount = req.body.amount;
+
+            const startOfWeek = new Date(today)
+            startOfWeek.setHours(0, 0, 0, 0)
+            startOfWeek.setDate(today.getDate() - day) // go back to Sunday
+
+            const endOfWeek = new Date(startOfWeek)
+            endOfWeek.setDate(startOfWeek.getDate() + 7) // next Sunday (exclusive)
+            const transfer = await Transfer.findOne({
+                where: {
+                    user_id: userId,
+                    wallet_type: 3, // referral
+                    from: 3, // referral
+                    to: 2, // balance
+                    createdAt: {
+                        [Op.gte]: startOfWeek,
+                        [Op.lt]: endOfWeek,
+                    },
+                },
+                attributes: ['id']
+            });
+            if (transfer) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '本周已完成转账', {});
+            }
+            const record = await RewardRecord.findOne({
+                where: {
+                    user_id: userId,
+                    is_used: 0,
+                    reward_id: {
+                        [Op.or]: [4, 6]
+                    }
+                },
+                order: [['id', 'ASC']],
+            });
+
+            const t = await db.transaction();
+            try {
+
+                const user = await User.findByPk(userId, {
+                    attributes: ['id', 'relation', 'referral_bonus', 'balance'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t
+                });
+
+                if (parseFloat(amount) > parseFloat(user.referral_bonus)) {
+                    throw new Error('推荐金不足');
+                }
+
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 3, // referral
+                    amount: amount,
+                    from: 3, // referral
+                    to: 2, // balance
+                    before_from_amount: Number(user.referral_bonus),
+                    after_from_amount: Number(parseFloat(user.referral_bonus) - parseFloat(amount)),
+                    before_to_amount: Number(user.balance),
+                    after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+                await user.increment({ referral_bonus: -amount, balance: amount }, { transaction: t });
+                if (record) {
+                    await record.update({ is_used: 1 }, { transaction: t });
+                }
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_REFERRAL_BONUS_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                if (record) {
+                    await record.update({ is_used: 1 });
+                }
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_REFERRAL_BONUS_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    // Not Used
+    TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND = async (req, res) => {
+        try {
+            const today = new Date();
+            const day = today.getDay();
+            const hour = today.getHours();
+            if (day < 6) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请于周日转账', {});
+            }
+
+            const refConf = this.redisHelper.getValue('withdrawal_time_for_referral_bonus'); // 12:00:00-17:00:00
+            // Parse start and end times
+            const [startTime, endTime] = refConf.split('-'); // ['12:00:00', '17:00:00']
+            const currentTime = today.toTimeString().split(' ')[0]; // "HH:mm:ss"
+
+            if (currentTime < startTime || currentTime >= endTime) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不允许转让', { allow: { start: startTime, end: endTime } });
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const amount = req.body.amount;
+
+            const user = await User.findByPk(userId, {
+                attributes: ['id', 'relation', 'referral_bonus', 'reserve_fund']
+            });
+
+            if (amount > user.referral_bonus) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '推荐金不足', {});
+            }
+
+            const startOfWeek = new Date(today)
+            startOfWeek.setHours(0, 0, 0, 0)
+            startOfWeek.setDate(today.getDate() - day) // go back to Sunday
+
+            const endOfWeek = new Date(startOfWeek)
+            endOfWeek.setDate(startOfWeek.getDate() + 7) // next Sunday (exclusive)
+            const transfer = await Transfer.findOne({
+                where: {
+                    user_id: userId,
+                    wallet_type: 3, // referral
+                    from: 3, // referral
+                    to: 1, // reserve
+                    createdAt: {
+                        [Op.gte]: startOfWeek,
+                        [Op.lt]: endOfWeek,
+                    },
+                },
+                attributes: ['id']
+            });
+            if (transfer) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '本周已完成转账', {});
+            }
+            const record = await RewardRecord.findOne({
+                where: {
+                    user_id: userId,
+                    is_used: 0,
+                    reward_id: {
+                        [Op.or]: [4, 6]
+                    }
+                },
+                order: [['id', 'ASC']],
+            });
+
+            const t = await db.transaction();
+            try {
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 3, // referral
+                    amount: amount,
+                    from: 3, // referral
+                    to: 1, // reserve
+                    before_from_amount: Number(user.referral_bonus),
+                    after_from_amount: Number(parseFloat(user.referral_bonus) - parseFloat(amount)),
+                    before_to_amount: Number(user.reserve_fund),
+                    after_to_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+                await user.increment({ reserve_fund: amount, referral_bonus: -amount }, { transaction: t });
+                if (record) {
+                    await record.update({ is_used: 1 }, { transaction: t });
+                }
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                if (record) {
+                    await record.update({ is_used: 1 });
+                }
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    REFERRAL_BONUS_COUPONS = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const coupons = await RewardRecord.findAll({
+                where: {
+                    user_id: userId,
+                    reward_id: 8 // 推荐金提取券
+                },
+                attributes: ['id', 'amount', 'is_used', 'validedAt', 'createdAt'],
+                order: [['id', 'DESC']]
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { coupons });
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_REFERRAL_BONUS_TO_BALANCE_BY_COUPON = async (req, res) => {
+        const lockKey = `lock:transfer_referral_bonus_to_balance_by_coupon:${req.user_id}`;
+        let redisLocked = false;
+        try {
+
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const userId = req.user_id;
+            const id = req.params.id;
+           
+
+            const t = await db.transaction();
+            try {
+                 const rewardRecord = await RewardRecord.findOne({
+                    where: {
+                        id: id,
+                        user_id: userId,
+                        is_used: 0,
+                        reward_id: 8 // 推荐金提取券
+                    },
+                    attributes: ['id', 'amount'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t
+                });
+
+                if (!rewardRecord) {
+                    throw new Error('未持有提现券');
+                }
+
+                const user = await User.findByPk(userId, {
+                    attributes: ['id', 'relation', 'referral_bonus', 'balance'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t
+                });
+
+                const amount = new Decimal(user.referral_bonus)
+                    .times(rewardRecord.amount)
+                    .times(0.01)
+                    .toNumber();
+                    
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 3, // referral
+                    reward_id: 8,
+                    amount: amount,
+                    from: 3, // referral
+                    to: 2, // balance
+                    before_from_amount: Number(user.referral_bonus),
+                    after_from_amount: Number(parseFloat(user.referral_bonus) - parseFloat(amount)),
+                    before_to_amount: Number(user.balance),
+                    after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+
+                await rewardRecord.update({ is_used: 1 }, { transaction: t });
+                await user.increment({ referral_bonus: -amount, balance: amount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '提交成功！请等待审核', {});
+
+            } catch (error) {
+                errLogger(`[TRANSFER_REFERRAL_BONUS_TO_BALANCE_BY_COUPON][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+            }
+
+        } catch (error) {
+            errLogger(`[TRANSFER_REFERRAL_BONUS_TO_BALANCE_BY_COUPON][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND_BY_COUPON = async (req, res) => {
+        const lockKey = `lock:transfer_referral_bonus_to_reserve_fund_by_coupon:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const userId = req.user_id;
+            const id = req.params.id;
+
+            const t = await db.transaction();
+            try {
+                const rewardRecord = await RewardRecord.findOne({
+                    where: {
+                        id: id,
+                        user_id: userId,
+                        is_used: 0,
+                        reward_id: 8 // 推荐金提取券
+                    },
+                    attributes: ['id', 'amount'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t
+                });
+
+                if (!rewardRecord) {
+                    throw new Error('未持有提现券');
+                }
+
+                const user = await User.findByPk(userId, {
+                    attributes: ['id', 'relation', 'referral_bonus', 'reserve_fund'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t
+                });
+
+                const amount = new Decimal(user.referral_bonus)
+                    .times(rewardRecord.amount)
+                    .times(0.01)
+                    .toNumber();
+                    
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 3, // referral
+                    reward_id: 8,
+                    amount: amount,
+                    from: 3, // referral
+                    to: 1, // reserve
+                    before_from_amount: Number(user.referral_bonus),
+                    after_from_amount: Number(parseFloat(user.referral_bonus) - parseFloat(amount)),
+                    before_to_amount: Number(user.reserve_fund),
+                    after_to_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+
+                await rewardRecord.update({ is_used: 1 }, { transaction: t });
+                await user.increment({ referral_bonus: -amount, reserve_fund: amount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '提交成功！请等待审核', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND_BY_COUPON][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+            }
+
+        } catch (error) {
+            errLogger(`[TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND_BY_COUPON][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_ALLOWANCE_TO_BALANCE = async (req, res) => {
+        const lockKey = `lock:transfer_allowance_to_balance:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const amount = req.body.amount;
+
+            const t = await db.transaction();
+            try {
+                const user = await User.findByPk(userId, { 
+                    attributes: ['id', 'relation', 'rank_allowance', 'balance'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t 
+                });
+                if (amount > user.rank_allowance) {
+                    throw new Error('津贴不足');
+                }
+                
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 5, // allowance
+                    amount: amount,
+                    from: 5, // allowance
+                    to: 2, // balance
+                    before_from_amount: Number(user.rank_allowance),
+                    after_from_amount: Number(parseFloat(user.rank_allowance) - parseFloat(amount)),
+                    before_to_amount: Number(user.balance),
+                    after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+                await user.increment({ balance: amount, rank_allowance: -amount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_ALLOWANCE_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_ALLOWANCE_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_BALANCE_TO_EARN = async (req, res) => {
+        const lockKey = `lock:transfer_balance_to_earn:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const amount = req.body.amount;
+
+            const t = await db.transaction();
+            try {
+                const user = await User.findByPk(userId, { 
+                    attributes: ['id', 'relation', 'earn', 'balance'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t 
+                });
+                if (parseFloat(amount) > parseFloat(user.balance)) {
+                    throw new Error('余额不足');
+                }
+                
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 2, // balance
+                    amount: amount,
+                    from: 2, // balance
+                    to: 7, // earn
+                    before_from_amount: Number(user.balance),
+                    after_from_amount: Number(parseFloat(user.balance) - parseFloat(amount)),
+                    before_to_amount: Number(user.earn),
+                    after_to_amount: Number(parseFloat(user.earn) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+                await user.increment({ balance: -amount, earn: amount, earn_out_limit: amount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_BALANCE_TO_EARN][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_BALANCE_TO_EARN][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_EARN_TO_BALANCE = async (req, res) => {
+        const lockKey = `lock:transfer_earn_to_balance:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const amount = req.body.amount;
+
+            
+
+            const t = await db.transaction();
+            try {
+                const user = await User.findByPk(userId, { 
+                    attributes: ['id', 'relation', 'earn', 'earn_out_limit', 'balance'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t
+                });
+                if (parseFloat(amount) > parseFloat(user.earn_out_limit)) {
+                    throw new Error('余额宝资金不足，请重试');
+                }
+
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 7, // earn
+                    amount: amount,
+                    from: 7, // earn
+                    to: 2, // balance
+                    before_from_amount: Number(user.earn),
+                    after_from_amount: Number(parseFloat(user.earn) - parseFloat(amount)),
+                    before_to_amount: Number(user.balance),
+                    after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+                await user.increment({ balance: amount, earn: -amount, earn_out_limit: -amount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_EARN_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_EARN_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_GOLD_INTEREST_TO_BALANCE = async (req, res) => {
+        const lockKey = `lock:transfer_gold_interest_to_balance:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const amount = req.body.amount;
+
+            const t = await db.transaction();
+            try {
+                const user = await User.findByPk(userId, { 
+                    attributes: ['id', 'relation', 'gold_interest', 'balance'],
+                    lock: t.LOCK.UPDATE,
+                    transaction: t 
+                });
+                if (parseFloat(amount) > parseFloat(user.gold_interest)) {
+                    throw new Error('黄金息不足');
+                }
+                
+                await Transfer.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 8, // gold_interest
+                    amount: amount,
+                    from: 8, // gold_interest
+                    to: 2, // balance
+                    before_from_amount: Number(user.gold_interest),
+                    after_from_amount: Number(parseFloat(user.gold_interest) - parseFloat(amount)),
+                    before_to_amount: Number(user.balance),
+                    after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
+                    status: 'APPROVED'
+                }, { transaction: t });
+                await user.increment({ balance: parseFloat(amount), gold_interest: -parseFloat(amount) }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '提取成功', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_EARN_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || '提取失败', {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_EARN_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+}
+
+module.exports = Controller
