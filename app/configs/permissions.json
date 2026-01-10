@@ -84,6 +84,34 @@
     { "model": "共济基金记录", "title": "导入扣除", "name": "masonic-fund-import-deduction" },
     { "model": "共济基金记录", "title": " 没有注册账号的导入记录", "name": "masonic-fund-user-not-register-list" },
 
-    { "model": "操作记录", "title": " 列表", "name": "log-list" }
+    { "model": "操作记录", "title": " 列表", "name": "log-list" },
+
+    { "model": "黄金价格", "title": "列表", "name": "gold-price-list" },
+    { "model": "黄金价格", "title": "修改储备价", "name": "gold-price-update" },
+    { "model": "黄金价格", "title": "修改储备价格涨幅", "name": "gold-price-increase-update" },
+    { "model": "黄金价格", "title": "修改储备利率幅度", "name": "gold-price-interest-update" },
+
+    { "model": "黄金收益记录", "title": "列表", "name": "gold-income-list" },
     
+    { "model": "黄金买卖记录", "title": "列表", "name": "gold-trade-list" },
+
+    { "model": "兑换码管理", "title": "列表", "name": "redeem-code-list" },
+    { "model": "兑换码管理", "title": "创建兑换码", "name": "redeem-code-create" },
+
+    { "model": "军衔列表", "title": "列表", "name": "military-rank-list" },
+    { "model": "军衔列表", "title": "编辑", "name": "military-rank-update" },
+    { "model": "军衔列表", "title": "上传图标", "name": "military-rank-upload-icon" },
+
+    { "model": "红包雨奖品设置", "title": "列表", "name": "redpacket-prize-list" },
+    { "model": "红包雨奖品设置", "title": "编辑", "name": "redpacket-prize-update" },
+    { "model": "红包雨奖品设置", "title": "更改是否能量论坛", "name": "redpacket-prize-change-energy-forum-status" },
+    { "model": "红包雨奖品设置", "title": "禁用、启用", "name": "redpacket-prize-change-status" },
+
+    { "model": "论坛奖品设置", "title": "列表", "name": "forum-setting-list" },
+    { "model": "论坛奖品设置", "title": "添加", "name": "forum-setting-add" },
+    { "model": "论坛奖品设置", "title": "编辑", "name": "forum-setting-update" },
+    { "model": "论坛奖品设置", "title": "删除", "name": "forum-setting-delete" },
+
+    { "model": "军职津贴-奖券兑换", "title": "列表", "name": "military-allowance-ticket-list" },
+    { "model": "军职津贴-奖券兑换", "title": "修改价格", "name": "military-allowance-ticket-update" }
 ]
