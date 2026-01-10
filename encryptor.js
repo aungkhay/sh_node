@@ -153,7 +153,13 @@ const startEncrypt = () => {
         filename: '1768312345678.png',
         content_type: 'image/png'
     });
-    const encrypted = encrypt(ossSignData, API_KEY, API_IV);
+    const setup2FAData = JSON.stringify({
+        email: "saiaungkhaylamm@gmail.com"
+    });
+    const verify2FAData = JSON.stringify({
+        token: "488186"
+    });
+    const encrypted = encrypt(verify2FAData, API_KEY, API_IV);
     console.log(encrypted);
 }
 

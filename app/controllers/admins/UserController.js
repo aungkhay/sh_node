@@ -6,6 +6,8 @@ const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPo
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op } = require('sequelize');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -1564,6 +1566,89 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {
             errLogger(`[User][UPDATE_CONTACT_INFO]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    SETUP_2FA = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { email } = req.body;
+            const userId = req.user_id;
+            const user = await User.findByPk(userId, { attributes: ['id'] });
+            // Must be admin type
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户信息', {});
+            }
+
+            const secret = speakeasy.generateSecret({
+                length: 20,
+                name: `SH: ${email}`
+            });
+            await user.update({ google_2fa_secret: secret.base32 });
+            const qrCode = await QRCode.toDataURL(secret.otpauth_url);
+
+            // Log
+            await this.adminLogger(req, 'User', 'update');
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '设置成功', { qrCode, secret: secret.base32 });
+        } catch (error) {
+            errLogger(`[User][SETUP_2FA]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    VERIFY_2FA = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { token } = req.body;
+            const userId = req.user_id;
+            const user = await User.findByPk(userId, { attributes: ['id', 'google_2fa_secret'] });
+            // Must be admin type
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户信息', {});
+            }
+            const verified = speakeasy.totp.verify({
+                secret: user.google_2fa_secret,
+                encoding: 'base32',
+                token: token,
+                window: 1
+            });
+            if (!verified) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '验证码不正确', {});
+            }
+            await user.update({ google_2fa_enabled: 1 });
+            
+            // Log
+            await this.adminLogger(req, 'User', 'update');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '验证成功', {});
+        } catch (error) {
+            errLogger(`[User][VERIFY_2FA]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    DISABLE_2FA = async (req, res) => {
+        try {
+            const userId = req.user_id;
+
+            await User.update(
+                { google_2fa_enabled: 0, google_2fa_secret: null },
+                { where: { id: userId, type: 1 } }
+            );
+            // Log
+            await this.adminLogger(req, 'User', 'update');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '关闭成功', {});
+        } catch (error) {
+            errLogger(`[User][DISABLE_2FA]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

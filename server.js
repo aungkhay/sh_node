@@ -61,33 +61,33 @@ APP.use((req, res, next) => {
         }
 
         // Admin IP whitelist: only allow specified IPs to access /admin routes
-        try {
-            if (req.path && req.path.startsWith('/admin')) {
-                const rawList = process.env.ADMIN_WHITELIST || '127.0.0.1,::1';
-                const whitelist = rawList.split(',').map(s => s.trim()).filter(Boolean);
-                const forwarded = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-                const remote = req.connection && req.connection.remoteAddress ? req.connection.remoteAddress : '';
-                let ip = forwarded || req.ip || remote || '';
-                // normalize IPv4 mapped IPv6 addresses
-                ip = ip.replace(/^::ffff:/, '');
+        // try {
+        //     if (req.path && req.path.startsWith('/admin')) {
+        //         const rawList = process.env.ADMIN_WHITELIST || '127.0.0.1,::1';
+        //         const whitelist = rawList.split(',').map(s => s.trim()).filter(Boolean);
+        //         const forwarded = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+        //         const remote = req.connection && req.connection.remoteAddress ? req.connection.remoteAddress : '';
+        //         let ip = forwarded || req.ip || remote || '';
+        //         // normalize IPv4 mapped IPv6 addresses
+        //         ip = ip.replace(/^::ffff:/, '');
 
-                const allowed = whitelist.some(w => {
-                    if (!w) return false;
-                    if (w.includes('*')) {
-                        // support simple wildcard suffix like 192.168.1.*
-                        const prefix = w.replace(/\*+$/, '');
-                        return ip.startsWith(prefix);
-                    }
-                    return ip === w;
-                });
+        //         const allowed = whitelist.some(w => {
+        //             if (!w) return false;
+        //             if (w.includes('*')) {
+        //                 // support simple wildcard suffix like 192.168.1.*
+        //                 const prefix = w.replace(/\*+$/, '');
+        //                 return ip.startsWith(prefix);
+        //             }
+        //             return ip === w;
+        //         });
 
-                if (!allowed) {
-                    return MyResponse(res, 403, false, 'Forbidden', {});
-                }
-            }
-        } catch (e) {
-            console.error('Admin whitelist check error:', e);
-        }
+        //         if (!allowed) {
+        //             return MyResponse(res, 403, false, 'Forbidden', {});
+        //         }
+        //     }
+        // } catch (e) {
+        //     console.error('Admin whitelist check error:', e);
+        // }
     } catch (error) {
         console.log(error.stack);
         return MyResponse(res, 400, false, 'We are sorry. Please try again later!', {});

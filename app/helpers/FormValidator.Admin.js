@@ -398,6 +398,17 @@ exports.update_contact_info = () => {
     ]
 }
 
+exports.setup_2fa = () => {
+    return [
+        check('email', { msg: '邮箱不能为空' }).not().isEmpty().isEmail().withMessage('邮箱格式不正确'),
+    ];
+}
+
+exports.enable_2fa = () => {
+    return [
+        check('token', { msg: 'Token不能为空' }).not().isEmpty(),
+    ];
+}
 
 exports.update_bank = () => {
     return [

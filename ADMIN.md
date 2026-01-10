@@ -87,6 +87,9 @@ const url = `${baseURL}/get-recaptcha`;
 
 ### Login
 ``` js
+// [GET] Check account enable 2FA
+const url = `${baseURL}/check-2fa-enabled?phone=${phoneNumber}`;
+
 // [POST]
 const url = `${baseURL}/login`;
 const data = {
@@ -827,6 +830,21 @@ const url = `${baseURL}/users/${userId}/update-contact-info`;
 const data = {
     contact_info: ''
 }
+
+// [POST] Setup 2FA
+const url = `${baseURL}/users/${userId}/setup-2fa`;
+const data = {
+    email: ''
+}
+
+// [POST] Enable 2FA
+const url = `${baseURL}/users/${userId}/enable-2fa`;
+const data = {
+    token: '' // google 6 digit OTP
+}
+
+// [POST] Disable 2FA
+const url = `${baseURL}/users/${userId}/disable-2fa`;
 ```
 ### Logs 操作日志
 ``` js

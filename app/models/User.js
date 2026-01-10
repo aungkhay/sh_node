@@ -250,6 +250,14 @@ User.init({
     contact_info: {
         type: DataTypes.TEXT('medium'),
         allowNull: true,
+    },
+    google_2fa_secret: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    google_2fa_enabled: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
     }
 }, {
     sequelize,

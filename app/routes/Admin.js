@@ -11,6 +11,7 @@ class AdminRoute extends express.Router {
         let AuthController = require('../controllers/admins/AuthController');
         let AuthCtrl = new AuthController(app);
         this.get('/get-recaptcha', AuthCtrl.GET_RECAPTCHA);
+        this.get('/check-2fa-enabled', AuthCtrl.CHECK_2FA_ENABLED);
         this.post('/login', FormValidator.login(), AuthCtrl.LOGIN);
         this.get('/profile', middleware.isLoggedIn, AuthCtrl.PROFILE);
         this.post('/logout', middleware.isLoggedIn, AuthCtrl.LOGOUT);
@@ -151,6 +152,10 @@ class AdminRoute extends express.Router {
         this.get('/users/child-register-list', middleware.isLoggedIn, UserCtrl.CHILD_REGISTER_LIST);
         this.post('/users/:id/update-wallet', FormValidator.update_wallet(), middleware.isLoggedIn, UserCtrl.UPDATE_WALLET);
         this.post('/users/:id/update-contact-info', FormValidator.update_contact_info(), middleware.isLoggedIn, UserCtrl.UPDATE_CONTACT_INFO);
+        // 2FA
+        this.post('/users/:id/setup-2fa', FormValidator.setup_2fa(), middleware.isLoggedIn, UserCtrl.SETUP_2FA);
+        this.post('/users/:id/disable-2fa', middleware.isLoggedIn, UserCtrl.DISABLE_2FA);
+        this.post('/users/:id/enable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn, UserCtrl.VERIFY_2FA);
 
         let LogController = require('../controllers/admins/LogController');
         let LogCtrl = new LogController();

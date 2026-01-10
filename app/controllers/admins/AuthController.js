@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const { User } = require('../../models');
 const { encrypt } = require('../../helpers/AESHelper');
 const { errLogger } = require('../../helpers/Logger');
+const speakeasy = require('speakeasy');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -32,6 +33,22 @@ class Controller {
         }
     }
 
+    CHECK_2FA_ENABLED = async (req, res) => {
+        try {
+            const phone = req.query.phone || '';
+            const user = await User.findOne({
+                where: { phone_number: phone, type: 1 },
+                attributes: ['id', 'google_2fa_enabled']
+            });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户信息', {});
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '查询成功', { enabled: user.google_2fa_enabled });
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     LOGIN = async (req, res) => {
         try {
             const err = validationResult(req);
@@ -40,7 +57,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { phone, password, uuid, verification_code } = req.body;
+            const { phone, password, uuid, verification_code, otp } = req.body;
 
             // Check recaptcha
             const recapt = await this.redisHelper.getValue(uuid);
@@ -50,7 +67,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [recaptchaError]);
             }
 
-            const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'password', 'status', 'relation', 'login_count'] });
+            const user = await User.findOne({ 
+                where: { phone_number: phone }, 
+                attributes: ['id', 'password', 'status', 'relation', 'login_count', 'google_2fa_enabled', 'google_2fa_secret'] 
+            });
             if (!user) {
                 await this.redisHelper.deleteKey(uuid);
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到账号', {});
@@ -58,6 +78,20 @@ class Controller {
             if (user.id != 1 && user.status == 0) {
                 await this.redisHelper.deleteKey(uuid);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '账号已被冻结', {});
+            }
+            if (user.google_2fa_enabled) {
+                if (!otp) {
+                    return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [{ field: 'otp', msg: '谷歌验证码不能为空' }]);
+                }
+                const verified = speakeasy.totp.verify({
+                    secret: user.google_2fa_secret,
+                    encoding: 'base32',
+                    token: otp,
+                    window: 1
+                });
+                if (!verified) {
+                    return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [{ field: 'otp', msg: '谷歌验证码错误' }]);
+                }
             }
 
             const encPassword = encrypt(PASS_PREFIX + password + PASS_SUFFIX, PASS_KEY, PASS_IV);
