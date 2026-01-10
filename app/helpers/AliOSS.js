@@ -7,8 +7,8 @@ class AliOSS {
     constructor() {
         this.client = new OSS({
             region: 'oss-cn-hongkong',
-            accessKeyId: ACCESS_KEY_ID,
-            accessKeySecret: ACCESS_KEY_SECRET,
+            accessKeyId: process.env.ALIOSS_ACCESS_KEY_ID,
+            accessKeySecret: process.env.ALIOSS_ACCESS_KEY_SECRET,
             bucket: 'chinamainland',
             endpoint: 'oss-cn-hongkong.aliyuncs.com'
         });
