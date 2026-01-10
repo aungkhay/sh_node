@@ -488,3 +488,11 @@ exports.update_role = () => {
         check('name', { msg: '角色名称不能为空' }).not().isEmpty(),
     ]
 }
+
+exports.assign_permissions = () => {
+    return [
+        check('permissionIds').not().isEmpty().withMessage('权限ID不能为空')
+            .bail()
+            .isArray({ min: 1 }).withMessage('权限ID无效'),
+    ]
+}

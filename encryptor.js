@@ -159,7 +159,17 @@ const startEncrypt = () => {
     const verify2FAData = JSON.stringify({
         token: "488186"
     });
-    const encrypted = encrypt(verify2FAData, API_KEY, API_IV);
+    const createRole = JSON.stringify({
+        code: "test",
+        name: "Test"
+    });
+    const updateRole = JSON.stringify({
+        name: "超级管理员"
+    });
+    const permissions = JSON.stringify({
+        permissionIds: [1,2]
+    })
+    const encrypted = encrypt(permissions, API_KEY, API_IV);
     console.log(encrypted);
 }
 

@@ -2,6 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const { Role, Permission } = require('../../models');
 let { validationResult } = require('express-validator');
+const { Op } = require('sequelize');
 
 class Controller {
     constructor() {
@@ -74,11 +75,13 @@ class Controller {
             const { code, name } = req.body;
             const roleCode = await Role.findOne({ where: { code } });
             if (roleCode) {
-                return MyResponse(res, this.ResCode.ALREADY_EXISTS.code, false, '角色已存在', {});
+                const errMsg = [{ field: 'code', message: '角色代码已存在' }];
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, this.ResCode.BAD_REQUEST.msg, {}, errMsg);
             }
             const roleName = await Role.findOne({ where: { name } });
             if (roleName) {
-                return MyResponse(res, this.ResCode.ALREADY_EXISTS.code, false, '角色名称已存在', {});
+                const errMsg = [{ field: 'name', message: '角色名称已存在' }];
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, this.ResCode.BAD_REQUEST.msg, {}, errMsg);
             }
             const newRole = await Role.create({ code, name });
 
@@ -86,6 +89,7 @@ class Controller {
             await this.adminLogger(req, 'Role', 'create');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '角色创建成功', newRole);
         } catch (error) {
+            console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
@@ -103,9 +107,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到角色', {});
             }
             const { name } = req.body;
-            const roleName = await Role.findOne({ where: { name, id: { $ne: roleId } } });
+            const roleName = await Role.findOne({ where: { name, id: { [Op.ne]: roleId } } });
             if (roleName) {
-                return MyResponse(res, this.ResCode.ALREADY_EXISTS.code, false, '角色名称已存在', {});
+                const errMsg = [{ field: 'name', message: '角色名称已存在' }];
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, this.ResCode.BAD_REQUEST.msg, {}, errMsg);
             }
             await role.update({ name });
 
@@ -113,6 +118,7 @@ class Controller {
             await this.adminLogger(req, 'Role', 'update');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '角色更新成功', {});
         } catch (error) {
+            console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
@@ -145,12 +151,19 @@ class Controller {
             if (!role) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到角色', {});
             }
-            const { permissions } = req.body;
-            await role.setPermissions(permissions);
+            const { permissionIds } = req.body;
+            const validPermissions = await Permission.findAll({
+                where: {
+                    id: { [Op.in]: permissionIds }
+                },
+                attributes: ['id']
+            });
+            await role.setPermissions(validPermissions.map(p => p.id));
             // Log
             await this.adminLogger(req, 'Role', 'assign-permission');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '权限分配成功', {});
         } catch (error) {
+            console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

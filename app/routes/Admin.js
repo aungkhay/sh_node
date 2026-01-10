@@ -198,6 +198,7 @@ class AdminRoute extends express.Router {
         this.post('/roles/create', FormValidator.create_role(), middleware.isLoggedIn, RoleCtrl.CREATE_ROLE);
         this.post('/roles/:id/update', FormValidator.update_role(), middleware.isLoggedIn, RoleCtrl.UPDATE_ROLE);
         this.post('/roles/:id/delete', middleware.isLoggedIn, RoleCtrl.DELETE_ROLE);
+        this.post('/roles/:id/assign-permissions', FormValidator.assign_permissions(), middleware.isLoggedIn, RoleCtrl.ASSIGN_PERMISSIONS_TO_ROLE);
     }
 }
 

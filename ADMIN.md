@@ -1012,3 +1012,37 @@ const data = {
     status: 1 // 0 => Disabled | 1 => Enabled
 }
 ```
+
+### Role & Permissions
+``` js
+// [GET] Role List
+const url = `${baseURL}/roles/list`;
+
+// [POST] Create Role
+const url = `${baseURL}/roles/create`;
+const data = {
+    code: '',
+    name: ''
+}
+
+// [POST] Update Role
+const url = `${baseURL}/roles/${roleId}/update`;
+const data = {
+    name: ''
+}
+
+// [POST] Delete Role
+const url = `${baseURL}/roles/${roleId}/delete`;
+
+// [GET] Permission List
+const url = `${baseURL}/roles/permission-list`;
+
+// [GET] Role has permissions
+const url = `${baseURL}/roles/${roleId}/permissions`;
+
+// [GET] Assign permission
+const url = `${baseURL}/roles/${roleId}/assign-permissions`;
+const data = {
+    permissionIds: [1,2]
+}
+```
