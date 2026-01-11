@@ -29,6 +29,7 @@ class Controller {
             this.redisHelper.setValue(key, recaptcha, 300);
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { uuid: key, code: recaptcha });
         } catch (error) {
+            errLogger(`[GET_RECAPTCHA]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
