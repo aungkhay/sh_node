@@ -26,7 +26,7 @@ class Controller {
     GET_RECAPTCHA = async (req, res) => {
         try {
             const key = uuidv4();
-            const recaptcha = this.redisHelper.generateRecaptcha(key);
+            const recaptcha = await this.redisHelper.generateRecaptcha(key);
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { uuid: key, code: recaptcha });
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
