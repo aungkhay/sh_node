@@ -103,7 +103,7 @@ class Helper {
             var recaptcha = '';
 
             recaptcha = this.randomNumber(5);
-            await this.setValue(key, recaptcha.toLocaleLowerCase(), 5 * 60);
+            this.setValue(key, recaptcha.toLocaleLowerCase(), 5 * 60);
 
             // while (check == false) {
             //     recaptcha = this.randomNumber(5);
