@@ -4,7 +4,7 @@ const { queryLogger }  = require('../helpers/Logger');
 require('dotenv').config({ path: `./.env` });
 const env = process.env;
 
-const db = new Sequelize(env[`DB_NAME`], env[`DB_USER`], env[`DB_PASS`], {
+const db = new Sequelize(env[`DB_NAME`], null, null, {
     // host: env[`DB_HOST`],
     // port: env[`DB_PORT`],
     dialect: 'mysql',
