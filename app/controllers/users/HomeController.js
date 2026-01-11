@@ -2062,7 +2062,9 @@ class Controller {
     MASONIC_FUND = async (req, res) => {
         try {
             const totalRegister = await User.count();
-            const user = await User.findByPk(req.user_id, { attributes: ['id', 'masonic_fund'] });
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'masonic_fund', 'phone_number'] });
+
+            console.log("MASONIC_FUND:", user.phone_number, user.masonic_fund);
 
             const data = {
                 fund: Number(user.masonic_fund),

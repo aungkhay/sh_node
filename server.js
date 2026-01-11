@@ -58,11 +58,11 @@ const PUBLIC_ROUTES = [
     '/admin/get-recaptcha',
 ];
 APP.use((req, res, next) => {
-    console.log("***** ip *****", req.ip);
+    // console.log("***** ip *****", req.ip);
     /* ---------- async logger ---------- */
     res.on('finish', () => {
         try {
-            reqLogger(req, res);
+            // reqLogger(req, res);
         } catch (e) {
             console.error('[Logger]', e);
         }
