@@ -1250,7 +1250,7 @@ class Controller {
 
     CHILD_SUMMARY = async (req, res) => {
         try {
-            const phone = '13914725800' || req.query.phone || '';
+            const phone = req.query.phone || '';
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
 
@@ -1259,10 +1259,9 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
-            const condition = {
-                relation: {
-                    [Op.like]: `%/${user.id}/%`
-                }
+            let condition = {}
+            if (user.id != 1) {
+                condition.relation = { [Op.like]: `%/${user.id}/%` }
             }
 
             if (startTime && endTime) {
