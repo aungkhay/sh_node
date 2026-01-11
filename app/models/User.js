@@ -280,6 +280,26 @@ User.init({
             name: 'idx_actived_at',
             fields: ['activedAt'],
             using: 'BTREE',
+        },
+        {
+            name: 'idx_created_at',
+            fields: ['createdAt'],
+            using: 'BTREE',
+        },
+        {
+            name: 'idx_status',
+            fields: ['status'],
+            using: 'BTREE',
+        },
+        {
+            name: 'idx_name',
+            fields: ['name'],
+            using: 'BTREE',
+        },
+        {
+            name: 'idx_type',
+            fields: ['type'],
+            using: 'BTREE',
         }
     ]
 })

@@ -74,6 +74,21 @@ UserKYC.init({
     paranoid: true,
     indexes: [
         { fields: ['relation'] },
+        {
+            name: 'idx_created_at',
+            fields: ['createdAt'],
+            using: 'BTREE',
+        },
+        {
+            name: 'idx_status',
+            fields: ['status'],
+            using: 'BTREE',
+        },
+        {
+            name: 'idx_nrc_number',
+            fields: ['nrc_number'],
+            using: 'BTREE',
+        }
     ]
 });
 
