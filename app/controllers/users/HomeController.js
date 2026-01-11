@@ -49,6 +49,20 @@ class Controller {
         }
     }
 
+    GET_POPUP_ANNOUNCEMENT = async (req, res) => {
+        try {
+            let popup_announcement = await this.redisHelper.getValue('popup_announcement');
+            if (!popup_announcement) {
+                const config = await Config.findOne({ where: { type: 'popup_announcement' }, attributes: ['val'] });
+                await this.redisHelper.setValue('popup_announcement', config.val);
+                popup_announcement = config.val;
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { popup_announcement: popup_announcement });
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     GET_CUSTOMER_SERVICE = async (req, res) => {
         try {
             const type = req.params.type;

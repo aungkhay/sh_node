@@ -22,6 +22,7 @@ class UserRoute extends express.Router {
         const HomeCtrl = new HomeController(app);
         this.get('/get-server-time', HomeCtrl.GET_SERVER_TIME);
         this.get('/get-file-path', middleware.isLoggedIn, HomeCtrl.GET_FILE_PATH);
+        this.get('/get-popup-announcement', HomeCtrl.GET_POPUP_ANNOUNCEMENT);
         this.get('/customer-service/:type', HomeCtrl.GET_CUSTOMER_SERVICE);
         this.get('/notifications', middleware.isLoggedIn, HomeCtrl.NOTIFICATIONS);
         this.get('/notifications/:id/details', middleware.isLoggedIn, HomeCtrl.NOTIFICATION_DETAIL);

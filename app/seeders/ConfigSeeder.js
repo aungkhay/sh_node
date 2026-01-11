@@ -143,6 +143,13 @@ module.exports = async () => {
             description: '-',
             data_type: 'string'
         },
+        {
+            type: 'popup_announcement',
+            title: 'Popup Announcement',
+            val: '<p>This is a popup announcement</p>',
+            description: '-',
+            data_type: 'html'
+        }
     ];
 
     const count = await Config.count();
