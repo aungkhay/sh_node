@@ -130,18 +130,13 @@ APP.use((req, res, next) => {
     }
 })
 
-if (process.env.IS_ADMIN !== '1') {
-    const UserRoute = require('./app/routes/User');
-    APP.use('/api', new UserRoute(APP));
-} else {
-    const AdminRoute = require('./app/routes/Admin');
-    APP.use('/admin', new AdminRoute(APP));
-}
+const UserRoute = require('./app/routes/User');
+APP.use('/api', new UserRoute(APP));
+const AdminRoute = require('./app/routes/Admin');
+APP.use('/admin', new AdminRoute(APP));
 
 // Cron
-if (process.env.IS_ADMIN !== '1') {
-    require('./app/cron');
-}
+require('./app/cron');
 
 // Start Server
 APP.listen(PORT, HOST, () => {
