@@ -3,8 +3,8 @@ const express = require('express');
 const APP = express();
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
+// const swaggerUi = require('swagger-ui-express');
+// const YAML = require('yamljs');
 const { reqLogger } = require('./app/helpers/Logger');
 
 require('dotenv').config({ path: `./.env` });
@@ -32,17 +32,36 @@ APP.get('/', (req, res) => {
 });
 
 //setup Swagger
-try {
-    const UserDoc = YAML.load('./app/docs/User.yml');
-    APP.use('/docs/user', swaggerUi.serve, swaggerUi.setup(UserDoc));
-} catch (error) {
-    console.log(error);   
-}
+// try {
+//     const UserDoc = YAML.load('./app/docs/User.yml');
+//     APP.use('/docs/user', swaggerUi.serve, swaggerUi.setup(UserDoc));
+// } catch (error) {
+//     console.log(error);   
+// }
 
 const { decryptReqBody, decryptReqQuery } = require('./app/helpers/AESHelper');
 const RouteDetector = require('./app/helpers/RouteDetector');
 const MyResponse = require('./app/helpers/MyResponse');
+const PUBLIC_ROUTES = [
+    '/',
+    '/api/get-recaptcha',
+    '/api/get-server-time',
+    '/admin/get-recaptcha',
+];
 APP.use((req, res, next) => {
+    /* ---------- async logger ---------- */
+    res.on('finish', () => {
+        try {
+            reqLogger(req, res);
+        } catch (e) {
+            console.error('[Logger]', e);
+        }
+    });
+     /* ---------- skip heavy logic ---------- */
+    if (PUBLIC_ROUTES.includes(req.path)) {
+        return next();
+    }
+
     try {
         if(req.body?.data) {
             const decrypted = decryptReqBody(req.body.data);
@@ -58,6 +77,11 @@ APP.use((req, res, next) => {
                 configurable: true,
             });
             delete req.query.data;
+        }
+
+        /* ---------- route permission ---------- */
+        if (!req.path.startsWith('/admin') && !RouteDetector(req)) {
+            return MyResponse(res, 400, false, 'Action Denied!', {});
         }
 
         // Admin IP whitelist: only allow specified IPs to access /admin routes
@@ -88,15 +112,11 @@ APP.use((req, res, next) => {
         // } catch (e) {
         //     console.error('Admin whitelist check error:', e);
         // }
+
+        next();
     } catch (error) {
         console.log(error.stack);
         return MyResponse(res, 400, false, 'We are sorry. Please try again later!', {});
-    }
-    reqLogger(req, res);
-    if (!req.path.startsWith('/admin') && !RouteDetector(req)) {
-        return MyResponse(res, 400, false, 'Action Denied!', {}, {});
-    } else {
-        return next();
     }
 })
 
