@@ -306,7 +306,6 @@ class Controller {
                 const user = await User.findByPk(userId, {
                     attributes: ['id', 'relation', 'reserve_fund', 'balance'],
                     transaction: t,
-                    lock: t.LOCK.UPDATE
                 });
 
                 if (amount > user.balance) {
@@ -423,7 +422,6 @@ class Controller {
 
                 const user = await User.findByPk(userId, {
                     attributes: ['id', 'relation', 'referral_bonus', 'balance'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
 
@@ -617,7 +615,6 @@ class Controller {
                         reward_id: 8 // 推荐金提取券
                     },
                     attributes: ['id', 'amount'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
 
@@ -627,7 +624,6 @@ class Controller {
 
                 const user = await User.findByPk(userId, {
                     attributes: ['id', 'relation', 'referral_bonus', 'balance'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
 
@@ -696,7 +692,6 @@ class Controller {
                         reward_id: 8 // 推荐金提取券
                     },
                     attributes: ['id', 'amount'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
 
@@ -706,7 +701,6 @@ class Controller {
 
                 const user = await User.findByPk(userId, {
                     attributes: ['id', 'relation', 'referral_bonus', 'reserve_fund'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
 
@@ -774,7 +768,6 @@ class Controller {
             try {
                 const user = await User.findByPk(userId, { 
                     attributes: ['id', 'relation', 'rank_allowance', 'balance'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t 
                 });
                 if (amount > user.rank_allowance) {
@@ -836,7 +829,6 @@ class Controller {
             try {
                 const user = await User.findByPk(userId, { 
                     attributes: ['id', 'relation', 'earn', 'balance'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t 
                 });
                 if (parseFloat(amount) > parseFloat(user.balance)) {
@@ -900,7 +892,6 @@ class Controller {
             try {
                 const user = await User.findByPk(userId, { 
                     attributes: ['id', 'relation', 'earn', 'earn_out_limit', 'balance'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
                 if (parseFloat(amount) > parseFloat(user.earn_out_limit)) {
@@ -962,7 +953,6 @@ class Controller {
             try {
                 const user = await User.findByPk(userId, { 
                     attributes: ['id', 'relation', 'gold_interest', 'balance'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t 
                 });
                 if (parseFloat(amount) > parseFloat(user.gold_interest)) {

@@ -285,7 +285,6 @@ class Controller {
                             }, 
                             attributes: ['id', 'user_id', 'amount'], 
                             transaction: t,
-                            lock: t.LOCK.UPDATE
                         });
                         const obj = {
                             status: status,
@@ -298,7 +297,6 @@ class Controller {
                                     where: { id: withdraw.user_id },
                                     attributes: ['id', 'balance'],
                                     transaction: t,
-                                    lock: t.LOCK.UPDATE
                                 });
                                 await user.increment({ balance: withdraw.amount }, { transaction: t });
                             }

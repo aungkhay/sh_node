@@ -660,7 +660,6 @@ class Controller {
                             },
                             attributes: ['id', 'relation', 'type'],
                             transaction: t,
-                            lock: t.LOCK.UPDATE
                         });
 
                         for (let index = 0; index < upLevelIds.length; index++) {
@@ -748,7 +747,6 @@ class Controller {
                             },
                             attributes: ['id', 'relation', 'type'],
                             transaction: t,
-                            lock: t.LOCK.UPDATE
                         });
 
                         for (let index = 0; index < upLevelIds.length; index++) {
@@ -863,7 +861,6 @@ class Controller {
                         },
                         attributes: ['id', 'name', 'phone_number', 'relation', 'type'],
                         transaction: t,
-                        lock: t.LOCK.UPDATE
                     });
 
                     for (let index = 0; index < upLevelIds.length; index++) {
@@ -1774,7 +1771,6 @@ class Controller {
                     },
                     attributes: ['id', 'relation'],
                     transaction: t,
-                    lock: t.LOCK.UPDATE
                 });
                 if (user.kyc) {
                     if (user.kyc.status === 'PENDING') {
@@ -1824,7 +1820,6 @@ class Controller {
                     },
                     attributes: ['id', 'relation', 'type'],
                     transaction: t,
-                    lock: t.LOCK.UPDATE
                 });
 
                 for (let index = 0; index < upLevelIds.length; index++) {

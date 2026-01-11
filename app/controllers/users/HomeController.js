@@ -1767,7 +1767,6 @@ class Controller {
             try {
                 const user = await User.findByPk(userId, { 
                     attributes: ['id', 'relation', 'freeze_allowance'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
                 if (ticket.price > user.freeze_allowance) {
@@ -2234,7 +2233,6 @@ class Controller {
             try {
                 const user = await User.findByPk(userId, {
                     attributes: ['id', 'relation', 'reserve_fund', 'gold'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t 
                 });
                 if (totalConsume > parseFloat(user.reserve_fund)) {
@@ -2345,7 +2343,6 @@ class Controller {
                         is_used: 0,
                     },
                     attributes: ['id', 'amount', 'validedAt'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
 
@@ -2357,7 +2354,6 @@ class Controller {
                 }
                 const user = await User.findByPk(userId, { 
                     attributes: ['id', 'gold'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t 
                 });
                 
@@ -2415,7 +2411,6 @@ class Controller {
                         is_used: 0 
                     },
                     attributes: ['id', 'amount', 'validedAt'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
 
@@ -2433,7 +2428,6 @@ class Controller {
 
                 const user = await User.findByPk(userId, { 
                     attributes: ['id', 'balance'],
-                    lock: t.LOCK.UPDATE,
                     transaction: t
                 });
                 
@@ -2680,7 +2674,6 @@ class Controller {
                 const user = await User.findByPk(userId, { 
                     attributes: ['id'], 
                     transaction: t,
-                    lock: t.LOCK.UPDATE
                 });
                 let msg = '';
                 if (redemptionCode.type === 1) {
@@ -2704,7 +2697,6 @@ class Controller {
                     const rewardType = await RewardType.findOne({
                         where: { id: 7 },
                         attributes: ['id', 'remain_count'],
-                        lock: t.LOCK.UPDATE,
                         transaction: t
                     });
                     if (!rewardType || rewardType.remain_count <= 0) {
