@@ -1195,7 +1195,18 @@ class Controller {
     }
 
     GENERATE_RED_ENVELOP = async (req, res) => {
+        const lockKey = `lock:generate-red-envelope:${req.user_id}`;
+        let redisLocked = false;
+
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+            
             const now = new Date();
             const minutes = now.getMinutes();
 
@@ -1384,7 +1395,18 @@ class Controller {
     }
 
     GET_RED_ENVELOP = async (req, res) => {
+        const lockKey = `lock:get-red-envelope:${req.user_id}`;
+        let redisLocked = false;
+
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const now = new Date();
             const minutes = now.getMinutes();
 
