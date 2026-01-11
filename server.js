@@ -20,6 +20,12 @@ APP.use('/uploads', express.static('uploads'));
 const Redis = require('./app/connections/Redis');
 APP.set('redis', Redis);
 
+/* ===============================
+ * RATE LIMIT (PM2 SAFE)
+ * =============================== */
+const createRateLimiter = require('./app/middlewares/rateLimit');
+APP.use(createRateLimiter(Redis));
+
 // DB Connection
 const { connect, syncDB } = require('./app/models');
 (async () => {
