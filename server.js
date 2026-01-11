@@ -45,6 +45,7 @@ const MyResponse = require('./app/helpers/MyResponse');
 const PUBLIC_ROUTES = [
     '/',
     '/api/get-recaptcha',
+    '/api/get-popup-announcement',
     '/api/get-server-time',
     '/admin/get-recaptcha',
 ];
