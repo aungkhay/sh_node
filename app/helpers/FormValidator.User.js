@@ -29,8 +29,8 @@ exports.login = () => {
     return [
         check('phone', { msg: '手机号不能为空' }).not().isEmpty(),
         check('password', { msg: '密码不能为空' }).not().isEmpty(),
-        // check('uuid', { msg: 'UUID_REQUIRED' }).not().isEmpty(),
-        // check('verification_code', { msg: '验证码不能为空' }).not().isEmpty()
+        check('uuid', { msg: 'UUID_REQUIRED' }).not().isEmpty(),
+        check('verification_code', { msg: '验证码不能为空' }).not().isEmpty()
     ]
 }
 

@@ -131,12 +131,12 @@ class Controller {
             const { phone, password, uuid, verification_code } = req.body;
 
             // Check recaptcha
-            // const recapt = await this.redisHelper.getValue(uuid);
-            // if (!recapt || (recapt && recapt != verification_code.toLocaleLowerCase())) {
-            //     await this.redisHelper.deleteKey(uuid);
-            //     const recaptchaError = { field: 'verification_code', msg: '验证码无效' };
-            //     return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [recaptchaError]);
-            // }
+            const recapt = await this.redisHelper.getValue(uuid);
+            if (!recapt || (recapt && recapt != verification_code.toLocaleLowerCase())) {
+                await this.redisHelper.deleteKey(uuid);
+                const recaptchaError = { field: 'verification_code', msg: '验证码无效' };
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [recaptchaError]);
+            }
 
             const user = await User.findOne({ 
                 where: { phone_number: phone }, 

@@ -62,7 +62,7 @@ APP.use((req, res, next) => {
     /* ---------- async logger ---------- */
     res.on('finish', () => {
         try {
-            // reqLogger(req, res);
+            reqLogger(req, res);
         } catch (e) {
             console.error('[Logger]', e);
         }
