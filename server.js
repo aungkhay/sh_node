@@ -7,6 +7,8 @@ const bodyParser = require('body-parser');
 // const YAML = require('yamljs');
 const { reqLogger } = require('./app/helpers/Logger');
 
+APP.set('trust proxy', true);
+
 require('dotenv').config({ path: `./.env` });
 const HOST = process.env.HOST;
 const PORT = process.env.PORT;
@@ -23,9 +25,8 @@ APP.set('redis', Redis);
 /* ===============================
  * RATE LIMIT (PM2 SAFE)
  * =============================== */
-APP.set('trust proxy', true);
-const createRateLimiter = require('./app/middlewares/rateLimit');
-APP.use(createRateLimiter(Redis));
+// const createRateLimiter = require('./app/middlewares/rateLimit');
+// APP.use(createRateLimiter(Redis));
 
 // DB Connection
 const { connect, syncDB } = require('./app/models');
