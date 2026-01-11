@@ -12,12 +12,16 @@ const db = new Sequelize(env[`DB_NAME`], env[`DB_USER`], env[`DB_PASS`], {
     replication: {
         write: {
             host: env.DB_MASTER_HOST,
-            port: env.DB_MASTER_PORT
+            port: env.DB_MASTER_PORT,
+            username: env.DB_MASTER_USER,
+            password: env.DB_MASTER_PASS
         },
         read: [
             {
                 host: env.DB_SLAVE_HOST,
-                port: env.DB_SLAVE_PORT
+                port: env.DB_SLAVE_PORT,
+                username: env.DB_SLAVE_USER,
+                password: env.DB_SLAVE_PASS
             }
             // you can add more slaves here
         ]
