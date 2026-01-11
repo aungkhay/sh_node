@@ -10,13 +10,17 @@ module.exports = function createRateLimiter(redis) {
         legacyHeaders: false,
 
         keyGenerator: (req) => {
-            // skip public routes from strict limit
-            // if (req.path && req.path.startsWith('/api/get-recaptcha')) {
-            //     return `rl:captcha:${req.ip}`;
-            // }
+            const PUBLIC_ROUTES = [
+                '/',
+                '/api/get-recaptcha',
+                '/api/get-server-time',
+                '/admin/get-recaptcha',
+            ];
 
-            // return `rl:ip:${req.ip}`;
-            // ✅ IPv6-safe IP key
+            if (PUBLIC_ROUTES.includes(req.path)) {
+                return `rl:public:${req.path}`;
+            }
+
             return `rl:ip:${ipKeyGenerator(req)}`;
         },
 

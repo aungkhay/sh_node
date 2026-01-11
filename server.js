@@ -23,6 +23,7 @@ APP.set('redis', Redis);
 /* ===============================
  * RATE LIMIT (PM2 SAFE)
  * =============================== */
+APP.set('trust proxy', true);
 const createRateLimiter = require('./app/middlewares/rateLimit');
 APP.use(createRateLimiter(Redis));
 
