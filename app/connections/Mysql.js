@@ -9,12 +9,26 @@ const db = new Sequelize(env[`DB_NAME`], env[`DB_USER`], env[`DB_PASS`], {
     port: env[`DB_PORT`],
     dialect: 'mysql',
     timezone: '+08:00', 
+    // replication: {
+    //     write: {
+    //         host: env.DB_MASTER_HOST,
+    //         port: env.DB_PORT
+    //     },
+    //     read: [
+    //         {
+    //             host: env.DB_SLAVE_HOST,
+    //             port: env.DB_PORT
+    //         }
+    //         // you can add more slaves here
+    //     ]
+    // },
     dialectOptions: {
         connectTimeout: 60000
     },
     logging: console.log,
     logging: (str) => {
-        queryLogger(str.replace('Executing (default): ', ''));
+        // queryLogger(str.replace('Executing (default): ', ''));
+        console.log(str);
     },
     pool: {
         max: 20,

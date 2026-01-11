@@ -121,8 +121,10 @@ const url = `${baseURL}/get-server-time`;
 // [GET]
 const url = `${baseURL}/get-file-path`;
 ```
+
 ### Popup Announcement
 ``` js
+// [GET]
 const url = `${baseURL}/get-popup-announcement`;
 ```
 
