@@ -52,12 +52,14 @@ class Controller {
     GET_POPUP_ANNOUNCEMENT = async (req, res) => {
         try {
             let popup_announcement = await this.redisHelper.getValue('popup_announcement');
+            let is_show_popup = Number(await this.redisHelper.getValue('is_show_popup') || 0);
             if (!popup_announcement) {
-                const config = await Config.findOne({ where: { type: 'popup_announcement' }, attributes: ['val'] });
+                const config = await Config.findOne({ where: { type: 'popup_announcement' }, attributes: ['val', 'description'] });
                 await this.redisHelper.setValue('popup_announcement', config.val);
                 popup_announcement = config.val;
+                is_show_popup = Number(config.description);
             }
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { popup_announcement: popup_announcement });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { popup_announcement: popup_announcement, is_show_popup: is_show_popup });
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
