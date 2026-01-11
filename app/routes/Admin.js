@@ -137,6 +137,8 @@ class AdminRoute extends express.Router {
         this.post('/kyc/denied-multiple', FormValidator.approved_multiple_kyc(), middleware.isLoggedIn, UserCtrl.DENIED_MULTIPLE_KYC);
         this.post('/kyc/:id/update-kyc', FormValidator.update_kyc(), middleware.isLoggedIn, UserCtrl.UPDATE_KYC);
         this.post('/kyc/:id/delete-kyc', middleware.isLoggedIn, UserCtrl.DELETE_KYC);
+        this.post('/payment-methods/get-sign-url', FormValidator.get_payment_method_oss_sign(), middleware.isLoggedIn, UserCtrl.UPLOAD_PAYMENT_METHOD_OSS_SIGN);
+        this.post('/payment-methods/:id/update-pic-link', FormValidator.update_payment_method_pic_link(), middleware.isLoggedIn, UserCtrl.UPDATE_PAYMENT_METHOD_PIC_LINK);
         this.post('/payment-methods/:id/update-bank', FormValidator.update_bank(), middleware.isLoggedIn, UserCtrl.UPDATE_BANK);
         this.post('/payment-methods/:id/update-alipay', FormValidator.update_alipay(), middleware.isLoggedIn, UserCtrl.UPDATE_ALIPAY);
         this.post('/payment-methods/:id/update-bank-status', FormValidator.update_kyc_status(), middleware.isLoggedIn, UserCtrl.UPDATE_BANK_STATUS);

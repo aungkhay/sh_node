@@ -80,6 +80,25 @@ exports.get_oss_sign = () => {
     ]
 }
 
+exports.get_payment_method_oss_sign = () => {
+    return [
+        check('user_id', { msg: '用户ID不能为空' }).not().isEmpty(),
+        check('filename', { msg: '文件名不能为空' }).not().isEmpty(),
+        check('content_type', { msg: '内容类型不能为空' }).not().isEmpty()
+    ]
+}
+
+exports.update_payment_method_pic_link = () => {
+    return [
+        check('pic_link', { msg: '图片链接不能为空' }).not().isEmpty(),
+        check('user_id', { msg: '用户ID不能为空' }).not().isEmpty(),
+        check('method_type', { msg: '付款方式类型不能为空' }).not().isEmpty()
+            .bail()
+            .isIn(['bank_card_pic', 'ali_qr_code_pic', 'ali_home_page_screenshot'])
+            .withMessage('付款方式类型无效')
+    ]
+}
+
 exports.create_news = () => {
     return [
         check('type').not().isEmpty().withMessage('类型不能为空')

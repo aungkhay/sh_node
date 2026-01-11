@@ -961,6 +961,56 @@ class Controller {
         }
     }
 
+    UPLOAD_PAYMENT_METHOD_OSS_SIGN = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { user_id, filename, content_type } = req.body;
+            const filePath = `/uploads/payment-method/${user_id}/${filename}`;
+            const url = await this.OSS.SIGN_URL(filePath, content_type);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { sign_url: url, file_url: filePath });
+        } catch (error) {
+            errLogger(`[PaymentMethod][UPLOAD_PAYMENT_METHOD_OSS_SIGN]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    UPDATE_PAYMENT_METHOD_PIC_LINK = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { file_url, user_id, method_type } = req.body;
+            const id = req.params.id;
+            if (!['bank_card_pic', 'ali_qr_code_pic', 'ali_home_page_screenshot'].includes(method_type)) {
+                const typeError = { field: 'method_type', msg: '付款方式类型不正确' };
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [typeError]);
+            }
+
+            const paymentMethod = await PaymentMethod.findOne({
+                where: { id: id, user_id: user_id },
+                attributes: ['id']
+            });
+            if (!paymentMethod) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
+            }
+
+            await paymentMethod.update({ [method_type]: file_url });
+
+            // Log
+            await this.adminLogger(req, 'PaymentMethod', 'update');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
+        } catch (error) {
+            errLogger(`[PaymentMethod][UPDATE_PAYMENT_METHOD_PIC_LINK]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     UPDATE_BANK_STATUS = async (req, res) => {
         try {
             const err = validationResult(req);
@@ -1006,7 +1056,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'PaymentMethod', 'update');
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '未找到信息', {});
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {
             errLogger(`[PaymentMethod][UPDATE_ALI_STATUS]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});

@@ -682,6 +682,22 @@ const data = {
     ali_account_number: ''
 }
 
+// [POST] Get payment method oss sign url
+const url = `${baseURL}/payment-methods/get-sign-url`;
+const data = {
+    user_id: 1,
+    filename: '',
+    content_type: ''
+}
+
+// [POST] Update payment method picture link
+const url = `${baseURL}/payment-methods/${methodId}/update-pic-link`;
+const data = {
+    user_id: 1,
+    file_url: '/uploads/...',
+    method_type: 'bank_card_pic' // ali_qr_code_pic, ali_home_page_screenshot
+}
+
 // [GET] User's Certificate
 const url = `${baseURL}/user-certificates`;
 const params = {
