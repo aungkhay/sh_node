@@ -272,11 +272,6 @@ User.init({
             using: 'BTREE',
         },
         {
-            name: 'idx_is_active',
-            fields: ['isActive'],
-            using: 'BTREE',
-        },
-        {
             name: 'idx_actived_at',
             fields: ['activedAt'],
             using: 'BTREE',
@@ -287,20 +282,10 @@ User.init({
             using: 'BTREE',
         },
         {
-            name: 'idx_status',
-            fields: ['status'],
-            using: 'BTREE',
-        },
-        {
             name: 'idx_name',
             fields: ['name'],
             using: 'BTREE',
         },
-        {
-            name: 'idx_type',
-            fields: ['type'],
-            using: 'BTREE',
-        }
     ]
 })
 
