@@ -5,23 +5,23 @@ require('dotenv').config({ path: `./.env` });
 const env = process.env;
 
 const db = new Sequelize(env[`DB_NAME`], env[`DB_USER`], env[`DB_PASS`], {
-    host: env[`DB_HOST`],
-    port: env[`DB_PORT`],
+    // host: env[`DB_HOST`],
+    // port: env[`DB_PORT`],
     dialect: 'mysql',
     timezone: '+08:00', 
-    // replication: {
-    //     write: {
-    //         host: env.DB_MASTER_HOST,
-    //         port: env.DB_PORT
-    //     },
-    //     read: [
-    //         {
-    //             host: env.DB_SLAVE_HOST,
-    //             port: env.DB_PORT
-    //         }
-    //         // you can add more slaves here
-    //     ]
-    // },
+    replication: {
+        write: {
+            host: env.DB_MASTER_HOST,
+            port: env.DB_MASTER_PORT
+        },
+        read: [
+            {
+                host: env.DB_SLAVE_HOST,
+                port: env.DB_SLAVE_PORT
+            }
+            // you can add more slaves here
+        ]
+    },
     dialectOptions: {
         connectTimeout: 60000
     },
