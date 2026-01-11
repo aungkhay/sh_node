@@ -13,7 +13,7 @@ class Helper {
             if (prefix) {
                 newKey = `${prefix}_${key}`;
             }
-            console.log(`\x1b[33m[REDIS]:\x1b[0m [SET LOCK] ${newKey}`);
+            // console.log(`\x1b[33m[REDIS]:\x1b[0m [SET LOCK] ${newKey}`);
             return await this.redis.set(newKey, value, 'NX', 'EX', expireInSec);
         } catch (error) {
             console.error('RedisHelper setLock error:', error);
@@ -26,7 +26,7 @@ class Helper {
             if (prefix) {
                 newKey = `${prefix}_${key}`;
             }
-            console.log(`\x1b[33m[REDIS]:\x1b[0m [SET] ${newKey}`);
+            // console.log(`\x1b[33m[REDIS]:\x1b[0m [SET] ${newKey}`);
             if (expireInSec > 0) {
                 return await this.redis.set(newKey, value, 'EX', expireInSec);
             } else {
@@ -43,7 +43,7 @@ class Helper {
             if (prefix) {
                 newKey = `${prefix}_${key}`;
             }
-            console.log(`\x1b[33m[REDIS]:\x1b[0m [GET] ${newKey}`);
+            // console.log(`\x1b[33m[REDIS]:\x1b[0m [GET] ${newKey}`);
             return await this.redis.get(newKey);
         } catch (error) {
             console.error('RedisHelper getValue error:', error);
@@ -56,7 +56,7 @@ class Helper {
             if (prefix) {
                 newKey = `${prefix}_${key}`;
             }
-            console.log(`\x1b[33m[REDIS]:\x1b[0m [DELETE] ${newKey}`);
+            // console.log(`\x1b[33m[REDIS]:\x1b[0m [DELETE] ${newKey}`);
             return await this.redis.del(newKey);
         } catch (error) {
             console.error('RedisHelper deleteKey error:', error);
