@@ -985,7 +985,7 @@ class Controller {
             if (!err.isEmpty()) {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
-            const { file_url, user_id, method_type } = req.body;
+            const { pic_link, user_id, method_type } = req.body;
             const id = req.params.id;
             if (!['bank_card_pic', 'ali_qr_code_pic', 'ali_home_page_screenshot'].includes(method_type)) {
                 const typeError = { field: 'method_type', msg: '付款方式类型不正确' };
@@ -1000,7 +1000,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
-            await paymentMethod.update({ [method_type]: file_url });
+            await paymentMethod.update({ [method_type]: pic_link });
 
             // Log
             await this.adminLogger(req, 'PaymentMethod', 'update');
