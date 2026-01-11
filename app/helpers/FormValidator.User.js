@@ -147,7 +147,7 @@ exports.bind_address = () => {
     // $
     return [
         check('address').trim().not().isEmpty().withMessage('地址不能为空')
-            .matches(/^([\u4e00-\u9fa5]{1,10}省)?([\u4e00-\u9fa5]{1,10}市)?([\u4e00-\u9fa5]{1,10}(区|县))?([\u4e00-\u9fa5]{1,20}(街道|镇|乡|村))?\s*[\u4e00-\u9fa50-9\-号]*$/)
+            .matches(/^([\u4e00-\u9fa5]{1,10}省)?([\u4e00-\u9fa5]{1,10}市)?([\u4e00-\u9fa5]{1,10}(区|县))?([\u4e00-\u9fa5]{1,20}(街道|镇|乡|村))?\s*[\u4e00-\u9fa5A-Za-z0-9\-号]*$/)
             .withMessage('地址格式不正确')
     ];
 }
