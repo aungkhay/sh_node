@@ -102,17 +102,20 @@ class Helper {
             var check = false;
             var recaptcha = '';
 
-            while (check == false) {
-                recaptcha = this.randomNumber(5);
-                const exist = await this.getValue(key);
+            recaptcha = this.randomNumber(5);
+            await this.setValue(key, recaptcha.toLocaleLowerCase(), 5 * 60);
 
-                if (!exist) {
-                    check = true;
-                    await this.setValue(key, recaptcha.toLocaleLowerCase(), 5 * 60);
-                } else {
-                    check = false;
-                }
-            }
+            // while (check == false) {
+            //     recaptcha = this.randomNumber(5);
+            //     const exist = await this.getValue(key);
+
+            //     if (!exist) {
+            //         check = true;
+            //         await this.setValue(key, recaptcha.toLocaleLowerCase(), 5 * 60);
+            //     } else {
+            //         check = false;
+            //     }
+            // }
             return recaptcha;
         } catch (error) {
             return '';
