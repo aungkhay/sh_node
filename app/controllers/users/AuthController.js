@@ -40,7 +40,7 @@ class Controller {
 
              const captcha = svgCaptcha.create({
                 size: 5,               // number length
-                noise: 3,              // disturbance lines
+                noise: 0,              // disturbance lines
                 color: true,
                 background: '#cf2232',
                 charPreset: '0123456789' // 🔥 NUMBER ONLY
