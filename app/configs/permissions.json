@@ -20,6 +20,7 @@
     { "model": "用户管理", "title": "改密码", "name": "user-change-password" },
     { "model": "用户管理", "title": "联系方式", "name": "user-change-contact" },
     { "model": "用户管理", "title": "禁用、启用用户", "name": "user-disable-enable" },
+    { "model": "用户管理", "title": "分配角色", "name": "user-assign-role" },
 
     { "model": "实名认证管理", "title": "实名认证列表", "name": "kyc-list" },
     { "model": "实名认证管理", "title": "添加", "name": "kyc-add" },
@@ -35,6 +36,8 @@
     { "model": "银行卡认证", "title": "查看银行卡详情", "name": "bankcard-view-detail" },
     { "model": "银行卡认证", "title": "修改银行卡", "name": "bankcard-update" },
     { "model": "银行卡认证", "title": "修改支付宝", "name": "alipay-update" },
+    { "model": "银行卡认证", "title": "修改银行卡认证状态", "name": "bankcard-status-update" },
+    { "model": "银行卡认证", "title": "修改支付宝认证状态", "name": "alipay-status-update" },
 
     { "model": "推荐奖励", "title": "列表", "name": "referral-bonus-list" },
 
@@ -65,6 +68,7 @@
     { "model": "素材管理", "title": "添加", "name": "material-add" },
     { "model": "素材管理", "title": "编辑", "name": "material-update" },
     { "model": "素材管理", "title": "删除", "name": "material-delete" },
+    { "model": "素材管理", "title": "禁用、启用", "name": "material-change-status" },
 
     { "model": "轮播图管理", "title": "列表", "name": "carousel-list" },
     { "model": "轮播图管理", "title": "添加", "name": "carousel-add" },
