@@ -1514,7 +1514,9 @@ class Controller {
                 await t.commit();
             } catch (error) {
                 errLogger(`[GET_RED_ENVELOP]: ${error.stack}`);
-                await t.rollback();
+                if (!t.finished) {
+                    await t.rollback();
+                }
                 return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
             }
 
