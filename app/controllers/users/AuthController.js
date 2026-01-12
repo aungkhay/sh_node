@@ -226,7 +226,8 @@ class Controller {
                     'balance', 'referral_bonus', 'masonic_fund', 'address', 'address_status', 
                     'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
                     'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest',
-                ]
+                ],
+                useMaster: userId % 2 === 0 ? true : false
             });
 
             // Calculate Rank Percentage
@@ -246,7 +247,8 @@ class Controller {
                 where: {
                     user_id: userId,
                     reward_id: 7
-                }
+                },
+                useMaster: userId % 2 === 0 ? true : false
             }) || 0;
 
             let data = {
@@ -276,7 +278,7 @@ class Controller {
             } else {
                 data.next_rank_percentage = Number(parseFloat(next_rank_percentage).toFixed(0));
             }
-            data.can_impeach_count = currentRank.number_of_impeach;
+            data.can_impeach_count = currentRank?.number_of_impeach;
 
             // Update Active
             await user.update({ activedAt: new Date, isActive: 1 });
