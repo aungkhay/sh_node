@@ -260,7 +260,7 @@ class Controller {
             const currentRankIndex = ranks.findIndex(r => r.id === user.rank_id);
             const lastRank = ranks[ranks.length - 1];
             let nextRankPoint = 0;
-            const nextRank = ranks.find(r => r.point > ranks[currentRankIndex].point);
+            const nextRank = ranks.find(r => r?.point > ranks[currentRankIndex]?.point);
             if (nextRank) {
                 nextRankPoint = nextRank.point;
             } else {
