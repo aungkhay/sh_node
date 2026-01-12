@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { Deposit, Withdraw, User, UserKYC, PaymentMethod } = require('../../models');
+const { Deposit, Withdraw, User, UserKYC, PaymentMethod, RewardRecord } = require('../../models');
 const { Op, fn, col, literal } = require('sequelize');
 
 class Controller {
@@ -16,6 +16,11 @@ class Controller {
             const today = new Date();
             const startOfToday = new Date(today.setHours(0, 0, 0, 0));
             const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+            const yesterdayStart = new Date();
+            yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+            yesterdayStart.setHours(0, 0, 0, 0);
+
             const userId = req.user_id;
 
             const relationCondtion = {};
@@ -49,6 +54,20 @@ class Controller {
             const kycPendingCount = await UserKYC.count({ where: { status: 'PENDING',  ...relationCondtion } });
             const paymentPendingCount = await PaymentMethod.count({ where: { bank_status: 'PENDING',  ...relationCondtion } });
 
+            const kycApprovedCount = await UserKYC.count({ where: { status: 'APPROVED',  ...relationCondtion } });
+            const yesterdayCheckIn = await RewardRecord.count({
+                distinct: true,
+                col: 'user_id',
+                where: {
+                    createdAt: {
+                        [Op.gte]: yesterdayStart,
+                        [Op.lt]: startOfToday
+                    }
+                }
+            });
+            const totalRefferalBonus = await User.sum('referral_bonus');
+            const totalMasonicFundRelease = await RewardRecord.sum('amount', { where: { reward_id: 1 } })
+
             const data = {
                 today_deposit_amount: todayDepositAmount ? Number(todayDepositAmount) : 0,
                 today_deposit_count: todayDepositCount ?? 0,
@@ -58,7 +77,11 @@ class Controller {
                 today_register: todayRegister ?? 0,
                 kyc_pending_count: kycPendingCount ?? 0,
                 payment_pending_count: paymentPendingCount ?? 0,
-            }
+                kyc_approved_count: kycApprovedCount ?? 0,
+                yesterday_check_in: yesterdayCheckIn ?? 0,
+                total_refferal_bonus: totalRefferalBonus ? Number(totalRefferalBonus) : 0,
+                total_masonic_fund_release: totalMasonicFundRelease ? Number(totalMasonicFundRelease) : 0
+            };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
