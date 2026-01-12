@@ -26,7 +26,16 @@ class Controller {
     }
 
     GET_SERVER_TIME = async (req, res) => {
+        const lockKey = `lock:get_server_time:${req.ip}`;
+        let redisLocked = false;
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
             const serverTime = Math.floor(Date.now());
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { serverTime: serverTime });
         } catch (error) {
@@ -35,7 +44,18 @@ class Controller {
     }
 
     GET_FILE_PATH = async (req, res) => {
+        const lockKey = `lock:get_file_path:${req.ip}`;
+        let redisLocked = false;
+        
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             let oss = await this.redisHelper.getValue('ali_oss');
             if (!oss) {
                 const config = await Config.findOne({ where: { type: 'ali_oss' }, attributes: ['val'] });
@@ -293,7 +313,6 @@ class Controller {
     }
 
     GET_NEWS = async (req, res) => {
-        console.log("******************** UserID =============", req.user_id);
         const lockKey = `lock:get_news:${req.user_id}`;
         let redisLocked = false;
 
@@ -1235,7 +1254,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 5);
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -1440,7 +1459,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 5);
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }

@@ -127,8 +127,8 @@ APP.use((req, res, next) => {
 /* ===============================
  * RATE LIMIT (PM2 SAFE)
  * =============================== */
-const createRateLimiter = require('./app/middlewares/rateLimit');
-APP.use('/api', createRateLimiter(Redis));
+// const createRateLimiter = require('./app/middlewares/rateLimit');
+// APP.use('/api', createRateLimiter(Redis));
 const UserRoute = require('./app/routes/User');
 APP.use('/api', new UserRoute(APP));
 const AdminRoute = require('./app/routes/Admin');
