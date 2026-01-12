@@ -22,12 +22,6 @@ APP.use('/uploads', express.static('uploads'));
 const Redis = require('./app/connections/Redis');
 APP.set('redis', Redis);
 
-/* ===============================
- * RATE LIMIT (PM2 SAFE)
- * =============================== */
-// const createRateLimiter = require('./app/middlewares/rateLimit');
-// APP.use(createRateLimiter(Redis));
-
 // DB Connection
 const { connect, syncDB } = require('./app/models');
 (async () => {
@@ -130,6 +124,11 @@ APP.use((req, res, next) => {
     }
 })
 
+/* ===============================
+ * RATE LIMIT (PM2 SAFE)
+ * =============================== */
+const createRateLimiter = require('./app/middlewares/rateLimit');
+APP.use('/api', createRateLimiter(Redis));
 const UserRoute = require('./app/routes/User');
 APP.use('/api', new UserRoute(APP));
 const AdminRoute = require('./app/routes/Admin');
