@@ -129,7 +129,13 @@ class Controller {
     PROFILE = async (req, res) => {
         try {
             const userId = req.user_id;
-            const user = await User.findOne({ where: { id: userId }, attributes: ['id', 'phone_number', 'name', 'type', 'invite_code', 'profile_picture', 'google_2fa_enabled', 'createdAt'] });
+            const user = await User.findOne({ 
+                where: { id: userId }, 
+                attributes: ['id', 'phone_number', 'name', 'type', 'invite_code', 'profile_picture', 'google_2fa_enabled', 'createdAt'] 
+            });
+
+            const permissions = await this.commonHelper.getAllPermissions(userId);
+            user.dataValues.permissions = permissions;
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', user);
         } catch (error) {
