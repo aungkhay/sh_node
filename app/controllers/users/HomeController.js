@@ -3,7 +3,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint } = require('../../models');
 const { Op, literal, Sequelize } = require('sequelize');
-const { errLogger } = require('../../helpers/Logger');
+const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const Impeachment = require('../../models/Impeachment');
 const multer = require('multer');
@@ -1549,7 +1549,12 @@ class Controller {
                 });
                 await t.commit();
             } catch (error) {
-                errLogger(`[GET_RED_ENVELOP]: ${error.stack}`);
+                errLogger(`[GET_RED_ENVELOP]
+                    name: ${error.name}
+                    message: ${error.message}
+                    sql: ${error.sql || 'N/A'}
+                    stack: ${error.stack}
+                `);
                 if (!t.finished) {
                     await t.rollback();
                 }
