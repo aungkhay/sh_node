@@ -1492,8 +1492,10 @@ class Controller {
                 useMaster: userId % 2 === 0 ? true : false 
             });
 
-            const t = await db.transaction();
+            let t;
             try {
+                t = await db.transaction();
+                
                 const obj = {
                     user_id: userId,
                     relation: user.relation,
@@ -1547,21 +1549,35 @@ class Controller {
                     where: { id: reward.reward_id },
                     transaction: t
                 });
+                
+                // Commit transaction immediately to prevent rollback
                 await t.commit();
             } catch (error) {
-                errLogger(`[GET_RED_ENVELOP]
+                errLogger(`[GET_RED_ENVELOP][DB Transaction Error]
                     name: ${error.name}
                     message: ${error.message}
                     sql: ${error.sql || 'N/A'}
                     stack: ${error.stack}
                 `);
-                if (!t.finished) {
-                    await t.rollback();
+                // Only rollback if transaction exists and hasn't been committed
+                if (t && !t.finished) {
+                    try {
+                        await t.rollback();
+                    } catch (rollbackError) {
+                        errLogger(`[GET_RED_ENVELOP][Rollback Error][${userId}]: ${rollbackError.stack}`);
+                    }
                 }
-                return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '当前红包已领取完，请关注下一轮活动', {});
             }
 
-            await this.redisHelper.deleteKey(`UID_${userId}_reward`);
+            // Clean up Redis key after successful commit (outside transaction block)
+            try {
+                await this.redisHelper.deleteKey(`UID_${userId}_reward`);
+            } catch (redisError) {
+                // Log but don't fail the response since DB transaction is already committed
+                errLogger(`[GET_RED_ENVELOP][Redis cleanup error][${userId}]: ${redisError.stack}`);
+            }
+
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '收红包成功', {});
         } catch (error) {
             errLogger(`[GET_RED_ENVELOP][${req.user_id}]: ${error.stack}`);

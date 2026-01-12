@@ -53,6 +53,7 @@
     { "model": "公告管理", "title": "编辑", "name": "announcement-update" },
     { "model": "公告管理", "title": "删除", "name": "announcement-delete" },
     { "model": "公告管理", "title": "禁用、启用", "name": "announcement-change-status" },
+    { "model": "公告管理", "title": "首页弹窗通知发布", "name": "announcement-popup-notification" },
 
     { "model": "视讯管理", "title": "列表", "name": "news-list" },
     { "model": "视讯管理", "title": "发布", "name": "news-add" },

@@ -26,7 +26,7 @@ class AdminRoute extends express.Router {
         let ConfigCtrl = new ConfigController(app);
         this.get('/get-file-path', middleware.isLoggedIn(), ConfigCtrl.GET_FILE_PATH);
         this.get('/configs', middleware.isLoggedIn('config-list'), ConfigCtrl.INDEX);
-        this.post('/configs/:id/update', FormValidator.update_config('config-update'), middleware.isLoggedIn(), ConfigCtrl.UPDATE);
+        this.post('/configs/:id/update', FormValidator.update_config('config-update,announcement-popup-notification'), middleware.isLoggedIn(), ConfigCtrl.UPDATE);
 
         let CertificateController = require('../controllers/admins/CertificateController');
         let CertCtrl = new CertificateController();
