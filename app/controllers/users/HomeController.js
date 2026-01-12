@@ -90,6 +90,11 @@ class Controller {
             const userId = req.user_id;
             const isRead = req.query.isRead || 0;
 
+            const notifications = await this.redisHelper.getValue(`notifications_${userId}_${page}_${perPage}_${offset}_${isRead}`);
+            if (notifications) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(notifications));
+            }
+
             if (isRead) {
                 const { rows, count } = await Notification.findAndCountAll({
                     where: {
@@ -131,6 +136,8 @@ class Controller {
                     }
                 }
 
+                await this.redisHelper.setValue(`notifications_${userId}_${page}_${perPage}_${offset}_${isRead}`, JSON.stringify(data), 60); // cache for 60 seconds
+
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, data);
             } else {
                 const { rows, count } = await Notification.findAndCountAll({
@@ -162,6 +169,8 @@ class Controller {
                         total: count
                     }
                 }
+
+                await this.redisHelper.setValue(`notifications_${userId}_${page}_${perPage}_${offset}_${isRead}`, JSON.stringify(data), 60); // cache for 60 seconds
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
             }
@@ -288,7 +297,7 @@ class Controller {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 100);
             const offset = this.getOffset(page, perPage);
-            const type = req.query.type || -1;
+            const type = req.query.type || 0;
 
             if (type >= 0) {
                 const news = await this.redisHelper.getValue(`news_${page}_${perPage}_${offset}_${type}`);
