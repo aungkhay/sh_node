@@ -7,6 +7,7 @@ const { encrypt } = require('../../helpers/AESHelper');
 const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
 const { commonLogger, errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
+const svgCaptcha = require('svg-captcha');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -25,9 +26,23 @@ class Controller {
     GET_RECAPTCHA = async (req, res) => {
         try {
             const key = uuidv4();
-            const recaptcha = this.redisHelper.randomNumber(5);
-            this.redisHelper.setValue(key, recaptcha, 300);
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { uuid: key, code: recaptcha });
+
+             const captcha = svgCaptcha.create({
+                size: 5,               // number length
+                noise: 3,              // disturbance lines
+                color: true,
+                background: '#cf2232',
+                charPreset: '0123456789' // 🔥 NUMBER ONLY
+            });
+                
+            // const recaptcha = this.redisHelper.randomNumber(5);
+            this.redisHelper.setValue(key, captcha.text.toLowerCase(), 300);
+            const data = {
+                uuid: key,
+                image: `data:image/svg+xml;base64,${Buffer.from(captcha.data).toString('base64')}`
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             errLogger(`[GET_RECAPTCHA]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
