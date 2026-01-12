@@ -226,7 +226,8 @@ class Controller {
                     'balance', 'referral_bonus', 'masonic_fund', 'address', 'address_status', 
                     'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
                     'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest',
-                ]
+                ],
+                useMaster: userId % 2 == 0 ? false : true
             });
 
             // Calculate Rank Percentage
@@ -246,7 +247,8 @@ class Controller {
                 where: {
                     user_id: userId,
                     reward_id: 7
-                }
+                },
+                useMaster: userId % 2 == 0 ? false : true
             }) || 0;
 
             let data = {
