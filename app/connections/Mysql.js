@@ -27,28 +27,27 @@ const db = new Sequelize(env[`DB_NAME`], null, null, {
         ]
     },
     dialectOptions: {
-        connectTimeout: 60000
+        connectTimeout: 60000,
+        supportBigNumbers: true,
+        bigNumberStrings: true
     },
-    logging: console.log,
-    logging: (str) => {
-        // queryLogger(str.replace('Executing (default): ', ''));
-    },
+    logging: false,
+    // logging: (str) => {
+    //     queryLogger(str.replace('Executing (default): ', ''));
+    // },
     pool: {
-        max: 20,
-        min: 3,
-        acquire: 120000,
-        idle: 120000,
-        evict: 120000,
+        max: 30,
+        min: 5,
+        acquire: 30000,
+        idle: 10000,
+        evict: 10000,
     },
     retry: {
         max: 3,
         match: [
             /Deadlock/i,
+            /Lock wait timeout exceeded/i,
             /SequelizeConnectionError/,
-            /SequelizeConnectionRefusedError/,
-            /SequelizeHostNotFoundError/,
-            /SequelizeHostNotReachableError/,
-            /SequelizeInvalidConnectionError/,
             /SequelizeConnectionTimedOutError/
         ]
     }
