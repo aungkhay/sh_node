@@ -137,7 +137,9 @@ APP.use('/admin', new AdminRoute(APP));
 
 // Cron
 if (process.env.IS_MASTER == '1') {
-    require('./app/cron');
+    const CronJob = require('./app/cron');
+    const cron = new CronJob(APP);
+    cron.START();
 }
 
 // Start Server

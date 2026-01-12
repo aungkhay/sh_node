@@ -1251,7 +1251,7 @@ class Controller {
                     attributes: ['id', 'status']
                 },
                 where: { id: userId },
-                attributes: ['id', 'win_per_day', 'can_get_red_envelop', 'political_vetting_status']
+                attributes: ['id', 'win_per_day', 'can_get_red_envelop']
             })
             // check kyc status is approved
             if (!user.kyc || user.kyc.status !== 'APPROVED') {
@@ -1262,9 +1262,6 @@ class Controller {
                 // 已达上限
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
             }
-            // if (user.political_vetting_status !== 'APPROVED') {
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '政审状态未通过', {});
-            // }
 
             let winLimit = 0;
             if (user.win_per_day > 0) {
@@ -1308,33 +1305,39 @@ class Controller {
             rewardTypes = rewardTypes.filter(r => r.id != 8 && r.status == 1);
 
             // 每种授权书每个人只能获得一次
-            const record6 = await RewardRecord.count({ where: { user_id: userId, reward_id: 6 } }) || 0;
-            if (record6 >= 1) {
+            const haveReward6 = await this.redisHelper.getValue(`USER_HAVE_REWARD_6_${userId}`);
+            if (haveReward6) {
                 // Already won id 6 before, remove from pool
                 // 上合组织中国区授权书
                 rewardTypes = rewardTypes.filter(r => r.id != 6);
             } else {
                 // 需要伞下用户三代或者以上才能有机会抽中
                 // downline => /userId/xx/xx/xx
-                const longestDownline = await User.findOne({
-                    where: {
-                        relation: { [Op.like]: `%/${userId}/%` }    
-                    },
-                    attributes: ['relation'],
-                    order: [[Sequelize.fn('LENGTH', Sequelize.col('relation')), 'DESC']]
-                });
-                let downlineLength = 0;
-                if (longestDownline) {
-                    // assume userId is 42 for testing
-                    const splited = longestDownline.relation.split('/').filter(v => v); // /2/42/53/75/76 => ['2','42','53','75','76']
-                    const userIdIndex = splited.indexOf(String(userId)); // 1
-                    // only get Id after userId
-                    const downlineAfterUser = splited.slice(userIdIndex + 1); // ['53','75','76']
-                    downlineLength = downlineAfterUser.length; // 3
-                }
-                if (downlineLength < 3) {
-                    // remove id 6 from pool
-                    rewardTypes = rewardTypes.filter(r => r.id != 6);
+                const haveDownlineLength3 = await this.redisHelper.getValue(`DOWNLINE_LENGTH_${userId}`);
+                if (!haveDownlineLength3) {
+                    const longestDownline = await User.findOne({
+                        where: {
+                            relation: { [Op.like]: `%/${userId}/%` }    
+                        },
+                        attributes: ['relation'],
+                        order: [[Sequelize.fn('LENGTH', Sequelize.col('relation')), 'DESC']]
+                    });
+                    let downlineLength = 0;
+                    if (longestDownline) {
+                        // assume userId is 42 for testing
+                        const splited = longestDownline.relation.split('/').filter(v => v); // /2/42/53/75/76 => ['2','42','53','75','76']
+                        const userIdIndex = splited.indexOf(String(userId)); // 1
+                        // only get Id after userId
+                        const downlineAfterUser = splited.slice(userIdIndex + 1); // ['53','75','76']
+                        downlineLength = downlineAfterUser.length; // 3
+                    }
+                    if (downlineLength < 3) {
+                        // remove id 6 from pool
+                        rewardTypes = rewardTypes.filter(r => r.id != 6);
+                    } else {
+                        // No expiry, just set once
+                        await this.redisHelper.setValue(`DOWNLINE_LENGTH_${userId}`, downlineLength);
+                    }
                 }
             }
 
@@ -1431,9 +1434,9 @@ class Controller {
             const now = new Date();
             const minutes = now.getMinutes();
 
-            // if (minutes > 15) {
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
-            // }
+            if (minutes > 15) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
+            }
 
             const userId = req.user_id;
             let reward = await this.redisHelper.getValue(`UID_${userId}_reward`);
@@ -1481,6 +1484,7 @@ class Controller {
                 } else if (reward.reward_id == 6) {
                     obj.amount = authorize_letter_amount;
                     obj.from_where = `红包雨 上合组织中国区授权书 获得${authorize_letter_amount}`;
+                    await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${userId}`, 1); // No expiry
                 } else if (reward.reward_id == 8) {
                     obj.amount = referral_fund;
                     obj.from_where = `红包雨 推荐金提取券 获得${referral_fund}元`;

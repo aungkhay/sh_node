@@ -4,10 +4,11 @@ const { Op } = require('sequelize');
 const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
 const axios = require('axios');
+const RedisHelper = require('../helpers/RedisHelper');
 
 class CronJob {
-    constructor() {
-        this.START();
+    constructor(app) {
+        this.redisHelper = new RedisHelper(app);
     }
 
     START = () => {
@@ -454,6 +455,23 @@ class CronJob {
             errLogger(`[RESET_CAN_GET_RED_ENVELOPE]: ${error.stack}`);
         }
     }
+
+    SET_REWARD_6_TO_REDIS = async () => {
+        try {
+            const rewardRecords = await RewardRecord.findAll({
+                where: {
+                    reward_id: 6,
+                },
+                attributes: ['user_id']
+            });
+            for (let record of rewardRecords) {
+                await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${record.user_id}`, 1);
+            }
+            console.log('SET_REWARD_6_TO_REDIS completed.');
+        } catch (error) {
+            errLogger(`[SET_REWARD_6_TO_REDIS]: ${error.stack}`);
+        }
+    }
 }
 
-module.exports = new CronJob();
+module.exports = CronJob;
