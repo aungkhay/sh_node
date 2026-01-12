@@ -25,7 +25,8 @@ class Controller {
 
             const relationCondtion = {};
             if (userId !== 1) {
-                relationCondtion.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                relationCondtion.relation = { [Op.like]: `${me.relation}/%` }
             }
 
             const todayCondition = {
@@ -106,7 +107,8 @@ class Controller {
 
             const relationCondtion = {};
             if (userId !== 1) {
-                relationCondtion.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                relationCondtion.relation = { [Op.like]: `${me.relation}/%` }
             }
 
             const deposits = await Deposit.findAll({
@@ -166,7 +168,8 @@ class Controller {
             
             const relationCondtion = {};
             if (userId !== 1) {
-                relationCondtion.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                relationCondtion.relation = { [Op.like]: `${me.relation}/%` }
             }
 
             const deposits = await Deposit.findAll({

@@ -28,7 +28,8 @@ class Controller {
 
             let condition = {}
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (startTime && endTime) {
                 condition.createdAt = {
@@ -42,10 +43,10 @@ class Controller {
             let userCondition = {}
             if (phone) {
                 if (viewInferior == 1) {
-                    const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id'] });
+                    const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
                     if (user) {
                         condition.relation = {
-                            [Op.like]: `%/${user.id}%`
+                            [Op.like]: `${user.relation}/%`
                         }
                     } else {
                         userCondition.phone_number = phone;
@@ -108,7 +109,8 @@ class Controller {
 
             let condition = {}
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (startTime && endTime) {
                 condition.createdAt = {
@@ -122,10 +124,10 @@ class Controller {
             let userCondition = {}
             if (phone) {
                 if (viewInferior == 1) {
-                    const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id'] });
+                    const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
                     if (user) {
                         condition.relation = {
-                            [Op.like]: `%/${user.id}%`
+                            [Op.like]: `${user.relation}/%`
                         }
                     } else {
                         userCondition.phone_number = phone;
@@ -186,7 +188,8 @@ class Controller {
 
             let condition = {}
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }      
             }
             if (startTime && endTime) {
                 condition.createdAt = {
@@ -200,10 +203,10 @@ class Controller {
             let userCondition = {}
             if (phone) {
                 if (viewInferior == 1) {
-                    const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id'] });
+                    const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
                     if (user) {
                         condition.relation = {
-                            [Op.like]: `%/${user.id}%`
+                            [Op.like]: `${user.relation}/%`
                         }
                     } else {
                         userCondition.phone_number = phone;

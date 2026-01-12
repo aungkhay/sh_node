@@ -29,7 +29,8 @@ class Controller {
             }
             let condition = {}
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (is_used > -1) {
                 condition.is_used = is_used

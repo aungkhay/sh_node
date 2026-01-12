@@ -45,7 +45,8 @@ class Controller {
 
             let condition = {};
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (type > 0) {
                 condition.type = type;
@@ -131,7 +132,8 @@ class Controller {
             }
             let condition = {};
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (status) {
                 condition.status = status;
@@ -197,7 +199,8 @@ class Controller {
             }
             let condition = {};
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (bank_status) {
                 condition.bank_status = bank_status;
@@ -256,7 +259,8 @@ class Controller {
             }
             let condition = {}
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (startTime && endTime) {
                 condition.createdAt = {
@@ -309,7 +313,8 @@ class Controller {
             }
             let condition = {}
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (startTime && endTime) {
                 condition.createdAt = {
@@ -369,7 +374,8 @@ class Controller {
             }
             let condition = {}
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (startTime && endTime) {
                 condition.createdAt = {
@@ -1311,7 +1317,8 @@ class Controller {
 
             let condition = {}
             if (user.id != 1) {
-                condition.relation = { [Op.like]: `%/${user.id}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
 
             if (startTime && endTime) {
@@ -1462,7 +1469,8 @@ class Controller {
 
             let condition = {};
             if (userId != 1) {
-                condition.relation = { [Op.like]: `%/${userId}/%` }
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (startTime && endTime) {
                 condition.createdAt = {
@@ -1522,7 +1530,7 @@ class Controller {
 
             const condition = {
                 relation: {
-                    [Op.like]: `%/${user.id}/%`
+                    [Op.like]: `${user.relation}/%`
                 }
             }
             const { rows, count } = await User.findAndCountAll({
