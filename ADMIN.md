@@ -893,6 +893,12 @@ const data = {
     nrc_back_pic: "", 
     nrc_hold_pic: ""
 }
+
+// [POST] Assign roles to admin
+const url = `${baseURL}/users/${userId}/assign-roles`;
+const data = {
+    roleIds: [1,2]
+}
 ```
 ### Logs 操作日志
 ``` js

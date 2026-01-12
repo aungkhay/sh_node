@@ -495,6 +495,14 @@ exports.verify_kyc = () => {
     ]
 }
 
+exports.assign_roles = () => {
+    return [
+        check('roleIds').not().isEmpty().withMessage('角色ID不能为空')
+            .bail()
+            .isArray({ min: 1 }).withMessage('角色ID无效'),
+    ]
+}
+
 exports.create_role = () => {
     return [
         check('code', { msg: '角色代码不能为空' }).not().isEmpty(),

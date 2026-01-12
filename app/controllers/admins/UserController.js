@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col } = require('sequelize');
@@ -83,6 +83,11 @@ class Controller {
                         model: Rank,
                         as: 'rank',
                         attributes: ['id', 'name']
+                    },
+                    {
+                        model: Role,
+                        as: 'roles',
+                        attributes: ['id', 'name', 'code'],
                     }
                 ],
                 where: condition,
@@ -1910,6 +1915,45 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '绑定实名认证成功', {});
         } catch (error) {
             errLogger(`[User][ADD_KYC]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ASSIGN_ROLES_TO_USER = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const { roleIds } = req.body;
+            const userId = req.params.id;
+            const user = await User.findOne({
+                where: { id: userId, type: 1 },
+                attributes: ['id', 'name']
+            });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到管理员账号', {});
+            }
+
+            const roles = await Role.findAll({
+                where: { id: { [Op.in]: roleIds } },
+                attributes: ['id']
+            });
+            if (roles.length != roleIds.length) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '角色信息有误', {});
+            }
+
+            await user.setRoles(roleIds);
+
+            // Log
+            await this.adminLogger(req, 'User', 'assign_roles');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '设置成功', {});
+
+        } catch (error) {
+            console.log(error)
+            errLogger(`[User][ASSIGN_ROLES_TO_USER]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

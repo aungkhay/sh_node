@@ -169,7 +169,10 @@ const startEncrypt = () => {
     const permissions = JSON.stringify({
         permissionIds: [1,2]
     })
-    const encrypted = encrypt(permissions, API_KEY, API_IV);
+    const roleIds = JSON.stringify({
+        roleIds: [4,5,6]
+    })
+    const encrypted = encrypt(roleIds, API_KEY, API_IV);
     console.log(encrypted);
 }
 

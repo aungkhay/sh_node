@@ -57,10 +57,14 @@ class Controller {
             const roleId = req.params.id;
 
             const role = await Role.findByPk(roleId);
+            if (!role) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到角色', {});
+            }
             const permissions = (await role.getPermissions()).map(p => p.id);
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', permissions);
         } catch (error) {
+            console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
