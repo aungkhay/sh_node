@@ -25,14 +25,14 @@
     { "model": "实名认证管理", "title": "添加", "name": "kyc-add" },
     { "model": "实名认证管理", "title": "编辑", "name": "kyc-update" },
     { "model": "实名认证管理", "title": "删除", "name": "kyc-delete" },
-    { "model": "实名认证管理", "title": "查看", "name": "kyc-view-detail" },
+    { "model": "实名认证管理", "title": "查看实名详情", "name": "kyc-view-detail" },
     { "model": "实名认证管理", "title": "通过", "name": "kyc-approve" },
     { "model": "实名认证管理", "title": "拒绝", "name": "kyc-reject" },
     { "model": "实名认证管理", "title": "批量通过", "name": "kyc-multiple-approve" },
     { "model": "实名认证管理", "title": "批量拒绝", "name": "kyc-multiple-reject" },
 
     { "model": "银行卡认证", "title": "列表", "name": "bankcard-list" },
-    { "model": "银行卡认证", "title": "查看", "name": "bankcard-view-detail" },
+    { "model": "银行卡认证", "title": "查看银行卡详情", "name": "bankcard-view-detail" },
     { "model": "银行卡认证", "title": "修改银行卡", "name": "bankcard-update" },
     { "model": "银行卡认证", "title": "修改支付宝", "name": "alipay-update" },
 
@@ -41,7 +41,7 @@
     { "model": "用户经验值", "title": "列表", "name": "user-rankpoint-list" },
 
     { "model": "转让继承管理", "title": "列表", "name": "transfer-inheritance-list" },
-    { "model": "转让继承管理", "title": "查看", "name": "transfer-inheritance-view" },
+    { "model": "转让继承管理", "title": "查看转让继承详情", "name": "transfer-inheritance-view" },
     { "model": "转让继承管理", "title": "通过", "name": "transfer-inheritance-approve" },
     { "model": "转让继承管理", "title": "拒绝", "name": "transfer-inheritance-reject" },
 
@@ -71,6 +71,8 @@
     { "model": "轮播图管理", "title": "删除", "name": "carousel-delete" },
 
     { "model": "红包记录", "title": "列表", "name": "redpacket-list" },
+
+    { "model": "津贴发放记录", "title": "列表", "name": "allowance-issue-list" },
     
     { "model": "余额宝收益记录", "title": "列表", "name": "yuebao-income-list" },
 
@@ -82,9 +84,12 @@
     { "model": "共济基金记录", "title": "通过", "name": "masonic-fund-approve" },
     { "model": "共济基金记录", "title": "拒绝", "name": "masonic-fund-reject" },
     { "model": "共济基金记录", "title": "导入扣除", "name": "masonic-fund-import-deduction" },
-    { "model": "共济基金记录", "title": " 没有注册账号的导入记录", "name": "masonic-fund-user-not-register-list" },
+    { "model": "共济基金记录", "title": "没有注册账号的导入记录", "name": "masonic-fund-user-not-register-list" },
 
-    { "model": "操作记录", "title": " 列表", "name": "log-list" },
+    { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
+    { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
+
+    { "model": "操作记录", "title": "列表", "name": "log-list" },
 
     { "model": "黄金价格", "title": "列表", "name": "gold-price-list" },
     { "model": "黄金价格", "title": "修改储备价", "name": "gold-price-update" },
@@ -113,5 +118,14 @@
     { "model": "论坛奖品设置", "title": "删除", "name": "forum-setting-delete" },
 
     { "model": "军职津贴-奖券兑换", "title": "列表", "name": "military-allowance-ticket-list" },
-    { "model": "军职津贴-奖券兑换", "title": "修改价格", "name": "military-allowance-ticket-update" }
+    { "model": "军职津贴-奖券兑换", "title": "修改价格", "name": "military-allowance-ticket-update" },
+    { "model": "军职津贴-奖券兑换", "title": "历史记录", "name": "military-allowance-ticket-history" },
+
+    { "model": "充值管理", "title": "列表", "name": "recharge-management-list" },
+    { "model": "充值管理", "title": "通过", "name": "recharge-management-approve" },
+    { "model": "充值管理", "title": "拒绝", "name": "recharge-management-reject" },
+
+    { "model": "提现管理", "title": "列表", "name": "withdraw-management-list" },
+    { "model": "提现管理", "title": "通过", "name": "withdraw-management-approve" },
+    { "model": "提现管理", "title": "拒绝", "name": "withdraw-management-reject" }
 ]

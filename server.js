@@ -32,7 +32,7 @@ APP.set('redis', Redis);
 const { connect, syncDB } = require('./app/models');
 (async () => {
     await connect();
-    // await syncDB(); // <-- Creates tables
+    await syncDB(); // <-- Creates tables
 })();
 
 APP.get('/', (req, res) => {
