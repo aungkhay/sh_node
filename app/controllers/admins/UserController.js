@@ -428,7 +428,7 @@ class Controller {
             }
 
             const { status, effected_to_all_child } = req.body;
-            const user = await User.findByPk(req.params.id, { attributes: ['id', 'type'] });
+            const user = await User.findByPk(req.params.id, { attributes: ['id', 'type', 'relation'] });
             if (!user) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
@@ -442,7 +442,7 @@ class Controller {
                 if (effected_to_all_child) {
                     const children = await User.findAll({
                         where: {
-                            relation: { [Op.like]: `%/${user.id}/%` },
+                            relation: { [Op.like]: `${user.relation}/%` },
                         },
                         attributes: ['id']
                     });
@@ -1268,7 +1268,7 @@ class Controller {
 
     SET_TO_INTERNAL_ACCOUNT = async (req, res) => {
         try {
-            const user = await User.findByPk(req.params.id, { attributes: ['id', 'is_internal_account'] });
+            const user = await User.findByPk(req.params.id, { attributes: ['id', 'is_internal_account', 'relation'] });
             if (!user) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到账号', {});
             }
@@ -1281,7 +1281,7 @@ class Controller {
                 await user.update({ is_internal_account: 1 }, { transaction: t });
                 await User.update({ top_account_id: user.id }, {
                     where: {
-                        relation: { [Op.like]: `%/${user.id}/%` },
+                        relation: { [Op.like]: `${user.relation}/%` },
                         top_account_id: null
                     },
                     transaction: t
@@ -1310,15 +1310,14 @@ class Controller {
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
 
-            const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id'] });
+            const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
             let condition = {}
             if (user.id != 1) {
-                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
-                condition.relation = { [Op.like]: `${me.relation}/%` }
+                condition.relation = { [Op.like]: `${user.relation}/%` }
             }
 
             if (startTime && endTime) {
@@ -1360,7 +1359,7 @@ class Controller {
                 SELECT COUNT(DISTINCT DATE(createdAt)) AS totalCount
                 FROM reward_records
                 WHERE user_id != ${user.id}
-                AND relation LIKE '%/${user.id}/%'
+                AND relation LIKE '${user.relation}/%'
                 ${rawQuery}
             `);
 
@@ -1384,14 +1383,14 @@ class Controller {
             const total_team_deposit = await Deposit.sum('amount', {
                 where: {
                     status: 1,
-                    relation: { [Op.like]: `%/${user.id}/%` }
+                    relation: { [Op.like]: `${user.relation}/%` }
                 }
             }) || 0;
 
             const total_team_withdraw = await Withdraw.sum('amount', {
                 where: {
                     status: 1,
-                    relation: { [Op.like]: `%/${user.id}/%` }
+                    relation: { [Op.like]: `${user.relation}/%` }
                 }
             }) || 0;
 
