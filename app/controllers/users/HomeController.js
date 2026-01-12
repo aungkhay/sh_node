@@ -2221,11 +2221,18 @@ class Controller {
                 await this.redisHelper.setValue(`gold_price_group_count_${userId}`, groupGoldCount, 300); // 5 minutes
             }
 
-            const latestPrice = await GoldPrice.findOne({
-                attributes: ['price', 'reserve_price'],
-                order: [['id', 'DESC']],
-                limit: 1
-            });
+            let latestPrice = await this.redisHelper.getValue('gold_price_latest');
+            if (latestPrice) {
+                latestPrice = JSON.parse(latestPrice);
+            } else {
+                latestPrice = await GoldPrice.findOne({
+                    attributes: ['price', 'reserve_price'],
+                    order: [['id', 'DESC']],
+                    limit: 1
+                });
+                await this.redisHelper.setValue('gold_price_latest', JSON.stringify(latestPrice), 300); // 5 minutes
+            }
+
             let data = {
                 realtime_price: 0,
                 reserve_price: 0,
@@ -2245,11 +2252,17 @@ class Controller {
             data.personal_gold_amount = Number(data.personal_gold_count * data.reserve_price);
             data.group_gold_amount = Number(data.group_gold_count * data.reserve_price);
 
-            const lastSevenPrice = await GoldPrice.findAll({
-                attributes: ['price', 'reserve_price', 'createdAt'],
-                order: [['id', 'DESC']],
-                limit: 7
-            })
+            let lastSevenPrice = await this.redisHelper.getValue('gold_price_last_seven');
+            if (lastSevenPrice) {
+                lastSevenPrice = JSON.parse(lastSevenPrice);
+            } else {
+                lastSevenPrice = await GoldPrice.findAll({
+                    attributes: ['price', 'reserve_price', 'createdAt'],
+                    order: [['id', 'DESC']],
+                    limit: 7
+                })
+                await this.redisHelper.setValue('gold_price_last_seven', JSON.stringify(lastSevenPrice), 1800); // 30 minutes
+            }
 
             data.realtime_chart = lastSevenPrice.map(g => {
                 return { price: g.price, date: g.createdAt }
