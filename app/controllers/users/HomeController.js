@@ -2208,13 +2208,18 @@ class Controller {
         try {
             const userId = req.user_id;
             const user = await User.findByPk(userId, { attributes: ['id', 'gold'] });
-            const groupGoldCount = await User.sum('gold', {
-                where: {
-                    relation: {
-                        [Op.like]: `%/${userId}/%`
+
+            let groupGoldCount = await this.redisHelper.getValue(`gold_price_group_count_${userId}`);
+            if (!groupGoldCount) {
+                groupGoldCount = await User.sum('gold', {
+                    where: {
+                        relation: {
+                            [Op.like]: `%/${userId}/%`
+                        }
                     }
-                }
-            });
+                });
+                await this.redisHelper.setValue(`gold_price_group_count_${userId}`, groupGoldCount, 300); // 5 minutes
+            }
 
             const latestPrice = await GoldPrice.findOne({
                 attributes: ['price', 'reserve_price'],
