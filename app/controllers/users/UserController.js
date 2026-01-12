@@ -794,10 +794,11 @@ class Controller {
             }
             
             let userIds = [];
+            const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
             if(level > 0) {
                 const users = await User.findAll({
                     where: {
-                        relation: { [Op.like]: `%/${userId}/%` }
+                        relation: { [Op.like]: `${me.relation}/%` }
                     },
                     attributes: ['id', 'relation']
                 });
@@ -816,7 +817,7 @@ class Controller {
             }
 
             let conditions = {
-                relation: { [Op.like]: `%/${userId}/%` }
+                relation: { [Op.like]: `${me.relation}/%` }
             }
             
             if(level > 0 && userIds.length == 0) {

@@ -1251,7 +1251,7 @@ class Controller {
                     attributes: ['id', 'status']
                 },
                 where: { id: userId },
-                attributes: ['id', 'win_per_day', 'can_get_red_envelop'],
+                attributes: ['id', 'win_per_day', 'can_get_red_envelop', 'relation'],
                 useMaster: userId % 2 === 0 ? true : false
             })
             // check kyc status is approved
@@ -1319,7 +1319,7 @@ class Controller {
                 if (!haveDownlineLength3) {
                     const longestDownline = await User.findOne({
                         where: {
-                            relation: { [Op.like]: `%/${userId}/%` }    
+                            relation: { [Op.like]: `${user.relation}/%` }    
                         },
                         attributes: ['relation'],
                         order: [[Sequelize.fn('LENGTH', Sequelize.col('relation')), 'DESC']]
@@ -1608,9 +1608,10 @@ class Controller {
         try {
             const userId = req.user_id;
 
+            const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
             const users = await User.findAll({
                 where: {
-                    relation: { [Op.like]: `%/${userId}/%` }
+                    relation: { [Op.like]: `${me.relation}/%` }
                 },
                 attributes: ['id', 'name', 'relation']
             });
