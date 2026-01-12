@@ -293,6 +293,7 @@ class Controller {
     }
 
     GET_NEWS = async (req, res) => {
+        console.log("******************** UserID =============", req.user_id);
         const lockKey = `lock:get_news:${req.user_id}`;
         let redisLocked = false;
 
