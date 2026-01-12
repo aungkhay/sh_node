@@ -136,7 +136,9 @@ const AdminRoute = require('./app/routes/Admin');
 APP.use('/admin', new AdminRoute(APP));
 
 // Cron
-require('./app/cron');
+if (process.env.IS_MASTER == '1') {
+    require('./app/cron');
+}
 
 // Start Server
 APP.listen(PORT, HOST, () => {

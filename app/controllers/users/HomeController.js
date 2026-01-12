@@ -288,7 +288,14 @@ class Controller {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 100);
             const offset = this.getOffset(page, perPage);
-            const type = req.query.type;
+            const type = req.query.type || -1;
+
+            if (type >= 0) {
+                const news = await this.redisHelper.getValue(`news_${page}_${perPage}_${offset}_${type}`);
+                if (news) {
+                    return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(news));
+                }
+            }
 
             let conditions = {
                 status: 'APPROVED',
@@ -335,6 +342,11 @@ class Controller {
                     totalPage: count > 0 ? Math.ceil(count / perPage) : count,
                     total: count
                 }
+            }
+
+            if (type >= 0) {
+                const expiry = type == 1 ? 60 : 600; // type 1 cache for 60 seconds, type 2 & 3 cache for 600 seconds
+                await this.redisHelper.setValue(`news_${page}_${perPage}_${offset}_${type}`, JSON.stringify(data), expiry); // cache for 600 seconds
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
@@ -1202,7 +1214,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            redisLocked = await this.redisHelper.setLock(lockKey, 5);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -1402,7 +1414,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            redisLocked = await this.redisHelper.setLock(lockKey, 5);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -2084,6 +2096,11 @@ class Controller {
 
     MASONIC_FUND = async (req, res) => {
         try {
+            const masonicFund = await this.redisHelper.getValue(`masonic_fund_summary_${req.user_id}`);
+            if (masonicFund) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(masonicFund));
+            }
+
             const totalRegister = await User.count();
             const user = await User.findByPk(req.user_id, { attributes: ['id', 'masonic_fund', 'phone_number'] });
 
@@ -2092,6 +2109,8 @@ class Controller {
                 total_participant: Number(totalRegister * 17),
                 total_retreiver: Number(totalRegister * 7)
             }
+
+            await this.redisHelper.setValue(`masonic_fund_summary_${req.user_id}`, JSON.stringify(data), 60); // 10 minutes
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
