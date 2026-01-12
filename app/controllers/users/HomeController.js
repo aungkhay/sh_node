@@ -1251,7 +1251,8 @@ class Controller {
                     attributes: ['id', 'status']
                 },
                 where: { id: userId },
-                attributes: ['id', 'win_per_day', 'can_get_red_envelop']
+                attributes: ['id', 'win_per_day', 'can_get_red_envelop'],
+                useMaster: userId % 2 === 0 ? true : false
             })
             // check kyc status is approved
             if (!user.kyc || user.kyc.status !== 'APPROVED') {
@@ -1288,6 +1289,7 @@ class Controller {
                         [Op.between]: [startOfToday, endOfToday]
                     }
                 },
+                useMaster: userId % 2 === 0 ? true : false
             }) ?? 0;
 
             if (totalTodayRecord == winLimit) {
@@ -1454,7 +1456,10 @@ class Controller {
             const gold_fund = reward.gold_fund;
             const gold_gram = reward.gold_gram;
             const authorize_letter_amount = reward.authorize_letter_amount;
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'political_vetting_status', 'masonic_fund', 'balance'] });
+            const user = await User.findByPk(userId, { 
+                attributes: ['id', 'relation', 'masonic_fund', 'balance'], 
+                useMaster: userId % 2 === 0 ? true : false 
+            });
 
             const t = await db.transaction();
             try {
