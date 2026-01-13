@@ -1483,9 +1483,8 @@ class Controller {
             }
 
             const userId = req.user_id;
-            // Check already get reward
-            const check = await this.redisHelper.getValue(`LOCK_GET_RED_ENVELOP_${userId}`);
-            if (check) {
+            const locked = await this.redisHelper.setLock(`LOCK_GET_RED_ENVELOP_${userId}`, 1, 300); // 5 minutes lock
+            if (!locked) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过该红包', {});
             }
 
@@ -1604,9 +1603,6 @@ class Controller {
                 // Log but don't fail the response since DB transaction is already committed
                 errLogger(`[GET_RED_ENVELOP][Redis cleanup error][${userId}]: ${redisError.stack}`);
             }
-
-            // lock to not get again between 15 minutes
-            await this.redisHelper.setValue(`LOCK_GET_RED_ENVELOP_${userId}`, 1, 15 * 60); // 15 minutes
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '收红包成功', {});
         } catch (error) {
