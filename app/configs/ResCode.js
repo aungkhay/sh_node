@@ -5,7 +5,7 @@ module.exports = {
     },
     UNAUTHORIZED: {
         code: 1001,
-        msg: 'token不合法'
+        msg: '连接失败，请重新连接'
     },
     VALIDATE_FAIL: {
         code: 1002,

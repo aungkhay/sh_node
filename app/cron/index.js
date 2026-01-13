@@ -29,6 +29,8 @@ class CronJob {
         cron.schedule('0 0 * * *', this.RESET_CAN_GET_RED_ENVELOPE).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
+        // Run at the 6th minute of every hour
+        cron.schedule('6 * * * *', this.RESET_REWARD_TYPE).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -470,6 +472,26 @@ class CronJob {
             console.log('SET_REWARD_6_TO_REDIS completed.');
         } catch (error) {
             errLogger(`[SET_REWARD_6_TO_REDIS]: ${error.stack}`);
+        }
+    }
+
+    RESET_REWARD_TYPE = async () => {
+        // Reset reward types after GET_RED_ENVELOPE event
+        try {
+            const rewardTypes = await this.redisHelper.getValue('reward_types');
+            if (rewardTypes) {
+                const parsedTypes = JSON.parse(rewardTypes);
+                for (let type of parsedTypes) {
+                    await RewardType.update(
+                        { remain_count: type.remain_count },
+                        { where: { id: type.id } }
+                    );
+
+                    commonLogger(`[RESET_REWARD_TYPE]: Reset reward type ID ${type.id} to total count ${type.total_count}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[RESET_REWARD_TYPE]: ${error.stack}`);
         }
     }
 }

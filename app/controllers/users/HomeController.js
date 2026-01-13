@@ -1545,10 +1545,20 @@ class Controller {
                     await user.update({ can_get_red_envelop: 0 }, { transaction: t });
                 }
                 
-                await RewardType.update({ remain_count: reward.reward_remain_count - 1 }, {
-                    where: { id: reward.reward_id },
-                    transaction: t
-                });
+                reward.remain_count = reward.reward_remain_count - 1;
+                let rewardTypes = await this.redisHelper.getValue('reward_types');
+                if (rewardTypes) {
+                    rewardTypes = JSON.parse(rewardTypes);
+                } else {
+                    rewardTypes = await RewardType.findAll({});
+                }
+                const currentRewardIndex = rewardTypes.findIndex(r => r.id == reward.reward_id);
+                rewardTypes[currentRewardIndex].remain_count = reward.remain_count;
+                await this.redisHelper.setValue('reward_types', JSON.stringify(rewardTypes));
+                // await RewardType.update({ remain_count: reward.reward_remain_count - 1 }, {
+                //     where: { id: reward.reward_id },
+                //     transaction: t
+                // });
                 
                 // Commit transaction immediately to prevent rollback
                 await t.commit();
