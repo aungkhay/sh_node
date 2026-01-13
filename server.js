@@ -91,7 +91,7 @@ const AdminRoute = require('./app/routes/Admin');
 APP.use('/admin', new AdminRoute(APP));
 
 // Cron
-if (process.env.IS_MASTER == '1') {
+if (Number(process.env.IS_MASTER || 1) == 1) {
     const CronJob = require('./app/cron');
     const cron = new CronJob(APP);
     cron.START();
