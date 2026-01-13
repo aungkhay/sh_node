@@ -560,6 +560,26 @@ const params = {
     isUsed: 0, // 0 => No | 1 => Yes
 }
 
+// [POST] Add Reward
+const url = `${baseURL}/rewards/add-reward`;
+const data = {
+    user_id: 34,
+    reward_id: 8,
+    amount: 1000
+}
+
+// [POST] Delete Reward
+const url = `${baseURL}/rewards/10/delete-reward`;
+
+// [POST] Delete Multiple
+const url = `${baseURL}/rewards/delete-multiple-rewards`;
+const data = {
+    ids: []
+}
+
+// [POST] Delete All Admin Added Rewards
+const url = `${baseURL}/rewards/delete-all-rewards`;
+
 // Referral Reward Setting
 // [GET] List
 const url = `${baseURL}/referral-reward-settings`;

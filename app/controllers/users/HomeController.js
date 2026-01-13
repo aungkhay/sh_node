@@ -595,6 +595,7 @@ class Controller {
                                 relation: user.relation,
                                 reward_id: reward.id,
                                 amount: amount,
+                                is_used: 1,
                                 before_amount: user.masonic_fund,
                                 after_amount: Number(user.masonic_fund) + Number(amount),
                                 from_where: `发布能量论坛 获得共济基金`
@@ -639,6 +640,7 @@ class Controller {
                                 relation: user.relation,
                                 reward_id: reward.id,
                                 amount: amount,
+                                is_used: 1,
                                 before_amount: user.balance,
                                 after_amount: Number(user.balance) + Number(amount),
                                 from_where: `发布能量论坛 获得账户余额`,

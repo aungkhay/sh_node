@@ -3,7 +3,7 @@ let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { errLogger } = require('../../helpers/Logger');
-const { RewardType, RewardRecord, User } = require('../../models');
+const { RewardType, RewardRecord, User, db } = require('../../models');
 const { Op } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
 
@@ -119,6 +119,7 @@ class Controller {
             const endTime = req.query.endTime;
             const userId = req.user_id;
             const isUsed = req.query.isUsed || -1;
+            const isBackgroundAdded = req.query.isBackgroundAdded || -1;
 
             let userCondition = {}
             if (phone) {
@@ -136,6 +137,9 @@ class Controller {
             }
             if (isUsed != -1) {
                 condition.is_used = isUsed;
+            }
+            if (isBackgroundAdded != -1) {
+                condition.is_background_added = isBackgroundAdded;
             }
 
             const { rows, count } = await RewardRecord.findAndCountAll({
@@ -170,6 +174,166 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ADD_REWARD = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { user_id, reward_id, amount } = req.body;
+            const user = await User.findByPk(user_id, { attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund'] });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
+            }
+            const rewardType = await RewardType.findByPk(reward_id, { attributes: ['id', 'title'] });
+            if (!rewardType) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到奖励类型', {});
+            }
+            const obj = {
+                user_id: user.id,
+                relation: user.relation,
+                reward_id: rewardType.id,
+                is_background_added: 1,
+            }
+            const t = await db.transaction();
+            try {
+                if (reward_id == 1) {
+                    // 共济基金
+                    obj.amount = amount;
+                    obj.is_used = 1;
+                    obj.before_amount = user.masonic_fund;
+                    obj.after_amount = Number(user.masonic_fund) + Number(amount);
+                    await RewardRecord.create(obj, { transaction: t });
+                    await user.increment({ masonic_fund: amount }, { transaction: t });
+                }
+                if (reward_id == 2) {
+                    // 上合战略黄金持有克数
+                    const now = new Date();
+                    const validUntil = new Date(now);
+                    validUntil.setMonth(validUntil.getMonth() + 3);
+                    obj.amount = amount;
+                    obj.validedAt = validUntil;
+                    await RewardRecord.create(obj, { transaction: t });
+                }
+                if (reward_id == 3) {
+                    // 账户余额
+                    obj.amount = amount;
+                    obj.is_used = 1;
+                    obj.before_amount = user.balance;   
+                    obj.after_amount = Number(user.balance) + Number(amount);
+                    await RewardRecord.create(obj, { transaction: t });
+                    await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
+                }
+                if ([4,6,8].includes(reward_id)) {
+                    // 上合组织各国授权书
+                    obj.amount = 100;
+                    if (reward_id == 8) {
+                        obj.amount = amount; // 推荐奖励
+                    }
+                    await RewardRecord.create(obj, { transaction: t });
+                }
+                if (reward_id == 7) {
+                    // 上合战略储备黄金券
+                    const now = new Date();
+                    const validUntil = new Date(now);
+                    validUntil.setMonth(validUntil.getMonth() + 3);
+                    obj.amount = amount;
+                    obj.validedAt = validUntil;
+                    await RewardRecord.create(obj, { transaction: t });
+                }
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '添加奖励成功', {});
+            } catch (error) {
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '添加奖励失败', {});
+            }
+        } catch (error) {
+            errLogger(`[ADD_REWARD]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    DELETE_REWARD = async (req, res) => {
+        try {
+            const { id } = req.params;
+            const reward = await RewardRecord.findByPk(id, { attributes: ['id','amount', 'reward_id', 'user_id', 'is_used', 'is_background_added'] });
+            if (!reward) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
+            }
+            if (reward.is_background_added == 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '非后台添加奖励，无法删除', {});
+            }
+            if (reward.is_used == 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '奖励已使用，无法删除', {});
+            }
+
+            await reward.destroy();
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '删除成功', {});
+        } catch (error) {
+            errLogger(`[DELETE_REWARD]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    MULTIPLE_DELETE_REWARD = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { ids } = req.body;
+            const rewards = await RewardRecord.findAll({ 
+                where: {
+                    id: { [Op.in]: ids },
+                    is_background_added: 1,
+                    is_used: 0
+                },
+                attributes: ['id','amount', 'reward_id', 'user_id', 'is_used', 'is_background_added']
+            });
+
+            if (rewards.length != ids.length) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '部分奖励无法删除，请确认后重试', {});
+            }
+            await RewardRecord.destroy({ 
+                where: { id: { [Op.in]: ids } }, 
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '删除成功', {});
+        } catch (error) {
+            errLogger(`[MULTIPLE_DELETE_REWARD]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    DELETE_ALL_BACKGROUND_ADDED_REWARD = async (req, res) => {
+        try {
+            let condition = {
+                is_background_added: 1,
+                is_used: 0,
+            }
+            const rewards = await RewardRecord.findAll({ 
+                where: condition,
+                attributes: ['id','amount', 'reward_id', 'user_id', 'is_used', 'is_background_added']
+            });
+
+            // separate into chunks to avoid too many deletions at once
+            const chunkSize = 1000;
+            for (let i = 0; i < rewards.length; i += chunkSize) {
+                const chunk = rewards.slice(i, i + chunkSize);
+                const ids = chunk.map(r => r.id);
+                await RewardRecord.destroy({ 
+                    where: { id: { [Op.in]: ids } }
+                });
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '删除成功', {});
+        } catch (error) {
+            errLogger(`[DELETE_ALL_BACKGROUND_ADDED_REWARD]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

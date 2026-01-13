@@ -69,6 +69,11 @@ RewardRecord.init({
     from_where: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    is_background_added: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+        comment: 'Indicates if added in background (0 => No | 1 => Yes)'
     }
 }, {
     sequelize,

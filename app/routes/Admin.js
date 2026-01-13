@@ -102,11 +102,18 @@ class AdminRoute extends express.Router {
 
         let RewardController = require('../controllers/admins/RewardController');
         let RewardCtrl = new RewardController(app);
+        // Reward Types
         this.get('/reward-types', middleware.isLoggedIn('redpacket-prize-list'), RewardCtrl.REWARD_TYPES);
         this.post('/reward-types/:id/set-as-energy-forum', FormValidator.set_as_energy_forum(), middleware.isLoggedIn('redpacket-prize-change-energy-forum-status'), RewardCtrl.SET_AS_ENERGY_FORUM);
         this.post('/reward-types/:id/update', FormValidator.update_reward_type(), middleware.isLoggedIn('redpacket-prize-update'), RewardCtrl.UPDATE_REWARD_TYPE);
         this.post('/reward-types/:id/update-status', FormValidator.update_status(), middleware.isLoggedIn('redpacket-prize-change-status'), RewardCtrl.UPDATE_REWARD_TYPE_STATUS);
+        // Reward Records
         this.get('/reward-history', middleware.isLoggedIn('redpacket-list'), RewardCtrl.REWARD_HISTORY);
+        this.post('/rewards/add-reward', FormValidator.add_reward_record(), middleware.isLoggedIn('redpacket-add'), RewardCtrl.ADD_REWARD);
+        this.post('/rewards/:id/delete-reward', middleware.isLoggedIn('redpacket-delete'), RewardCtrl.DELETE_REWARD);
+        this.post('/rewards/delete-multiple-rewards', FormValidator.delete_multiple_rewards(), middleware.isLoggedIn('redpacket-multiple-delete'), RewardCtrl.MULTIPLE_DELETE_REWARD);
+        this.post('/rewards/delete-all-rewards', middleware.isLoggedIn('redpacket-delete-all-background-added'), RewardCtrl.DELETE_ALL_BACKGROUND_ADDED_REWARD);
+        // Referral Reward Settings
         this.get('/referral-reward-settings', middleware.isLoggedIn('forum-setting-list'), RewardCtrl.REFERRAL_REWARD_SETTINGS);
         this.post('/referral-reward-settings/create', FormValidator.create_referral_reward_setting(), middleware.isLoggedIn('forum-setting-add'), RewardCtrl.CREATE_REFERRAL_REWARD_SETTING);
         this.post('/referral-reward-settings/:id/update', FormValidator.create_referral_reward_setting(), middleware.isLoggedIn('forum-setting-update'), RewardCtrl.UPDATE_REFERRAL_REWARD_SETTING);

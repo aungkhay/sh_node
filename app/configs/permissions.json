@@ -77,6 +77,10 @@
     { "model": "轮播图管理", "title": "删除", "name": "carousel-delete" },
 
     { "model": "红包记录", "title": "列表", "name": "redpacket-list" },
+    { "model": "红包记录", "title": "添加", "name": "redpacket-add" },
+    { "model": "红包记录", "title": "删除", "name": "redpacket-delete" },
+    { "model": "红包记录", "title": "批量删除", "name": "redpacket-multiple-delete" },
+    { "model": "红包记录", "title": "删除", "name": "redpacket-delete-all-background-added" },
 
     { "model": "津贴发放记录", "title": "列表", "name": "allowance-issue-list" },
     

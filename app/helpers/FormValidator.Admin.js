@@ -229,6 +229,28 @@ exports.create_referral_reward_setting = () => {
     ]
 }
 
+exports.add_reward_record = () => {
+    return [
+        check('user_id', { msg: '用户ID不能为空' }).not().isEmpty(),
+        check('reward_id', { msg: '奖励类型ID不能为空' }).not().isEmpty()
+            .bail()
+            .isIn([1,2,3,4,6,7,8])
+            .withMessage('奖励类型ID无效'),
+        check('amount').not().isEmpty().withMessage('金额不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('金额必须是数字'),
+    ]
+}
+
+exports.delete_multiple_rewards = () => {
+    return [
+        check('ids').not().isEmpty().withMessage('奖励记录ID不能为空')
+            .bail()
+            .isArray({ min: 1 }).withMessage('奖励记录ID无效'),
+    ]
+}
+
 exports.update_ticket = () => {
     return [
         check('price').not().isEmpty().withMessage('价格不能为空')
