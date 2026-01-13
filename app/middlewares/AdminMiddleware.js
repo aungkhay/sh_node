@@ -23,9 +23,14 @@ class MiddleWare {
                     return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
                 }
 
-                const redisToken = await this.redisHelper.getValue(`admin_token_${user.id}_${user.login_count}`);
-                if(!redisToken || (redisToken && redisToken != token)) {
-                    return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
+                // const redisToken = await this.redisHelper.getValue(`admin_token_${user.id}_${user.login_count}`);
+                // if(!redisToken || (redisToken && redisToken != token)) {
+                //     return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
+                // }
+
+                // Check token expiry
+                if (user.expire_time && user.expire_time < Date.now()) {
+                    return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, '登录已过期，请重新登录', {});
                 }
 
                 // await this.redisHelper.setValue(`admin_token_${user.id}_${user.login_count}`, token, 24 * 60 * 60);

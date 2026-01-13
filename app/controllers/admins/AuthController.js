@@ -124,7 +124,8 @@ class Controller {
                 type: 1, // Admin
                 phone: phone,
                 relation: user.relation,
-                login_count: user.login_count + 1
+                login_count: user.login_count + 1,
+                expire_time: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
             });
             const token = encrypt(tokenPrefix + toEncrypt + tokenSuffix, TOKEN_KEY, TOKEN_IV);
             await this.redisHelper.setValue(`admin_token_${user.id}_${user.login_count + 1}`, token, 24 * 60 * 60);
