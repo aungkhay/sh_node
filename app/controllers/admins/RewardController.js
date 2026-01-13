@@ -118,6 +118,7 @@ class Controller {
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
             const userId = req.user_id;
+            const isUsed = req.query.isUsed || -1;
 
             let userCondition = {}
             if (phone) {
@@ -132,6 +133,9 @@ class Controller {
                 condition.createdAt = {
                     [Op.between]: [startTime, endTime]
                 }
+            }
+            if (isUsed != -1) {
+                condition.is_used = isUsed;
             }
 
             const { rows, count } = await RewardRecord.findAndCountAll({

@@ -24,6 +24,8 @@ class Controller {
             const phone = req.query.phone;
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
+            const isImport = req.query.isImport || -1;
+            const status = req.query.status || '';
             const userId = req.user_id;
 
             let userCondition = {}
@@ -40,6 +42,12 @@ class Controller {
                 condition.createdAt = {
                     [Op.between]: [startTime, endTime]
                 }
+            }
+            if (isImport != -1) {
+                condition.is_import = isImport;
+            }
+            if (status) {
+                condition.status = status;
             }
 
             const { rows, count } = await MasonicFundHistory.findAndCountAll({

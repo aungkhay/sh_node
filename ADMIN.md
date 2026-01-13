@@ -340,7 +340,9 @@ const params = {
     perPage: 10,
     phone: '',
     startTime: '2025-11-06 00:00:00',
-    endTime: '2025-11-06 23:59:59', 
+    endTime: '2025-11-06 23:59:59',
+    isImport: 0, // 0 => No | 1 => Yes
+    status: '', // PENDING,APPROVED,DENIED
 }
 
 // [POST] Substract Fund
@@ -554,7 +556,8 @@ const params = {
     perPage: 10,
     phone: '',
     startTime: '2025-11-06 00:00:00',
-    endTime: '2025-11-06 23:59:59', 
+    endTime: '2025-11-06 23:59:59',
+    isUsed: 0, // 0 => No | 1 => Yes
 }
 
 // Referral Reward Setting
