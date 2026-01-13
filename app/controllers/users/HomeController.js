@@ -12,6 +12,7 @@ const Decimal = require('decimal.js');
 const AliOSS = require('../../helpers/AliOSS');
 const NewsReports = require('../../models/NewsReports');
 const RankHistory = require('../../models/RankHistory');
+const moment = require('moment');
 
 class Controller {
     constructor(app) {
@@ -1262,46 +1263,52 @@ class Controller {
     }
 
     GENERATE_RED_ENVELOP = async (req, res) => {
-        const lockKey = `lock:generate-red-envelope:${req.user_id}`;
-        let redisLocked = false;
+        const userId = req.user_id;
+        const lockKey = `lock:generate-red-envelope:${userId}`;
 
         try {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
-            if (redisLocked !== 'OK') {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
-            }
+            // const locked = await this.redisHelper.setLock(lockKey, 1, 15);
+            // if (locked !== 'OK') {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            // }
             
+            /* ===============================
+            * TIME WINDOW CHECK
+            * =============================== */
             const now = new Date();
             const minutes = now.getMinutes();
+            // if (minutes > 5 && minutes < 58) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
+            // }
 
-            if (minutes > 5 && minutes < 58) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
-            }
+            /* ===============================
+            * QUICK RETURN IF REWARD EXISTS
+            * =============================== */
+            // const rewardExist = await this.redisHelper.getValue(`UID_${userId}_reward`);
+            // if (rewardExist) {
+            //     await this.redisHelper.setValue(`UID_${userId}_reward`, rewardExist, 5 * 60); // refresh expiry to 5 minutes
+            //     return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(rewardExist));
+            // }
 
-            const userId = req.user_id;
-            // Check Reward Already Exist
-            const rewardExist = await this.redisHelper.getValue(`UID_${userId}_reward`);
-            if (rewardExist) {
-                await this.redisHelper.setValue(`UID_${userId}_reward`, rewardExist, 5 * 60); // refresh expiry to 5 minutes
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(rewardExist));
-            }
-
-            // Check Limit is reach
+            /* ===============================
+            * LOAD USER + KYC (READ SLAVE OK)
+            * =============================== */
             const user = await User.findOne({
+                where: { id: userId },
+                attributes: ['id', 'win_per_day', 'can_get_red_envelop'],
                 include: {
                     model: UserKYC,
                     as: 'kyc',
-                    attributes: ['id', 'status']
-                },
-                where: { id: userId },
-                attributes: ['id', 'win_per_day', 'can_get_red_envelop', 'relation'],
-                useMaster: userId % 2 === 0 ? true : false
-            })
+                    attributes: ['status'],
+                    required: false
+                }
+            });
+
             // check kyc status is approved
-            if (!user.kyc || user.kyc.status !== 'APPROVED') {
+            if (!user?.kyc || user.kyc.status !== 'APPROVED') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名未通过', {});
             }
 
@@ -1310,38 +1317,31 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
             }
 
-            let winLimit = 0;
-            if (user.win_per_day > 0) {
-                winLimit = user.win_per_day;
-            } else {
+            /* ===============================
+            * DAILY WIN LIMIT (REDIS)
+            * =============================== */
+            const todayKey = `WIN_COUNT_${userId}_${moment().format('YYYYMMDD')}`;
+            let winCount = parseInt(await this.redisHelper.getValue(todayKey) || 0);
+
+            let winLimit = user.win_per_day;
+            if (!winLimit) {
                 const win_per_day = await this.redisHelper.getValue('win_per_day');
                 if (win_per_day) {
-                    winLimit = win_per_day;
+                    winLimit = Number(win_per_day);
                 } else {
                     const config = await Config.findOne({ where: { type: 'win_per_day' }, attributes: ['val'] });
-                    winLimit = config.val;
+                    winLimit = Number(config.val);
                     await this.redisHelper.setValue('win_per_day', winLimit);
                 }
             }
 
-            const startOfToday = new Date();
-            const endOfToday = new Date();
-            startOfToday.setHours(0, 0, 0, 0);
-            endOfToday.setHours(23, 59, 59, 999);
-            const totalTodayRecord = await RewardRecord.count({
-                where: {
-                    user_id: userId,
-                    createdAt: {
-                        [Op.between]: [startOfToday, endOfToday]
-                    }
-                },
-                useMaster: userId % 2 === 0 ? true : false
-            }) ?? 0;
-
-            if (totalTodayRecord == winLimit) {
+            if (winCount >= winLimit) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
             }
 
+            /* ===============================
+            * LOAD REWARD TYPES (CACHE)
+            * =============================== */
             let rewardTypes = await this.redisHelper.getValue('reward_types');
             if (rewardTypes) {
                 rewardTypes = JSON.parse(rewardTypes);
@@ -1352,6 +1352,9 @@ class Controller {
             // remove 8 from pool first
             rewardTypes = rewardTypes.filter(r => r.id != 8 && r.status == 1);
 
+            /* ===============================
+            * REWARD 6 RULE (DOWNLINE)
+            * =============================== */
             // 每种授权书每个人只能获得一次
             const haveReward6 = await this.redisHelper.getValue(`USER_HAVE_REWARD_6_${userId}`);
             if (haveReward6) {
@@ -1361,53 +1364,61 @@ class Controller {
             } else {
                 // 需要伞下用户三代或者以上才能有机会抽中
                 // downline => /userId/xx/xx/xx
-                const haveDownlineLength3 = await this.redisHelper.getValue(`DOWNLINE_LENGTH_${userId}`);
-                if (!haveDownlineLength3) {
-                    const longestDownline = await User.findOne({
-                        where: {
-                            relation: { [Op.like]: `${user.relation}/%` }    
-                        },
-                        attributes: ['relation'],
-                        order: [[Sequelize.fn('LENGTH', Sequelize.col('relation')), 'DESC']]
-                    });
-                    let downlineLength = 0;
-                    if (longestDownline) {
-                        // assume userId is 42 for testing
-                        const splited = longestDownline.relation.split('/').filter(v => v); // /2/42/53/75/76 => ['2','42','53','75','76']
-                        const userIdIndex = splited.indexOf(String(userId)); // 1
-                        // only get Id after userId
-                        const downlineAfterUser = splited.slice(userIdIndex + 1); // ['53','75','76']
-                        downlineLength = downlineAfterUser.length; // 3
-                    }
-                    if (downlineLength < 3) {
-                        // remove id 6 from pool
-                        rewardTypes = rewardTypes.filter(r => r.id != 6);
-                    } else {
-                        // No expiry, just set once
-                        await this.redisHelper.setValue(`DOWNLINE_LENGTH_${userId}`, downlineLength);
-                    }
+                const downlineDepth = await this.redisHelper.getValue(`DOWNLINE_LENGTH_${userId}`);
+                if (!downlineDepth || Number(downlineDepth) < 3) {
+                    rewardTypes = rewardTypes.filter(r => r.id !== 6);
                 }
+                
+                // const haveDownlineLength3 = await this.redisHelper.getValue(`DOWNLINE_LENGTH_${userId}`);
+                // if (!haveDownlineLength3) {
+                //     const longestDownline = await User.findOne({
+                //         where: {
+                //             relation: { [Op.like]: `${user.relation}/%` }    
+                //         },
+                //         attributes: ['relation'],
+                //         order: [[Sequelize.fn('LENGTH', Sequelize.col('relation')), 'DESC']]
+                //     });
+                //     let downlineLength = 0;
+                //     if (longestDownline) {
+                //         // assume userId is 42 for testing
+                //         const splited = longestDownline.relation.split('/').filter(v => v); // /2/42/53/75/76 => ['2','42','53','75','76']
+                //         const userIdIndex = splited.indexOf(String(userId)); // 1
+                //         // only get Id after userId
+                //         const downlineAfterUser = splited.slice(userIdIndex + 1); // ['53','75','76']
+                //         downlineLength = downlineAfterUser.length; // 3
+                //     }
+                //     if (downlineLength < 3) {
+                //         // remove id 6 from pool
+                //         rewardTypes = rewardTypes.filter(r => r.id != 6);
+                //     } else {
+                //         // No expiry, just set once
+                //         await this.redisHelper.setValue(`DOWNLINE_LENGTH_${userId}`, downlineLength);
+                //     }
+                // }
             }
 
+            /* ===============================
+            * DRAW REWARD
+            * =============================== */
             let reward = null;
             let randomNum;
             let attempts = 0;
             const MAX_ATTEMPTS = 1000;
+            
             while (!reward && attempts < MAX_ATTEMPTS) {
                 randomNum = this.getRandomInt(1, 100);
                 reward = rewardTypes.find(r => randomNum >= r.range_min && randomNum <= r.range_max);
                 attempts++;
             }
 
-            if (!reward) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
-            }
-            if (reward.id != 5 && reward.remain_count <= 0) {
+            if (!reward || (reward.id != 5 && reward.remain_count <= 0)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '红包已领完，请等待下一个红包雨到来', {});
             }
 
-            // Must be win 3 times per day
-            if (totalTodayRecord <= 2) {
+            /* ===============================
+            * FORCE FIRST 3 WINS
+            * =============================== */
+            if (winCount <= 2) {
                 // Must be win if reward id is 5
                 let mastWinAttempts = 0;
                 while ((!reward && mastWinAttempts < MAX_ATTEMPTS) || reward.id == 5) {
@@ -1448,7 +1459,7 @@ class Controller {
                 reward_id: reward.id,
                 reward_remain_count: reward.remain_count,
                 title: reward.title,
-                total_reward: totalTodayRecord + 1,
+                total_reward: winCount + 1,
                 limit: winLimit,
                 masonic_fund: masonic_fund,
                 balance_fund: balance_fund,
@@ -1467,36 +1478,40 @@ class Controller {
     }
 
     GET_RED_ENVELOP = async (req, res) => {
-        const lockKey = `lock:get-red-envelope:${req.user_id}`;
-        let redisLocked = false;
+        const userId = req.user_id;
+        const lockKey = `lock:get-red-envelope:${userId}`;
 
         try {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
-            if (redisLocked !== 'OK') {
+            const redLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            if (redLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
+            /* ===============================
+            * TIME WINDOW CHECK
+            * =============================== */
             const now = new Date();
             const minutes = now.getMinutes();
-
             if (minutes > 15) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
             }
 
-            const userId = req.user_id;
             const locked = await this.redisHelper.setLock(`LOCK_GET_RED_ENVELOP_${userId}`, 1, 300); // 5 minutes lock
             if (!locked) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过该红包', {});
             }
 
-            let reward = await this.redisHelper.getValue(`UID_${userId}_reward`);
-            if (!reward) {
+            /* ===============================
+            * LOAD GENERATED REWARD
+            * =============================== */
+            let rewardCache  = await this.redisHelper.getValue(`UID_${userId}_reward`);
+            if (!rewardCache) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '红包已过期', {});
             }
-            reward = JSON.parse(reward);
+            const reward = JSON.parse(rewardCache);
             if (reward.id == 5) {
                 return MyResponse(res, this.ResCode.SUCCESS.code, false, '未中奖，请下次再试', {});
             }
@@ -1576,6 +1591,13 @@ class Controller {
                 const currentRewardIndex = rewardTypes.findIndex(r => r.id == reward.reward_id);
                 rewardTypes[currentRewardIndex].remain_count = reward.remain_count;
                 await this.redisHelper.setValue('reward_types', JSON.stringify(rewardTypes));
+
+                const todayKey = `WIN_COUNT_${userId}_${moment().format('YYYYMMDD')}`;
+                // Expiry at midnight
+                const now = new Date();
+                const expireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+                const ttlInSeconds = Math.floor((expireAt - now) / 1000);
+                await this.redisHelper.setValue(todayKey, String(reward.total_reward), ttlInSeconds);
                 
                 await t.commit();
             } catch (error) {

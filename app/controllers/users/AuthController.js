@@ -142,6 +142,22 @@ class Controller {
                 await this.redisHelper.setValue(`user_token_${user.id}`, token, 24 * 60 * 60);
                 await this.redisHelper.deleteKey(uuid);
 
+                /* ===============================
+                * ✅ UPDATE DOWNLINE DEPTH (NEW)
+                * =============================== */
+                const relationParts = parent.relation.split('/').filter(r => r);
+                for (let i = 0; i < relationParts.length; i++) {
+                    const uId = relationParts[i];
+                    const depthKey = `DOWNLINE_LENGTH_${uId}`;
+                    let currentDepth = await this.redisHelper.getValue(depthKey);
+                    if (currentDepth) {
+                        currentDepth = Number(currentDepth) + 1;
+                        await this.redisHelper.setValue(depthKey, currentDepth);
+                    } else {
+                        await this.redisHelper.setValue(depthKey, 1);
+                    }
+                }
+
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '注册成功', { token: token });
             } catch (error) {
                 errLogger(`[Register]: ${error.stack}`);

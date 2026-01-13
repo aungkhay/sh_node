@@ -36,8 +36,8 @@ const db = new Sequelize(env[`DB_NAME`], null, null, {
     //     queryLogger(str.replace('Executing (default): ', ''));
     // },
     pool: {
-        max: 30,
-        min: 5,
+        max: 15,
+        min: 2,
         acquire: 30000,
         idle: 10000,
         evict: 10000,
