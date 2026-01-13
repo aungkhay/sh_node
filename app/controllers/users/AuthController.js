@@ -41,8 +41,10 @@ class Controller {
             const captcha = svgCaptcha.create({
                 size: 5,               // number length
                 noise: 0,              // disturbance lines
-                color: true,
-                background: '#cf223300',
+                color: false,
+                // background: '#cf223300',
+                foreground: '#000000',
+                fontColor: '#000000',
                 charPreset: '0123456789' // 🔥 NUMBER ONLY
             });
                 
@@ -54,6 +56,11 @@ class Controller {
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+            // res.setHeader('Content-Type', 'image/svg+xml');
+            // res.setHeader('Cache-Control', 'no-store');
+            // return res.status(200).send(captcha.data);
+            
         } catch (error) {
             errLogger(`[GET_RECAPTCHA]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});

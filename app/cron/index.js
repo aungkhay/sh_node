@@ -496,7 +496,7 @@ class CronJob {
         }
     }
 
-    DELETE_OVER_CLAIM_REWARD_7 = async () => {
+    DELETE_OVER_CLAIM_REWARD = async () => {
         try {
             const dates = ['2026-01-10', '2026-01-11', '2026-01-12', '2026-01-13'];
             for (let dateStr of dates) {
@@ -515,12 +515,12 @@ class CronJob {
                             [fn('COUNT', col('*')), 'total_count']
                         ],
                         where: {
-                            reward_id: 7,
+                            reward_id: 3,
                             from_where: {
                                 [Op.like]: '红包雨%%'
                             },
                             createdAt: {
-                                [Op.between]: dateRange
+                                [Op.between]: [dateRange[0], dateRange[1]]
                             }
                         },
                         group: ['user_id'],
@@ -534,15 +534,24 @@ class CronJob {
                         const userRewards = await RewardRecord.findAll({
                             where: {
                                 user_id: userId,
-                                reward_id: 7,
+                                reward_id: 3,
+                                from_where: {
+                                    [Op.like]: '红包雨%%'
+                                },
+                                createdAt: {
+                                    [Op.between]: [dateRange[0], dateRange[1]]
+                                }
                             },
-                            attributes: ['id', 'user_id', 'createdAt'],
+                            attributes: ['id', 'user_id', 'amount', 'createdAt'],
                             order: [['createdAt', 'ASC']]
                         });
                         // Keep the first one, delete the rest
                         for (let i = 1; i < userRewards.length; i++) {
+                            const reward = userRewards[i];
+                            const user = await User.findByPk(userId, { attributes: ['id'] });
+                            await user.increment({ masonic_fund: reward.amount, balance: -reward.amount });
                             await userRewards[i].destroy();
-                            commonLogger(`[DELETE_OVER_CLAIM_REWARDS]: Deleted over-claimed reward for user ID ${userRewards[i].user_id}`);
+                            commonLogger(`[DELETE_OVER_CLAIM_REWARDS][${dateStr}][${userId}]: Deleting over-claimed reward ID ${reward.id} amount ${reward.amount}`);
                         }
                     }
                 }
@@ -550,6 +559,7 @@ class CronJob {
                 commonLogger(`[DELETE_OVER_CLAIM_REWARDS][${dateStr}]: Completed processing all date ranges.`);
             }
         } catch (error) {
+            console.log(error);
             errLogger(`[DELETE_OVER_CLAIM_REWARDS]: ${error.stack}`);
         }
     }
