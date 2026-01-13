@@ -11,7 +11,6 @@ module.exports = (res, code, success, message, data, errors = null) => {
         errors: errors ?? {}
     }
 
-    console.log(process.env.ENCRYPTION_ENABLED)
     if (Number(process.env.ENCRYPTION_ENABLED || 1) == 0) {
         return res.status(200).json(encData);
     }
