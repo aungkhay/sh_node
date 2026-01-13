@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund } = require('../models');
-const { Op } = require('sequelize');
+const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
 const axios = require('axios');
@@ -458,6 +458,7 @@ class CronJob {
         }
     }
 
+    // Not Cron Job, just a one-time function to set Redis flags
     SET_REWARD_6_TO_REDIS = async () => {
         try {
             const rewardRecords = await RewardRecord.findAll({
@@ -492,6 +493,61 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RESET_REWARD_TYPE]: ${error.stack}`);
+        }
+    }
+
+    DELETE_OVER_CLAIM_REWARD_7 = async () => {
+        try {
+            const dates = ['2026-01-10', '2026-01-11', '2026-01-12', '2026-01-13'];
+            for (let dateStr of dates) {
+                // Get yesterdays from 0 hour to 24 hour
+                const date = []
+                for (let index = 0; index < 24; index++) {
+                    date.push([`${dateStr} ${String(index).padStart(2, '0')}:00:00`, `${dateStr} ${String(index).padStart(2, '0')}:59:59`]);                
+                }
+
+                for (let dateRange of date) {
+                    commonLogger(`Processing date range: ${dateRange[0]} to ${dateRange[1]}`);
+
+                    const results = await RewardRecord.findAll({
+                        attributes: [
+                            'user_id',
+                            [fn('COUNT', col('*')), 'total_count']
+                        ],
+                        where: {
+                            reward_id: 7,
+                            createdAt: {
+                                [Op.between]: dateRange
+                            }
+                        },
+                        group: ['user_id'],
+                        having: literal('total_count > 1'),
+                        raw: true
+                    });
+                    const userIds = results.map(r => r.user_id);
+
+                    // Delete one of the over-claimed rewards for each user
+                    for (let userId of userIds) {
+                        const userRewards = await RewardRecord.findAll({
+                            where: {
+                                user_id: userId,
+                                reward_id: 7,
+                            },
+                            attributes: ['id', 'user_id', 'createdAt'],
+                            order: [['createdAt', 'ASC']]
+                        });
+                        // Keep the first one, delete the rest
+                        for (let i = 1; i < userRewards.length; i++) {
+                            await userRewards[i].destroy();
+                            commonLogger(`[DELETE_OVER_CLAIM_REWARDS]: Deleted over-claimed reward for user ID ${userRewards[i].user_id}`);
+                        }
+                    }
+                }
+
+                commonLogger(`[DELETE_OVER_CLAIM_REWARDS][${dateStr}]: Completed processing all date ranges.`);
+            }
+        } catch (error) {
+            errLogger(`[DELETE_OVER_CLAIM_REWARDS]: ${error.stack}`);
         }
     }
 }
