@@ -135,7 +135,8 @@ class Controller {
                     id: user.id,
                     type: 2, // User
                     phone: phone,
-                    invite_code: user_invite_code
+                    invite_code: user_invite_code,
+                    expire_time: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
                 });
                 const token = encrypt(tokenPrefix + toEncrypt + tokenSuffix, TOKEN_KEY, TOKEN_IV);
                 await this.redisHelper.setValue(`user_token_${user.id}`, token, 24 * 60 * 60);
@@ -210,6 +211,7 @@ class Controller {
                 phone: phone,
                 invite_code: user.invite_code,
                 serial_number: user.serial_number,
+                expire_time: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
             });
             const token = encrypt(tokenPrefix + toEncrypt + tokenSuffix, TOKEN_KEY, TOKEN_IV);
             await this.redisHelper.setValue(`user_token_${user.id}`, token, 24 * 60 * 60);

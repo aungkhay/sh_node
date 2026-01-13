@@ -22,12 +22,17 @@ class MiddleWare {
                 return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
             }
 
-            const redisToken = await this.redisHelper.getValue(`user_token_${user.id}`);
-            if(!redisToken || (redisToken && redisToken != token)) {
+            // const redisToken = await this.redisHelper.getValue(`user_token_${user.id}`);
+            // if(!redisToken || (redisToken && redisToken != token)) {
+            //     return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
+            // }
+
+            // await this.redisHelper.setValue(`user_token_${user.id}`, token, 24 * 60 * 60);\
+            // Check Expiry
+            if (user.expire_time < Date.now()) {
                 return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
             }
 
-            // await this.redisHelper.setValue(`user_token_${user.id}`, token, 24 * 60 * 60);
             req.user_id = user.id;
             req.user_type = user.type;
 
