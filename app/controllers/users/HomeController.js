@@ -2209,7 +2209,7 @@ class Controller {
                 total_retreiver: Number(totalRegister * 27)
             }
 
-            await this.redisHelper.setValue(`masonic_fund_summary_${req.user_id}`, JSON.stringify(data), 60); // 10 minutes
+            await this.redisHelper.setValue(`masonic_fund_summary_${req.user_id}`, JSON.stringify(data), 600); // 10 minutes
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
