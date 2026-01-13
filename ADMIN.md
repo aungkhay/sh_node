@@ -833,6 +833,12 @@ const params = {
     phone: ''
 }
 
+// [GET] 导出下级注册
+const url = `${baseURL}/users/export-child-register-list`;
+const params = {
+    phone: ''
+}
+
 // [POST] 上下分
 const url = `${baseURL}/users/${userId}/update-wallet`;
 const data = {

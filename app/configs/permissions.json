@@ -13,6 +13,7 @@
     { "model": "用户管理", "title": "查看上级内部账号", "name": "user-view-superior" },
     { "model": "用户管理", "title": "上下分", "name": "user-add-substract" },
     { "model": "用户管理", "title": "查看下级注册", "name": "user-view-subordinate" },
+    { "model": "用户管理", "title": "导出下级注册", "name": "user-export-subordinate" },
     { "model": "用户管理", "title": "通过放款协议", "name": "user-approve-loan-agreement" },
     { "model": "用户管理", "title": "拒绝放款协议", "name": "user-reject-loan-agreement" },
     { "model": "用户管理", "title": "设为内部账号", "name": "user-set-internal-account" },

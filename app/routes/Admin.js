@@ -139,6 +139,7 @@ class AdminRoute extends express.Router {
         this.get('/users/:id/superior-internal-account', middleware.isLoggedIn('user-view-superior'), UserCtrl.SUPERIOR_INTERNAL_ACCOUNT);
         this.get('/users/allowance-history', middleware.isLoggedIn('allowance-issue-list'), UserCtrl.ALLOWANCE_HISTORY);
         this.get('/users/child-register-list', middleware.isLoggedIn('user-view-subordinate'), UserCtrl.CHILD_REGISTER_LIST);
+        this.get('/users/export-child-register-list', middleware.isLoggedIn('user-export-subordinate'), UserCtrl.EXPORT_CHILD_REGISTER_LIST);
         this.post('/users/:id/update-wallet', FormValidator.update_wallet(), middleware.isLoggedIn('user-add-substract'), UserCtrl.UPDATE_WALLET);
         this.post('/users/:id/update-contact-info', FormValidator.update_contact_info(), middleware.isLoggedIn('user-change-contact'), UserCtrl.UPDATE_CONTACT_INFO);
         // 2FA

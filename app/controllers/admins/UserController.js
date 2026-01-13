@@ -1568,6 +1568,34 @@ class Controller {
         }
     }
 
+    EXPORT_CHILD_REGISTER_LIST = async (req, res) => {
+        try {
+            const phone = req.query.phone || '';
+
+            const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
+            }
+
+            const condition = {
+                relation: {
+                    [Op.like]: `${user.relation}/%`
+                }
+            }
+            const users = await User.findAll({
+                where: condition,
+                attributes: ['id', 'name', 'phone_number', 'createdAt'],
+                order: [['id', 'ASC']],
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', users);
+
+        } catch (error) {
+            errLogger(`[User][EXPORT_CHILD_REGISTER_LIST]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     UPDATE_WALLET = async (req, res) => {
         try {
             const err = validationResult(req);

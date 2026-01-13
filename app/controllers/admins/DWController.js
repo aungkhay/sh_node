@@ -106,6 +106,7 @@ class Controller {
             const endTime = req.query.endTime;
             const status = req.query.status;
             const userId = req.user_id;
+            const isInternalAccount = req.query.isInternalAccount || 0;
 
             let condition = {}
             if (userId != 1) {
@@ -133,6 +134,9 @@ class Controller {
                         userCondition.phone_number = phone;
                     }
                 }
+            }
+            if (isInternalAccount > 0) {
+                userCondition.is_internal_account = isInternalAccount;
             }
 
             const { rows, count } = await Withdraw.findAndCountAll({
