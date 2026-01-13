@@ -143,18 +143,20 @@ class Controller {
                 await this.redisHelper.deleteKey(uuid);
 
                 /* ===============================
-                * ✅ UPDATE DOWNLINE DEPTH (NEW)
+                * ✅ UPDATE DOWNLINE LENGTH (NEW)
                 * =============================== */
-                const relationParts = parent.relation.split('/').filter(r => r);
-                for (let i = 0; i < relationParts.length; i++) {
-                    const uId = relationParts[i];
-                    const depthKey = `DOWNLINE_LENGTH_${uId}`;
-                    let currentDepth = await this.redisHelper.getValue(depthKey);
-                    if (currentDepth) {
-                        currentDepth = Number(currentDepth) + 1;
-                        await this.redisHelper.setValue(depthKey, currentDepth);
-                    } else {
-                        await this.redisHelper.setValue(depthKey, 1);
+                const parts = parent.relation.split('/').filter(r => r);
+                for (let i = 0; i < parts.length; i++) {
+                    const uId = parts[i];
+
+                    // depth below this ancestor
+                    const depth = parts.length - i;
+
+                    const key = `DOWNLINE_LENGTH_${uId}`;
+                    const current = await this.redisHelper.getValue(key);
+
+                    if (!current || depth > Number(current)) {
+                        await this.redisHelper.setValue(key, depth);
                     }
                 }
 
