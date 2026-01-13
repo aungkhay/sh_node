@@ -30,7 +30,7 @@ class MiddleWare {
             // await this.redisHelper.setValue(`user_token_${user.id}`, token, 24 * 60 * 60);\
             // Check Expiry
             if ( user.expire_time && user.expire_time < Date.now()) {
-                return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
+                return MyResponse(res, this.ResCode.TOKEN_EXPIRED.code, false, '登录已过期，请重新登录', {});
             }
 
             req.user_id = user.id;
