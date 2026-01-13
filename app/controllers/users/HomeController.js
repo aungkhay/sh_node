@@ -154,7 +154,8 @@ class Controller {
                     attributes: ['id', 'title', 'subtitle', 'createdAt'],
                     order: [['id', 'DESC']],
                     limit: perPage,
-                    offset
+                    offset,
+                    useMaster: true
                 });
 
                 const data = {
@@ -382,7 +383,8 @@ class Controller {
                 },
                 order: [['id', 'DESC']],
                 limit: perPage,
-                offset
+                offset,
+                useMaster: true
             })
 
             const data = {
@@ -1510,48 +1512,49 @@ class Controller {
                 useMaster: userId % 2 === 0 ? true : false 
             });
 
+            const obj = {
+                user_id: userId,
+                relation: user.relation,
+                reward_id: reward.reward_id,
+                amount: 0
+            }
+            if (reward.reward_id == 1) {
+                obj.amount = masonic_fund;
+                obj.before_amount = user.masonic_fund;
+                obj.after_amount = parseFloat(user.masonic_fund) + parseFloat(masonic_fund);
+                obj.from_where = `红包雨 共济基金 获得${masonic_fund}元`;
+            } else if (reward.reward_id == 2) {
+                obj.amount = gold_gram;
+                const now = new Date();
+                const validUntil = new Date(now);
+                validUntil.setMonth(validUntil.getMonth() + 3);
+                obj.validedAt = validUntil;
+                obj.from_where = `红包雨 上合战略储备黄金券 获得${gold_gram}克`;
+            } else if (reward.reward_id == 3) {
+                obj.amount = balance_fund;
+                obj.before_amount = user.balance;
+                obj.after_amount = parseFloat(user.balance) + parseFloat(balance_fund);
+                obj.from_where = `红包雨 余额 获得${balance_fund}元`;
+            } else if (reward.reward_id == 6) {
+                obj.amount = authorize_letter_amount;
+                obj.from_where = `红包雨 上合组织中国区授权书 获得${authorize_letter_amount}`;
+                await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${userId}`, 1); // No expiry
+            } else if (reward.reward_id == 8) {
+                obj.amount = referral_fund;
+                obj.from_where = `红包雨 推荐金提取券 获得${referral_fund}元`;
+            } else if (reward.reward_id == 7) {
+                obj.amount = gold_fund;
+                obj.from_where = `红包雨 上合战略储备黄金券 获得${gold_fund}克`;
+                const now = new Date();
+                const validUntil = new Date(now);
+                validUntil.setMonth(validUntil.getMonth() + 3);
+                obj.validedAt = validUntil;
+            }
+
             let t;
             try {
                 t = await db.transaction();
                 
-                const obj = {
-                    user_id: userId,
-                    relation: user.relation,
-                    reward_id: reward.reward_id,
-                    amount: 0
-                }
-                if (reward.reward_id == 1) {
-                    obj.amount = masonic_fund;
-                    obj.before_amount = user.masonic_fund;
-                    obj.after_amount = parseFloat(user.masonic_fund) + parseFloat(masonic_fund);
-                    obj.from_where = `红包雨 共济基金 获得${masonic_fund}元`;
-                } else if (reward.reward_id == 2) {
-                    obj.amount = gold_gram;
-                    const now = new Date();
-                    const validUntil = new Date(now);
-                    validUntil.setMonth(validUntil.getMonth() + 3);
-                    obj.validedAt = validUntil;
-                    obj.from_where = `红包雨 上合战略储备黄金券 获得${gold_gram}克`;
-                } else if (reward.reward_id == 3) {
-                    obj.amount = balance_fund;
-                    obj.before_amount = user.balance;
-                    obj.after_amount = parseFloat(user.balance) + parseFloat(balance_fund);
-                    obj.from_where = `红包雨 余额 获得${balance_fund}元`;
-                } else if (reward.reward_id == 6) {
-                    obj.amount = authorize_letter_amount;
-                    obj.from_where = `红包雨 上合组织中国区授权书 获得${authorize_letter_amount}`;
-                    await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${userId}`, 1); // No expiry
-                } else if (reward.reward_id == 8) {
-                    obj.amount = referral_fund;
-                    obj.from_where = `红包雨 推荐金提取券 获得${referral_fund}元`;
-                } else if (reward.reward_id == 7) {
-                    obj.amount = gold_fund;
-                    obj.from_where = `红包雨 上合战略储备黄金券 获得${gold_fund}克`;
-                    const now = new Date();
-                    const validUntil = new Date(now);
-                    validUntil.setMonth(validUntil.getMonth() + 3);
-                    obj.validedAt = validUntil;
-                }
                 await RewardRecord.create(obj, { transaction: t });
 
                 if (masonic_fund > 0) {
@@ -1573,12 +1576,7 @@ class Controller {
                 const currentRewardIndex = rewardTypes.findIndex(r => r.id == reward.reward_id);
                 rewardTypes[currentRewardIndex].remain_count = reward.remain_count;
                 await this.redisHelper.setValue('reward_types', JSON.stringify(rewardTypes));
-                // await RewardType.update({ remain_count: reward.reward_remain_count - 1 }, {
-                //     where: { id: reward.reward_id },
-                //     transaction: t
-                // });
                 
-                // Commit transaction immediately to prevent rollback
                 await t.commit();
             } catch (error) {
                 errLogger(`[GET_RED_ENVELOP][DB Transaction Error]
@@ -2299,7 +2297,7 @@ class Controller {
                         }
                     }
                 });
-                await this.redisHelper.setValue(`gold_price_group_count_${userId}`, groupGoldCount, 300); // 5 minutes
+                await this.redisHelper.setValue(`gold_price_group_count_${userId}`, groupGoldCount, 600); // 10 minutes
             }
 
             let latestPrice = await this.redisHelper.getValue('gold_price_latest');
@@ -2309,7 +2307,8 @@ class Controller {
                 latestPrice = await GoldPrice.findOne({
                     attributes: ['price', 'reserve_price'],
                     order: [['id', 'DESC']],
-                    limit: 1
+                    limit: 1,
+                    useMaster: true
                 });
                 await this.redisHelper.setValue('gold_price_latest', JSON.stringify(latestPrice), 300); // 5 minutes
             }
@@ -2340,7 +2339,8 @@ class Controller {
                 lastSevenPrice = await GoldPrice.findAll({
                     attributes: ['price', 'reserve_price', 'createdAt'],
                     order: [['id', 'DESC']],
-                    limit: 7
+                    limit: 7,
+                    useMaster: true
                 })
                 await this.redisHelper.setValue('gold_price_last_seven', JSON.stringify(lastSevenPrice), 1800); // 30 minutes
             }
@@ -2376,7 +2376,8 @@ class Controller {
             const latestPrice = await GoldPrice.findOne({
                 attributes: ['price'],
                 order: [['id', 'DESC']],
-                limit: 1
+                limit: 1,
+                useMaster: true
             });
             if (!latestPrice) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '黄金价格未设置', {});

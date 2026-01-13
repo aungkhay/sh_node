@@ -28,7 +28,7 @@ class MiddleWare {
                     return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
                 }
 
-                await this.redisHelper.setValue(`admin_token_${user.id}_${user.login_count}`, token, 24 * 60 * 60);
+                // await this.redisHelper.setValue(`admin_token_${user.id}_${user.login_count}`, token, 24 * 60 * 60);
 
                 if (user.id != 1 && permission) {
                     const split = permission.split(',');

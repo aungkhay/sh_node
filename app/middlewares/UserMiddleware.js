@@ -27,7 +27,7 @@ class MiddleWare {
                 return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
             }
 
-            await this.redisHelper.setValue(`user_token_${user.id}`, token, 24 * 60 * 60);
+            // await this.redisHelper.setValue(`user_token_${user.id}`, token, 24 * 60 * 60);
             req.user_id = user.id;
             req.user_type = user.type;
 

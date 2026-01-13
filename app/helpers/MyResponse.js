@@ -12,5 +12,5 @@ module.exports = (res, code, success, message, data, errors = null) => {
     }
 
     const response = encrypt(JSON.stringify(encData), API_KEY, API_IV);
-    return res.status(200).json(response);
+    return res.status(200).json(encData);
 }

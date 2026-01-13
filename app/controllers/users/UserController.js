@@ -937,7 +937,8 @@ class Controller {
                 ],
                 order: [['id', 'DESC']],
                 limit: perPage,
-                offset: offset
+                offset: offset,
+                useMaster: true
             });
 
             data = {

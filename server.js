@@ -3,8 +3,6 @@ const express = require('express');
 const APP = express();
 const cors = require('cors');
 const bodyParser = require('body-parser');
-// const swaggerUi = require('swagger-ui-express');
-// const YAML = require('yamljs');
 const { reqLogger } = require('./app/helpers/Logger');
 
 APP.set('trust proxy', true);
@@ -32,14 +30,6 @@ const { connect, syncDB } = require('./app/models');
 APP.get('/', (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid endpoint!' });
 });
-
-//setup Swagger
-// try {
-//     const UserDoc = YAML.load('./app/docs/User.yml');
-//     APP.use('/docs/user', swaggerUi.serve, swaggerUi.setup(UserDoc));
-// } catch (error) {
-//     console.log(error);   
-// }
 
 const { decryptReqBody, decryptReqQuery } = require('./app/helpers/AESHelper');
 const RouteDetector = require('./app/helpers/RouteDetector');
@@ -88,35 +78,6 @@ APP.use((req, res, next) => {
             return MyResponse(res, 400, false, 'Action Denied!', {});
         }
 
-        // Admin IP whitelist: only allow specified IPs to access /admin routes
-        // try {
-        //     if (req.path && req.path.startsWith('/admin')) {
-        //         const rawList = process.env.ADMIN_WHITELIST || '127.0.0.1,::1';
-        //         const whitelist = rawList.split(',').map(s => s.trim()).filter(Boolean);
-        //         const forwarded = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-        //         const remote = req.connection && req.connection.remoteAddress ? req.connection.remoteAddress : '';
-        //         let ip = forwarded || req.ip || remote || '';
-        //         // normalize IPv4 mapped IPv6 addresses
-        //         ip = ip.replace(/^::ffff:/, '');
-
-        //         const allowed = whitelist.some(w => {
-        //             if (!w) return false;
-        //             if (w.includes('*')) {
-        //                 // support simple wildcard suffix like 192.168.1.*
-        //                 const prefix = w.replace(/\*+$/, '');
-        //                 return ip.startsWith(prefix);
-        //             }
-        //             return ip === w;
-        //         });
-
-        //         if (!allowed) {
-        //             return MyResponse(res, 403, false, 'Forbidden', {});
-        //         }
-        //     }
-        // } catch (e) {
-        //     console.error('Admin whitelist check error:', e);
-        // }
-
         next();
     } catch (error) {
         console.log(error.stack);
@@ -124,11 +85,6 @@ APP.use((req, res, next) => {
     }
 })
 
-/* ===============================
- * RATE LIMIT (PM2 SAFE)
- * =============================== */
-// const createRateLimiter = require('./app/middlewares/rateLimit');
-// APP.use('/api', createRateLimiter(Redis));
 const UserRoute = require('./app/routes/User');
 APP.use('/api', new UserRoute(APP));
 const AdminRoute = require('./app/routes/Admin');
