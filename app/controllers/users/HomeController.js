@@ -103,7 +103,18 @@ class Controller {
     }
 
     NOTIFICATIONS = async (req, res) => {
+        const lockKey = `lock:get_notification_list:${req.user_id}`;
+        let redisLocked = false;
+
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+            
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
