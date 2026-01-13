@@ -38,11 +38,11 @@ class Controller {
 
             const key = uuidv4();
 
-             const captcha = svgCaptcha.create({
+            const captcha = svgCaptcha.create({
                 size: 5,               // number length
                 noise: 0,              // disturbance lines
                 color: true,
-                background: '#cf2232',
+                background: '#cf223300',
                 charPreset: '0123456789' // 🔥 NUMBER ONLY
             });
                 

@@ -516,6 +516,9 @@ class CronJob {
                         ],
                         where: {
                             reward_id: 7,
+                            from_where: {
+                                [Op.like]: '红包雨%%'
+                            },
                             createdAt: {
                                 [Op.between]: dateRange
                             }
