@@ -14,6 +14,7 @@ const TOKEN_KEY = process.env.TOKEN_KEY;
 const TOKEN_IV = process.env.TOKEN_IV;
 const PASS_PREFIX = process.env.PASS_PREFIX;
 const PASS_SUFFIX = process.env.PASS_SUFFIX;
+const svgCaptcha = require('svg-captcha');
 
 class Controller {
     constructor (app) {
@@ -26,9 +27,23 @@ class Controller {
     GET_RECAPTCHA = async (req, res) => {
         try {
             const key = uuidv4();
-            const recaptcha = this.redisHelper.randomNumber(5);
-            this.redisHelper.setValue(key, recaptcha, 300);
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { uuid: key, code: recaptcha });
+            const captcha = svgCaptcha.create({
+                size: 5,               // number length
+                noise: 0,              // disturbance lines
+                color: false,
+                // background: '#cf223300',
+                foreground: '#000000',
+                fontColor: '#000000',
+                charPreset: '0123456789' // 🔥 NUMBER ONLY
+            });
+
+            this.redisHelper.setValue(key, captcha.text.toLowerCase(), 300);
+            const data = {
+                uuid: key,
+                image: `data:image/svg+xml;base64,${Buffer.from(captcha.data).toString('base64')}`
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
