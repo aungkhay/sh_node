@@ -27,12 +27,12 @@ class CronJob {
         cron.schedule('0 0 * * *', this.EARN_INTEREST).start();
         cron.schedule('0 0 * * *', this.RESET_TODAY_NEWS_REWARD_COUNT).start();
         cron.schedule('0 0 * * *', this.RESET_CAN_GET_RED_ENVELOPE).start();
-        cron.schedule('0 0 * * *', this.RESET_REWARD_TYPE).start();
+        // Run at 23:30 every day
+        cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
-        // Run every ten minutes
-        cron.schedule('*/10 * * * *', this.RESET_REWARD_TYPE).start();
-
+        // Run 10th minute of every hour
+        cron.schedule('10 * * * *', this.RESET_REMAIN_COUNT).start();
         // Run Every Hour at minute 0
         cron.schedule('0 * * * *', this.UPDATE_MASONIC_FUND_HISTORY).start();
     }
@@ -490,13 +490,16 @@ class CronJob {
                 const parsedTypes = JSON.parse(rewardTypes);
                 for (let type of parsedTypes) {
                     await RewardType.update(
-                        { remain_count: type.remain_count < 0 ? 0 : type.remain_count },
+                        { remain_count: type.total_count },
                         { where: { id: type.id } }
                     );
+                    await this.redisHelper.setValue(`REWARD_REMAIN_${type.id}`, type.total_count);
 
                     commonLogger(`[RESET_REWARD_TYPE]: Reset reward type ID ${type.id} to total count ${type.total_count}`);
                 }
             }
+            const types = await RewardType.findAll();
+            await this.redisHelper.setValue('reward_types', JSON.stringify(types));
         } catch (error) {
             errLogger(`[RESET_REWARD_TYPE]: ${error.stack}`);
         }
@@ -508,9 +511,8 @@ class CronJob {
             for (let index = 0; index < rewardTypes.length; index++) {
                 const type = rewardTypes[index];
                 const remainCount = await this.redisHelper.getValue(`REWARD_REMAIN_${type.id}`);
-                console.log(remainCount);
                 if (remainCount) {
-                    await type.update({ remain_count: type.remain_count < 0 ? 0 : remainCount });
+                    await type.update({ remain_count: remainCount < 0 ? 0 : remainCount });
                 }
                 commonLogger(`[RESET_REMAIN_COUNT]: Reward Type ID ${type.id} remain count set to ${remainCount}`);
             }
