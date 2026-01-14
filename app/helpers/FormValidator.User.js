@@ -211,12 +211,20 @@ exports.deposit = () => {
 
 exports.withdraw = () => {
     return [
+        // amount must be 100,200,300,...
         check('amount').not().isEmpty().withMessage('提现金额不能为空')
             .bail()
             .isNumeric()
             .withMessage('提现金额必须是数字')
             .bail()
-            .custom((value) => Number(value) >= 100)
+            .custom(value => {
+                if (value % 100 !== 0) {
+                    throw new Error('提现金额必须是100的整数倍');
+                }
+                return true;
+            })
+            .bail()
+            .isFloat({ min: 100 })  
             .withMessage('最低提现金额为100'),
         check('withdrawBy').not().isEmpty().withMessage('提现方式不能为空')
             .bail()
