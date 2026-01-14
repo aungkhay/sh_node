@@ -137,5 +137,7 @@
 
     { "model": "提现管理", "title": "列表", "name": "withdraw-management-list" },
     { "model": "提现管理", "title": "通过", "name": "withdraw-management-approve" },
-    { "model": "提现管理", "title": "拒绝", "name": "withdraw-management-reject" }
+    { "model": "提现管理", "title": "拒绝", "name": "withdraw-management-reject" },
+    { "model": "提现管理", "title": "导入", "name": "withdraw-management-import" },
+    { "model": "提现管理", "title": "导出", "name": "withdraw-management-export" }
 ]
