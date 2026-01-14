@@ -81,7 +81,7 @@ RewardRecord.init({
     tableName: 'reward_records',
     timestamps: true,
     indexes: [
-         {
+        {
             name: 'idx_relation',
             fields: ['relation'],
             using: 'BTREE',
@@ -99,6 +99,11 @@ RewardRecord.init({
         {
             name: 'idx_user_id_reward_id',
             fields: ['user_id', 'reward_id'],
+            using: 'BTREE',
+        },
+        {
+            name: 'idx_user_id_reward_id_is_used_amount',
+            fields: ['user_id', 'reward_id', 'is_used', 'amount'],
             using: 'BTREE',
         }
     ]
