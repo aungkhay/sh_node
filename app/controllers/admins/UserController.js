@@ -1538,6 +1538,11 @@ class Controller {
                 }
             }
             const { rows, count } = await User.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'parent',
+                    attributes: ['id', 'name']
+                },
                 where: condition,
                 attributes: [
                     'id', 'type', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 'balance',
@@ -1583,6 +1588,11 @@ class Controller {
                 }
             }
             const users = await User.findAll({
+                include: {
+                    model: User,
+                    as: 'parent',
+                    attributes: ['id', 'name']
+                },
                 where: condition,
                 attributes: ['id', 'name', 'phone_number', 'createdAt'],
                 order: [['id', 'ASC']],
