@@ -1381,6 +1381,18 @@ class Controller {
             let reward = rewardTypes.find(r => randomNum >= r.range_min && randomNum <= r.range_max);
 
             if (!reward) {
+                if (winCount <= 2) {
+                    let attempts = 0;
+                    const MAX_ATTEMPTS = 1000;
+                    while (attempts < MAX_ATTEMPTS) {
+                        randomNum = this.getRandomInt(1, 100);
+                        reward = rewardTypes.find(r => randomNum >= r.range_min && randomNum <= r.range_max);
+                        attempts++;
+                        if (reward) {
+                            break;
+                        }
+                    }
+                }
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
             }
 
