@@ -1392,8 +1392,9 @@ class Controller {
                             break;
                         }
                     }
+                } else {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
                 }
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
             }
 
             const remainKey = `REWARD_REMAIN_${reward.id}`;
