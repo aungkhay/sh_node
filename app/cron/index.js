@@ -290,6 +290,8 @@ class CronJob {
             for (let index = 0; index < rewardTypes.length; index++) {
                 const type = rewardTypes[index];
                 await type.update({ remain_count: type.total_count });
+                await this.redisHelper.setValue(`REWARD_REMAIN_${type.id}`, type.total_count);
+                commonLogger(`[RESET_REWARD_COUNT]: Reward Type ID ${type.id} reset to ${type.total_count}`);
             }
 
         } catch (error) {

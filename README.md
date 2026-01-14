@@ -63,3 +63,33 @@ try {
 const createRateLimiter = require('./app/middlewares/rateLimit');
 APP.use('/api', createRateLimiter(Redis));
 ```
+
+### Downline
+``` js
+const haveDownlineLength3 = await this.redisHelper.getValue(`DOWNLINE_LENGTH_${userId}`);
+if (!haveDownlineLength3) {
+    const longestDownline = await User.findOne({
+        where: {
+            relation: { [Op.like]: `${user.relation}/%` }    
+        },
+        attributes: ['relation'],
+        order: [[Sequelize.fn('LENGTH', Sequelize.col('relation')), 'DESC']]
+    });
+    let downlineLength = 0;
+    if (longestDownline) {
+        // assume userId is 42 for testing
+        const splited = longestDownline.relation.split('/').filter(v => v); // /2/42/53/75/76 => ['2','42','53','75','76']
+        const userIdIndex = splited.indexOf(String(userId)); // 1
+        // only get Id after userId
+        const downlineAfterUser = splited.slice(userIdIndex + 1); // ['53','75','76']
+        downlineLength = downlineAfterUser.length; // 3
+    }
+    if (downlineLength < 3) {
+        // remove id 6 from pool
+        rewardTypes = rewardTypes.filter(r => r.id != 6);
+    } else {
+        // No expiry, just set once
+        await this.redisHelper.setValue(`DOWNLINE_LENGTH_${userId}`, downlineLength);
+    }
+}
+```
