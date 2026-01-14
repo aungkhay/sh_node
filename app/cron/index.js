@@ -31,6 +31,8 @@ class CronJob {
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run at the 6th minute of every hour
         cron.schedule('6 * * * *', this.RESET_REWARD_TYPE).start();
+        // Run Every Hour at minute 0
+        cron.schedule('0 * * * *', this.UPDATE_MASONIC_FUND_HISTORY).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -495,6 +497,23 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RESET_REWARD_TYPE]: ${error.stack}`);
+        }
+    }
+
+    UPDATE_MASONIC_FUND_HISTORY = async () => {
+        try {
+            // random number between 20000 and 35000
+            const participantRand = Math.floor(Math.random() * (35000 - 20000 + 1)) + 20000;
+            // random number between 10000 and 20000
+            const totalRetreiverRank = Math.floor(Math.random() * (20000 - 10000 + 1)) + 10000;
+
+            const participantCount = (await this.redisHelper.getValue('MASONIC_FUND_PARTICIPANT_COUNT') || 0);
+            await this.redisHelper.setValue('MASONIC_FUND_PARTICIPANT_COUNT', participantRand + Number(participantCount));
+
+            const ReteriverCount = (await this.redisHelper.getValue('MASONIC_FUND_RETRIEVER_COUNT') || 0);
+            await this.redisHelper.setValue('MASONIC_FUND_RETRIEVER_COUNT', totalRetreiverRank + Number(ReteriverCount));
+        } catch (error) {
+            console.log(error);
         }
     }
 

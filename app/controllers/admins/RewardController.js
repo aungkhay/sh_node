@@ -148,7 +148,7 @@ class Controller {
                         model: User,
                         as: 'user',
                         where: userCondition,
-                        attributes: ['name']
+                        attributes: ['id', 'name', 'phone_number']
                     },
                     {
                         model: RewardType,

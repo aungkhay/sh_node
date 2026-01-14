@@ -2188,10 +2188,13 @@ class Controller {
             const totalRegister = await User.count();
             const user = await User.findByPk(req.user_id, { attributes: ['id', 'masonic_fund', 'phone_number'] });
 
+            const participantCount = (await this.redisHelper.getValue('MASONIC_FUND_PARTICIPANT_COUNT') || 0);
+            const ReteriverCount = (await this.redisHelper.getValue('MASONIC_FUND_RETRIEVER_COUNT') || 0);
+
             const data = {
                 fund: Number(user.masonic_fund),
-                total_participant: Number(totalRegister * 111),
-                total_retreiver: Number(totalRegister * 27)
+                total_participant: Number(totalRegister * 111) + Number(participantCount),
+                total_retreiver: Number(totalRegister * 27) + Number(ReteriverCount)
             }
 
             await this.redisHelper.setValue(`masonic_fund_summary_${req.user_id}`, JSON.stringify(data), 600); // 10 minutes

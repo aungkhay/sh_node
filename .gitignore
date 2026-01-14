@@ -4,3 +4,5 @@ logs
 dump.rdb
 uploads
 checknrc.js
+/servers
+entry.js
