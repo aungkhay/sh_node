@@ -1271,27 +1271,27 @@ class Controller {
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
             const locked = await this.redisHelper.setLock(lockKey, 1, 5);
-            // if (locked !== 'OK') {
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
-            // }
+            if (locked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
             
             /* ===============================
             * TIME WINDOW CHECK
             * =============================== */
             const now = new Date();
             const minutes = now.getMinutes();
-            // if (minutes > 5 && minutes < 58) {
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
-            // }
+            if (minutes > 5 && minutes < 58) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
+            }
 
             /* ===============================
             * QUICK RETURN IF REWARD EXISTS
             * =============================== */
             const rewardExist = await this.redisHelper.getValue(`UID_${userId}_reward`);
-            // if (rewardExist) {
-            //     await this.redisHelper.setValue(`UID_${userId}_reward`, rewardExist, 5 * 60); // refresh expiry to 5 minutes
-            //     return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(rewardExist));
-            // }
+            if (rewardExist) {
+                await this.redisHelper.setValue(`UID_${userId}_reward`, rewardExist, 5 * 60); // refresh expiry to 5 minutes
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(rewardExist));
+            }
 
             /* ===============================
             * LOAD USER + KYC (READ SLAVE OK)
