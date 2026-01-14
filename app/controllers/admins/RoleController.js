@@ -22,7 +22,7 @@ class Controller {
 
     PERMISSIONS = async (req, res) => {
         try {
-            const permissions = await Permission.findAll();
+            const permissions = await Permission.findAll({ order: [['model', 'ASC'], ['id', 'ASC']] });
 
             let model = null;
             let arr = [];
