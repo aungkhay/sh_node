@@ -197,7 +197,7 @@ class Controller {
             const obj = {
                 user_id: user.id,
                 relation: user.relation,
-                reward_id: rewardType.id,
+                reward_id: Number(rewardType.id),
                 is_background_added: 1,
             }
             const t = await db.transaction();
