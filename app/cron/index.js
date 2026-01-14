@@ -27,10 +27,12 @@ class CronJob {
         cron.schedule('0 0 * * *', this.EARN_INTEREST).start();
         cron.schedule('0 0 * * *', this.RESET_TODAY_NEWS_REWARD_COUNT).start();
         cron.schedule('0 0 * * *', this.RESET_CAN_GET_RED_ENVELOPE).start();
+        cron.schedule('0 0 * * *', this.RESET_REWARD_TYPE).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
-        // Run at the 10th minute of every hour
-        cron.schedule('10 * * * *', this.RESET_REWARD_TYPE).start();
+        // Run every ten minutes
+        cron.schedule('*/10 * * * *', this.RESET_REWARD_TYPE).start();
+
         // Run Every Hour at minute 0
         cron.schedule('0 * * * *', this.UPDATE_MASONIC_FUND_HISTORY).start();
     }
@@ -497,6 +499,23 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RESET_REWARD_TYPE]: ${error.stack}`);
+        }
+    }
+
+    RESET_REMAIN_COUNT = async () => {
+        try {
+            const rewardTypes = await RewardType.findAll(); 
+            for (let index = 0; index < rewardTypes.length; index++) {
+                const type = rewardTypes[index];
+                const remainCount = await this.redisHelper.getValue(`REWARD_REMAIN_${type.id}`);
+                console.log(remainCount);
+                if (remainCount) {
+                    await type.update({ remain_count: type.remain_count < 0 ? 0 : remainCount });
+                }
+                commonLogger(`[RESET_REMAIN_COUNT]: Reward Type ID ${type.id} remain count set to ${remainCount}`);
+            }
+        } catch (error) {
+            errLogger(`[RESET_REMAIN_COUNT]: ${error.stack}`);
         }
     }
 

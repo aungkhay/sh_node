@@ -69,6 +69,11 @@ class Controller {
 
             const { total_count, remain_count, range_min, range_max, amount_min, amount_max } = req.body;
             await type.update({ total_count, remain_count, range_min, range_max, amount_min, amount_max });
+            // Refresh Cache
+            await this.redisHelper.deleteKey('reward_types');
+            const types = await RewardType.findAll();
+            await this.redisHelper.setValue('reward_types', JSON.stringify(types));
+            await this.redisHelper.setValue(`REWARD_REMAIN_${type.id}`, remain_count);
 
             // Log
             await this.adminLogger(req, 'Reward', 'update');
