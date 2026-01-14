@@ -208,11 +208,7 @@ class Controller {
             const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
             const user = await User.findByPk(userId, {
-                include: {
-                    model: PaymentMethod,
-                    as: 'payment_method'
-                },
-                attributes: ['id', 'balance']
+                attributes: ['id', 'balance', 'relation']
             });
 
             if (parseFloat(amount) < 100) {
@@ -229,6 +225,7 @@ class Controller {
                     order_no: order_no,
                     type: withdrawBy,
                     user_id: userId,
+                    relation: user.relation,
                     amount: amount,
                     before_amount: Number(user.balance),
                     after_amount: Number(parseFloat(user.balance) - parseFloat(amount)),
