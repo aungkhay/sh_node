@@ -202,7 +202,7 @@ class Controller {
             }
             const t = await db.transaction();
             try {
-                if (reward_id == 1) {
+                if (obj.reward_id == 1) {
                     // 共济基金
                     obj.amount = amount;
                     obj.is_used = 1;
@@ -211,7 +211,7 @@ class Controller {
                     await RewardRecord.create(obj, { transaction: t });
                     await user.increment({ masonic_fund: amount }, { transaction: t });
                 }
-                if (reward_id == 2) {
+                if (obj.reward_id == 2) {
                     // 上合战略黄金持有克数
                     const now = new Date();
                     const validUntil = new Date(now);
@@ -220,7 +220,7 @@ class Controller {
                     obj.validedAt = validUntil;
                     await RewardRecord.create(obj, { transaction: t });
                 }
-                if (reward_id == 3) {
+                if (obj.reward_id == 3) {
                     // 账户余额
                     obj.amount = amount;
                     obj.is_used = 1;
@@ -229,15 +229,15 @@ class Controller {
                     await RewardRecord.create(obj, { transaction: t });
                     await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
                 }
-                if ([4,6,8].includes(reward_id)) {
+                if ([4,6,8].includes(obj.reward_id)) {
                     // 上合组织各国授权书
                     obj.amount = 100;
-                    if (reward_id == 8) {
+                    if (obj.reward_id == 8) {
                         obj.amount = amount; // 推荐奖励
                     }
                     await RewardRecord.create(obj, { transaction: t });
                 }
-                if (reward_id == 7) {
+                if (obj.reward_id == 7) {
                     // 上合战略储备黄金券
                     const now = new Date();
                     const validUntil = new Date(now);
