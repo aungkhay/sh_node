@@ -326,7 +326,7 @@ class CronJob {
                     where: {
                         type: 2, // user
                         id: { [Op.gt]: lastId },
-                        earn: { [Op.gt]: 0 }
+                        gold: { [Op.gt]: 0 }
                     },
                     attributes: ['id', 'relation', 'gold', 'gold_interest'],
                     limit: batchLimit,
