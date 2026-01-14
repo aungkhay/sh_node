@@ -2206,8 +2206,8 @@ class Controller {
 
             const data = {
                 fund: Number(user.masonic_fund),
-                total_participant: Number(totalRegister * 111) + Number(participantCount),
-                total_retreiver: Number(totalRegister * 27) + Number(ReteriverCount)
+                total_participant: Number(totalRegister * 111) + Number(participantCount) + 7300000,
+                total_retreiver: Number(totalRegister * 27) + Number(ReteriverCount) + 2650000,
             }
 
             await this.redisHelper.setValue(`masonic_fund_summary_${req.user_id}`, JSON.stringify(data), 600); // 10 minutes
