@@ -333,7 +333,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 1);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -1270,7 +1270,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            const locked = await this.redisHelper.setLock(lockKey, 1, 15);
+            const locked = await this.redisHelper.setLock(lockKey, 1, 5);
             if (locked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -1400,32 +1400,36 @@ class Controller {
             /* ===============================
             * DRAW REWARD
             * =============================== */
-            let reward = null;
-            let randomNum;
-            let attempts = 0;
-            const MAX_ATTEMPTS = 1000;
-            
-            while (!reward && attempts < MAX_ATTEMPTS) {
-                randomNum = this.getRandomInt(1, 100);
-                reward = rewardTypes.find(r => randomNum >= r.range_min && randomNum <= r.range_max);
-                attempts++;
+            if (winCount <= 2) {
+                // First 3 wins must be a win
+                rewardTypes = rewardTypes.filter(r => r.id != 5);
             }
+            let randomNum = this.getRandomInt(1, 100);;
+            let reward = rewardTypes.find(r => randomNum >= r.range_min && randomNum <= r.range_max);
 
-            if (!reward || (reward.id != 5 && reward.remain_count <= 0)) {
+            if (!reward) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '红包已领完，请等待下一个红包雨到来', {});
             }
 
+            // const remainKey = `REWARD_REMAIN_${reward.id}`;
+            // const remain = await this.redisHelper.decrementValue(remainKey);
+            // if (remain < 0) {
+            //     // Out of stock, revert back
+            //     await this.redisHelper.incrementValue(remainKey);
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '红包已领完，请等待下一个红包雨到来', {});
+            // }
+            
             /* ===============================
             * FORCE FIRST 3 WINS
             * =============================== */
             if (winCount <= 2) {
                 // Must be win if reward id is 5
-                let mastWinAttempts = 0;
-                while ((!reward && mastWinAttempts < MAX_ATTEMPTS) || reward.id == 5) {
-                    randomNum = this.getRandomInt(1, 100);
-                    reward = rewardTypes.find(r => randomNum >= r.range_min && randomNum <= r.range_max);
-                    mastWinAttempts++;
-                }
+                // let mastWinAttempts = 0;
+                // while ((!reward && mastWinAttempts < MAX_ATTEMPTS) || reward.id == 5) {
+                //     randomNum = this.getRandomInt(1, 100);
+                //     reward = rewardTypes.find(r => randomNum >= r.range_min && randomNum <= r.range_max);
+                //     mastWinAttempts++;
+                // }
             }
 
             let masonic_fund = 0;

@@ -1,4 +1,5 @@
 const { Config } = require("../models");
+const { errLogger } = require("./Logger");
 
 const prefix = process.env.REDIS_PREFIX;
 
@@ -60,6 +61,32 @@ class Helper {
             return await this.redis.del(newKey);
         } catch (error) {
             console.error('RedisHelper deleteKey error:', error);
+        }
+    }
+
+    decrementValue = async (key) => {
+        try {
+            var newKey = key;
+            if (prefix) {
+                newKey = `${prefix}_${key}`;
+            }
+            return await this.redis.decr(newKey);
+        }
+        catch (error) {
+            errLogger('RedisHelper decrementValue error:', error);
+        }
+    }
+
+    incrementValue = async (key) => {
+        try {
+            var newKey = key;
+            if (prefix) {
+                newKey = `${prefix}_${key}`;
+            }
+            return await this.redis.incr(newKey);
+        }
+        catch (error) {
+            errLogger('RedisHelper incrementValue error:', error);
         }
     }
 
