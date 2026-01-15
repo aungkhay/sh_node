@@ -1400,14 +1400,6 @@ class Controller {
                 });
             }
 
-            // delete condition.createdAt;
-
-            // const activeCount = await User.count({
-            //     where: {
-            //         isActive: 1,
-            //         ... condition
-            //     }
-            // });
             let activeCount = loginCount;
             if (startTime && endTime) {
                 activeCount = await User.count({
@@ -1435,16 +1427,14 @@ class Controller {
             const total_team_deposit = await Deposit.sum('amount', {
                 where: {
                     status: 1,
-                    relation: { [Op.like]: `${user.relation}/%` },
-                    createdAt: { [Op.between]: [startTime, endTime] }
+                    ... condition
                 }
             }) || 0;
 
             const total_team_withdraw = await Withdraw.sum('amount', {
                 where: {
                     status: 1,
-                    relation: { [Op.like]: `${user.relation}/%` },
-                    createdAt: { [Op.between]: [startTime, endTime] }
+                    ... condition
                 }
             }) || 0;
 
