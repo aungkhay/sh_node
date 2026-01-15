@@ -1373,11 +1373,6 @@ class Controller {
                 });
             }
 
-            let rawQuery = '';
-            if(startTime && endTime) {
-                rawQuery = 'AND createdAt BETWEEN "'.concat(startTime).concat('" AND "').concat(endTime).concat('"');
-            }
-
             let signCount = 0;
             if (startTime && endTime) {
                 const signGroup = await RewardRecord.count({
@@ -1405,34 +1400,51 @@ class Controller {
                 });
             }
 
-            delete condition.createdAt;
+            // delete condition.createdAt;
 
-            const activeCount = await User.count({
-                where: {
-                    isActive: 1,
-                    ... condition
-                }
-            });
+            // const activeCount = await User.count({
+            //     where: {
+            //         isActive: 1,
+            //         ... condition
+            //     }
+            // });
+            let activeCount = loginCount;
+            if (startTime && endTime) {
+                activeCount = await User.count({
+                    where: {
+                        isActive: 1,
+                        relation: { [Op.like]: `${user.relation}/%` },
+                    }
+                });
+            }
 
             const total_personal_deposit = await Deposit.sum('amount', {
-                where: { user_id: user.id, status: 1 }
+                where: { 
+                    user_id: user.id, status: 1,
+                    ... condition
+                }
             }) || 0;
 
             const total_persional_withdraw = await Withdraw.sum('amount', {
-                where: { user_id: user.id, status: 1 }
+                where: { 
+                    user_id: user.id, status: 1,
+                    ... condition
+                }
             }) || 0;
 
             const total_team_deposit = await Deposit.sum('amount', {
                 where: {
                     status: 1,
-                    relation: { [Op.like]: `${user.relation}/%` }
+                    relation: { [Op.like]: `${user.relation}/%` },
+                    createdAt: { [Op.between]: [startTime, endTime] }
                 }
             }) || 0;
 
             const total_team_withdraw = await Withdraw.sum('amount', {
                 where: {
                     status: 1,
-                    relation: { [Op.like]: `${user.relation}/%` }
+                    relation: { [Op.like]: `${user.relation}/%` },
+                    createdAt: { [Op.between]: [startTime, endTime] }
                 }
             }) || 0;
 
