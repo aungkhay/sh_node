@@ -307,13 +307,14 @@ class Controller {
                 if(phoneNumbers.length === 0) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件内容不能为空', {});
                 }
-                    
+
+                const numbers = phoneNumbers.map(n => n['手机号']);
                 const t = await db.transaction();
                 try {
 
                     const users = await User.findAll({
                         where: {
-                            phone_number: { [Op.in]: phoneNumbers }
+                            phone_number: { [Op.in]: numbers }
                         },
                         attributes: ['id']
                     });
