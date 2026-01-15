@@ -308,13 +308,11 @@ class Controller {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件内容不能为空', {});
                 }
 
-                const numbers = phoneNumbers.map(n => n['手机号']);
                 const t = await db.transaction();
                 try {
-
                     const users = await User.findAll({
                         where: {
-                            phone_number: { [Op.in]: numbers }
+                            phone_number: { [Op.in]: phoneNumbers }
                         },
                         attributes: ['id']
                     });
@@ -325,6 +323,7 @@ class Controller {
                                 user_id: user.id,
                                 status: 'PENDING'
                             },
+                            attributes: ['id', 'amount'],
                             transaction: t
                         });
                         if (!fund) {
@@ -335,6 +334,7 @@ class Controller {
                             transaction: t
                         });
                         await user.increment({ balance: Number(fund.amount), masonic_fund: -Number(fund.amount) }, { transaction: t });
+                        await fund.update({ status: 'APPROVED' }, { transaction: t });
                     }
 
                     await t.commit();
