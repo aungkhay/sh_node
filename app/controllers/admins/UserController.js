@@ -1615,7 +1615,7 @@ class Controller {
     EXPORT_CHILD_REGISTER_LIST = async (req, res) => {
         try {
             const phone = req.query.phone || '';
-            const level = parseInt(req.query.level || 3); // 0 means all levels
+            const level = parseInt(req.query.level || 0); // 0 means all levels
 
             const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {

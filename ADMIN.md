@@ -875,7 +875,8 @@ const params = {
 // [GET] 导出下级注册
 const url = `${baseURL}/users/export-child-register-list`;
 const params = {
-    phone: ''
+    phone: '',
+    level: 0, // 0 means all levels [1,2,3]
 }
 
 // [POST] 上下分
