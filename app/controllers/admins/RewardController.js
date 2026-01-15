@@ -123,6 +123,7 @@ class Controller {
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
             const userId = req.user_id;
+            const rewardId = req.query.rewardId;
             const isUsed = req.query.isUsed || -1;
             const isBackgroundAdded = req.query.isBackgroundAdded || -1;
 
@@ -145,6 +146,9 @@ class Controller {
             }
             if (isBackgroundAdded != -1) {
                 condition.is_background_added = isBackgroundAdded;
+            }
+            if (rewardId) {
+                condition.reward_id = rewardId;
             }
 
             const { rows, count } = await RewardRecord.findAndCountAll({

@@ -3084,7 +3084,7 @@ class Controller {
         }
     }
 
-    REWARD_HISTORY = async (req, res) => {
+    REWARD_HISTORY_OLD = async (req, res) => {
         try {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
@@ -3137,6 +3137,68 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    REWARD_HISTORY = async (req, res) => {
+        try {
+            /* ===============================
+            * PARAMS
+            * =============================== */
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            /* ===============================
+            * LIST QUERY (WITH JOIN)
+            * =============================== */
+            const rows = await RewardRecord.findAll({
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'is_used', 'validedAt', 'createdAt'],
+                include: [
+                    {
+                        model: RewardType,
+                        as: 'reward_type',
+                        attributes: ['id', 'title']
+                    }
+                ],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset
+            });
+
+            const formattedRows = rows.map(r => ({
+                id: r.id,
+                reward_type: r.reward_type,
+                amount: Number(r.amount),
+                is_used: r.is_used,
+                validedAt: r.validedAt,
+                createdAt: r.createdAt
+            }));
+
+            /* ===============================
+            * COUNT QUERY (NO JOIN)
+            * =============================== */
+            const total = await RewardRecord.count({
+                where: { user_id: userId }
+            });
+
+            const data = {
+                records: formattedRows,
+                meta: {
+                    page,
+                    perPage,
+                    total,
+                    totalPage: Math.ceil(total / perPage)
+                }
+            };
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+        } catch (error) {
+            console.error('[REWARD_HISTORY]', error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
