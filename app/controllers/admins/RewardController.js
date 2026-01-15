@@ -240,6 +240,9 @@ class Controller {
                     if (obj.reward_id == 8) {
                         obj.amount = amount; // 推荐奖励
                     }
+                    if (obj.reward_id == 6) {
+                        await user.update({ have_reward_6: 1 }, { transaction: t });
+                    }
                     await RewardRecord.create(obj, { transaction: t });
                 }
                 if (obj.reward_id == 7) {
