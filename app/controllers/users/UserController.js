@@ -792,7 +792,7 @@ class Controller {
         }
     }
 
-    TEAM = async (req, res) => {
+    TEAM_OLD = async (req, res) => {
         try {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
@@ -947,6 +947,172 @@ class Controller {
                     perPage: perPage,
                     totalPage: count > 0 ? Math.ceil(count / perPage) : count,
                     total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[TEAM]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TEAM = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const level = parseInt(req.query.level || 0); // 0 => all
+            const userId = req.user_id;
+
+            const removeBeforeAndValue = arr => {
+                const index = arr.indexOf(String(userId));
+                return index >= 0 ? arr.slice(index + 1) : [];
+            };
+
+            let data = {
+                users: [],
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: 0,
+                    total: 0
+                }
+            }
+            
+            let userIds = [];
+            const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+            if(level > 0) {
+                const users = await User.findAll({
+                    where: {
+                        relation: { [Op.like]: `${me.relation}/%` }
+                    },
+                    attributes: ['id', 'relation']
+                });
+                
+                for (let i = 0; i < users.length; i++) {
+                    const u = users[i];
+                    const relation = u.relation.split('/');
+                    if(relation.length > 0) {
+                        const newRel = relation.slice(1);
+                        const arr = removeBeforeAndValue(newRel);
+                        if(arr.length == level) {
+                            userIds.push(u.id);
+                        }
+                    }
+                }
+            }
+
+            let conditions = {
+                relation: { [Op.like]: `${me.relation}/%` }
+            }
+            
+            if(level > 0 && userIds.length == 0) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+            } else if(userIds.length > 0) {
+                conditions.id = {
+                    [Op.in]: userIds
+                }
+            }
+
+            const total = await User.count({ where: conditions });
+            const rows = await User.findAll({
+                include: {
+                    model: Rank,
+                    as: 'rank',
+                    attributes: ['name']
+                },
+                where: conditions,
+                attributes: [
+                    'id', 'name',
+                    [
+                        Sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM users AS tc
+                            WHERE tc.parent_id = User.id
+                            AND tc.deletedAt IS NULL
+                        )`),
+                        'team_count'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM users AS ttc
+                            WHERE ttc.relation LIKE CONCAT('%/', User.id, '%')
+                            AND ttc.id <> User.id
+                            AND ttc.deletedAt IS NULL
+                        )`),
+                        'total_team_count'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM deposits AS pd
+                            WHERE pd.user_id = User.id
+                            AND pd.status = 1
+                            AND pd.deletedAt IS NULL
+                        )`),
+                        'personal_deposit'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM withdraws AS pw
+                            WHERE pw.user_id = User.id
+                            AND pw.status = 1
+                            AND pw.deletedAt IS NULL
+                        )`),
+                        'personal_withdraw'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM deposits AS gd
+                            WHERE gd.relation LIKE CONCAT('%/', User.id, '%')
+                            AND gd.status = 1
+                            AND gd.deletedAt IS NULL
+                        )`),
+                        'group_deposit'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM withdraws AS gw
+                            WHERE gw.relation LIKE CONCAT('%/', User.id, '%')
+                            AND gw.status = 1
+                            AND gw.deletedAt IS NULL
+                        )`),
+                        'group_withdraw'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(gold_count), 0)
+                            FROM user_gold_prices AS pp
+                            WHERE pp.user_id = User.id
+                        )`),
+                        'personal_gold_count'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(gold_count), 0)
+                            FROM user_gold_prices AS gp
+                            WHERE gp.relation LIKE CONCAT('%/', User.id, '%')
+                        )`),
+                        'group_gold_count'
+                    ],
+                ],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            data = {
+                users: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    total: total,
+                    totalPage: Math.ceil(total / perPage)
                 }
             }
 
