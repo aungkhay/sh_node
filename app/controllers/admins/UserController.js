@@ -5,7 +5,7 @@ const RedisHelper = require('../../helpers/RedisHelper');
 const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
-const { Op, fn, col } = require('sequelize');
+const { Op, fn, col, Sequelize } = require('sequelize');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const multer = require('multer');
@@ -1330,7 +1330,6 @@ class Controller {
                     [Op.between]: [startTime, endTime]
                 }
             }
-            console.log(startTime,endTime)
 
             const registerCount = await User.count({ 
                 where: {
@@ -1347,26 +1346,64 @@ class Controller {
                 } 
             });
 
-            const loginCount = await UserLog.count({
-                where: {
-                    user_id : { [Op.ne]: user.id },
-                    ...condition
-                },
-                group: [fn('DATE', col('createdAt'))]
-            });
+            let loginCount = 0;
+            if (startTime && endTime) {
+                const loginGroup = await UserLog.count({
+                    where: {
+                        user_id : { [Op.ne]: user.id },
+                        ...condition
+                    },
+                    attributes: [
+                        [fn('DATE', col('createdAt')), 'login_date'],
+                        [fn('COUNT', fn('DISTINCT', col('user_id'))), 'login_count']
+                    ],
+                    group: [fn('DATE', col('createdAt'))]
+                });
+                for (const item of loginGroup) {
+                    loginCount += Number(item.login_count);
+                }
+            } else {
+                loginCount = await UserLog.count({ 
+                    where: { 
+                        user_id : { [Op.ne]: user.id },
+                        ... condition
+                    },
+                    distinct: true,
+                    col: 'user_id'
+                });
+            }
 
             let rawQuery = '';
             if(startTime && endTime) {
                 rawQuery = 'AND createdAt BETWEEN "'.concat(startTime).concat('" AND "').concat(endTime).concat('"');
             }
 
-            const [result] = await db.query(`
-                SELECT COUNT(DISTINCT DATE(createdAt)) AS totalCount
-                FROM reward_records
-                WHERE user_id != ${user.id}
-                AND relation LIKE '${user.relation}/%'
-                ${rawQuery}
-            `);
+            let signCount = 0;
+            if (startTime && endTime) {
+                const signGroup = await RewardRecord.count({
+                    where: {
+                        user_id : { [Op.ne]: user.id },
+                        ...condition
+                    },
+                    attributes: [
+                        [fn('DATE', col('createdAt')), 'sign_date'],
+                        [fn('COUNT', fn('DISTINCT', col('user_id'))), 'sign_count']
+                    ],
+                    group: [fn('DATE', col('createdAt'))]
+                });
+                for (const item of signGroup) {
+                    signCount += Number(item.sign_count);
+                }
+            } else {
+                signCount = await RewardRecord.count({ 
+                    where: { 
+                        user_id : { [Op.ne]: user.id },
+                        ... condition
+                    },
+                    distinct: true,
+                    col: 'user_id'
+                });
+            }
 
             delete condition.createdAt;
 
@@ -1402,9 +1439,9 @@ class Controller {
             const data = {
                 total_register: parseInt(registerCount || 0),
                 total_verified_kyc: parseInt(kycCount || 0),
-                total_logged_in: parseInt(loginCount.length || 0),
+                total_logged_in: parseInt(loginCount || 0),
                 total_actived: parseInt(activeCount || 0),
-                total_sign: parseInt(result.length > 0 ? result[0].totalCount : 0),
+                total_sign: parseInt(signCount || 0),
                 total_personal_deposit: parseFloat(total_personal_deposit),
                 total_persional_withdraw: parseFloat(total_persional_withdraw),
                 total_team_deposit: parseFloat(total_team_deposit),

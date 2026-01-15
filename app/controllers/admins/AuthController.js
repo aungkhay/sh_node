@@ -130,8 +130,7 @@ class Controller {
             const token = encrypt(tokenPrefix + toEncrypt + tokenSuffix, TOKEN_KEY, TOKEN_IV);
             await this.redisHelper.setValue(`admin_token_${user.id}_${user.login_count + 1}`, token, 24 * 60 * 60);
             await this.redisHelper.deleteKey(uuid);
-            await user.update({ login_count: user.login_count + 1 });
-
+            await user.update({ login_count: user.login_count + 1, last_login_at: new Date() });
             // Log
             await this.adminLogger(req, 'User', 'login');
 
