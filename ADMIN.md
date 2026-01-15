@@ -372,6 +372,21 @@ const url = `${baseURL}/masonic-fund-history/${id}/update-status`;
 const data = {
     status: 'APPROVED' // DENIED
 }
+
+// [POST] Approved by excel
+const url = `${baseURL}/masonic-fund-history/approve-by-excel`;
+const formData = new FormData();
+formData.append('file', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
 ```
 ### News
 ``` js

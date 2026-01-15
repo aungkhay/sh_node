@@ -107,7 +107,7 @@ class Controller {
                 const sheet = workbook.Sheets[sheetName];
 
                 const excelData = XLSX.utils.sheet_to_json(sheet);
-                console.log(excelData);
+                // console.log(excelData);
                 const phoneNumbers = excelData
                     .map(r => String(r['手机号']).trim())
                     .filter(Boolean);
@@ -267,6 +267,86 @@ class Controller {
                 return MyResponse(res, this.ResCode.DB_ERROR.code, true, error.message || '操作失败', {});
             }
         } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    UPDATE_FUND_STATUS_BY_EXCEL = async (req, res) => {
+        try {
+            req.uploadDir = `./uploads/excels`;
+
+            const upload = require('../../middlewares/UploadExcel');
+            upload(req, res, async (err) => {
+                if (err instanceof multer.MulterError) {
+                    if (err.code == 'LIMIT_FILE_SIZE') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件过大', { allow_size: '50MB' });
+                    }
+                    if (err.code == 'ENOENT') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, 'ENOENT', {});
+                    }
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, err.message, {});
+                } else if (err) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '上传失败', {});
+                }
+
+                if (req.file == null) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请选文件', {});
+                }
+
+                const filePath = req.file.path;
+                const workbook = XLSX.readFile(filePath);
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+
+                const excelData = XLSX.utils.sheet_to_json(sheet);
+                // console.log(excelData);
+                const phoneNumbers = excelData
+                    .map(r => String(r['手机号']).trim())
+                    .filter(Boolean);
+
+                if(phoneNumbers.length === 0) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件内容不能为空', {});
+                }
+                    
+                const t = await db.transaction();
+                try {
+
+                    const users = await User.findAll({
+                        where: {
+                            phone_number: { [Op.in]: phoneNumbers }
+                        },
+                        attributes: ['id']
+                    });
+
+                    for(let user of users) {
+                        const fund = await MasonicFundHistory.findOne({
+                            where: {
+                                user_id: user.id,
+                                status: 'PENDING'
+                            },
+                            transaction: t
+                        });
+                        if (!fund) {
+                            continue;
+                        }
+                        await RewardRecord.update({ is_used: 1 }, {
+                            where: { user_id: user.id, reward_id: 6, is_used: 0 },
+                            transaction: t
+                        });
+                        await user.increment({ balance: Number(fund.amount), masonic_fund: -Number(fund.amount) }, { transaction: t });
+                    }
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[UPDATE_FUND_STATUS_BY_EXCEL]: ${error.stack}`);
+                    await t.rollback();
+                    return MyResponse(res, this.ResCode.DB_ERROR.code, true, error.message || '操作失败', {});
+                }
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '上传成功', {});
+            });
+        } catch (error) {
+            errLogger(`[UPDATE_FUND_STATUS_BY_EXCEL]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

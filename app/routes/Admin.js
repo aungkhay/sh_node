@@ -73,6 +73,7 @@ class AdminRoute extends express.Router {
         this.post('/masonic-fund/substract', middleware.isLoggedIn('masonic-fund-import-deduction'), MasonicCtrl.SUBSTRACT_MASONIC_FUND);
         this.get('/masonic-fund/temp-history', middleware.isLoggedIn('masonic-fund-user-not-register-list'), MasonicCtrl.TEMP_HISTORY);
         this.post('/masonic-fund-history/:id/update-status', FormValidator.update_masonic_fund_status(), middleware.isLoggedIn('masonic-fund-approve,masonic-fund-reject'), MasonicCtrl.UPDATE_FUND_STATUS);
+        this.post('/masonic-fund-history/approve-by-excel', middleware.isLoggedIn('masonic-fund-approve'), MasonicCtrl.UPDATE_FUND_STATUS_BY_EXCEL);
 
         let NewsController = require('../controllers/admins/NewsController');
         let NewsCtrl = new NewsController();
