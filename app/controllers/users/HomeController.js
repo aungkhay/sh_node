@@ -1392,6 +1392,10 @@ class Controller {
 
     GET_WELCOME_MESSAGE = async (req, res) => {
         try {
+            const cachedMessage = await this.redisHelper.getValue(`WELCOME_MESSAGE_${req.user_id}`);
+            if (cachedMessage) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cachedMessage));
+            }
             const user = await User.findByPk(req.user_id, { attributes: ['name', 'rank_id'] });
             const now = new Date();
             const hour = now.getHours();
@@ -1423,6 +1427,8 @@ class Controller {
                 message: currentRank.welcome_message,
                 next_rank_level: nextRank ? nextRank.name : '已达到最高军衔'
             }
+
+            await this.redisHelper.setValue(`WELCOME_MESSAGE_${req.user_id}`, JSON.stringify(obj), 180); // cache for 3 minute
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', obj);
         } catch (error) {
