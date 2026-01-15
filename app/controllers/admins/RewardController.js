@@ -190,15 +190,22 @@ class Controller {
             if (!err.isEmpty()) {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
-            const { user_id, reward_id, amount } = req.body;
-            const user = await User.findByPk(user_id, { attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund'] });
-            if (!user) {
-                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
-            }
+            const { user_id, is_all_user, reward_id, amount } = req.body;
             const rewardType = await RewardType.findByPk(reward_id, { attributes: ['id', 'title'] });
             if (!rewardType) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到奖励类型', {});
             }
+            if (is_all_user && Number(is_all_user) == 1) {
+                const obj = { reward_id: Number(reward_id), amount: Number(amount) }
+                await this.redisHelper.setValue('RELEASE_REWARD_TO_ALL_USERS', JSON.stringify(obj));
+                // Cron job will do this at 20th minute of every hour
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '已设置为批量发放奖励任务，系统每20分钟自动处理', {});
+            }
+            const user = await User.findByPk(user_id, { attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund'] });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
+            }
+
             const obj = {
                 user_id: user.id,
                 relation: user.relation,

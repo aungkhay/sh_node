@@ -563,7 +563,8 @@ const params = {
 // [POST] Add Reward
 const url = `${baseURL}/rewards/add-reward`;
 const data = {
-    user_id: 34,
+    user_id: 34, // opitonal
+    is_all_user: 0, // optional but priority
     reward_id: 8,
     amount: 1000
 }

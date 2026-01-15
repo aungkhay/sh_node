@@ -231,7 +231,16 @@ exports.create_referral_reward_setting = () => {
 
 exports.add_reward_record = () => {
     return [
-        check('user_id', { msg: '用户ID不能为空' }).not().isEmpty(),
+        // user_id is optional
+        check('user_id')
+            .optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('用户ID必须是数字'),
+        // is_all_user is optional
+        check('is_all_user')
+            .optional({ checkFalsy: true })
+            .isIn([0, 1])
+            .withMessage('是否所有用户值无效'),
         check('reward_id', { msg: '奖励类型ID不能为空' }).not().isEmpty()
             .bail()
             .isIn([1,2,3,4,6,7,8])

@@ -33,6 +33,7 @@ class CronJob {
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run 10th minute of every hour
         cron.schedule('10 * * * *', this.RESET_REMAIN_COUNT).start();
+        cron.schedule('10 * * * *', this.RELEASE_REWARD_TO_ALL_USERS).start();
         // Run Every Hour at minute 0
         cron.schedule('0 * * * *', this.UPDATE_MASONIC_FUND_HISTORY).start();
     }
@@ -541,6 +542,7 @@ class CronJob {
         }
     }
 
+    // Not Cron Job, just a one-time function to delete over-claimed rewards
     DELETE_OVER_CLAIM_REWARD = async () => {
         try {
             const dates = ['2026-01-10', '2026-01-11', '2026-01-12', '2026-01-13'];
@@ -606,6 +608,109 @@ class CronJob {
         } catch (error) {
             console.log(error);
             errLogger(`[DELETE_OVER_CLAIM_REWARDS]: ${error.stack}`);
+        }
+    }
+
+    RELEASE_REWARD_TO_ALL_USERS = async () => {
+        try {
+            let reward = await this.redisHelper.getValue('RELEASE_REWARD_TO_ALL_USERS');
+            if (!reward) {
+                return;
+            }
+            reward = JSON.parse(reward); // { reward_id: x, amount: y }
+            const amount = Number(reward.amount);
+            if (isNaN(amount) || amount <= 0) {
+                return;
+            }
+            const rewardId = Number(reward.reward_id);
+            if (isNaN(rewardId) || ![1,2,3,4,6,7,8].includes(rewardId)) {
+                return;
+            }
+
+            const users = await User.findAll({
+                where: { type: 2 },
+                attributes: ['id', 'relation', 'have_reward_6', 'balance', 'masonic_fund']
+            });
+
+            // chunk size 100
+            const chunkSize = 100;
+            for (let i = 0; i < users.length; i += chunkSize) {
+                const chunk = users.slice(i, i + chunkSize);
+                const t = await db.transaction();
+                try {
+
+                    const rewards = [];
+                    for (let user of chunk) {
+                        const obj = {
+                            user_id: user.id,
+                            relation: user.relation,
+                            reward_id: reward.reward_id,
+                            is_background_added: 1,
+                        }
+
+                        if (obj.reward_id == 1) {
+                            // 共济基金
+                            obj.amount = amount;
+                            obj.is_used = 1;
+                            obj.before_amount = user.masonic_fund;
+                            obj.after_amount = Number(user.masonic_fund) + Number(amount);
+                            await RewardRecord.create(obj, { transaction: t });
+                            rewards.push(obj);
+                            await user.increment({ masonic_fund: amount }, { transaction: t });
+                        }
+                        if (obj.reward_id == 2) {
+                            // 上合战略黄金持有克数
+                            const now = new Date();
+                            const validUntil = new Date(now);
+                            validUntil.setMonth(validUntil.getMonth() + 3);
+                            obj.amount = amount;
+                            obj.validedAt = validUntil;
+                            rewards.push(obj);
+                        }
+                        if (obj.reward_id == 3) {
+                            // 账户余额
+                            obj.amount = amount;
+                            obj.is_used = 1;
+                            obj.before_amount = user.balance;   
+                            obj.after_amount = Number(user.balance) + Number(amount);
+                            rewards.push(obj);
+                            await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
+                        }
+                        if ([4,6,8].includes(obj.reward_id)) {
+                            // 上合组织各国授权书
+                            obj.amount = 100;
+                            if (obj.reward_id == 8) {
+                                obj.amount = amount; // 推荐奖励
+                            }
+                            if (obj.reward_id == 6) {
+                                await user.update({ have_reward_6: 1 }, { transaction: t });
+                            }
+                            rewards.push(obj);
+                        }
+                        if (obj.reward_id == 7) {
+                            // 上合战略储备黄金券
+                            const now = new Date();
+                            const validUntil = new Date(now);
+                            validUntil.setMonth(validUntil.getMonth() + 3);
+                            obj.amount = amount;
+                            obj.validedAt = validUntil;
+                            rewards.push(obj);
+                        }
+                    }
+                    if (rewards.length > 0) {
+                        await RewardRecord.bulkCreate(rewards, { transaction: t });
+                    }
+
+                    await t.commit();
+
+                    commonLogger(`[RELEASE_REWARD_TO_ALL_USERS][TRANSACTION]: Processed rewards from user ID ${chunk[0].id} to ${chunk[chunk.length -1].id}`);
+                } catch (error) {
+                    errLogger(`[RELEASE_REWARD_TO_ALL_USERS][TRANSACTION]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[RELEASE_REWARD_TO_ALL_USERS]: ${error.stack}`);
         }
     }
 }
