@@ -1616,6 +1616,7 @@ class Controller {
         try {
             const phone = req.query.phone || '';
             const level = parseInt(req.query.level || 0); // 0 means all levels
+            const isKycVerified = req.query.isKycVerified; // '1' => verified, '0' => unverified, others => all
 
             const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {
@@ -1623,19 +1624,22 @@ class Controller {
             }
 
             let levelIds = [];
+            let level1IdArr = [];
+            let level2IdArr = [];
+            let level3IdArr = [];
             if (level > 0) {
                 const level1Ids = await User.findAll({ where: { parent_id: user.id }, attributes: ['id'] });
-                const level1IdArr = level1Ids.map(u => u.id);
+                level1IdArr = level1Ids.map(u => u.id);
                 // console.log('Level 1', level1IdArr);
                 levelIds = level1IdArr;
                 if (level > 1) {
                     const level2Ids = await User.findAll({ where: { parent_id: { [Op.in]: level1IdArr } }, attributes: ['id'] });
-                    const level2IdArr = level2Ids.map(u => u.id);
+                    level2IdArr = level2Ids.map(u => u.id);
                     // console.log('Level 2', level2IdArr);
                     levelIds = levelIds.concat(level2IdArr);
                     if (level > 2) {
                         const level3Ids = await User.findAll({ where: { parent_id: { [Op.in]: level2IdArr } }, attributes: ['id'] });
-                        const level3IdArr = level3Ids.map(u => u.id);
+                        level3IdArr = level3Ids.map(u => u.id);
                         // console.log('Level 3', level3IdArr);
                         levelIds = levelIds.concat(level3IdArr);
                     }
@@ -1662,7 +1666,12 @@ class Controller {
                 order: [['id', 'ASC']],
             });
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', users);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', {
+                users,
+                level1Ids: level1IdArr,
+                level2Ids: level2IdArr,
+                level3Ids: level3IdArr
+            });
 
         } catch (error) {
             errLogger(`[User][EXPORT_CHILD_REGISTER_LIST]: ${error.stack}`);

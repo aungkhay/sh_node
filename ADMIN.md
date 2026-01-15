@@ -877,6 +877,7 @@ const url = `${baseURL}/users/export-child-register-list`;
 const params = {
     phone: '',
     level: 0, // 0 means all levels [1,2,3]
+    isKycVerified: 0, // '1' => verified, '0' => unverified
 }
 
 // [POST] 上下分
