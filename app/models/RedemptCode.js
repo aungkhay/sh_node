@@ -31,6 +31,10 @@ RedemptCode.init({
         },
         allowNull: false,    
     },
+    relation: {
+        type: DataTypes.STRING(333),
+        allowNull: true,
+    },
     amount: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,
@@ -57,6 +61,13 @@ RedemptCode.init({
     modelName: 'RedemptCode',
     tableName: 'redempt_codes',
     timestamps: true,
+    indexes: [
+        {
+            name: 'idx_relation',
+            fields: ['relation'],
+            using: 'BTREE',
+        }
+    ]
 });
 
 module.exports = RedemptCode;

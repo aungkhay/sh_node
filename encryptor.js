@@ -14,10 +14,10 @@ const startEncrypt = () => {
     });
 
     const loginData = JSON.stringify({
-        phone: "13914725801",
-        password: "admin1@123",
-        uuid: "5ef542aa-fcd0-4ed6-b7cc-f49d8a1d58f4",
-        verification_code: "58747"
+        phone: "13914725802",
+        password: "admin2@123",
+        uuid: "c73561e0-9f77-43e6-9cba-7d965dfc19db",
+        verification_code: "12735"
     });
 
     const kyc = JSON.stringify({
@@ -179,7 +179,7 @@ const startEncrypt = () => {
         amount: 111
     });
     const deleteMultitpleRewards = JSON.stringify({ ids: [114011,114010] });
-    const encrypted = encrypt(addReward, API_KEY, API_IV);
+    const encrypted = encrypt(loginData, API_KEY, API_IV);
     console.log(encrypted);
 }
 
