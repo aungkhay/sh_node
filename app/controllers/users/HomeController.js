@@ -409,80 +409,6 @@ class Controller {
     }
 
     GET_NEWS_OLD = async (req, res) => {
-        try {
-            const page = parseInt(req.query.page || 1);
-            const perPage = parseInt(req.query.perPage || 10);
-            const offset = this.getOffset(page, perPage);
-            const type = req.query.type;
-
-            let conditions = {
-                status: 'APPROVED',
-                contain_sensitive_word: 0,
-                reported_count: 0
-            };
-            if (type) {
-                conditions.type = type;
-            } else {
-                conditions.type = { [Op.in]: [2, 3] };
-            }
-
-            const attributes = ['id', 'title', 'subtitle', 'file_url', 'liked_count', 'createdAt'];
-            if (type == 1) {
-                attributes.push([
-                    Sequelize.literal(`
-                        EXISTS (
-                            SELECT 1 
-                            FROM news_likes nl
-                            WHERE nl.news_id = News.id 
-                            AND nl.user_id = ${req.user_id}
-                        )
-                    `),
-                    'is_liked'
-                ]);
-            }
-
-            const { rows, count } = await News.findAndCountAll({
-                where: conditions,
-                attributes: attributes,
-                order: [['id', 'DESC']],
-                limit: perPage,
-                offset: offset
-            });
-
-            const newsList = rows.map((news) => {
-                let is_liked = 0;
-                if (type == 1) {
-                    is_liked = news.getDataValue('is_liked') ? 1 : 0;
-                }
-                return {
-                    id: news.id,
-                    title: news.title,
-                    subtitle: news.subtitle,
-                    file_url: news.file_url,
-                    liked_count: news.liked_count,
-                    is_liked: is_liked,
-                    createdAt: news.createdAt
-                }
-            });
-
-            const data = {
-                news: newsList,
-                meta: {
-                    page: page,
-                    perPage: perPage,
-                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
-                    total: count
-                }
-            }
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
-        } catch (error) {
-            console.log(error);
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-        }
-    }
-
-    GET_NEWS = async (req, res) => {
         const lockKey = `lock:get_news:${req.user_id}`;
         let redisLocked = false;
 
@@ -562,6 +488,93 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GET_NEWS = async (req, res) => {
+        try {
+            /* ===============================
+            * PARAMS
+            * =============================== */
+            const page = req.query.page || 1
+            const perPage = req.query.perPage || 30;
+            const offset = this.getOffset(page, perPage);
+            const type = Number(req.query.type || 0);
+
+            /* ===============================
+            * CACHE
+            * =============================== */
+            const cacheKey = `news:${page}:${perPage}:${offset}:${type}`;
+            const cached = await this.redisHelper.getValue(cacheKey);
+            if (cached) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cached));
+            }
+
+            /* ===============================
+            * WHERE CONDITIONS
+            * =============================== */
+            const where = {
+                status: 'APPROVED',
+                contain_sensitive_word: 0,
+                type: type ? type : { [Op.in]: [2, 3] }
+            };
+
+            /* ===============================
+            * LIST QUERY
+            * =============================== */
+            const rows = await News.findAll({
+                where,
+                attributes: [
+                    'id',
+                    'title',
+                    'subtitle',
+                    'file_url',
+                    'liked_count',
+                    'createdAt',
+                    [
+                        Sequelize.literal(`EXISTS (
+                            SELECT 1
+                            FROM news_likes nl
+                            WHERE nl.news_id = News.id
+                            AND nl.user_id = :userId
+                        )`),
+                        'is_liked'
+                    ]
+                ],
+                replacements: {
+                    userId: req.user_id
+                },
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset
+            });
+
+            /* ===============================
+            * COUNT QUERY (NO SUBQUERY)
+            * =============================== */
+            const total = await News.count({ where });
+
+            const data = {
+                news: rows,
+                meta: {
+                    page,
+                    perPage,
+                    total,
+                    totalPage: Math.ceil(total / perPage)
+                }
+            };
+
+            /* ===============================
+            * CACHE TTL
+            * =============================== */
+            const ttl = type === 1 ? 60 : 300; // hot news shorter cache
+            await this.redisHelper.setValue(cacheKey, JSON.stringify(data), ttl);
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+        } catch (error) {
+            console.error('[GET_NEWS]', error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
