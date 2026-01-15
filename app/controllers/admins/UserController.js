@@ -1615,16 +1615,41 @@ class Controller {
     EXPORT_CHILD_REGISTER_LIST = async (req, res) => {
         try {
             const phone = req.query.phone || '';
+            const level = parseInt(req.query.level || 3); // 0 means all levels
 
             const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
+            let levelIds = [];
+            if (level > 0) {
+                const level1Ids = await User.findAll({ where: { parent_id: user.id }, attributes: ['id'] });
+                const level1IdArr = level1Ids.map(u => u.id);
+                // console.log('Level 1', level1IdArr);
+                levelIds = level1IdArr;
+                if (level > 1) {
+                    const level2Ids = await User.findAll({ where: { parent_id: { [Op.in]: level1IdArr } }, attributes: ['id'] });
+                    const level2IdArr = level2Ids.map(u => u.id);
+                    // console.log('Level 2', level2IdArr);
+                    levelIds = levelIds.concat(level2IdArr);
+                    if (level > 2) {
+                        const level3Ids = await User.findAll({ where: { parent_id: { [Op.in]: level2IdArr } }, attributes: ['id'] });
+                        const level3IdArr = level3Ids.map(u => u.id);
+                        // console.log('Level 3', level3IdArr);
+                        levelIds = levelIds.concat(level3IdArr);
+                    }
+                }   
+            }
+            console.log(`Exporting level ${level} users, total ${levelIds.length} users`);
+
             const condition = {
                 relation: {
                     [Op.like]: `${user.relation}/%`
-                }
+                },
+            }
+            if (levelIds.length > 0) {
+                condition.id = { [Op.in]: levelIds };
             }
             const users = await User.findAll({
                 include: {
