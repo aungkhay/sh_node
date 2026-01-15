@@ -104,7 +104,7 @@ class Controller {
             const viewInferior = req.query.viewInferior || 0;
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
-            const status = req.query.status;
+            const status = req.query.status || -1;
             const userId = req.user_id;
             const isInternalAccount = req.query.isInternalAccount || 0;
 
@@ -118,8 +118,8 @@ class Controller {
                     [Op.between]: [startTime, endTime]
                 }
             }
-            if (status >= 0) {
-                condition.status = status;
+            if (Number(status) >= 0) {
+                condition.status = Number(status);
             }
 
             let userCondition = {}
@@ -135,8 +135,8 @@ class Controller {
                     }
                 }
             }
-            if (isInternalAccount > 0) {
-                userCondition.is_internal_account = isInternalAccount;
+            if (Number(isInternalAccount) > 0) {
+                userCondition.is_internal_account = Number(isInternalAccount);
             }
 
             const { rows, count } = await Withdraw.findAndCountAll({
@@ -187,7 +187,7 @@ class Controller {
             const viewInferior = req.query.viewInferior || 0;
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
-            const status = req.query.status;
+            const status = req.query.status || -1;
             const userId = req.user_id;
 
             let condition = {}
@@ -200,13 +200,13 @@ class Controller {
                     [Op.between]: [startTime, endTime]
                 }
             }
-            if (status >= 0) {
-                condition.status = status;
+            if (Number(status) >= 0) {
+                condition.status = Number(status);
             }
 
             let userCondition = {}
             if (phone) {
-                if (viewInferior == 1) {
+                if (Number(viewInferior) == 1) {
                     const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
                     if (user) {
                         condition.relation = {
