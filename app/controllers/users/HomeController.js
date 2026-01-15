@@ -156,7 +156,6 @@ class Controller {
                     order: [['id', 'DESC']],
                     limit: perPage,
                     offset,
-                    useMaster: true
                 });
 
                 const data = {
@@ -385,7 +384,6 @@ class Controller {
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset,
-                useMaster: true
             })
 
             const data = {
@@ -1529,7 +1527,6 @@ class Controller {
             } else if (reward.reward_id == 6) {
                 obj.amount = authorize_letter_amount;
                 obj.from_where = `红包雨 上合组织中国区授权书 获得${authorize_letter_amount}`;
-                await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${userId}`, 1); // No expiry
             } else if (reward.reward_id == 8) {
                 obj.amount = referral_fund;
                 obj.from_where = `红包雨 推荐金提取券 获得${referral_fund}元`;
@@ -1555,6 +1552,11 @@ class Controller {
                 }
                 if (reward.total_reward == reward.limit) {
                     await user.update({ can_get_red_envelop: 0 }, { transaction: t });
+                }
+
+                // Set flag for reward 6 to prevent duplicate wins
+                if (reward.reward_id == 6) {
+                    await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${userId}`, '1');
                 }
                 
                 reward.remain_count = reward.reward_remain_count - 1;
@@ -2309,7 +2311,6 @@ class Controller {
                     attributes: ['price', 'reserve_price'],
                     order: [['id', 'DESC']],
                     limit: 1,
-                    useMaster: true
                 });
                 await this.redisHelper.setValue('gold_price_latest', JSON.stringify(latestPrice), 300); // 5 minutes
             }
@@ -2341,7 +2342,6 @@ class Controller {
                     attributes: ['price', 'reserve_price', 'createdAt'],
                     order: [['id', 'DESC']],
                     limit: 7,
-                    useMaster: true
                 })
                 await this.redisHelper.setValue('gold_price_last_seven', JSON.stringify(lastSevenPrice), 1800); // 30 minutes
             }
@@ -2378,7 +2378,6 @@ class Controller {
                 attributes: ['price'],
                 order: [['id', 'DESC']],
                 limit: 1,
-                useMaster: true
             });
             if (!latestPrice) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '黄金价格未设置', {});
