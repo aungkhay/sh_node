@@ -199,7 +199,7 @@ class Controller {
                 const obj = { reward_id: Number(reward_id), amount: Number(amount) }
                 await this.redisHelper.setValue('RELEASE_REWARD_TO_ALL_USERS', JSON.stringify(obj));
                 // Cron job will do this at 20th minute of every hour
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '已设置为批量发放奖励任务，系统每20分钟自动处理', {});
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '已设置为批量发放奖励任务，系统每10分钟自动处理', {});
             }
             const user = await User.findByPk(user_id, { attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund'] });
             if (!user) {
