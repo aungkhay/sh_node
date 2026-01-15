@@ -103,7 +103,7 @@ class Controller {
         }
     }
 
-    NOTIFICATIONS = async (req, res) => {
+    NOTIFICATIONS_OLD = async (req, res) => {
         const lockKey = `lock:get_notification_list:${req.user_id}`;
         let redisLocked = false;
 
@@ -208,6 +208,164 @@ class Controller {
             }
         } catch (error) {
             console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    NOTIFICATIONS = async (req, res) => {
+        const userId = req.user_id;
+        const lockKey = `lock:notifications:${userId}`;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST CLICK)
+            * =============================== */
+            const locked = await this.redisHelper.setLock(lockKey, 1, 1);
+            if (locked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            /* ===============================
+            * PARAMS
+            * =============================== */
+            const page = Math.max(parseInt(req.query.page || 1), 1);
+            const perPage = Math.min(parseInt(req.query.perPage || 10), 50);
+            const offset = (page - 1) * perPage;
+            const isRead = Number(req.query.isRead || 0);
+
+            /* ===============================
+            * REDIS CACHE
+            * =============================== */
+            const cacheKey = `notifications:${userId}:${isRead}:${page}:${perPage}`;
+            const cached = await this.redisHelper.getValue(cacheKey);
+            if (cached) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cached));
+            }
+
+            /* ===============================
+            * READ NOTIFICATIONS
+            * =============================== */
+            if (isRead === 1) {
+                const rows = await Notification.findAll({
+                    attributes: ['id', 'title', 'subtitle', 'createdAt'],
+                    where: {
+                        [Op.or]: [
+                            { type: { [Op.in]: [1, 2] } }, // global
+                            literal(`EXISTS (
+                                SELECT 1
+                                FROM specific_user_notifications sn
+                                WHERE sn.notification_id = Notification.id
+                                AND sn.user_id = ${userId}
+                            )`)
+                        ],
+                        [Op.and]: literal(`EXISTS (
+                            SELECT 1
+                            FROM read_notifications rn
+                            WHERE rn.notification_id = Notification.id
+                            AND rn.user_id = ${userId}
+                        )`)
+                    },
+                    order: [['id', 'DESC']],
+                    limit: perPage,
+                    offset
+                });
+
+                const total = await Notification.count({
+                    where: {
+                        [Op.or]: [
+                            { type: { [Op.in]: [1, 2] } },
+                            literal(`EXISTS (
+                                SELECT 1
+                                FROM specific_user_notifications sn
+                                WHERE sn.notification_id = Notification.id
+                                AND sn.user_id = ${userId}
+                            )`)
+                        ],
+                        [Op.and]: literal(`EXISTS (
+                            SELECT 1
+                            FROM read_notifications rn
+                            WHERE rn.notification_id = Notification.id
+                            AND rn.user_id = ${userId}
+                        )`)
+                    }
+                });
+
+                const data = {
+                    notifications: rows,
+                    meta: {
+                        page,
+                        perPage,
+                        total,
+                        totalPage: Math.ceil(total / perPage)
+                    }
+                };
+
+                await this.redisHelper.setValue(cacheKey, JSON.stringify(data), 120);
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+            }
+
+            /* ===============================
+            * UNREAD NOTIFICATIONS
+            * =============================== */
+            const rows = await Notification.findAll({
+                attributes: ['id', 'title', 'subtitle', 'createdAt'],
+                where: {
+                    [Op.or]: [
+                        { type: { [Op.in]: [1, 2] } },
+                        literal(`EXISTS (
+                            SELECT 1
+                            FROM specific_user_notifications sn
+                            WHERE sn.notification_id = Notification.id
+                            AND sn.user_id = ${userId}
+                        )`)
+                    ],
+                    [Op.and]: literal(`NOT EXISTS (
+                        SELECT 1
+                        FROM read_notifications rn
+                        WHERE rn.notification_id = Notification.id
+                        AND rn.user_id = ${userId}
+                    )`)
+                },
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset
+            });
+
+            const total = await Notification.count({
+                where: {
+                    [Op.or]: [
+                        { type: { [Op.in]: [1, 2] } },
+                        literal(`EXISTS (
+                            SELECT 1
+                            FROM specific_user_notifications sn
+                            WHERE sn.notification_id = Notification.id
+                            AND sn.user_id = ${userId}
+                        )`)
+                    ],
+                    [Op.and]: literal(`NOT EXISTS (
+                        SELECT 1
+                        FROM read_notifications rn
+                        WHERE rn.notification_id = Notification.id
+                        AND rn.user_id = ${userId}
+                    )`)
+                }
+            });
+
+            const data = {
+                notifications: rows,
+                meta: {
+                    page,
+                    perPage,
+                    total,
+                    totalPage: Math.ceil(total / perPage)
+                }
+            };
+
+            await this.redisHelper.setValue(cacheKey, JSON.stringify(data), 120);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+        } catch (error) {
+            console.error('[NOTIFICATIONS]', error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
