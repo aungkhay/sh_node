@@ -471,10 +471,13 @@ class CronJob {
                 where: {
                     reward_id: 6,
                 },
-                attributes: ['user_id']
+                attributes: ['user_id'],
+                distinct: true,
             });
             for (let record of rewardRecords) {
-                await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${record.user_id}`, 1);
+                // await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${record.user_id}`, 1);
+                await User.update({ have_reward_6: 1 }, { where: { id: record.user_id } });
+                await this.redisHelper.deleteKey(`USER_HAVE_REWARD_6_${record.user_id}`);
             }
             console.log('SET_REWARD_6_TO_REDIS completed.');
         } catch (error) {

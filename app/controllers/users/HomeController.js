@@ -1296,7 +1296,7 @@ class Controller {
             * =============================== */
             const user = await User.findOne({
                 where: { id: userId },
-                attributes: ['id', 'win_per_day', 'can_get_red_envelop'],
+                attributes: ['id', 'win_per_day', 'can_get_red_envelop', 'have_reward_6'],
                 include: {
                     model: UserKYC,
                     as: 'kyc',
@@ -1310,10 +1310,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名未通过', {});
             }
 
-            // if (user.can_get_red_envelop == 0) {
-            //     // 已达上限
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
-            // }
+            if (user.can_get_red_envelop == 0) {
+                // 已达上限
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
+            }
 
             /* ===============================
             * DAILY WIN LIMIT (REDIS)
@@ -1354,8 +1354,7 @@ class Controller {
             * REWARD 6 RULE (DOWNLINE)
             * =============================== */
             // 每种授权书每个人只能获得一次
-            const haveReward6 = await this.redisHelper.getValue(`USER_HAVE_REWARD_6_${userId}`);
-            if (haveReward6) {
+            if (user.have_reward_6) {
                 // Already won id 6 before, remove from pool
                 // 上合组织中国区授权书
                 rewardTypes = rewardTypes.filter(r => r.id != 6);
@@ -1497,7 +1496,7 @@ class Controller {
             const gold_gram = reward.gold_gram;
             const authorize_letter_amount = reward.authorize_letter_amount;
             const user = await User.findByPk(userId, { 
-                attributes: ['id', 'relation', 'masonic_fund', 'balance'], 
+                attributes: ['id', 'masonic_fund', 'balance'], 
                 useMaster: userId % 2 === 0 ? true : false 
             });
 
@@ -1556,7 +1555,7 @@ class Controller {
 
                 // Set flag for reward 6 to prevent duplicate wins
                 if (reward.reward_id == 6) {
-                    await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${userId}`, '1');
+                    await user.update({ have_reward_6: 1 }, { transaction: t });
                 }
                 
                 reward.remain_count = reward.reward_remain_count - 1;

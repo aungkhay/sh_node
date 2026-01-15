@@ -206,6 +206,11 @@ User.init({
         defaultValue: 1,
         comment: '0 => Can not get | 1 => Can get (automatically set to 0 when limit is reached)'
     },
+    have_reward_6: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+        comment: '1 => Have received the Reward 6 (上合组织中国区授权书) from the red envelope rain event'
+    },
     status: {
         type: DataTypes.TINYINT,
         defaultValue: 1,
