@@ -1666,12 +1666,13 @@ class Controller {
                 order: [['id', 'ASC']],
             });
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', {
-                users,
-                level1Ids: level1IdArr,
-                level2Ids: level2IdArr,
-                level3Ids: level3IdArr
-            });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', users);
+            // return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', {
+            //     users,
+            //     level1Ids: level1IdArr,
+            //     level2Ids: level2IdArr,
+            //     level3Ids: level3IdArr
+            // });
 
         } catch (error) {
             errLogger(`[User][EXPORT_CHILD_REGISTER_LIST]: ${error.stack}`);

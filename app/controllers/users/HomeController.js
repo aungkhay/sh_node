@@ -1686,6 +1686,7 @@ class Controller {
             if (reward.reward_id == 1) {
                 obj.amount = masonic_fund;
                 obj.before_amount = user.masonic_fund;
+                obj.is_used = 1;
                 obj.after_amount = parseFloat(user.masonic_fund) + parseFloat(masonic_fund);
                 obj.from_where = `红包雨 共济基金 获得${masonic_fund}元`;
             } else if (reward.reward_id == 2) {
@@ -1698,6 +1699,7 @@ class Controller {
             } else if (reward.reward_id == 3) {
                 obj.amount = balance_fund;
                 obj.before_amount = user.balance;
+                obj.is_used = 1;
                 obj.after_amount = parseFloat(user.balance) + parseFloat(balance_fund);
                 obj.from_where = `红包雨 余额 获得${balance_fund}元`;
             } else if (reward.reward_id == 6) {
