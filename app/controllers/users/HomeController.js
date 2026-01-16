@@ -1455,7 +1455,7 @@ class Controller {
             * =============================== */
             const now = new Date();
             const minutes = now.getMinutes();
-            if (minutes > 10 && minutes < 58) {
+            if (minutes > 5 && minutes < 58) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
             }
 
