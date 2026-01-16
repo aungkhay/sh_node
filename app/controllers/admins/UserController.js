@@ -1624,29 +1624,23 @@ class Controller {
             }
 
             const levelMap = {};
-            let levelIds = [];
-            let level1IdArr = [];
-            let level2IdArr = [];
-            let level3IdArr = [];
             if (level > 0) {
                 const level1Ids = await User.findAll({ where: { parent_id: user.id }, attributes: ['id'] });
-                level1IdArr = level1Ids.map(u => {
+                const level1IdArr = level1Ids.map(u => {
                     levelMap[u.id] = 1;
                     return u.id;
                 });
                 // console.log('Level 1', level1IdArr);
-                levelIds = level1IdArr;
                 if (level > 1) {
                     const level2Ids = await User.findAll({ where: { parent_id: { [Op.in]: level1IdArr } }, attributes: ['id'] });
-                    level2IdArr = level2Ids.map(u => {
+                    const level2IdArr = level2Ids.map(u => {
                         levelMap[u.id] = 2;
                         return u.id;
                     });
                     // console.log('Level 2', level2IdArr);
-                    levelIds = levelIds.concat(level2IdArr);
                     if (level > 2) {
                         const level3Ids = await User.findAll({ where: { parent_id: { [Op.in]: level2IdArr } }, attributes: ['id'] });
-                        level3IdArr = level3Ids.map(u => {
+                        const level3IdArr = level3Ids.map(u => {
                             levelMap[u.id] = 3;
                             return u.id;
                         });
@@ -1660,7 +1654,7 @@ class Controller {
                     [Op.like]: `${user.relation}/%`
                 },
             }
-            if (levelIds.length > 0) {
+            if (Object.keys(levelMap).length > 0) {
                 condition.id = { [Op.in]: Object.keys(levelMap) };
             }
             const includes = [
