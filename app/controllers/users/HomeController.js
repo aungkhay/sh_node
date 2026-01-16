@@ -33,7 +33,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 1);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -52,7 +52,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 1);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -1445,7 +1445,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            const locked = await this.redisHelper.setLock(lockKey, 1, 5);
+            const locked = await this.redisHelper.setLock(lockKey, 1, 1);
             if (locked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -1635,7 +1635,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            const redLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            const redLocked = await this.redisHelper.setLock(lockKey, 1, 1);
             if (redLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
