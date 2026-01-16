@@ -1623,29 +1623,37 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
+            const levelMap = {};
             let levelIds = [];
             let level1IdArr = [];
             let level2IdArr = [];
             let level3IdArr = [];
             if (level > 0) {
                 const level1Ids = await User.findAll({ where: { parent_id: user.id }, attributes: ['id'] });
-                level1IdArr = level1Ids.map(u => u.id);
+                level1IdArr = level1Ids.map(u => {
+                    levelMap[u.id] = 1;
+                    return u.id;
+                });
                 // console.log('Level 1', level1IdArr);
                 levelIds = level1IdArr;
                 if (level > 1) {
                     const level2Ids = await User.findAll({ where: { parent_id: { [Op.in]: level1IdArr } }, attributes: ['id'] });
-                    level2IdArr = level2Ids.map(u => u.id);
+                    level2IdArr = level2Ids.map(u => {
+                        levelMap[u.id] = 2;
+                        return u.id;
+                    });
                     // console.log('Level 2', level2IdArr);
                     levelIds = levelIds.concat(level2IdArr);
                     if (level > 2) {
                         const level3Ids = await User.findAll({ where: { parent_id: { [Op.in]: level2IdArr } }, attributes: ['id'] });
-                        level3IdArr = level3Ids.map(u => u.id);
+                        level3IdArr = level3Ids.map(u => {
+                            levelMap[u.id] = 3;
+                            return u.id;
+                        });
                         // console.log('Level 3', level3IdArr);
-                        levelIds = levelIds.concat(level3IdArr);
                     }
                 }   
             }
-            console.log(`Exporting level ${level} users, total ${levelIds.length} users`);
 
             const condition = {
                 relation: {
@@ -1653,27 +1661,38 @@ class Controller {
                 },
             }
             if (levelIds.length > 0) {
-                condition.id = { [Op.in]: levelIds };
+                condition.id = { [Op.in]: Object.keys(levelMap) };
             }
-            const users = await User.findAll({
-                include: {
+            const includes = [
+                {
                     model: User,
                     as: 'parent',
                     attributes: ['id', 'name']
-                },
+                }
+            ]
+            if (Number(isKycVerified) === 1) {
+                includes.push({
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: [],
+                    where: { status: 'APPROVED' }
+                });
+            }
+            const users = await User.findAll({
+                include: includes,
                 where: condition,
                 attributes: ['id', 'name', 'phone_number', 'createdAt'],
                 order: [['id', 'ASC']],
             });
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', users);
-            // return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', {
-            //     users,
-            //     level1Ids: level1IdArr,
-            //     level2Ids: level2IdArr,
-            //     level3Ids: level3IdArr
-            // });
+            const result = users.map(u => {
+                return {
+                    ... u.toJSON(),
+                    level: levelMap[u.id] || null
+                }
+            });
 
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '导出成功', result);
         } catch (error) {
             errLogger(`[User][EXPORT_CHILD_REGISTER_LIST]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});

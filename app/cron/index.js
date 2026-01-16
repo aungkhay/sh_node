@@ -709,6 +709,8 @@ class CronJob {
                     await t.rollback();
                 }
             }
+
+            await this.redisHelper.deleteKey('RELEASE_REWARD_TO_ALL_USERS');
         } catch (error) {
             errLogger(`[RELEASE_REWARD_TO_ALL_USERS]: ${error.stack}`);
         }
