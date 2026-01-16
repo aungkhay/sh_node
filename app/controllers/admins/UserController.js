@@ -1565,10 +1565,38 @@ class Controller {
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
             const phone = req.query.phone || '';
+            const level = parseInt(req.query.level || 0); // 0 means all levels
+            const isKycVerified = req.query.isKycVerified; // '1' => verified, '0' => unverified, others => all
 
             const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
+            }
+
+            const levelMap = {};
+            if (level > 0) {
+                const level1Ids = await User.findAll({ where: { parent_id: user.id }, attributes: ['id'] });
+                const level1IdArr = level1Ids.map(u => {
+                    levelMap[u.id] = 1;
+                    return u.id;
+                });
+                // console.log('Level 1', level1IdArr);
+                if (level > 1) {
+                    const level2Ids = await User.findAll({ where: { parent_id: { [Op.in]: level1IdArr } }, attributes: ['id'] });
+                    const level2IdArr = level2Ids.map(u => {
+                        levelMap[u.id] = 2;
+                        return u.id;
+                    });
+                    // console.log('Level 2', level2IdArr);
+                    if (level > 2) {
+                        const level3Ids = await User.findAll({ where: { parent_id: { [Op.in]: level2IdArr } }, attributes: ['id'] });
+                        const level3IdArr = level3Ids.map(u => {
+                            levelMap[u.id] = 3;
+                            return u.id;
+                        });
+                        // console.log('Level 3', level3IdArr);
+                    }
+                }   
             }
 
             const condition = {
@@ -1576,26 +1604,51 @@ class Controller {
                     [Op.like]: `${user.relation}/%`
                 }
             }
-            const { rows, count } = await User.findAndCountAll({
-                include: {
+            if (Object.keys(levelMap).length > 0) {
+                condition.id = { [Op.in]: Object.keys(levelMap) };
+            }
+
+            const includes = [
+                {
                     model: User,
                     as: 'parent',
                     attributes: ['id', 'name']
-                },
+                }
+            ];
+            if (Number(isKycVerified) === 1) {
+                includes.push({
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: [],
+                    where: { status: 'APPROVED' }
+                });
+            }
+
+            const count = await User.count({ where: condition });
+            const rows = await User.findAll({
+                include: includes,
                 where: condition,
-                attributes: [
-                    'id', 'type', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 'balance',
-                    'referral_bonus', 'masonic_fund', 'rank_allowance', 'freeze_allowance', 'earn', 'gold', 'gold_interest', 'address',
-                    'address_status', 'agreement_status', 'rank_point', 'level_up_pay', 'win_per_day', 'status', 'political_vetting_status', 
-                    'is_internal_account','profile_picture', 'isActive', 'activedAt', 'createdAt'
-                ],
+                // attributes: [
+                //     'id', 'type', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 'balance',
+                //     'referral_bonus', 'masonic_fund', 'rank_allowance', 'freeze_allowance', 'earn', 'gold', 'gold_interest', 'address',
+                //     'address_status', 'agreement_status', 'rank_point', 'level_up_pay', 'win_per_day', 'status', 'political_vetting_status', 
+                //     'is_internal_account','profile_picture', 'isActive', 'activedAt', 'createdAt'
+                // ],
+                attributes: ['id', 'name', 'phone_number', 'invite_code', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset
             });
 
+            const result = rows.map(u => {
+                return {
+                    ... u.toJSON(),
+                    level: levelMap[u.id] || null
+                }
+            });
+
             const data = {
-                users: rows,
+                users: result,
                 meta: { 
                     page: page,
                     perPage: perPage,
@@ -1675,7 +1728,7 @@ class Controller {
             const users = await User.findAll({
                 include: includes,
                 where: condition,
-                attributes: ['id', 'name', 'phone_number', 'createdAt'],
+                attributes: ['id', 'name', 'phone_number', 'invite_code', 'createdAt'],
                 order: [['id', 'ASC']],
             });
 
