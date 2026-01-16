@@ -130,6 +130,13 @@ module.exports = async () => {
             data_type: 'string'
         },
         {
+            type: 'can_withdraw',
+            title: 'Can Withdraw',
+            val: '0',
+            description: '0:关闭   1:开通',
+            data_type: 'boolean'
+        },
+        {
             type: 'customer_service_1',
             title: 'Customer Service 1',
             val: 'http://customer-service-1.com',

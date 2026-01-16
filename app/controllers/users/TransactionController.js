@@ -190,10 +190,15 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
-            const today = new Date();
-            const day = today.getDay();
-            if (day === 0 || day === 6) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请于工作日取款', {});
+            // const today = new Date();
+            // const day = today.getDay();
+            // if (day === 0 || day === 6) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在工作日进行提现提交', {});
+            // }
+
+            const can_withdraw = await this.redisHelper.getValue('can_withdraw');
+            if (!can_withdraw || Number(can_withdraw) != 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在工作日进行提现提交', {});
             }
 
             const err = validationResult(req);
