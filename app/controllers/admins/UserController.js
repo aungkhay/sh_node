@@ -1624,8 +1624,7 @@ class Controller {
                 });
             }
 
-            const count = await User.count({ where: condition });
-            const rows = await User.findAll({
+            const { rows, count} = await User.findAndCountAll({
                 include: includes,
                 where: condition,
                 // attributes: [
