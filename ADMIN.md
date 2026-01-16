@@ -869,7 +869,9 @@ const url = `${baseURL}/users/child-register-list`;
 const params = {
     page: 1,
     perPage: 10,
-    phone: ''
+    phone: '',
+    level: 0, // 0 means all levels [1,2,3]
+    isKycVerified: 0, // '1' => verified, '0' => unverified
 }
 
 // [GET] 导出下级注册

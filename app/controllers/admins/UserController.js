@@ -1615,12 +1615,12 @@ class Controller {
                     attributes: ['id', 'name']
                 }
             ];
-            if (Number(isKycVerified) === 1) {
+            if (isKycVerified && isKycVerified >= 0) {
                 includes.push({
                     model: UserKYC,
                     as: 'kyc',
                     attributes: [],
-                    where: { status: 'APPROVED' }
+                    where: { status: Number(isKycVerified) === 1 ? 'APPROVED' : 'PENDING' }
                 });
             }
 
@@ -1717,12 +1717,12 @@ class Controller {
                     attributes: ['id', 'name']
                 }
             ]
-            if (Number(isKycVerified) === 1) {
+            if (isKycVerified && isKycVerified >= 0) {
                 includes.push({
                     model: UserKYC,
                     as: 'kyc',
                     attributes: [],
-                    where: { status: 'APPROVED' }
+                    where: { status: Number(isKycVerified) === 1 ? 'APPROVED' : 'PENDING' }
                 });
             }
             const users = await User.findAll({
