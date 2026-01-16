@@ -1455,8 +1455,13 @@ class Controller {
             * =============================== */
             const now = new Date();
             const minutes = now.getMinutes();
-            if (minutes > 5 && minutes < 58) {
+            if (minutes > 10 && minutes < 58) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
+            }
+
+            const lockGen = await this.redisHelper.setLock(`LOCK_GENERATE_RED_ENVELOP_${userId}`, 1, 300); // 5 minutes lock
+            if (!lockGen) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过一次', {});
             }
 
             /* ===============================
