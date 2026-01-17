@@ -5,8 +5,8 @@ const client = ioredis.createClient({
     username: process.env.REDIS_USER,
     password: process.env.REDIS_PASS,
     // db: process.env.REDIS_DB,
-    connectTimeout: 5000, // 5 seconds connection timeout
-    commandTimeout: 3000, // 3 seconds command timeout
+    connectTimeout: 10000, // 10 seconds connection timeout
+    commandTimeout: 15000, // 15 seconds command timeout
     maxRetriesPerRequest: 3, // Reduced from 20 to 3
     retryStrategy(times) {
         if (times > 3) {
