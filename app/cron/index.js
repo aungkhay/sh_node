@@ -39,7 +39,7 @@ class CronJob {
         // Run Every Hour at minute 0
         cron.schedule('0 * * * *', this.UPDATE_MASONIC_FUND_HISTORY).start();
         // Run at 5th minute of every hour
-        cron.schedule('5 * * * *', this.RUN_INTERVAL_RELEASE_RED_ENVELOP).start();
+        // cron.schedule('5 * * * *', this.RUN_INTERVAL_RELEASE_RED_ENVELOP).start();
     }
 
     PAY_ALLOWANCE = async () => {

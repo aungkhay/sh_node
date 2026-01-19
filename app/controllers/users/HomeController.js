@@ -1632,8 +1632,8 @@ class Controller {
             }
             await this.redisHelper.setValue(`UID_${userId}_reward`, JSON.stringify(data), 5 * 60); // 5 minutes
 
-            const QUEUE_KEY = 'QUEUE:RED_ENVELOP_POST_PROCESS';
-            await this.redisHelper.rPushValue(QUEUE_KEY, JSON.stringify(data));
+            // const QUEUE_KEY = 'QUEUE:RED_ENVELOP_POST_PROCESS';
+            // await this.redisHelper.rPushValue(QUEUE_KEY, JSON.stringify(data));
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
@@ -1647,7 +1647,7 @@ class Controller {
         const lockKey = `lock:get-red-envelope:${userId}`;
 
         try {
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '领取成功！5分钟后可以在道具里面查看', {});
+            // return MyResponse(res, this.ResCode.SUCCESS.code, true, '领取成功！5分钟后可以在道具里面查看', {});
 
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
