@@ -1120,7 +1120,7 @@ class Controller {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
-            const level = parseInt(req.query.level || 3); // 0 => all
+            const level = parseInt(req.query.level || 0); // 0 => all
             const userId = req.user_id;
 
             let data = {
