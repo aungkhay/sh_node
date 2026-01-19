@@ -957,13 +957,13 @@ class Controller {
         }
     }
 
-    TEAM = async (req, res) => {
+    TEAM__ = async (req, res) => {
         try {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
             const level = parseInt(req.query.level || 0); // 0 => all
-            const userId = req.user_id;
+            const userId = 70 || req.user_id;
 
             const removeBeforeAndValue = arr => {
                 const index = arr.indexOf(String(userId));
@@ -1092,18 +1092,188 @@ class Controller {
                         )`),
                         'personal_gold_count'
                     ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COALESCE(SUM(gold_count), 0)
-                            FROM user_gold_prices AS gp
-                            WHERE gp.relation LIKE CONCAT('%/', User.id, '%')
-                        )`),
-                        'group_gold_count'
-                    ],
                 ],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
+            });
+
+            data = {
+                users: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    total: total,
+                    totalPage: Math.ceil(total / perPage)
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[TEAM]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+    
+    TEAM = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const level = parseInt(req.query.level || 3); // 0 => all
+            const userId = req.user_id;
+
+            let data = {
+                users: [],
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: 0,
+                    total: 0
+                }
+            }
+            
+            const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+            const levelMap = {};
+            if (level > 0) {
+                const level1Ids = await User.findAll({ where: { parent_id: me.id }, attributes: ['id'] });
+                const level1IdArr = level1Ids.map(u => {
+                    levelMap[u.id] = 1;
+                    return u.id;
+                });
+                // console.log('Level 1', level1IdArr);
+                if (level > 1) {
+                    const level2Ids = await User.findAll({ where: { parent_id: { [Op.in]: level1IdArr } }, attributes: ['id'] });
+                    const level2IdArr = level2Ids.map(u => {
+                        levelMap[u.id] = 2;
+                        return u.id;
+                    });
+                    // console.log('Level 2', level2IdArr);
+                    if (level > 2) {
+                        const level3Ids = await User.findAll({ where: { parent_id: { [Op.in]: level2IdArr } }, attributes: ['id'] });
+                        const level3IdArr = level3Ids.map(u => {
+                            levelMap[u.id] = 3;
+                            return u.id;
+                        });
+                        // console.log('Level 3', level3IdArr);
+                    }
+                }   
+            }
+
+            const condition = {
+                relation: {
+                    [Op.like]: `${me.relation}/%`
+                }
+            }
+
+            if (Object.keys(levelMap).length > 0) {
+                condition.id = { [Op.in]: Object.keys(levelMap) };
+            }
+
+            const includes = [
+                {
+                    model: Rank,
+                    as: 'rank',
+                    attributes: ['name']
+                }
+            ];
+
+            const total = await User.count({ where: condition });
+            const rows = await User.findAll({
+                include: includes,
+                where: condition,
+                attributes: [
+                    'id', 'name',
+                    [
+                        Sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM users AS tc
+                            WHERE tc.parent_id = User.id
+                            AND tc.deletedAt IS NULL
+                        )`),
+                        'team_count'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM users AS ttc
+                            WHERE ttc.relation LIKE CONCAT('%/', User.id, '/%')
+                            AND ttc.id <> User.id
+                            AND ttc.deletedAt IS NULL
+                        )`),
+                        'total_team_count'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM deposits AS pd
+                            WHERE pd.user_id = User.id
+                            AND pd.status = 1
+                            AND pd.deletedAt IS NULL
+                        )`),
+                        'personal_deposit'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM withdraws AS pw
+                            WHERE pw.user_id = User.id
+                            AND pw.status = 1
+                            AND pw.deletedAt IS NULL
+                        )`),
+                        'personal_withdraw'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM deposits AS gd
+                            WHERE gd.relation LIKE CONCAT('%/', User.id, '/%')
+                            AND gd.user_id <> User.id
+                            AND gd.status = 1
+                            AND gd.deletedAt IS NULL
+                        )`),
+                        'group_deposit'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(amount), 0)
+                            FROM withdraws AS gw
+                            WHERE gw.relation LIKE CONCAT('%/', User.id, '/%')
+                            AND gw.status = 1
+                            AND gw.deletedAt IS NULL
+                        )`),
+                        'group_withdraw'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(gold_count), 0)
+                            FROM user_gold_prices AS pp
+                            WHERE pp.user_id = User.id
+                        )`),
+                        'personal_gold_count'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(SUM(gold_count), 0)
+                            FROM user_gold_prices AS gp
+                            WHERE gp.relation LIKE CONCAT('%/', User.id, '/%')
+                        )`),
+                        'group_gold_count'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM user_kyc AS uk
+                            WHERE uk.relation LIKE CONCAT('%/', User.id, '/%')
+                            AND uk.status = 'APPROVED'
+                            AND uk.deletedAt IS NULL
+                        )`),
+                        'kyc_approved_count'
+                    ],
+                ],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset
             });
 
             data = {
