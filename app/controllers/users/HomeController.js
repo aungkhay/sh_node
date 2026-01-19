@@ -1455,7 +1455,8 @@ class Controller {
             * =============================== */
             const now = new Date();
             const minutes = now.getMinutes();
-            if (minutes > 5 && minutes < 58) {
+            const allowed = (minutes >= 0 && minutes <= 5) || (minutes >= 58 && minutes <= 59);
+            if (!allowed) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
             }
 
@@ -1578,13 +1579,7 @@ class Controller {
 
             // UPDATE remain count in Redis
             const remainKey = `REWARD_REMAIN_${reward.id}`;
-            let remainCount = 0;
-            if ([1,3].includes(reward.reward_id)) {
-                await this.redisHelper.setValue(remainKey, String(reward.remain_count - amount));
-                remainCount = await this.redisHelper.getValue(remainKey);
-            } else {
-                remainCount = await this.redisHelper.decrementValue(remainKey);
-            }
+            const remainCount = await this.redisHelper.decrementValue(remainKey);
             if (parseInt(remainCount || '0') < 0) {
                 // Out of stock, revert back
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '红包已领完，请等待下一个红包雨到来', {});
@@ -1644,7 +1639,7 @@ class Controller {
 
     GET_RED_ENVELOP = async (req, res) => {
         return MyResponse(res, this.ResCode.SUCCESS.code, true, '领取成功！5分钟后可以在道具里面查看', {});
-        
+
         const userId = req.user_id;
         const lockKey = `lock:get-red-envelope:${userId}`;
 

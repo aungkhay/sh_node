@@ -825,6 +825,13 @@ class CronJob {
                 const expireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
                 const ttlInSeconds = Math.floor((expireAt - now) / 1000);
                 await this.redisHelper.setValue(todayKey, String(reward.total_reward), ttlInSeconds);
+
+                const remainKey = `REWARD_REMAIN_${reward.reward_id}`;
+                if ([1,3].includes(reward.reward_id)) {
+                    await this.redisHelper.setValue(remainKey, String(reward.remain_count - obj.amount));
+                } else {
+                    await this.redisHelper.decrementValue(remainKey);
+                }
                 
                 await t.commit();
             } catch (error) {
