@@ -10,6 +10,7 @@ const moment = require('moment');
 class CronJob {
     constructor(app) {
         this.redisHelper = new RedisHelper(app);
+        this.interval = null;
     }
 
     START = () => {
@@ -37,6 +38,8 @@ class CronJob {
         cron.schedule('10 * * * *', this.RELEASE_REWARD_TO_ALL_USERS).start();
         // Run Every Hour at minute 0
         cron.schedule('0 * * * *', this.UPDATE_MASONIC_FUND_HISTORY).start();
+        // Run RELEASE_RED_ENVELOP 200 ms interval
+        // cron.schedule('5 * * * *', this.RUN_INTERVAL_RELEASE_RED_ENVELOP).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -723,6 +726,8 @@ class CronJob {
             const QUEUE_KEY = 'QUEUE:RED_ENVELOP_POST_PROCESS';
             const item = await this.redisHelper.lPopValue(QUEUE_KEY);
             if (!item) {
+                clearInterval(this.interval);
+                this.interval = null;
                 return;
             }
             const reward = JSON.parse(item);
@@ -852,6 +857,21 @@ class CronJob {
         } catch (error) {
             errLogger(`[RELEASE_RED_ENVELOP][${userId}]: ${error.stack}`);
         }
+    }
+
+    RUN_INTERVAL_RELEASE_RED_ENVELOP = () => {
+        if (this.interval) return;
+        let running = false;
+
+        this.interval = setInterval(async () => {
+            if (running) return;
+            running = true;
+            try {
+                await this.RELEASE_RED_ENVELOP();
+            } finally {
+                running = false;
+            }
+        }, 100);
     }
 }
 

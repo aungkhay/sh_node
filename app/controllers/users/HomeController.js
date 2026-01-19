@@ -1576,9 +1576,16 @@ class Controller {
                 }
             }
 
+            // UPDATE remain count in Redis
             const remainKey = `REWARD_REMAIN_${reward.id}`;
-            const remain = await this.redisHelper.decrementValue(remainKey);
-            if (remain < 0) {
+            let remainCount = 0;
+            if ([1,3].includes(reward.reward_id)) {
+                await this.redisHelper.setValue(remainKey, String(reward.remain_count - amount));
+                remainCount = await this.redisHelper.getValue(remainKey);
+            } else {
+                remainCount = await this.redisHelper.decrementValue(remainKey);
+            }
+            if (parseInt(remainCount || '0') < 0) {
                 // Out of stock, revert back
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '红包已领完，请等待下一个红包雨到来', {});
             }
