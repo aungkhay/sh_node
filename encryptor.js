@@ -179,7 +179,7 @@ const startEncrypt = () => {
         amount: 111
     });
     const deleteMultitpleRewards = JSON.stringify({ ids: [114011,114010] });
-    const encrypted = encrypt(loginData, API_KEY, API_IV);
+    const encrypted = encrypt(withdraw, API_KEY, API_IV);
     console.log(encrypted);
 }
 

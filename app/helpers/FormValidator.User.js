@@ -88,7 +88,7 @@ exports.verify_kyc = () => {
         //     }),
         check('nrc_front_pic', { msg: '请上传身份证正面照片' }).not().isEmpty(),
         check('nrc_back_pic', { msg: '请上传身份证背面照片' }).not().isEmpty(),
-        check('nrc_hold_pic', { msg: '请上传手持身份证照片' }).not().isEmpty(),
+        // check('nrc_hold_pic', { msg: '请上传手持身份证照片' }).not().isEmpty(),
     ]
 }
 
