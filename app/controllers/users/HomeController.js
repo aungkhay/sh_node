@@ -1625,6 +1625,9 @@ class Controller {
             }
             await this.redisHelper.setValue(`UID_${userId}_reward`, JSON.stringify(data), 5 * 60); // 5 minutes
 
+            // const QUEUE_KEY = 'QUEUE:RED_ENVELOP_POST_PROCESS';
+            // await this.redisHelper.rPushValue(QUEUE_KEY, JSON.stringify(data));
+
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             errLogger(`[GENERATE_RED_ENVELOP][${req.user_id}]: ${error.stack}`);
@@ -1678,7 +1681,7 @@ class Controller {
             const gold_gram = reward.gold_gram;
             const authorize_letter_amount = reward.authorize_letter_amount;
             const user = await User.findByPk(userId, { 
-                attributes: ['id', 'masonic_fund', 'balance'], 
+                attributes: ['id', 'masonic_fund', 'balance', 'relation'], 
                 useMaster: userId % 2 === 0 ? true : false 
             });
 

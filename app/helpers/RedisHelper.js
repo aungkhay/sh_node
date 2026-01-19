@@ -104,6 +104,30 @@ class Helper {
         }
     }
 
+    rPushValue = async (key, value) => {
+        try {
+            var newKey = key;
+            if (prefix) {
+                newKey = `${prefix}_${key}`;
+            }
+            return await this.redis.rpush(newKey, value);
+        } catch (error) {
+            console.error('RedisHelper rPushValue error:', error);
+        }
+    }
+
+    lPopValue = async (key) => {
+        try {
+            var newKey = key;
+            if (prefix) {
+                newKey = `${prefix}_${key}`;
+            }
+            return await this.redis.lpop(newKey);
+        } catch (error) {
+            console.error('RedisHelper lPopValue error:', error);
+        }
+    }
+
     randomString = (length) => {
         var result = '';
         var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

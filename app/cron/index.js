@@ -5,6 +5,7 @@ const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
 const axios = require('axios');
 const RedisHelper = require('../helpers/RedisHelper');
+const moment = require('moment');
 
 class CronJob {
     constructor(app) {
@@ -713,6 +714,143 @@ class CronJob {
             await this.redisHelper.deleteKey('RELEASE_REWARD_TO_ALL_USERS');
         } catch (error) {
             errLogger(`[RELEASE_REWARD_TO_ALL_USERS]: ${error.stack}`);
+        }
+    }
+
+    RELEASE_RED_ENVELOP = async (req, res) => {
+        let userId = null;
+        try {
+            const QUEUE_KEY = 'QUEUE:RED_ENVELOP_POST_PROCESS';
+            const item = await this.redisHelper.lPopValue(QUEUE_KEY);
+            if (!item) {
+                return;
+            }
+            const reward = JSON.parse(item);
+            userId = reward.user_id;
+            
+            if (reward.reward_id == 5) {
+                return;
+            }
+
+            const masonic_fund = reward.masonic_fund;
+            const balance_fund = reward.balance_fund;
+            const referral_fund = reward.referral_fund;
+            const gold_fund = reward.gold_fund;
+            const gold_gram = reward.gold_gram;
+            const authorize_letter_amount = reward.authorize_letter_amount;
+            const user = await User.findByPk(userId, { 
+                attributes: ['id', 'masonic_fund', 'balance', 'relation'], 
+                useMaster: userId % 2 === 0 ? true : false 
+            });
+
+            const obj = {
+                user_id: userId,
+                relation: user.relation,
+                reward_id: reward.reward_id,
+                amount: 0
+            }
+            if (reward.reward_id == 1) {
+                obj.amount = masonic_fund;
+                obj.before_amount = user.masonic_fund;
+                obj.is_used = 1;
+                obj.after_amount = parseFloat(user.masonic_fund) + parseFloat(masonic_fund);
+                obj.from_where = `红包雨 共济基金 获得${masonic_fund}元`;
+            } else if (reward.reward_id == 2) {
+                obj.amount = gold_gram;
+                const now = new Date();
+                const validUntil = new Date(now);
+                validUntil.setMonth(validUntil.getMonth() + 3);
+                obj.validedAt = validUntil;
+                obj.from_where = `红包雨 上合战略储备黄金券 获得${gold_gram}克`;
+            } else if (reward.reward_id == 3) {
+                obj.amount = balance_fund;
+                obj.before_amount = user.balance;
+                obj.is_used = 1;
+                obj.after_amount = parseFloat(user.balance) + parseFloat(balance_fund);
+                obj.from_where = `红包雨 余额 获得${balance_fund}元`;
+            } else if (reward.reward_id == 6) {
+                obj.amount = authorize_letter_amount;
+                obj.from_where = `红包雨 上合组织中国区授权书 获得${authorize_letter_amount}`;
+            } else if (reward.reward_id == 8) {
+                obj.amount = referral_fund;
+                obj.from_where = `红包雨 推荐金提取券 获得${referral_fund}元`;
+            } else if (reward.reward_id == 7) {
+                obj.amount = gold_fund;
+                obj.from_where = `红包雨 上合战略储备黄金券 获得${gold_fund}克`;
+                const now = new Date();
+                const validUntil = new Date(now);
+                validUntil.setMonth(validUntil.getMonth() + 3);
+                obj.validedAt = validUntil;
+            }
+
+            let t;
+            try {
+                t = await db.transaction();
+                
+                await RewardRecord.create(obj, { transaction: t });
+
+                if (masonic_fund > 0) {
+                    await user.increment({ masonic_fund: masonic_fund }, { transaction: t });
+                } else if (balance_fund > 0) {
+                    await user.increment({ balance: balance_fund, masonic_fund: -balance_fund }, { transaction: t });
+                }
+                if (reward.total_reward == reward.limit) {
+                    await user.update({ can_get_red_envelop: 0 }, { transaction: t });
+                }
+
+                // Set flag for reward 6 to prevent duplicate wins
+                if (reward.reward_id == 6) {
+                    await user.update({ have_reward_6: 1 }, { transaction: t });
+                }
+                
+                reward.remain_count = reward.reward_remain_count - 1;
+                let rewardTypes = await this.redisHelper.getValue('reward_types');
+                if (rewardTypes) {
+                    rewardTypes = JSON.parse(rewardTypes);
+                } else {
+                    rewardTypes = await RewardType.findAll({});
+                }
+                const currentRewardIndex = rewardTypes.findIndex(r => r.id == reward.reward_id);
+                rewardTypes[currentRewardIndex].remain_count = reward.remain_count;
+                await this.redisHelper.setValue('reward_types', JSON.stringify(rewardTypes));
+
+                const todayKey = `WIN_COUNT_${userId}_${moment().format('YYYYMMDD')}`;
+                // Expiry at midnight
+                const now = new Date();
+                const expireAt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+                const ttlInSeconds = Math.floor((expireAt - now) / 1000);
+                await this.redisHelper.setValue(todayKey, String(reward.total_reward), ttlInSeconds);
+                
+                await t.commit();
+            } catch (error) {
+                errLogger(`[RELEASE_RED_ENVELOP][DB Transaction Error]
+                    name: ${error.name}
+                    message: ${error.message}
+                    sql: ${error.sql || 'N/A'}
+                    stack: ${error.stack}
+                `);
+                // Only rollback if transaction exists and hasn't been committed
+                if (t && !t.finished) {
+                    try {
+                        await t.rollback();
+                    } catch (rollbackError) {
+                        errLogger(`[RELEASE_RED_ENVELOP][Rollback Error][${userId}]: ${rollbackError.stack}`);
+                    }
+                }
+                return errLogger(`[RELEASE_RED_ENVELOP][Transaction Rolled Back][${userId}]`);
+            }
+
+            // Clean up Redis key after successful commit (outside transaction block)
+            try {
+                await this.redisHelper.deleteKey(`UID_${userId}_reward`);
+            } catch (redisError) {
+                // Log but don't fail the response since DB transaction is already committed
+                errLogger(`[RELEASE_RED_ENVELOP][Redis cleanup error][${userId}]: ${redisError.stack}`);
+            }
+
+            commonLogger(`[RELEASE_RED_ENVELOP][${userId}]: Successfully released red envelope reward[${reward.reward_id}].`);
+        } catch (error) {
+            errLogger(`[RELEASE_RED_ENVELOP][${userId}]: ${error.stack}`);
         }
     }
 }
