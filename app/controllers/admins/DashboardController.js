@@ -24,7 +24,7 @@ class Controller {
             const userId = req.user_id;
 
             const relationCondtion = {};
-            if (userId !== 1) {
+            if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
                 relationCondtion.relation = { [Op.like]: `${me.relation}/%` }
             }
@@ -106,7 +106,7 @@ class Controller {
             endOfToday.setHours(23, 59, 59, 999);
 
             const relationCondtion = {};
-            if (userId !== 1) {
+            if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
                 relationCondtion.relation = { [Op.like]: `${me.relation}/%` }
             }
@@ -167,7 +167,7 @@ class Controller {
             const userId = req.user_id;
             
             const relationCondtion = {};
-            if (userId !== 1) {
+            if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
                 relationCondtion.relation = { [Op.like]: `${me.relation}/%` }
             }
