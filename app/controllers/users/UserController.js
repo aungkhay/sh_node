@@ -3,7 +3,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const ResdisHelper = require('../../helpers/RedisHelper');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
-const { UserKYC, User, db, PaymentMethod, Rank, UserBonus, Config } = require('../../models');
+const { UserKYC, User, db, PaymentMethod, Rank, UserBonus, Config, Deposit, Withdraw, UserGoldPrice } = require('../../models');
 const multer = require('multer');
 const path = require('path');
 const AliOSS = require('../../helpers/AliOSS');
@@ -1183,101 +1183,170 @@ class Controller {
                 include: includes,
                 where: condition,
                 attributes: [
-                    'id', 'name',
-                    [
-                        Sequelize.literal(`(
-                            SELECT COUNT(*)
-                            FROM users AS tc
-                            WHERE tc.parent_id = User.id
-                            AND tc.deletedAt IS NULL
-                        )`),
-                        'team_count'
-                    ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COUNT(*)
-                            FROM users AS ttc
-                            WHERE ttc.relation LIKE CONCAT('%/', User.id, '/%')
-                            AND ttc.id <> User.id
-                            AND ttc.deletedAt IS NULL
-                        )`),
-                        'total_team_count'
-                    ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COALESCE(SUM(amount), 0)
-                            FROM deposits AS pd
-                            WHERE pd.user_id = User.id
-                            AND pd.status = 1
-                            AND pd.deletedAt IS NULL
-                        )`),
-                        'personal_deposit'
-                    ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COALESCE(SUM(amount), 0)
-                            FROM withdraws AS pw
-                            WHERE pw.user_id = User.id
-                            AND pw.status = 1
-                            AND pw.deletedAt IS NULL
-                        )`),
-                        'personal_withdraw'
-                    ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COALESCE(SUM(amount), 0)
-                            FROM deposits AS gd
-                            WHERE gd.relation LIKE CONCAT('%/', User.id, '/%')
-                            AND gd.user_id <> User.id
-                            AND gd.status = 1
-                            AND gd.deletedAt IS NULL
-                        )`),
-                        'group_deposit'
-                    ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COALESCE(SUM(amount), 0)
-                            FROM withdraws AS gw
-                            WHERE gw.relation LIKE CONCAT('%/', User.id, '/%')
-                            AND gw.status = 1
-                            AND gw.deletedAt IS NULL
-                        )`),
-                        'group_withdraw'
-                    ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COALESCE(SUM(gold_count), 0)
-                            FROM user_gold_prices AS pp
-                            WHERE pp.user_id = User.id
-                        )`),
-                        'personal_gold_count'
-                    ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COALESCE(SUM(gold_count), 0)
-                            FROM user_gold_prices AS gp
-                            WHERE gp.relation LIKE CONCAT('%/', User.id, '/%')
-                        )`),
-                        'group_gold_count'
-                    ],
-                    [
-                        Sequelize.literal(`(
-                            SELECT COUNT(*)
-                            FROM user_kyc AS uk
-                            WHERE uk.relation LIKE CONCAT('%/', User.id, '/%')
-                            AND uk.status = 'APPROVED'
-                            AND uk.deletedAt IS NULL
-                        )`),
-                        'kyc_approved_count'
-                    ],
+                    'id', 'name', 'relation'
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COUNT(*)
+                    //         FROM users AS tc
+                    //         WHERE tc.parent_id = User.id
+                    //         AND tc.deletedAt IS NULL
+                    //     )`),
+                    //     'team_count'
+                    // ],
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COUNT(*)
+                    //         FROM users AS ttc
+                    //         WHERE ttc.relation LIKE CONCAT('%/', User.id, '/%')
+                    //         AND ttc.id <> User.id
+                    //         AND ttc.deletedAt IS NULL
+                    //     )`),
+                    //     'total_team_count'
+                    // ],
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COALESCE(SUM(amount), 0)
+                    //         FROM deposits AS pd
+                    //         WHERE pd.user_id = User.id
+                    //         AND pd.status = 1
+                    //         AND pd.deletedAt IS NULL
+                    //     )`),
+                    //     'personal_deposit'
+                    // ],
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COALESCE(SUM(amount), 0)
+                    //         FROM withdraws AS pw
+                    //         WHERE pw.user_id = User.id
+                    //         AND pw.status = 1
+                    //         AND pw.deletedAt IS NULL
+                    //     )`),
+                    //     'personal_withdraw'
+                    // ],
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COALESCE(SUM(amount), 0)
+                    //         FROM deposits AS gd
+                    //         WHERE gd.relation LIKE CONCAT('%/', User.id, '/%')
+                    //         AND gd.user_id <> User.id
+                    //         AND gd.status = 1
+                    //         AND gd.deletedAt IS NULL
+                    //     )`),
+                    //     'group_deposit'
+                    // ],
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COALESCE(SUM(amount), 0)
+                    //         FROM withdraws AS gw
+                    //         WHERE gw.relation LIKE CONCAT('%/', User.id, '/%')
+                    //         AND gw.status = 1
+                    //         AND gw.deletedAt IS NULL
+                    //     )`),
+                    //     'group_withdraw'
+                    // ],
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COALESCE(SUM(gold_count), 0)
+                    //         FROM user_gold_prices AS pp
+                    //         WHERE pp.user_id = User.id
+                    //     )`),
+                    //     'personal_gold_count'
+                    // ],
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COALESCE(SUM(gold_count), 0)
+                    //         FROM user_gold_prices AS gp
+                    //         WHERE gp.relation LIKE CONCAT('%/', User.id, '/%')
+                    //     )`),
+                    //     'group_gold_count'
+                    // ],
+                    // [
+                    //     Sequelize.literal(`(
+                    //         SELECT COUNT(*)
+                    //         FROM user_kyc AS uk
+                    //         WHERE uk.relation LIKE CONCAT('%/', User.id, '/%')
+                    //         AND uk.status = 'APPROVED'
+                    //         AND uk.deletedAt IS NULL
+                    //     )`),
+                    //     'kyc_approved_count'
+                    // ],
                 ],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset
             });
 
+            const users = [];
+            for (let i = 0; i < rows.length; i++) {
+                const u = rows[i];
+                const userObj = u.toJSON();
+                // Team count
+                const team_count = await User.count({ where: { parent_id: u.id } });
+                userObj.team_count = team_count;
+                // Total team count
+                const total_team_count = await User.count({
+                    where: {
+                        relation: {
+                            [Op.like]: `${u.relation}/%`
+                        },
+                    }
+                });
+                userObj.total_team_count = total_team_count;
+                // Personal deposit
+                const personal_deposit = await Deposit.sum('amount', { where: { user_id: u.id, status: 1 } });
+                userObj.personal_deposit = personal_deposit || 0;
+                // Personal withdraw
+                const personal_withdraw = await Withdraw.sum('amount', { where: { user_id: u.id, status: 1 } });
+                userObj.personal_withdraw = personal_withdraw || 0;
+                // Group deposit
+                const group_deposit = await Deposit.sum('amount', {
+                    where: {
+                        relation: {
+                            [Op.like]: `${u.relation}/%`
+                        },
+                        status: 1
+                    }
+                });
+                userObj.group_deposit = group_deposit || 0;
+                // Group withdraw
+                const group_withdraw = await Withdraw.sum('amount', {
+                    where: {
+                        relation: {
+                            [Op.like]: `${u.relation}/%`
+                        },
+                        status: 1
+                    }
+                });
+                userObj.group_withdraw = group_withdraw || 0;
+                // Personal gold count
+                const personal_gold_count = await UserGoldPrice.sum('gold_count', { where: { user_id: u.id } });
+                userObj.personal_gold_count = personal_gold_count || 0;
+                // Group gold count
+                const group_gold_count = await UserGoldPrice.sum('gold_count', {
+                    where: {
+                        relation: {
+                            [Op.like]: `${u.relation}/%`
+                        }
+                    }
+                });
+                userObj.group_gold_count = group_gold_count || 0;
+                // KYC approved count
+                const kyc_approved_count = await UserKYC.count({
+                    where: {
+                        relation: {
+                            [Op.like]: `${u.relation}/%`
+                        },
+                        status: 'APPROVED'
+                    }
+                });
+                userObj.kyc_approved_count = kyc_approved_count || 0;
+
+                delete userObj.relation;
+                users.push(userObj);
+            }
+
             data = {
-                users: rows,
+                users: users,
                 meta: {
                     page: page,
                     perPage: perPage,
@@ -1288,6 +1357,7 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            console.log(error);
             errLogger(`[TEAM]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
