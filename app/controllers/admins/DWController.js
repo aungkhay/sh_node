@@ -133,6 +133,8 @@ class Controller {
                     } else {
                         userCondition.phone_number = phone;
                     }
+                } else {
+                    userCondition.phone_number = phone;
                 }
             }
             if (Number(isInternalAccount) > 0) {
