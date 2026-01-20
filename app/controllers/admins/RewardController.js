@@ -6,6 +6,7 @@ const { errLogger } = require('../../helpers/Logger');
 const { RewardType, RewardRecord, User, db } = require('../../models');
 const { Op } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
+const { fn, literal } = require('sequelize');
 
 class Controller {
     constructor(app) {
@@ -151,7 +152,18 @@ class Controller {
                 condition.reward_id = rewardId;
             }
 
-            const { rows, count } = await RewardRecord.findAndCountAll({
+            const total = await RewardRecord.count({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        where: userCondition,
+                        attributes: []
+                    }
+                ],
+                where: condition,
+            });
+            const rows = await RewardRecord.findAll({
                 include: [
                     {
                         model: User,
@@ -170,19 +182,41 @@ class Controller {
                 limit: perPage,
                 offset: offset
             });
+            const countObj = {}
+            for (let i = 1; i <= 8; i++) {
+                const result = await RewardRecord.findOne({
+                    include: [
+                        {
+                            model: User,
+                            as: 'user',
+                            where: userCondition,
+                            attributes: []
+                        }
+                    ],
+                    attributes: [[fn('COUNT', literal('DISTINCT user_id')), 'user_count']],
+                    where: {
+                        reward_id: i,
+                        ...condition
+                    },
+                    raw: true
+                });
+                countObj[`reward${i}UserCount`] = Number(result.user_count || 0);
+            }
 
             const data = {
                 rewards: rows,
+                ...countObj,
                 meta: {
                     page: page,
                     perPage: perPage,
-                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
-                    total: count
+                    totalPage: total > 0 ? Math.ceil(total / perPage) : total,
+                    total: total
                 }
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
