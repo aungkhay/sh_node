@@ -2391,7 +2391,12 @@ class Controller {
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(masonicFund));
             }
 
-            const totalRegister = await User.count();
+            // const totalRegister = await User.count({ where: { type: 2 } });
+            let totalRegister = await this.redisHelper.getValue('TOTAL_REGISTERED_USER_COUNT');
+            if (!totalRegister) {
+                totalRegister = await User.count({ where: { type: 2 } });
+                await this.redisHelper.setValue('TOTAL_REGISTERED_USER_COUNT', String(totalRegister), 600); // 10 minutes
+            }
             const user = await User.findByPk(req.user_id, { attributes: ['id', 'masonic_fund', 'phone_number'] });
 
             const participantCount = (await this.redisHelper.getValue('MASONIC_FUND_PARTICIPANT_COUNT') || 0);
