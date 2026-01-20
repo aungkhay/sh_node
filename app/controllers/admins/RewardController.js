@@ -182,8 +182,20 @@ class Controller {
                 limit: perPage,
                 offset: offset
             });
-            const countObj = {}
+            const countObj = {
+                reward1UserCount: 0,
+                reward2UserCount: 0,
+                reward3UserCount: 0,
+                reward4UserCount: 0,
+                reward5UserCount: 0,
+                reward6UserCount: 0,
+                reward7UserCount: 0,
+                reward8UserCount: 0,
+            }
             for (let i = 1; i <= 8; i++) {
+                if (rewardId && Number(rewardId) != i) {
+                    continue;
+                }
                 const result = await RewardRecord.findOne({
                     include: [
                         {
