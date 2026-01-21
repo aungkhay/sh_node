@@ -1401,45 +1401,60 @@ class Controller {
 
     GET_WELCOME_MESSAGE = async (req, res) => {
         try {
-            const cachedMessage = await this.redisHelper.getValue(`WELCOME_MESSAGE_${req.user_id}`);
+            let popup_announcement = await this.redisHelper.getValue('popup_announcement');
+            let is_show_popup = Number(await this.redisHelper.getValue('is_show_popup') || 0);
+            if (!popup_announcement) {
+                const config = await Config.findOne({ where: { type: 'popup_announcement' }, attributes: ['val', 'description'] });
+                await this.redisHelper.setValue('popup_announcement', config.val);
+                popup_announcement = config.val;
+                is_show_popup = Number(config.description);
+            }
+
+            let cachedMessage = await this.redisHelper.getValue(`WELCOME_MESSAGE_${req.user_id}`);
             if (cachedMessage) {
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cachedMessage));
+                cachedMessage = JSON.parse(cachedMessage);
+                } else {
+                const user = await User.findByPk(req.user_id, { attributes: ['name', 'rank_id'] });
+                const now = new Date();
+                const hour = now.getHours();
+                let timeOfDay = '';
+                if (hour >= 5 && hour < 12) {
+                    timeOfDay = '早上好';
+                } else if (hour >= 12 && hour < 17) {
+                    timeOfDay = '下午好';
+                } else if (hour >= 17 && hour < 21) {
+                    timeOfDay = '晚上好';
+                } else {
+                    timeOfDay = '晚安';
+                }
+
+                const ranks = await Rank.findAll({
+                    attributes: ['id', 'name', 'point', 'pic', 'welcome_message'],
+                    order: [['id', 'ASC']]
+                });
+
+                const currentRankIndex = ranks.findIndex(r => r.id === user.rank_id);
+                const currentRank = ranks[currentRankIndex];
+                const nextRank = ranks.find(r => r.point > ranks[currentRankIndex].point);
+
+                const obj = {
+                    name: user.name,
+                    time: timeOfDay,
+                    rank_level: currentRank.name,
+                    rank_pic: currentRank.pic,
+                    message: currentRank.welcome_message,
+                    next_rank_level: nextRank ? nextRank.name : '已达到最高军衔'
+                }
+                await this.redisHelper.setValue(`WELCOME_MESSAGE_${req.user_id}`, JSON.stringify(obj), 180); // cache for 3 minute
+                cachedMessage = obj;
             }
-            const user = await User.findByPk(req.user_id, { attributes: ['name', 'rank_id'] });
-            const now = new Date();
-            const hour = now.getHours();
-            let timeOfDay = '';
-            if (hour >= 5 && hour < 12) {
-                timeOfDay = '早上好';
-            } else if (hour >= 12 && hour < 17) {
-                timeOfDay = '下午好';
-            } else if (hour >= 17 && hour < 21) {
-                timeOfDay = '晚上好';
-            } else {
-                timeOfDay = '晚安';
+            let data = {
+                welcome_message: cachedMessage,
+                popup_announcement: popup_announcement,
+                is_show_popup: is_show_popup
             }
 
-            const ranks = await Rank.findAll({
-                attributes: ['id', 'name', 'point', 'pic', 'welcome_message'],
-                order: [['id', 'ASC']]
-            });
-
-            const currentRankIndex = ranks.findIndex(r => r.id === user.rank_id);
-            const currentRank = ranks[currentRankIndex];
-            const nextRank = ranks.find(r => r.point > ranks[currentRankIndex].point);
-
-            const obj = {
-                name: user.name,
-                time: timeOfDay,
-                rank_level: currentRank.name,
-                rank_pic: currentRank.pic,
-                message: currentRank.welcome_message,
-                next_rank_level: nextRank ? nextRank.name : '已达到最高军衔'
-            }
-
-            await this.redisHelper.setValue(`WELCOME_MESSAGE_${req.user_id}`, JSON.stringify(obj), 180); // cache for 3 minute
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', obj);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             console.log(error)
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
