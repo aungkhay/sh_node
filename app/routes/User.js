@@ -57,7 +57,7 @@ class UserRoute extends express.Router {
         this.post('/upload-inheritance-prove', middleware.isLoggedIn, HomeCtrl.UPLOAD_INHERITANCE_PROVE);
         this.get('/earn-summary', middleware.isLoggedIn, HomeCtrl.EARN_SUMMARY);
         this.get('/earn-history', middleware.isLoggedIn, HomeCtrl.EARN_HISTORY);
-        this.get('/masonic-fund', middleware.isLoggedIn, HomeCtrl.MASONIC_FUND);
+        // this.get('/masonic-fund', middleware.isLoggedIn, HomeCtrl.MASONIC_FUND);
         this.post('/get-masonic-fund', middleware.isLoggedIn, HomeCtrl.GET_MASONIC_FUND);
         this.get('/get-banners', HomeCtrl.GET_BANNER);
         this.get('/get-gold-prices', middleware.isLoggedIn, HomeCtrl.GOLD_PRICE);
