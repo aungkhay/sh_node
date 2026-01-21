@@ -1413,7 +1413,7 @@ class Controller {
             let cachedMessage = await this.redisHelper.getValue(`WELCOME_MESSAGE_${req.user_id}`);
             if (cachedMessage) {
                 cachedMessage = JSON.parse(cachedMessage);
-                } else {
+            } else {
                 const user = await User.findByPk(req.user_id, { attributes: ['name', 'rank_id'] });
                 const now = new Date();
                 const hour = now.getHours();
@@ -1448,10 +1448,25 @@ class Controller {
                 await this.redisHelper.setValue(`WELCOME_MESSAGE_${req.user_id}`, JSON.stringify(obj), 180); // cache for 3 minute
                 cachedMessage = obj;
             }
+
+            let masonicFund = await this.redisHelper.getValue(`masonic_fund_summary`);
+            if (masonicFund) {
+                masonicFund = JSON.parse(masonicFund);
+            } else {
+                const totalRegister = await User.count({ where: { type: 2 } });
+                const participantCount = (await this.redisHelper.getValue('MASONIC_FUND_PARTICIPANT_COUNT') || 0);
+                const ReteriverCount = (await this.redisHelper.getValue('MASONIC_FUND_RETRIEVER_COUNT') || 0);
+                masonicFund = {
+                    total_participant: Number(totalRegister * 111) + Number(participantCount) + 10300000,
+                    total_retreiver: Number(totalRegister * 27) + Number(ReteriverCount) + 5050000,
+                }
+                await this.redisHelper.setValue(`masonic_fund_summary`, JSON.stringify(masonicFund), 600); // cache for 10 minutes
+            }
             let data = {
                 welcome_message: cachedMessage,
                 popup_announcement: popup_announcement,
-                is_show_popup: is_show_popup
+                is_show_popup: is_show_popup,
+                masonic_fund: masonicFund
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
