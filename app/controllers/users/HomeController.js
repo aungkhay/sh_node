@@ -1464,7 +1464,7 @@ class Controller {
             * =============================== */
             const now = new Date();
             const minutes = now.getMinutes();
-            const allowed = (minutes >= 0 && minutes < 5) || (minutes >= 58 && minutes <= 59);
+            const allowed = (minutes >= 0 && minutes <= 5) || (minutes >= 58 && minutes <= 59);
             if (!allowed) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
             }
