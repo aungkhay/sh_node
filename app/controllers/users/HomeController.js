@@ -37,7 +37,16 @@ class Controller {
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
-            const serverTime = Math.floor(Date.now());
+            
+            let serverTime = Math.floor(Date.now());
+            const group = (req.user_id || 3) % 3;
+
+            if (group === 1) {
+                serverTime -= 60 * 1000;      // -60 seconds
+            } else if (group === 2) {
+                serverTime -= 120 * 1000;     // -120 seconds
+            }
+            
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { serverTime: serverTime });
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
