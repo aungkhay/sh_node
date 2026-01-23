@@ -208,7 +208,7 @@ class Controller {
             }
 
             const userId = req.user_id;
-            const amount = req.body.amount;
+            const amount = parseFloat(req.body.amount);
             const withdrawBy = req.body.withdrawBy;
             const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
@@ -216,11 +216,11 @@ class Controller {
                 attributes: ['id', 'balance', 'relation']
             });
 
-            if (parseFloat(amount) < 100) {
+            if (amount < 100) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '最低提现金额为100', {});
             }
 
-            if (parseFloat(amount) > parseFloat(user.balance)) {
+            if (amount > parseFloat(user.balance)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '余额不足', {});
             }
 
@@ -233,7 +233,7 @@ class Controller {
                     relation: user.relation,
                     amount: amount,
                     before_amount: Number(user.balance),
-                    after_amount: Number(parseFloat(user.balance) - parseFloat(amount)),
+                    after_amount: Number(parseFloat(user.balance) - amount),
                 }, { transaction: t });
                 await user.increment({ balance: -amount }, { transaction: t });
 
