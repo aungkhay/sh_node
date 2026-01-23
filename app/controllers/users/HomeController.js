@@ -42,9 +42,9 @@ class Controller {
             const group = (req.user_id || 3) % 3;
 
             if (group === 1) {
-                serverTime -= 60 * 1000;      // -60 seconds
+                serverTime -= 20 * 1000;      // -20 seconds
             } else if (group === 2) {
-                serverTime -= 120 * 1000;     // -120 seconds
+                serverTime -= 40 * 1000;     // -40 seconds
             }
             
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { serverTime: serverTime });
