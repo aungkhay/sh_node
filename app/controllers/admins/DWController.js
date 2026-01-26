@@ -327,6 +327,56 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    EXPORT_WITHDRAW_BY_PHONES = async (req, res) => {
+        try {
+            const phone_numbers = req.body.phone_numbers; // array
+            const userId = req.user_id;
+            const status = req.body.status || -1;
+
+            let condition = {}
+            if (userId != 1) {
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }      
+            }
+            if (Number(status) >= 0) {
+                condition.status = Number(status);
+            }
+
+            let userCondition = {}
+            if (phone_numbers.length > 0) {
+                userCondition.phone_number = { [Op.in]: phone_numbers };
+            }
+
+            const rows = await Withdraw.findAll({
+                include: {
+                    model: User,
+                    as: 'user',
+                    include: [
+                        {
+                            model: User,
+                            as: 'top_account',
+                            attributes: ['id', 'name', 'phone_number']
+                        },
+                        {
+                            model: PaymentMethod,
+                            as: 'payment_method',
+                            attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name']
+                        }
+                    ],
+                    where: userCondition,
+                    attributes: ['id', 'name', 'phone_number', 'is_internal_account'],
+                },
+                where: condition,
+                order: [['id', 'DESC']],
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', rows);
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller

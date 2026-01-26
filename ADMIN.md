@@ -215,6 +215,13 @@ const params = {
     endTime: '2025-11-06 23:59:59',
 }
 
+// [POST] Export Withdraw by phone numbers
+const url = `${baseURL}/export-withdraw-by-phone_numbers`;
+const data = {
+    phone_numbers: [],
+    status: 0, // 0 => PENDIGN | 1 => SUCCESS | 2 => FAILED (Optional)
+}
+
 // [POST] Import Withdraw
 const url = `${baseURL}/import-withdraw`;
 const formData = new FormData();

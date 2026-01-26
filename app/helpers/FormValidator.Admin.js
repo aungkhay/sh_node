@@ -554,3 +554,11 @@ exports.assign_permissions = () => {
             .isArray({ min: 1 }).withMessage('权限ID无效'),
     ]
 }
+
+exports.export_withdraw_by_phones = () => {
+    return [
+        check('phone_numbers').not().isEmpty().withMessage('手机号列表不能为空')
+            .bail()
+            .isArray({ min: 1 }).withMessage('手机号列表无效'),
+    ]
+}
