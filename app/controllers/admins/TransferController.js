@@ -52,7 +52,7 @@ class Controller {
                     model: User,
                     as: 'user',
                     where: userCondition,
-                    attributes: ['id', 'name']
+                    attributes: ['id', 'name', 'phone_number']
                 },
                 where: condition,
                 attributes: ['id', 'wallet_type', 'amount', 'from', 'to', 'before_from_amount', 'after_from_amount', 'before_to_amount', 'after_to_amount', 'status', 'createdAt'],

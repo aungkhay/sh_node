@@ -16,8 +16,8 @@ const startEncrypt = () => {
     const loginData = JSON.stringify({
         phone: "13914725800",
         password: "superadmin@123",
-        uuid: "fff49aac-0813-4ad0-8457-07d1bd31e6f5",
-        verification_code: "51369"
+        uuid: "b5afa324-c063-42c9-856b-5b51c1192ec7",
+        verification_code: "15855"
     });
 
     const kyc = JSON.stringify({
@@ -119,8 +119,7 @@ const startEncrypt = () => {
     const updateAgreementStatus = JSON.stringify({ political_vetting_status: 'APPROVED' });
     const filters = JSON.stringify({
         page: 1,
-        perPage: 20,
-        type: 'update'
+        perPage: 5,
     })
     const gold_percentage = JSON.stringify({ rate: 0.2, percentage: 0.05 });
     const reportNews = JSON.stringify({ description: 'HaHa Blah' });
@@ -182,7 +181,7 @@ const startEncrypt = () => {
     const exportWithdraw = JSON.stringify({
         phone_numbers: []
     })
-    const encrypted = encrypt(exportWithdraw, API_KEY, API_IV);
+    const encrypted = encrypt(filters, API_KEY, API_IV);
     console.log(encrypted);
 }
 
