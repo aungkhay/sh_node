@@ -3215,7 +3215,7 @@ class Controller {
             * =============================== */
             const rows = await RewardRecord.findAll({
                 where: { user_id: userId },
-                attributes: ['id', 'amount', 'is_used', 'validedAt', 'createdAt'],
+                attributes: ['id', 'amount', 'is_used', 'is_spring_festival_event', 'check_in_type', 'validedAt', 'createdAt'],
                 include: [
                     {
                         model: RewardType,
