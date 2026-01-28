@@ -16,8 +16,8 @@ const startEncrypt = () => {
     const loginData = JSON.stringify({
         phone: "13914725800",
         password: "superadmin@123",
-        uuid: "b5afa324-c063-42c9-856b-5b51c1192ec7",
-        verification_code: "15855"
+        uuid: "e1178aa0-9995-4109-8380-38cfff11ef63",
+        verification_code: "03311"
     });
 
     const kyc = JSON.stringify({
@@ -181,7 +181,10 @@ const startEncrypt = () => {
     const exportWithdraw = JSON.stringify({
         phone_numbers: []
     })
-    const encrypted = encrypt(filters, API_KEY, API_IV);
+    const checkInCard = JSON.stringify({
+        phone: ''
+    })
+    const encrypted = encrypt(checkInCard, API_KEY, API_IV);
     console.log(encrypted);
 }
 

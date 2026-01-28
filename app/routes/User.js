@@ -106,6 +106,13 @@ class UserRoute extends express.Router {
         this.post('/transfer-balance-to-earn', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE_TO_EARN);
         this.post('/transfer-earn-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_EARN_TO_BALANCE);
         this.post('/transfer-gold-interest-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_GOLD_INTEREST_TO_BALANCE);
+
+        // Spring Festival Event Routes
+        let SpringFestivalEventController = require('../controllers/users/SpringFestivalEventController');
+        const SpringFestivalEventCtrl = new SpringFestivalEventController(app);
+        this.post('/spring-festival-event/check-in', middleware.isLoggedIn, SpringFestivalEventCtrl.CHECK_IN_EVENT);
+        this.post('/spring-festival-event/repair-card/:id/use', middleware.isLoggedIn, SpringFestivalEventCtrl.USE_REPAIR_CARD);
+        this.get('/spring-festival-event/logs', middleware.isLoggedIn, SpringFestivalEventCtrl.CHECK_IN_LOGS);
     }
 }
 

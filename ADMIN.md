@@ -903,6 +903,13 @@ const data = {
     contact_info: ''
 }
 
+// [POST] 更新是否可以参加春节活动
+const url = `${baseURL}/users/update-can-join-spring-event`;
+const data = {
+    can_join_spring_event: 1, // 0 => No | 1 => Yes
+    phone_numbers: []
+}
+
 // [POST] Setup 2FA
 const url = `${baseURL}/users/${userId}/setup-2fa`;
 const data = {
@@ -1122,5 +1129,33 @@ const url = `${baseURL}/roles/${roleId}/permissions`;
 const url = `${baseURL}/roles/${roleId}/assign-permissions`;
 const data = {
     permissionIds: [1,2]
+}
+```
+### Spring Festival Event
+``` js
+// [GET] Joined List
+const url = `${baseUrl}/spring-festival-event/joined-event-list`;
+const params = {
+    page: 1,
+    perPage: 10,
+    startTime: '',
+    endTime: '',
+    phone: ''
+}
+
+// [GET] Check In Logs
+const url = `${baseURL}/spring-festival-event/check-in-logs`;
+const params = {
+    page: 1,
+    perPage: 10,
+    startTime: '',
+    endTime: '',
+    phone: ''
+}
+
+// [POST] Give Repair Card
+const url = `${baseURL}/spring-festival-event/give-repair-card`;
+const data = {
+    phone: ''
 }
 ```

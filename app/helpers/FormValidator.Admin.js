@@ -448,6 +448,18 @@ exports.update_contact_info = () => {
     ]
 }
 
+exports.update_can_join_spring_event = () => {
+    return [
+        check('can_join_spring_event')
+            .not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([0, 1]).withMessage('状态无效'),
+        check('phone_numbers').not().isEmpty().withMessage('手机号列表不能为空')
+            .bail()
+            .isArray({ min: 1 }).withMessage('手机号列表无效'),
+    ]
+}
+
 exports.setup_2fa = () => {
     return [
         check('email', { msg: '邮箱不能为空' }).not().isEmpty().isEmail().withMessage('邮箱格式不正确'),
@@ -560,5 +572,11 @@ exports.export_withdraw_by_phones = () => {
         check('phone_numbers').not().isEmpty().withMessage('手机号列表不能为空')
             .bail()
             .isArray({ min: 1 }).withMessage('手机号列表无效'),
+    ]
+}
+
+exports.give_repair_card = () => {
+    return [
+        check('phone', { msg: '手机号不能为空' }).not().isEmpty(),
     ]
 }

@@ -74,6 +74,16 @@ RewardRecord.init({
         type: DataTypes.TINYINT,
         defaultValue: 0,
         comment: 'Indicates if added in background (0 => No | 1 => Yes)'
+    },
+    is_spring_festival_event: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+        comment: '0 => No | 1 => Yes'
+    },
+    check_in_type: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: '1: 签到 2: 补签'
     }
 }, {
     sequelize,

@@ -659,3 +659,14 @@ const params = {
     perPage: 10
 }
 ```
+### Spring Festival Event
+``` js
+// [POST] Check In [签到]
+const url = `${baseURL}/spring-festival-event/check-in`;
+
+// [POST] Use Repair Card [补签卡]
+const url = `${baseURL}/spring-festival-event/repair-card/${cardId}/use`;
+
+// [GET] Logs [签到记录]
+const url = `${baseURL}/spring-festival-event/logs`;
+```

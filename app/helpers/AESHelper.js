@@ -40,12 +40,12 @@ const decrypt = (phrase, KEY, IV) => {
 }
 
 const decryptPass = (password) => {
-    const decryted = this.decrypt(password, PASS_KEY, PASS_IV);
+    const decryted = decrypt(password, PASS_KEY, PASS_IV);
     return decryted.slice(10, -10);
 }
 
 const decryptPhone = (phone) => {
-    const decryted = this.decrypt(phone, PHONE_KEY, PHONE_IV);
+    const decryted = decrypt(phone, PHONE_KEY, PHONE_IV);
     return decryted.slice(10, -10);
 }
 

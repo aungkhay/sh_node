@@ -42,6 +42,8 @@ const NewsLikes = require('./NewsLikes');
 const NewsReports = require('./NewsReports');
 const RankHistory = require('./RankHistory')
 const RedemptCode = require('./RedemptCode');
+const UserSpringFestivalCheckIn = require('./UserSpringFestivalCheckIn');
+const UserSpringFestivalCheckInLog = require('./UserSpringFestivalCheckInLog');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -183,6 +185,14 @@ NewsReports.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASC
 User.hasMany(RedemptCode, { foreignKey: 'user_id', as: 'redempt_codes', onDelete: 'CASCADE' });
 RedemptCode.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========= USER ↔️ SPRING_FESTIVAL_CHECK_IN (1:N) ==========
+User.hasOne(UserSpringFestivalCheckIn, { foreignKey: 'user_id', as: 'spring_festival_checks', onDelete: 'CASCADE' });
+UserSpringFestivalCheckIn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ======== USER ↔️ SPRING_FESTIVAL_CHECK_IN_LOG (1:N) ==========
+User.hasMany(UserSpringFestivalCheckInLog, { foreignKey: 'user_id', as: 'spring_festival_checkin_logs', onDelete: 'CASCADE' });
+UserSpringFestivalCheckInLog.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -223,6 +233,8 @@ const models = {
     GoldInterest,
     NewsLikes,
     RedemptCode,
+    UserSpringFestivalCheckIn,
+    UserSpringFestivalCheckInLog,
 };
 
 // Export models + db connection

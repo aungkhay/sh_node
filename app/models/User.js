@@ -263,6 +263,11 @@ User.init({
     google_2fa_enabled: {
         type: DataTypes.TINYINT,
         defaultValue: 0,
+    },
+    can_join_spring_event: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+        comment: '0 => No | 1 => Yes'
     }
 }, {
     sequelize,
