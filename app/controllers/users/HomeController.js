@@ -3233,6 +3233,8 @@ class Controller {
                 reward_type: r.reward_type,
                 amount: Number(r.amount),
                 is_used: r.is_used,
+                is_spring_festival_event: r.is_spring_festival_event,
+                check_in_type: r.check_in_type,
                 validedAt: r.validedAt,
                 createdAt: r.createdAt
             }));
