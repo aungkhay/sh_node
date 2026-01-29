@@ -448,15 +448,39 @@ exports.update_contact_info = () => {
     ]
 }
 
-exports.update_can_join_spring_event = () => {
+exports.spring_whitelist = () => {
     return [
         check('can_join_spring_event')
             .not().isEmpty().withMessage('状态不能为空')
             .bail()
             .isIn([0, 1]).withMessage('状态无效'),
-        check('phone_numbers').not().isEmpty().withMessage('手机号列表不能为空')
+        check('users').not().isEmpty().withMessage('用户列表不能为空')
             .bail()
-            .isArray({ min: 1 }).withMessage('手机号列表无效'),
+            .isArray({ min: 1 }).withMessage('用户列表无效'),
+
+        // phone_number
+        check('users.*.phone_number')
+            .notEmpty().withMessage('手机号不能为空')
+            .bail()
+            .isString().withMessage('手机号格式错误'),
+
+        // day_7_rate
+        check('users.*.day_7_rate')
+            .optional()
+            .isFloat({ min: 1, max: 100 })
+            .withMessage('7天比例必须在 1~100 之间'),
+
+        // day_14_rate
+        check('users.*.day_14_rate')
+            .optional()
+            .isFloat({ min: 1, max: 100 })
+            .withMessage('14天比例必须在 1~100 之间'),
+
+        // day_21_rate
+        check('users.*.day_21_rate')
+            .optional()
+            .isFloat({ min: 1, max: 100 })
+            .withMessage('21天比例必须在 1~100 之间'),
     ]
 }
 

@@ -578,7 +578,10 @@ class Controller {
             const coupons = await RewardRecord.findAll({
                 where: {
                     user_id: userId,
-                    reward_id: 8 // 推荐金提取券
+                    reward_id: 8, // 推荐金提取券
+                    check_in_type: {
+                        [Op.ne]: 2 // Not 补签卡
+                    }
                 },
                 attributes: ['id', 'amount', 'is_used', 'validedAt', 'createdAt'],
                 order: [['id', 'DESC']]

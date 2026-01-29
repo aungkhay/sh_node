@@ -1158,4 +1158,23 @@ const url = `${baseURL}/spring-festival-event/give-repair-card`;
 const data = {
     phone: ''
 }
+
+// [POST] Add whitelist
+const url = `${baseURL}/spring-festival-event/add-white-list`;
+const data = {
+    can_join_spring_event: 1, // 0 => remove from whitelist | 1 => whitelist
+    users: [
+        { phone_number: "xxx", day_7_rate: 10, day_14_rate: 20, day_21_rate: 30 },
+    ]
+}
+
+// [GET] Whitelist
+const url = `${baseURL}/spring-festival-event/white-list`;
+const params = {
+    page: 1,
+    perPage: 10,
+    startTime: '',
+    endTime: '',
+    phone: ''
+}
 ```

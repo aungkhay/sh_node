@@ -151,7 +151,6 @@ class AdminRoute extends express.Router {
         this.get('/users/export-child-register-list', middleware.isLoggedIn('user-export-subordinate'), UserCtrl.EXPORT_CHILD_REGISTER_LIST);
         this.post('/users/:id/update-wallet', FormValidator.update_wallet(), middleware.isLoggedIn('user-add-substract'), UserCtrl.UPDATE_WALLET);
         this.post('/users/:id/update-contact-info', FormValidator.update_contact_info(), middleware.isLoggedIn('user-change-contact'), UserCtrl.UPDATE_CONTACT_INFO);
-        this.post('/users/update-can-join-spring-event', FormValidator.update_can_join_spring_event(), middleware.isLoggedIn('spring-festival-event-allow-user-join'), UserCtrl.UPDATE_CAN_JOIN_SPRING_EVENT);
         // 2FA
         this.post('/users/:id/setup-2fa', FormValidator.setup_2fa(), middleware.isLoggedIn(), UserCtrl.SETUP_2FA);
         this.post('/users/:id/disable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn(), UserCtrl.DISABLE_2FA);
@@ -222,6 +221,8 @@ class AdminRoute extends express.Router {
         this.get('/spring-festival-event/joined-event-list', middleware.isLoggedIn('spring-festival-event-joined-list'), SpringFestivalEventCtrl.JOINED_EVENT_LIST);
         this.get('/spring-festival-event/check-in-logs', middleware.isLoggedIn('spring-festival-event-check-in-logs'), SpringFestivalEventCtrl.CHECK_IN_LOGS);
         this.post('/spring-festival-event/give-repair-card', FormValidator.give_repair_card(), middleware.isLoggedIn('spring-festival-event-give-repair-card'), SpringFestivalEventCtrl.GIVE_PEPAIR_CARD);
+        this.post('/spring-festival-event/add-white-list', FormValidator.spring_whitelist(), middleware.isLoggedIn('spring-festival-event-update-white-list'), SpringFestivalEventCtrl.ADD_WHITE_LIST);
+        this.get('/spring-festival-event/white-list', middleware.isLoggedIn('spring-festival-event-view-white-list'), SpringFestivalEventCtrl.WHITE_LIST);
     }
 }
 

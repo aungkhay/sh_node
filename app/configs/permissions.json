@@ -22,7 +22,6 @@
     { "model": "用户管理", "title": "联系方式", "name": "user-change-contact" },
     { "model": "用户管理", "title": "禁用、启用用户", "name": "user-disable-enable" },
     { "model": "用户管理", "title": "分配角色", "name": "user-assign-role" },
-    { "model": "用户管理", "title": "更新是否可以参加春节活动", "name": "update-can-join-spring-event" },
 
     { "model": "实名认证管理", "title": "实名认证列表", "name": "kyc-list" },
     { "model": "实名认证管理", "title": "添加", "name": "kyc-add" },
@@ -144,5 +143,7 @@
 
     { "model": "春节活动", "title": "已参加列表", "name": "spring-festival-event-joined-list" },
     { "model": "春节活动", "title": "签到记录", "name": "spring-festival-event-check-in-logs" },
-    { "model": "春节活动", "title": "发放补签卡", "name": "spring-festival-event-give-repair-card" }
+    { "model": "春节活动", "title": "发放补签卡", "name": "spring-festival-event-give-repair-card" },
+    { "model": "春节活动", "title": "更新白名单", "name": "spring-festival-event-update-white-list" },
+    { "model": "春节活动", "title": "查看白名单", "name": "spring-festival-event-view-white-list" }
 ]

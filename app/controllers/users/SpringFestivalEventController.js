@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { User, RewardRecord, UserSpringFestivalCheckIn, UserSpringFestivalCheckInLog, UserKYC, db } = require('../../models');
+const { User, RewardRecord, UserSpringFestivalCheckIn, UserSpringFestivalCheckInLog, UserKYC, db, SpringWhiteList } = require('../../models');
 const { Op } = require('sequelize');
 const { errLogger } = require('../../helpers/Logger');
 const moment = require('moment');
@@ -372,10 +372,7 @@ class Controller {
             if (!user) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '用户未实名，无法参与活动', {});
             }
-
-            if (user.can_join_spring_event != 1) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您暂无资格参加此次活动，如有疑问请联系在线客服', {});
-            }
+            const whiteListUser = await SpringWhiteList.findOne({ where: { user_id: userId } });
 
             const checkInRecord = await UserSpringFestivalCheckIn.findOne({ where: { user_id: userId } });
             if (checkInRecord) {
@@ -430,7 +427,7 @@ class Controller {
 
                     if (totalCheckIn == 7) {
                         updateObj.is_completed_7 = 1;
-                        const amount = this.getRandomInt(20, 29);
+                        const amount = whiteListUser ? whiteListUser.day_7_rate : this.getRandomInt(20, 29);
                         const validUntil = new Date(this.eventStart);
                         // Valid At Feb 26, 2026 00:00:00 Beijing Time
                         validUntil.setDate(validUntil.getDate() + 21);
@@ -454,7 +451,7 @@ class Controller {
                         const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
                         console.log('Downline Users for 14 days check-in:', downlineUsers.length);
                         if (downlineUsers.length >= 10) {
-                            const amount = this.getRandomInt(30, 49);
+                            const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
                             await rewardRecord.update({ amount: amount }, { transaction: t });
                         }
                     }
@@ -465,7 +462,7 @@ class Controller {
                         const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
                         console.log('Downline Users for 21 days check-in:', downlineUsers.length);
                         if (downlineUsers.length >= 20) {
-                            const amount = this.getRandomInt(50, 60);   
+                            const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
                             await rewardRecord.update({ amount: amount }, { transaction: t });
                             resAmount = amount;
                         }
@@ -508,7 +505,6 @@ class Controller {
                     reward_id: 8,
                     is_spring_festival_event: 1,
                     check_in_type: 2,
-                    is_repair: 1
                 }
             });
             if (!repairCard) {
@@ -540,6 +536,7 @@ class Controller {
             }
 
             const user = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+            const whiteListUser = await SpringWhiteList.findOne({ where: { user_id: userId } });
             const rewardRecord = await RewardRecord.findOne({ where: { user_id: userId, is_spring_festival_event: 1, check_in_type: 1 }, order: [['createdAt', 'DESC']] });
 
             let resMsg = '';
@@ -561,7 +558,7 @@ class Controller {
 
                 if (totalCheckIn == 7) {
                     updateObj.is_completed_7 = 1;
-                    const amount = this.getRandomInt(20, 29);
+                    const amount = whiteListUser ? whiteListUser.day_7_rate : this.getRandomInt(20, 29);
                     const validUntil = new Date(this.eventStart);
                     // Valid At Feb 26, 2026 00:00:00 Beijing Time
                     validUntil.setDate(validUntil.getDate() + 21);
@@ -585,7 +582,7 @@ class Controller {
                     const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
                     console.log('Downline Users for 14 days check-in:', downlineUsers.length);
                     if (downlineUsers.length >= 10) {
-                        const amount = this.getRandomInt(30, 49);
+                        const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
                         await rewardRecord.update({ amount: amount }, { transaction: t });
                     }
                 }
@@ -596,7 +593,7 @@ class Controller {
                     const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
                     console.log('Downline Users for 21 days check-in:', downlineUsers.length);
                     if (downlineUsers.length >= 20) {
-                        const amount = this.getRandomInt(50, 60);   
+                        const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
                         await rewardRecord.update({ amount: amount }, { transaction: t });
                         resAmount = amount;
                     }

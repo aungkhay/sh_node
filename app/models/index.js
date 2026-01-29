@@ -44,6 +44,7 @@ const RankHistory = require('./RankHistory')
 const RedemptCode = require('./RedemptCode');
 const UserSpringFestivalCheckIn = require('./UserSpringFestivalCheckIn');
 const UserSpringFestivalCheckInLog = require('./UserSpringFestivalCheckInLog');
+const SpringWhiteList = require('./SpringWhiteList');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -193,6 +194,10 @@ UserSpringFestivalCheckIn.belongsTo(User, { foreignKey: 'user_id', as: 'user', o
 User.hasMany(UserSpringFestivalCheckInLog, { foreignKey: 'user_id', as: 'spring_festival_checkin_logs', onDelete: 'CASCADE' });
 UserSpringFestivalCheckInLog.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ======== USER ↔️ SPRING_WHITE_LIST ==========
+User.hasOne(SpringWhiteList, { foreignKey: 'user_id', as: 'spring_white_list', onDelete: 'CASCADE' });
+SpringWhiteList.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -235,6 +240,7 @@ const models = {
     RedemptCode,
     UserSpringFestivalCheckIn,
     UserSpringFestivalCheckInLog,
+    SpringWhiteList
 };
 
 // Export models + db connection

@@ -184,7 +184,24 @@ const startEncrypt = () => {
     const checkInCard = JSON.stringify({
         phone: ''
     })
-    const encrypted = encrypt(checkInCard, API_KEY, API_IV);
+    const springWhiteList = JSON.stringify({
+        can_join_spring_event: 1,
+        users: [
+            {
+                phone_number: '13914725800',
+                day_7_rate: 5,
+                day_14_rate: 10,
+                day_21_rate: 15
+            },
+            {
+                phone_number: '13900000001',
+                day_7_rate: 3,
+                day_14_rate: 6,
+                day_21_rate: 9
+            }
+        ]
+    });
+    const encrypted = encrypt(springWhiteList, API_KEY, API_IV);
     console.log(encrypted);
 }
 

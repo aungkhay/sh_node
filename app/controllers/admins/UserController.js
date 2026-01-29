@@ -2134,30 +2134,6 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
-
-    UPDATE_CAN_JOIN_SPRING_EVENT = async (req, res) => {
-        try {
-            const err = validationResult(req);
-            const errors = this.commonHelper.validateForm(err);
-            if (!err.isEmpty()) {
-                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
-            }
-
-            const { can_join_spring_event, phone_numbers } = req.body;
-
-            await User.update({ can_join_spring_event: can_join_spring_event }, {
-                where: { phone_number: { [Op.in]: phone_numbers } }
-            });
-
-            // Log
-            await this.adminLogger(req, 'User', 'update');
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
-        } catch (error) {
-            errLogger(`[User][UPDATE_CAN_JOIN_SPRING_EVENT]: ${error.stack}`);
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-        }
-    }
 }
 
 module.exports = Controller;
