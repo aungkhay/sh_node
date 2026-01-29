@@ -259,7 +259,7 @@ class Controller {
             const obj = {
                 user_id: user.id,
                 relation: user.relation,
-                reward_id: Number(reward_id),
+                reward_id: Number(reward_id == 9 ? 8 : reward_id), // 补签卡按共济基金处理
                 is_background_added: 1,
                 from_where: '后台发放春节活动补签卡',
                 is_spring_festival_event: reward_id == 9 ? 1 : 0,
