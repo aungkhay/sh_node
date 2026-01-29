@@ -627,7 +627,7 @@ class CronJob {
                 return;
             }
             const rewardId = Number(reward.reward_id);
-            if (isNaN(rewardId) || ![1,2,3,4,6,7,8].includes(rewardId)) {
+            if (isNaN(rewardId) || ![1,2,3,4,6,7,8,9].includes(rewardId)) {
                 return;
             }
 
@@ -648,7 +648,7 @@ class CronJob {
                         const obj = {
                             user_id: user.id,
                             relation: user.relation,
-                            reward_id: reward.reward_id,
+                            reward_id: rewardId,
                             is_background_added: 1,
                         }
 
@@ -680,10 +680,10 @@ class CronJob {
                             rewards.push(obj);
                             await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
                         }
-                        if ([4,6,8].includes(obj.reward_id)) {
+                        if ([4,6,8,9].includes(obj.reward_id)) {
                             // 上合组织各国授权书
                             obj.amount = 100;
-                            if (obj.reward_id == 8) {
+                            if (obj.reward_id == 8 || obj.reward_id == 9) {
                                 obj.amount = amount; // 推荐奖励
                             }
                             if (obj.reward_id == 6) {

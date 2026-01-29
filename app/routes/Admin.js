@@ -220,7 +220,7 @@ class AdminRoute extends express.Router {
         let SpringFestivalEventCtrl = new SpringFestivalEventController(app);
         this.get('/spring-festival-event/joined-event-list', middleware.isLoggedIn('spring-festival-event-joined-list'), SpringFestivalEventCtrl.JOINED_EVENT_LIST);
         this.get('/spring-festival-event/check-in-logs', middleware.isLoggedIn('spring-festival-event-check-in-logs'), SpringFestivalEventCtrl.CHECK_IN_LOGS);
-        this.post('/spring-festival-event/give-repair-card', FormValidator.give_repair_card(), middleware.isLoggedIn('spring-festival-event-give-repair-card'), SpringFestivalEventCtrl.GIVE_PEPAIR_CARD);
+        // this.post('/spring-festival-event/give-repair-card', FormValidator.give_repair_card(), middleware.isLoggedIn('spring-festival-event-give-repair-card'), SpringFestivalEventCtrl.GIVE_PEPAIR_CARD);
         this.post('/spring-festival-event/add-white-list', FormValidator.spring_whitelist(), middleware.isLoggedIn('spring-festival-event-update-white-list'), SpringFestivalEventCtrl.ADD_WHITE_LIST);
         this.get('/spring-festival-event/white-list', middleware.isLoggedIn('spring-festival-event-view-white-list'), SpringFestivalEventCtrl.WHITE_LIST);
     }

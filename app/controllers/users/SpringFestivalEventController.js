@@ -383,7 +383,7 @@ class Controller {
                     if (lastDate.getFullYear() === now.getFullYear() &&
                         lastDate.getMonth() === now.getMonth() &&
                         lastDate.getDate() === now.getDate()) {
-                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到，明天再来吧！', {});
+                        // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到，明天再来吧！', {});
                     }
                 }
             }

@@ -242,7 +242,7 @@ class Controller {
             }
             const { user_id, is_all_user, reward_id, amount } = req.body;
             const rewardType = await RewardType.findByPk(reward_id, { attributes: ['id', 'title'] });
-            if (!rewardType) {
+            if (reward_id != 9 && !rewardType) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到奖励类型', {});
             }
             if (is_all_user && Number(is_all_user) == 1) {
@@ -259,8 +259,11 @@ class Controller {
             const obj = {
                 user_id: user.id,
                 relation: user.relation,
-                reward_id: Number(rewardType.id),
+                reward_id: Number(reward_id),
                 is_background_added: 1,
+                from_where: '后台发放春节活动补签卡',
+                is_spring_festival_event: reward_id == 9 ? 1 : 0,
+                check_in_type: reward_id == 9 ? 2 : 0
             }
             const t = await db.transaction();
             try {
@@ -291,10 +294,10 @@ class Controller {
                     await RewardRecord.create(obj, { transaction: t });
                     await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
                 }
-                if ([4,6,8].includes(obj.reward_id)) {
+                if ([4,6,8,9].includes(obj.reward_id)) {
                     // 上合组织各国授权书
                     obj.amount = 100;
-                    if (obj.reward_id == 8) {
+                    if (obj.reward_id == 8 || obj.reward_id == 9) {
                         obj.amount = amount; // 推荐奖励
                     }
                     if (obj.reward_id == 6) {
