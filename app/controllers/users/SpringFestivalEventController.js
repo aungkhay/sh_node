@@ -53,7 +53,12 @@ class Controller {
                     where: { status: 'APPROVED' },
                     attributes: []
                 },
-                where: { parent_id: userId }, 
+                where: { 
+                    parent_id: userId,
+                    createdAt: { 
+                        [Op.between]: [this.eventStart, this.eventEnd]
+                    }
+                }, 
                 attributes: ['id'] 
             });
             const userIds = users.map(u => {
@@ -113,6 +118,7 @@ class Controller {
             return users;
         } catch (error) {
             console.error('Error in USER_DOWNLINE_LEVEL:', error);
+            errLogger(`[SpringFestivalEvent][USER_DOWNLINE_LEVEL]: ${error.stack}`);
             return [];
         }
     }
@@ -122,20 +128,18 @@ class Controller {
             const userId = req.user_id;
 
             // 活动时间限制
-            const eventStart = new Date('2026-02-05T00:00:00+08:00');
-            const eventEnd = new Date('2026-02-25T23:59:59+08:00');
             const now = new Date();
-            // if (now < eventStart || now > eventEnd) {
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '活动未在进行时间内', {});
-            // }
+            if (now < this.eventStart || now > this.eventEnd) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '活动未在进行时间内', {});
+            }
 
             const user = await User.findByPk(userId, {
-                // include: {
-                //     model: UserKYC,
-                //     as: 'kyc',
-                //     where: { status: 'APPROVED' },
-                //     attributes: []
-                // },
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    where: { status: 'APPROVED' },
+                    attributes: []
+                },
                 attributes: ['id', 'relation'] 
             });
             if (!user) {
@@ -187,7 +191,7 @@ class Controller {
                             check_in_date: {
                                 // Feb 5 to Feb 10, 2026 // total 6 days
                                 [Op.between]: [
-                                    // eventStart,
+                                    // this.eventStart,
                                     // new Date('2026-02-10T23:59:59+08:00'),
                                     new Date('2026-01-23T00:00:00+08:00'),
                                     new Date('2026-01-28T23:59:59+08:00'),
@@ -286,7 +290,7 @@ class Controller {
                         if (totalCheckIn == 7) {
                             updateObj.is_completed_7 = 1;
                             const amount = this.getRandomInt(20, 29);
-                            const validUntil = new Date(eventStart);
+                            const validUntil = new Date(this.eventStart);
                             // Valid At Feb 26, 2026 00:00:00 Beijing Time
                             validUntil.setDate(validUntil.getDate() + 21);
 
@@ -383,7 +387,7 @@ class Controller {
                     if (lastDate.getFullYear() === now.getFullYear() &&
                         lastDate.getMonth() === now.getMonth() &&
                         lastDate.getDate() === now.getDate()) {
-                        // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到，明天再来吧！', {});
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到，明天再来吧！', {});
                     }
                 }
             }
