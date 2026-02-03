@@ -481,6 +481,12 @@ exports.spring_whitelist = () => {
             .optional()
             .isFloat({ min: 1, max: 100 })
             .withMessage('21天比例必须在 1~100 之间'),
+        
+        // is_check_downline_kyc
+        check('users.*.is_check_downline_kyc')
+            .optional()
+            .isIn([0, 1])
+            .withMessage('是否检查下线KYC状态值无效'),
     ]
 }
 

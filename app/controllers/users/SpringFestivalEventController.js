@@ -456,26 +456,39 @@ class Controller {
 
                     if (totalCheckIn == 14) {
                         updateObj.is_completed_14 = 1;
-                        const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
-                        console.log('Downline Users for 14 days check-in:', downlineUsers.length);
-                        if (downlineUsers.length >= 10) {
-                            const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
+                        if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
+                            const amount = whiteListUser.day_14_rate;
                             await rewardRecord.update({ amount: amount }, { transaction: t });
                             totalAmount = amount;
+                        } else {
+                            const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
+                            console.log('Downline Users for 14 days check-in:', downlineUsers.length);
+                            if (downlineUsers.length >= 10) {
+                                const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
+                                await rewardRecord.update({ amount: amount }, { transaction: t });
+                                totalAmount = amount;
+                            }
                         }
                     }
 
                     if (totalCheckIn == 21) {
                         updateObj.is_completed_21 = 1;
-                        const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
-                        console.log('Downline Users for 21 days check-in:', downlineUsers.length);
-                        if (downlineUsers.length >= 20) {
-                            const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
+                        if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
+                            const amount = whiteListUser.day_21_rate;
                             await rewardRecord.update({ amount: amount }, { transaction: t });
                             totalAmount = amount;
                         } else {
-                            totalAmount = rewardRecord.amount;
+                            const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
+                            console.log('Downline Users for 21 days check-in:', downlineUsers.length);
+                            if (downlineUsers.length >= 20) {
+                                const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
+                                await rewardRecord.update({ amount: amount }, { transaction: t });
+                                totalAmount = amount;
+                            } else {
+                                totalAmount = rewardRecord.amount;
+                            }
                         }
+                        
                         show_dialog = true;
                         resMsg = `恭喜您完成21天共签活动，您的活动奖励：${Number(totalAmount)}%推荐金提取券已发放到您的道具仓库，您可以在“我的道具”列表查看`;
                     }
@@ -503,6 +516,7 @@ class Controller {
             
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '签到成功', resData);
         } catch (error) {
+            console.log(error)
             errLogger(`[SpringFestivalEvent][CHECK_IN_EVENT]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
@@ -558,7 +572,7 @@ class Controller {
             let resMsg = '';
             let totalAmount = 0;
             let show_dialog = false;
-            
+
             const t = await db.transaction();
             try {
                 const currentTime = moment().format('HH:mm:ss');
@@ -600,25 +614,37 @@ class Controller {
 
                 if (totalCheckIn == 14) {
                     updateObj.is_completed_14 = 1;
-                    const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
-                    console.log('Downline Users for 14 days check-in:', downlineUsers.length);
-                    if (downlineUsers.length >= 10) {
-                        const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
+                    if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
+                        const amount = whiteListUser.day_14_rate;
                         await rewardRecord.update({ amount: amount }, { transaction: t });
                         totalAmount = amount;
+                    } else {
+                        const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
+                        console.log('Downline Users for 14 days check-in:', downlineUsers.length);
+                        if (downlineUsers.length >= 10) {
+                            const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
+                            await rewardRecord.update({ amount: amount }, { transaction: t });
+                            totalAmount = amount;
+                        }
                     }
                 }
 
                 if (totalCheckIn == 21) {
                     updateObj.is_completed_21 = 1;
-                    const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
-                    console.log('Downline Users for 21 days check-in:', downlineUsers.length);
-                    if (downlineUsers.length >= 20) {
-                        const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
+                    if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
+                        const amount = whiteListUser.day_21_rate;
                         await rewardRecord.update({ amount: amount }, { transaction: t });
                         totalAmount = amount;
                     } else {
-                        totalAmount = rewardRecord.amount;
+                        const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
+                        console.log('Downline Users for 21 days check-in:', downlineUsers.length);
+                        if (downlineUsers.length >= 20) {
+                            const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
+                            await rewardRecord.update({ amount: amount }, { transaction: t });
+                            totalAmount = amount;
+                        } else {
+                            totalAmount = rewardRecord.amount;
+                        }
                     }
                     resMsg = `恭喜您完成21天共签活动，您的活动奖励：${Number(totalAmount)}%推荐金提取券已发放到您的道具仓库，您可以在“我的道具”列表查看`;
                     show_dialog = true;

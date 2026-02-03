@@ -165,7 +165,7 @@ class Controller {
             }
 
             const { can_join_spring_event, users } = req.body;
-            // users => [{phone_number: 'xxxxxx', day_7_rate: 0.1, day_14_rate: 0.2, day_21_rate: 0.3}, {...}]
+            // users => [{phone_number: 'xxxxxx', day_7_rate: 0.1, day_14_rate: 0.2, day_21_rate: 0.3, is_check_downline_kyc: 1}, {...}]
 
             // check phone numbers exist
             const phoneNumbers = users.map(u => u.phone_number);
@@ -182,12 +182,13 @@ class Controller {
                     relation: u.relation,
                     day_7_rate: userRates.day_7_rate,
                     day_14_rate: userRates.day_14_rate,
-                    day_21_rate: userRates.day_21_rate
+                    day_21_rate: userRates.day_21_rate,
+                    is_check_downline_kyc: userRates.is_check_downline_kyc
                 });
             }
 
             if (can_join_spring_event == 1) {
-                await SpringWhiteList.bulkCreate(data, { updateOnDuplicate: ['day_7_rate', 'day_14_rate', 'day_21_rate'] });
+                await SpringWhiteList.bulkCreate(data, { updateOnDuplicate: ['day_7_rate', 'day_14_rate', 'day_21_rate', 'is_check_downline_kyc'] });
             } else {
                 await SpringWhiteList.destroy({
                     where: { phone_number: { [Op.in]: data.map(u => u.phone_number) } }

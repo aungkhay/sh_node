@@ -35,6 +35,10 @@ SpringWhiteList.init({
         type: DataTypes.INTEGER,
         defaultValue: 0
     },
+    is_check_downline_kyc: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    }
 }, {
     sequelize,
     modelName: 'SpringWhiteList',
