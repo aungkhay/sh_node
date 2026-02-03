@@ -231,7 +231,7 @@ class Controller {
                 userCondition.phone_number = phone;
             }
             const { rows, count } = await SpringWhiteList.findAndCountAll({
-                attributes: ['id', 'day_7_rate', 'day_14_rate', 'day_21_rate', 'createdAt', 'updatedAt'],
+                attributes: ['id', 'day_7_rate', 'day_14_rate', 'day_21_rate', 'is_check_downline_kyc', 'createdAt', 'updatedAt'],
                 where: condition,
                 include: {
                     model: User,
