@@ -387,7 +387,7 @@ class Controller {
                     if (lastDate.getFullYear() === now.getFullYear() &&
                         lastDate.getMonth() === now.getMonth() &&
                         lastDate.getDate() === now.getDate()) {
-                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到，明天再来吧！', {});
+                        // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到，明天再来吧！', {});
                     }
                 }
             }
@@ -396,6 +396,8 @@ class Controller {
 
             let totalCheckIn = 0;
             let resMsg = '签到成功';
+            let totalAmount = 0;
+            let show_dialog = false;
 
             const t = await db.transaction();
             try {
@@ -448,6 +450,8 @@ class Controller {
                         }, { transaction: t });
 
                         resMsg = '恭喜您完成连续签到，继续签到可以获得更大额度推荐金提取券。';
+                        totalAmount = amount;
+                        show_dialog = true;
                     }
 
                     if (totalCheckIn == 14) {
@@ -457,20 +461,23 @@ class Controller {
                         if (downlineUsers.length >= 10) {
                             const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
                             await rewardRecord.update({ amount: amount }, { transaction: t });
+                            totalAmount = amount;
                         }
                     }
 
                     if (totalCheckIn == 21) {
                         updateObj.is_completed_21 = 1;
-                        let resAmount = rewardRecord.amount;
                         const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
                         console.log('Downline Users for 21 days check-in:', downlineUsers.length);
                         if (downlineUsers.length >= 20) {
                             const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
                             await rewardRecord.update({ amount: amount }, { transaction: t });
-                            resAmount = amount;
+                            totalAmount = amount;
+                        } else {
+                            totalAmount = rewardRecord.amount;
                         }
-                        resMsg = `恭喜您完成21天共签活动，您的活动奖励：${resAmount}%推荐金提取券已发放到您的道具仓库，您可以在“我的道具”列表查看`;
+                        show_dialog = true;
+                        resMsg = `恭喜您完成21天共签活动，您的活动奖励：${Number(totalAmount)}%推荐金提取券已发放到您的道具仓库，您可以在“我的道具”列表查看`;
                     }
 
                     await checkInRecord.update(updateObj, { transaction: t });
@@ -488,8 +495,13 @@ class Controller {
                 await t.rollback();
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '签到失败', {});
             }
+            const resData = {
+                amount: Number(totalAmount),
+                show_dialog: show_dialog,
+                title: resMsg
+            }
             
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, resMsg, { });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '签到成功', resData);
         } catch (error) {
             errLogger(`[SpringFestivalEvent][CHECK_IN_EVENT]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
@@ -544,6 +556,9 @@ class Controller {
             const rewardRecord = await RewardRecord.findOne({ where: { user_id: userId, is_spring_festival_event: 1, check_in_type: 1 }, order: [['createdAt', 'DESC']] });
 
             let resMsg = '';
+            let totalAmount = 0;
+            let show_dialog = false;
+            
             const t = await db.transaction();
             try {
                 const currentTime = moment().format('HH:mm:ss');
@@ -579,6 +594,8 @@ class Controller {
                     }, { transaction: t });
 
                     resMsg = '恭喜您完成连续签到，继续签到可以获得更大额度推荐金提取券。';
+                    totalAmount = amount;
+                    show_dialog = true;
                 }
 
                 if (totalCheckIn == 14) {
@@ -588,20 +605,23 @@ class Controller {
                     if (downlineUsers.length >= 10) {
                         const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
                         await rewardRecord.update({ amount: amount }, { transaction: t });
+                        totalAmount = amount;
                     }
                 }
 
                 if (totalCheckIn == 21) {
                     updateObj.is_completed_21 = 1;
-                    let resAmount = rewardRecord.amount;
                     const downlineUsers = await this.USER_DOWNLINE_LEVEL(userId, 3);
                     console.log('Downline Users for 21 days check-in:', downlineUsers.length);
                     if (downlineUsers.length >= 20) {
                         const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
                         await rewardRecord.update({ amount: amount }, { transaction: t });
-                        resAmount = amount;
+                        totalAmount = amount;
+                    } else {
+                        totalAmount = rewardRecord.amount;
                     }
-                    resMsg = `恭喜您完成21天共签活动，您的活动奖励：${resAmount}%推荐金提取券已发放到您的道具仓库，您可以在“我的道具”列表查看`;
+                    resMsg = `恭喜您完成21天共签活动，您的活动奖励：${Number(totalAmount)}%推荐金提取券已发放到您的道具仓库，您可以在“我的道具”列表查看`;
+                    show_dialog = true;
                 }
                 
                 await checkInRecord.update(updateObj, { transaction: t });
@@ -613,7 +633,13 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '使用补签卡失败', {});
             }
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, `补签成功${resMsg ? ': '+  resMsg : ''}`, {});
+            const data = {
+                amount: Number(totalAmount),
+                show_dialog: show_dialog,
+                title: resMsg
+            };
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, `补签成功`, data);
         } catch (error) {
             errLogger(`[SpringFestivalEvent][USE_REPAIR_CARD]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
