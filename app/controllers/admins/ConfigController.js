@@ -78,6 +78,13 @@ class Controller {
                 }
                 await this.redisHelper.setValue('is_show_popup', Number(description));
             }
+            if (config.type === 'popup_announcement_1') {
+                if (![0,1].includes(Number(description))) {
+                    const descError = [{ field: 'description', msg: '描述字段值无效，必须是0或1' }];
+                    return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, descError);
+                }
+                await this.redisHelper.setValue('is_show_popup_1', Number(description));
+            }
 
             let newVal = val;
             if (Array.isArray(val) || typeof val === 'object') {

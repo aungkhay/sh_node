@@ -632,6 +632,10 @@ class Controller {
                     transaction: t
                 });
 
+                if (user.referral_bonus <= 0) {
+                    throw new Error('推荐金不足');
+                }
+
                 const amount = new Decimal(user.referral_bonus)
                     .times(rewardRecord.amount)
                     .times(0.01)
@@ -708,6 +712,10 @@ class Controller {
                     attributes: ['id', 'relation', 'referral_bonus', 'reserve_fund'],
                     transaction: t
                 });
+
+                if (user.referral_bonus <= 0) {
+                    throw new Error('推荐金不足');
+                }
 
                 const amount = new Decimal(user.referral_bonus)
                     .times(rewardRecord.amount)

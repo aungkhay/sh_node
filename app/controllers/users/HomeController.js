@@ -1410,6 +1410,15 @@ class Controller {
                 is_show_popup = Number(config.description);
             }
 
+            let popup_announcement_1 = await this.redisHelper.getValue('popup_announcement_1');
+            let is_show_popup_1 = Number(await this.redisHelper.getValue('is_show_popup_1') || 0);
+            if (!popup_announcement_1) {
+                const config = await Config.findOne({ where: { type: 'popup_announcement_1' }, attributes: ['val', 'description'] });
+                await this.redisHelper.setValue('popup_announcement_1', config.val);
+                popup_announcement_1 = config.val;
+                is_show_popup_1 = Number(config.description);
+            }
+
             let cachedMessage = await this.redisHelper.getValue(`WELCOME_MESSAGE_${req.user_id}`);
             if (cachedMessage) {
                 cachedMessage = JSON.parse(cachedMessage);
@@ -1466,6 +1475,8 @@ class Controller {
                 welcome_message: cachedMessage,
                 popup_announcement: popup_announcement,
                 is_show_popup: is_show_popup,
+                popup_announcement_1: popup_announcement_1,
+                is_show_popup_1: is_show_popup_1,
                 masonic_fund: masonicFund
             }
 
@@ -1569,8 +1580,8 @@ class Controller {
                 await this.redisHelper.setValue('reward_types', JSON.stringify(rewardTypes));
             }
             rewardTypes = rewardTypes.filter(r => r.status == 1);
-            // remove 8 from pool first
-            rewardTypes = rewardTypes.filter(r => r.id != 8);
+            // remove 8 or 10 from pool first
+            rewardTypes = rewardTypes.filter(r => r.id != 8 && r.id != 10);
 
             /* ===============================
             * REWARD 6 RULE (DOWNLINE)

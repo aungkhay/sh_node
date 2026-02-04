@@ -156,7 +156,21 @@ module.exports = async () => {
             val: '<p>This is a popup announcement</p>',
             description: '-',
             data_type: 'html'
-        }
+        },
+        {
+            type: 'can_withdraw',
+            title: 'Can Withdraw',
+            val: '0',
+            description: '0:关闭   1:开通',
+            data_type: 'boolean'
+        },
+        {
+            type: 'popup_announcement_1',
+            title: 'Popup Announcement 1',
+            val: '<p>This is a popup announcement</p>',
+            description: '-',
+            data_type: 'html'
+        },
     ];
 
     const count = await Config.count();

@@ -261,7 +261,7 @@ class Controller {
                 relation: user.relation,
                 reward_id: Number(reward_id == 9 ? 8 : reward_id), // 补签卡按共济基金处理
                 is_background_added: 1,
-                from_where: '后台发放春节活动补签卡',
+                from_where: '',
                 is_spring_festival_event: reward_id == 9 ? 1 : 0,
                 check_in_type: reward_id == 9 ? 2 : 0
             }
@@ -273,6 +273,7 @@ class Controller {
                     obj.is_used = 1;
                     obj.before_amount = user.masonic_fund;
                     obj.after_amount = Number(user.masonic_fund) + Number(amount);
+                    obj.from_where = '后台发放共济基金';
                     await RewardRecord.create(obj, { transaction: t });
                     await user.increment({ masonic_fund: amount }, { transaction: t });
                 }
@@ -283,6 +284,7 @@ class Controller {
                     validUntil.setMonth(validUntil.getMonth() + 3);
                     obj.amount = amount;
                     obj.validedAt = validUntil;
+                    obj.from_where = '后台发放上合战略黄金持有克数';
                     await RewardRecord.create(obj, { transaction: t });
                 }
                 if (obj.reward_id == 3) {
@@ -291,17 +293,23 @@ class Controller {
                     obj.is_used = 1;
                     obj.before_amount = user.balance;   
                     obj.after_amount = Number(user.balance) + Number(amount);
+                    obj.from_where = '后台发放账户余额';
                     await RewardRecord.create(obj, { transaction: t });
                     await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
                 }
                 if ([4,6,8,9].includes(obj.reward_id)) {
-                    // 上合组织各国授权书
-                    obj.amount = 100;
-                    if (obj.reward_id == 8 || obj.reward_id == 9) {
-                        obj.amount = amount; // 推荐奖励
-                    }
                     if (obj.reward_id == 6) {
+                        obj.amount = 100;
+                        obj.from_where = '后台发放上合组织中国区授权书';
                         await user.update({ have_reward_6: 1 }, { transaction: t });
+                    }
+                    if (obj.reward_id == 8) {
+                        obj.amount = amount;
+                        obj.from_where = '后台发放推荐奖励';
+                    }
+                    if (obj.reward_id == 9) {
+                        obj.amount = amount;
+                        obj.from_where = '后台发放春节活动补签卡';
                     }
                     await RewardRecord.create(obj, { transaction: t });
                 }
@@ -312,6 +320,13 @@ class Controller {
                     validUntil.setMonth(validUntil.getMonth() + 3);
                     obj.amount = amount;
                     obj.validedAt = validUntil;
+                    obj.from_where = '后台发放上合战略储备黄金券';
+                    await RewardRecord.create(obj, { transaction: t });
+                }
+                if (obj.reward_id == 10) {
+                    // 新春献礼兑换券
+                    obj.amount = 1000;
+                    obj.from_where = '后台发放新春献礼兑换券';
                     await RewardRecord.create(obj, { transaction: t });
                 }
                 await t.commit();
