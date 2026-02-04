@@ -243,7 +243,7 @@ exports.add_reward_record = () => {
             .withMessage('是否所有用户值无效'),
         check('reward_id', { msg: '奖励类型ID不能为空' }).not().isEmpty()
             .bail()
-            .isIn([1,2,3,4,6,7,8,9])
+            .isIn([1,2,3,4,6,7,8,9,10])
             .withMessage('奖励类型ID无效'),
         check('amount').not().isEmpty().withMessage('金额不能为空')
             .bail()
