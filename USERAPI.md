@@ -658,6 +658,9 @@ const params = {
     page: 1,
     perPage: 10
 }
+
+// [POST] Use Gift Voucher
+const url = `${baseURL}/gift-voucher/${rewardId}/use`;
 ```
 ### Spring Festival Event
 ``` js
