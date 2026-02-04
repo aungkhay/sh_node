@@ -3274,6 +3274,44 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    USE_GIFT_VOUCHER = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const id = req.params.id;
+            const giftVoucher = await RewardRecord.findOne({
+                where: {
+                    id: id,
+                    user_id: userId,
+                    reward_id: 10,
+                },
+                attributes: ['id', 'amount', 'is_used', 'validedAt'],
+            });
+            if (!giftVoucher) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '新春献礼兑换券不存在', {});
+            }
+            if (giftVoucher.is_used) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '新春献礼兑换券已被使用', {});
+            }
+            const t = await db.transaction();
+            try {
+                const user = await User.findByPk(userId, {
+                    attributes: ['id', 'balance', 'masonic_fund'],
+                    transaction: t
+                });
+                await giftVoucher.update({ is_used: 1 }, { transaction: t });
+                await user.increment({ balance: giftVoucher.amount, masonic_fund: -giftVoucher.amount }, { transaction: t });
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '新春献礼兑换券使用成功', {});
+            } catch (error) {
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '使用新春献礼兑换券失败', {});
+            }
+        } catch (error) {
+            errLogger(`[USE_GIFT_VOUCHER][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;

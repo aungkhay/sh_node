@@ -23,10 +23,10 @@ class MiddleWare {
                     return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
                 }
 
-                // const redisToken = await this.redisHelper.getValue(`admin_token_${user.id}_${user.login_count}`);
-                // if(!redisToken || (redisToken && redisToken != token)) {
-                //     return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
-                // }
+                const redisToken = await this.redisHelper.getValue(`admin_token_${user.id}_${user.login_count}`);
+                if(!redisToken || (redisToken && redisToken != token)) {
+                    return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
+                }
 
                 // Check token expiry
                 if (user.expire_time && user.expire_time < Date.now()) {
