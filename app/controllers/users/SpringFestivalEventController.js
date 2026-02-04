@@ -12,10 +12,10 @@ class Controller {
         this.getRandomInt = (min, max) => {
             return Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min);
         }
-        this.eventStart = new Date('2026-01-28T00:00:00+08:00');
-        this.eventEnd = new Date('2026-02-17T23:59:59+08:00');
-        // this.eventStart = new Date('2026-02-05T00:00:00+08:00');
-        // this.eventEnd = new Date('2026-02-25T23:59:59+08:00');
+        // this.eventStart = new Date('2026-01-28T00:00:00+08:00');
+        // this.eventEnd = new Date('2026-02-17T23:59:59+08:00');
+        this.eventStart = new Date('2026-02-05T00:00:00+08:00');
+        this.eventEnd = new Date('2026-02-25T23:59:59+08:00');
     }
 
     GET_MISSING_DATES = (dates) => {
@@ -387,7 +387,7 @@ class Controller {
                     if (lastDate.getFullYear() === now.getFullYear() &&
                         lastDate.getMonth() === now.getMonth() &&
                         lastDate.getDate() === now.getDate()) {
-                        // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到，明天再来吧！', {});
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到，明天再来吧！', {});
                     }
                 }
             }
