@@ -619,12 +619,17 @@ class Controller {
                         is_used: 0,
                         reward_id: 8 // 推荐金提取券
                     },
-                    attributes: ['id', 'amount'],
+                    attributes: ['id', 'amount', 'validedAt'],
                     transaction: t
                 });
 
                 if (!rewardRecord) {
-                    throw new Error('未持有提现券');
+                    throw new Error('未持有推荐金提取券');
+                }
+
+                // can use after validedAt
+                if (new Date() < new Date(rewardRecord.validedAt)) {
+                    throw new Error('推荐金提取券未到使用日期');
                 }
 
                 const user = await User.findByPk(userId, {
@@ -700,12 +705,17 @@ class Controller {
                         is_used: 0,
                         reward_id: 8 // 推荐金提取券
                     },
-                    attributes: ['id', 'amount'],
+                    attributes: ['id', 'amount', 'validedAt'],
                     transaction: t
                 });
 
                 if (!rewardRecord) {
-                    throw new Error('未持有提现券');
+                    throw new Error('未持有推荐金提取券');
+                }
+
+                // can use after validedAt
+                if (new Date() < new Date(rewardRecord.validedAt)) {
+                    throw new Error('推荐金提取券未到使用日期');
                 }
 
                 const user = await User.findByPk(userId, {
