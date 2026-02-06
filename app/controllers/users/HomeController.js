@@ -1466,8 +1466,8 @@ class Controller {
                 const participantCount = (await this.redisHelper.getValue('MASONIC_FUND_PARTICIPANT_COUNT') || 0);
                 const ReteriverCount = (await this.redisHelper.getValue('MASONIC_FUND_RETRIEVER_COUNT') || 0);
                 masonicFund = {
-                    total_participant: Number(totalRegister * 111) + Number(participantCount) + 10300000,
-                    total_retreiver: Number(totalRegister * 27) + Number(ReteriverCount) + 5050000,
+                    total_participant: Number(totalRegister * 111) + Number(participantCount) + 10300000 + 8000000,
+                    total_retreiver: Number(totalRegister * 27) + Number(ReteriverCount) + 5050000 + 5000000,
                 }
                 await this.redisHelper.setValue(`masonic_fund_summary`, JSON.stringify(masonicFund), 600); // cache for 10 minutes
             }
