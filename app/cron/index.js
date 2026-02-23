@@ -642,7 +642,7 @@ class CronJob {
                     return moment(log.check_in_date).format('YYYY-MM-DD');
                 });
                 if (checkInDates.length === 0) {
-                    checkInDates.push(moment(eventStart).format('YYYY-MM-DD')); // if no check-in record, use event start date as the first check-in date
+                    checkInDates.push(moment(eventStart).subtract(1, 'day').format('YYYY-MM-DD')); // if no check-in record, use event start date as the first check-in date
                 }
                 checkInDates.push(moment().format('YYYY-MM-DD')); // include today as well
     
