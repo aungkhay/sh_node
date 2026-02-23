@@ -223,6 +223,7 @@ class AdminRoute extends express.Router {
         // this.post('/spring-festival-event/give-repair-card', FormValidator.give_repair_card(), middleware.isLoggedIn('spring-festival-event-give-repair-card'), SpringFestivalEventCtrl.GIVE_PEPAIR_CARD);
         this.post('/spring-festival-event/add-white-list', FormValidator.spring_whitelist(), middleware.isLoggedIn('spring-festival-event-update-white-list'), SpringFestivalEventCtrl.ADD_WHITE_LIST);
         this.get('/spring-festival-event/white-list', middleware.isLoggedIn('spring-festival-event-view-white-list'), SpringFestivalEventCtrl.WHITE_LIST);
+        this.post('/spring-festival-event/import-check-in', middleware.isLoggedIn('spring-festival-event-import-check-in'), SpringFestivalEventCtrl.GIVE_CHECK_IN);
     }
 }
 

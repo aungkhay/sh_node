@@ -1177,4 +1177,19 @@ const params = {
     endTime: '',
     phone: ''
 }
+
+// [POST] 补签
+const url = `${baseURL}/spring-festival-event/import-check-in`;
+const formData = new FormData();
+formData.append('file', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
 ```

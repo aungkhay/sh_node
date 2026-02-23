@@ -1,9 +1,12 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
+const RedisHelper = require('../../helpers/RedisHelper');
 const { UserSpringFestivalCheckIn, UserSpringFestivalCheckInLog, User, RewardRecord, SpringWhiteList } = require('../../models');
 const { Op } = require('sequelize');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
+const XLSX = require("xlsx");
+const multer = require("multer");
 
 class Controller {
     constructor(app) {
@@ -11,6 +14,7 @@ class Controller {
         this.ResCode = this.commonHelper.ResCode;
         this.getOffset = this.commonHelper.getOffset;
         this.adminLogger = this.commonHelper.adminLogger;
+        this.redisHelper = new RedisHelper(app);
     }
 
     JOINED_EVENT_LIST = async (req, res) => {
@@ -256,6 +260,51 @@ class Controller {
             
         } catch (error) {
             console.error(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GIVE_CHECK_IN = async (req, res) => {
+        try {
+            req.uploadDir = `./uploads/excels`;
+            const upload = require('../../middlewares/UploadExcel');
+
+            const exist = await this.redisHelper.getValue('CHECK_IN_GIFT_PHONE_NUMBERS');
+            if (exist) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '已存在未处理的手机号列表，请稍后再试', {});
+            }
+
+            upload(req, res, async (err) => {
+                if (err instanceof multer.MulterError) {
+                    if (err.code == 'LIMIT_FILE_SIZE') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件过大', { allow_size: '50MB' });
+                    }
+                    if (err.code == 'ENOENT') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, 'ENOENT', {});
+                    }
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, err.message, {});
+                } else if (err) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '上传失败', {});
+                }
+
+                if (req.file == null) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请选文件', {});
+                }
+
+                const filePath = req.file.path;
+                const workbook = XLSX.readFile(filePath);
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+
+                const excelData = XLSX.utils.sheet_to_json(sheet);
+                const phoneNumbers = excelData.map(row => row['手机号']);
+
+                await this.redisHelper.setValue('CHECK_IN_GIFT_PHONE_NUMBERS', JSON.stringify(phoneNumbers));
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '上传成功', {});
+            });
+        } catch (error) {
+            errLogger(`[GIVE_CHECK_IN]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

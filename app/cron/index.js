@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -11,6 +11,10 @@ class CronJob {
     constructor(app) {
         this.redisHelper = new RedisHelper(app);
         this.interval = null;
+        this.getRandomInt = (min, max) => {
+            return Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min);
+        }
+        this.GIVE_CHECK_IN();
     }
 
     START = () => {
@@ -40,6 +44,8 @@ class CronJob {
         cron.schedule('0 * * * *', this.UPDATE_MASONIC_FUND_HISTORY).start();
         // Run at 5th minute of every hour
         cron.schedule('5 * * * *', this.RUN_INTERVAL_RELEASE_RED_ENVELOP).start();
+        // Run every 5 minutes
+        cron.schedule('*/5 * * * *', this.GIVE_CHECK_IN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -543,6 +549,200 @@ class CronJob {
             await this.redisHelper.setValue('MASONIC_FUND_RETRIEVER_COUNT', totalRetreiverRank + Number(ReteriverCount));
         } catch (error) {
             console.log(error);
+        }
+    }
+
+    GET_MISSING_DATES = (dates) => {
+        try {
+            const format = 'YYYY-MM-DD';
+
+            const dateSet = new Set(dates);
+
+            const start = moment(dates[0], format);
+            const end = moment(dates[dates.length - 1], format);
+
+            const missingDates = [];
+
+            let current = start.clone();
+            while (current.isSameOrBefore(end)) {
+                const d = current.format(format);
+                if (!dateSet.has(d)) {
+                    missingDates.push(d);
+                }
+                current.add(1, 'day');
+            }
+
+            return missingDates;
+        } catch (error) {
+            return [];
+        }
+    }
+
+    USER_DOWNLINE_LEVEL = async (userId, level = 3) => {
+        try {
+            const users = await User.findAll({ 
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    where: { status: 'APPROVED' },
+                    attributes: []
+                },
+                where: { 
+                    parent_id: userId,
+                    createdAt: { 
+                        [Op.between]: [this.eventStart, this.eventEnd]
+                    }
+                }, 
+                attributes: ['id'] 
+            });
+            const userIds = users.map(u => {
+                return u.id;
+            });
+            return userIds;
+        } catch (error) {
+            console.error('Error in USER_DOWNLINE_LEVEL:', error);
+            errLogger(`[SpringFestivalEvent][USER_DOWNLINE_LEVEL]: ${error.stack}`);
+            return [];
+        }
+    }
+
+    GIVE_CHECK_IN = async () => {
+        try {
+            const phoneNumbers = await this.redisHelper.getValue('CHECK_IN_GIFT_PHONE_NUMBERS');
+            if (!phoneNumbers) return;
+
+            const phoneNumberArr = JSON.parse(phoneNumbers);
+            if (phoneNumberArr.length === 0) {
+                await this.redisHelper.deleteKey('CHECK_IN_GIFT_PHONE_NUMBERS');
+                return;
+            }
+                
+            for (let phone of phoneNumberArr) {
+                const user = await User.findOne({ 
+                    where:  { phone_number: phone }, 
+                    include: {
+                        model: UserKYC,
+                        as: 'kyc',
+                        where: { status: 'APPROVED' },
+                        attributes: []
+                    },
+                    attributes: ['id', 'relation'] 
+                });
+                if (!user) {
+                    continue;
+                }
+                
+                const checkInLogs = await UserSpringFestivalCheckInLog.findAll({
+                    attributes: ['check_in_date'],
+                    where: {
+                        user_id: user.id,
+                    }
+                });
+                const checkInDates = checkInLogs.map(log => {
+                    return moment(log.check_in_date).format('YYYY-MM-DD');
+                });
+                checkInDates.push(moment().format('YYYY-MM-DD')); // include today as well
+    
+                const missingDates = this.GET_MISSING_DATES(checkInDates);
+                if (missingDates.length === 0) {
+                    continue;
+                }
+
+                const checkInRecord = await UserSpringFestivalCheckIn.findOne({ where: { user_id: user.id } });
+                if (!checkInRecord) {
+                    continue;
+                }
+    
+                const now = new Date();
+                const whiteListUser = await SpringWhiteList.findOne({ where: { user_id: user.id } });
+                const totalCheckIn = checkInRecord.total_check_in + 1;
+
+                const updateObj = {
+                    total_check_in: totalCheckIn,
+                    last_check_in_date: now
+                };
+                const currentTime = moment().format('HH:mm:ss');
+
+                const t = await db.transaction();
+                try {
+                    
+                    if (totalCheckIn == 7) {
+                        updateObj.is_completed_7 = 1;
+                        const amount = whiteListUser ? whiteListUser.day_7_rate : this.getRandomInt(20, 29);
+                        const validUntil = new Date('2026-02-05T00:00:00+08:00');
+                        // Valid At Feb 26, 2026 00:00:00 Beijing Time
+                        validUntil.setDate(validUntil.getDate() + 21);
+
+                        await RewardRecord.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            reward_id: 8, // 推荐金提取券
+                            amount: amount,
+                            from_where: '后台补签活动奖励',
+                            validedAt: validUntil,
+                            is_spring_festival_event: 1,
+                            check_in_type: 1
+                        }, { transaction: t });
+                    }
+
+                    if (totalCheckIn == 14) {
+                        updateObj.is_completed_14 = 1;
+                        if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
+                            const amount = whiteListUser.day_14_rate;
+                            await RewardRecord.update({ amount: amount }, { 
+                                where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
+                                transaction: t, 
+                            });
+                        } else {
+                            const downlineUsers = await this.USER_DOWNLINE_LEVEL(user.id, 3);
+                            if (downlineUsers.length >= 10) {
+                                const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
+                                await RewardRecord.update({ amount: amount }, { 
+                                    where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
+                                    transaction: t, 
+                                });
+                            }
+                        }
+                    }
+                    if (totalCheckIn == 21) {
+                        updateObj.is_completed_21 = 1;
+                        if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
+                            const amount = whiteListUser.day_21_rate;
+                            await RewardRecord.update({ amount: amount }, { 
+                                where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
+                                transaction: t 
+                            });
+                        } else {
+                            const downlineUsers = await this.USER_DOWNLINE_LEVEL(user.id, 3);
+                            if (downlineUsers.length >= 20) {
+                                const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
+                                await RewardRecord.update({ amount: amount }, { 
+                                    where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
+                                    transaction: t 
+                                });
+                            }
+                        }
+                    }
+
+                    await UserSpringFestivalCheckInLog.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        check_in_date: new Date(missingDates[0] + ' ' + currentTime)
+                    }, { transaction: t });
+
+                    await checkInRecord.update(updateObj, { transaction: t });
+                    await t.commit();
+                    console.log(`[GIVE_CHECK_IN][User ID: ${user.id}] Date ${missingDates[0]}`);
+                } catch (error) {
+                    console.log(error);
+                    errLogger(`[SpringFestivalEventController][GIVE_CHECK_IN][User ID: ${user.id}] ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+            await this.redisHelper.deleteKey('CHECK_IN_GIFT_PHONE_NUMBERS');
+        } catch (error) {
+            console.log(error)
+            errLogger(`[SpringFestivalEventController][GIVE_CHECK_IN] ${error.stack}`);
         }
     }
 

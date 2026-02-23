@@ -145,5 +145,6 @@
     { "model": "春节活动", "title": "签到记录", "name": "spring-festival-event-check-in-logs" },
     { "model": "春节活动", "title": "发放补签卡", "name": "spring-festival-event-give-repair-card" },
     { "model": "春节活动", "title": "更新白名单", "name": "spring-festival-event-update-white-list" },
-    { "model": "春节活动", "title": "查看白名单", "name": "spring-festival-event-view-white-list" }
+    { "model": "春节活动", "title": "查看白名单", "name": "spring-festival-event-view-white-list" },
+    { "model": "春节活动", "title": "补签", "name": "spring-festival-event-import-check-in" }
 ]
