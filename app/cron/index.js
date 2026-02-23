@@ -609,6 +609,7 @@ class CronJob {
         try {
             const phoneNumbers = await this.redisHelper.getValue('CHECK_IN_GIFT_PHONE_NUMBERS');
             if (!phoneNumbers) return;
+            const eventStart = new Date('2026-02-05T00:00:00+08:00')
 
             const phoneNumberArr = JSON.parse(phoneNumbers);
             if (phoneNumberArr.length === 0) {
@@ -640,6 +641,9 @@ class CronJob {
                 const checkInDates = checkInLogs.map(log => {
                     return moment(log.check_in_date).format('YYYY-MM-DD');
                 });
+                if (checkInDates.length === 0) {
+                    checkInDates.push(moment(eventStart).format('YYYY-MM-DD')); // if no check-in record, use event start date as the first check-in date
+                }
                 checkInDates.push(moment().format('YYYY-MM-DD')); // include today as well
     
                 const missingDates = this.GET_MISSING_DATES(checkInDates);
@@ -668,7 +672,7 @@ class CronJob {
                     if (totalCheckIn == 7) {
                         updateObj.is_completed_7 = 1;
                         const amount = whiteListUser ? whiteListUser.day_7_rate : this.getRandomInt(20, 29);
-                        const validUntil = new Date('2026-02-05T00:00:00+08:00');
+                        const validUntil = new Date(eventStart);
                         // Valid At Feb 26, 2026 00:00:00 Beijing Time
                         validUntil.setDate(validUntil.getDate() + 21);
 
