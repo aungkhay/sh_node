@@ -14,7 +14,6 @@ class CronJob {
         this.getRandomInt = (min, max) => {
             return Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min);
         }
-        this.GIVE_CHECK_IN();
     }
 
     START = () => {
