@@ -25,11 +25,11 @@ class Controller {
             commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
             const deposit = await Deposit.findOne({ where: { order_no: orderNo, deposit_merchant_id: merchantId, user_id: userId, status: 0 } });
             if (!deposit) {
-                return res.send('OK');
+                return res.send('');
             }
             const merchant = await DepositMerchant.findByPk(merchantId);
             if (!merchant) {
-                return res.send('OK');
+                return res.send('');
             }
 
             const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund'] });
@@ -40,14 +40,17 @@ class Controller {
 
             switch (merchant.app_code) {
                 case 'longlongzhifu':
+                    // {"memberid":"260309553","orderid":"SH7603007351869732","transaction_id":"LL02241956481ee6f9a5241947","amount":"100.0000","datetime":"20260224202527","returncode":"00","sign":"170B4A98ABB258674096BDC8EE9BFF04","attach":""}
                     // check sign first
-                    const reqSign = reqBody.sign;
+                    const longlongReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
-                    const cleaned = Object.fromEntries(
+                    const longlongCleaned = Object.fromEntries(
                         Object.entries(reqBody).filter(([key, value]) => value !== "")
                     );
-                    const sign = this.merchantController.CREATE_SIGN(cleaned, `&key=${merchant.app_key}`);
-                    if (sign.toUpperCase() === reqSign && reqBody.returncode === '00') {
+                    const longlongSign = this.merchantController.CREATE_SIGN(longlongCleaned, `&key=${merchant.app_key}`);
+                    console.log("longlongSign:", longlongSign, "longlongReqSign:", longlongReqSign);
+
+                    if (longlongSign.toUpperCase() === longlongReqSign && reqBody.returncode === '00') {
                         status = 1;
                         resMsg = 'OK';
                     } else {
@@ -55,7 +58,16 @@ class Controller {
                     }
                     break;
                 case 'mingrizhifu':
-                    if (deposit.sign === reqBody.sign) {
+                    // {"trade_no":"9022447186385998","product_id":"66","app_id":"5fd28cb0ebb68e3105242560","out_trade_no":"SH0416990468295762","trade_status":"1","amount":"100.00","real_amount":"100.00","desc":"","time":"1771939137","sign":"f3e2114774904f9c8cfbcc72649e292d"}
+                    const mingriReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const mingriCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "")
+                    );
+                    const mingriSign = this.merchantController.CREATE_SIGN(mingriCleaned, `&key=${merchant.app_key}`);
+                    console.log("mingriSign:", mingriSign, "mingriReqSign:", mingriReqSign);
+                    
+                    if (mingriSign === mingriReqSign) {
                         if (reqBody.trade_status == '1') {
                             status = 1;
                             resMsg = 'success';
@@ -67,7 +79,16 @@ class Controller {
                     }
                     break;
                 case 'bestzhifu':
-                    if (deposit.sign === reqBody.sign) {
+                    // {"merOrderTid":"SH1089649960530725","tid":"BS7773172551926455356","money":"100.00","status":1,"sign":"04696E5C831C3C3390819524A2C79B73"}
+                    const bestReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const bestCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "")
+                    );
+                    const bestSign = this.merchantController.CREATE_SIGN(bestCleaned, `&${merchant.app_key}`);
+                    console.log("bestSign:", bestSign, "bestReqSign:", bestReqSign);
+                    
+                    if (bestSign === bestReqSign) {
                         if (reqBody.status == '1') {
                             status = 1;
                             resMsg = 'success';
