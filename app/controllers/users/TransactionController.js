@@ -31,6 +31,9 @@ class Controller {
             if (!merchant) {
                 return res.send('OK');
             }
+
+            const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund'] });
+
             let status = 0;
             let resMsg = '';
             let reqBody = req.body;
@@ -71,7 +74,18 @@ class Controller {
                 default:
                     break;
             }
-            await deposit.update({ status: status, callback_data: JSON.stringify(reqBody) });
+
+            const t = await db.transaction();
+            try {
+                await deposit.update({ status: status, callback_data: JSON.stringify(reqBody) }, { transaction: t });
+                if (status === 1) {
+                    await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
+                }
+                await t.commit();
+            } catch (error) {
+                await t.rollback();
+                errLogger(`[RECHARGE_CALLBACK][${userId}]: ${error.stack}`);
+            }
 
             return res.send(resMsg);
         } catch (error) {
