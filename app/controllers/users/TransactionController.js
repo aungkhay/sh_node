@@ -22,9 +22,9 @@ class Controller {
         try {
             const orderNo = req.params.orderNo;
             commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo} | Body: ${JSON.stringify(req.body)}`);
-            return 'success';
+            return res.send('success');
         } catch (error) {
-            return 'success';
+            return res.send('success');
         }
     }
 
