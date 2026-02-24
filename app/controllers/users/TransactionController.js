@@ -37,10 +37,17 @@ class Controller {
             let status = 0;
             let resMsg = '';
             let reqBody = req.body;
-            
+
             switch (merchant.app_code) {
                 case 'longlongzhifu':
-                    if (deposit.sign === reqBody.sign && reqBody.returncode === '00') {
+                    // check sign first
+                    const reqSign = reqBody.sign;
+                    delete reqBody.sign;
+                    const cleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "")
+                    );
+                    const sign = this.merchantController.CREATE_SIGN(cleaned, `&key=${merchant.app_key}`);
+                    if (sign.toUpperCase() === reqSign && reqBody.returncode === '00') {
                         status = 1;
                         resMsg = 'OK';
                     } else {
@@ -193,9 +200,7 @@ class Controller {
             }
 
             const orderNo = payload.orderNo;
-            const mySign = payload.mySign;
             delete payload.orderNo;
-            delete payload.mySign;
             console.log(payload);
 
             // Make Payment Request
@@ -243,7 +248,6 @@ class Controller {
                     amount: amount,
                     before_amount: Number(user.reserve_fund),
                     after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
-                    sign: mySign,
                 });
             }
 

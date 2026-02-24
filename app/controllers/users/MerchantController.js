@@ -68,7 +68,6 @@ class Controller {
             body.pay_ip = encodeURIComponent(pay_ip);
             body.pay_md5sign = sign.toUpperCase();
             body.orderNo = orderNo;
-            body.mySign = sign;
             return body;
 
         } catch (error) {
@@ -107,7 +106,6 @@ class Controller {
             const sign = this.CREATE_SIGN(body, `&key=${merchant.app_key}`);
             body.sign = sign;
             body.orderNo = orderNo;
-            body.mySign = sign;
             return body;
 
         } catch (error) {
@@ -137,7 +135,6 @@ class Controller {
             const sign = this.CREATE_SIGN(body, `&${merchant.app_key}`);
             body.sign = sign;
             body.orderNo = orderNo;
-            body.mySign = sign;
             return body;
 
         } catch (error) {
