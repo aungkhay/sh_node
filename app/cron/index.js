@@ -658,85 +658,90 @@ class CronJob {
     
                 const now = new Date();
                 const whiteListUser = await SpringWhiteList.findOne({ where: { user_id: user.id } });
-                const totalCheckIn = checkInRecord.total_check_in + 1;
-
-                const updateObj = {
-                    total_check_in: totalCheckIn,
-                    last_check_in_date: now
-                };
+                
                 const currentTime = moment().format('HH:mm:ss');
 
                 const t = await db.transaction();
                 try {
-                    
-                    if (totalCheckIn == 7) {
-                        updateObj.is_completed_7 = 1;
-                        const amount = whiteListUser ? whiteListUser.day_7_rate : this.getRandomInt(20, 29);
-                        const validUntil = new Date(eventStart);
-                        // Valid At Feb 26, 2026 00:00:00 Beijing Time
-                        validUntil.setDate(validUntil.getDate() + 21);
+                    let totalCheckIn = checkInRecord.total_check_in;
+                    for (let i = 0; i < missingDates.length; i++) {
 
-                        await RewardRecord.create({
-                            user_id: user.id,
-                            relation: user.relation,
-                            reward_id: 8, // 推荐金提取券
-                            amount: amount,
-                            from_where: '后台补签活动奖励',
-                            validedAt: validUntil,
-                            is_spring_festival_event: 1,
-                            check_in_type: 1
-                        }, { transaction: t });
-                    }
+                        totalCheckIn += 1;
+                        const updateObj = {
+                            total_check_in: totalCheckIn,
+                            last_check_in_date: now
+                        };
 
-                    if (totalCheckIn == 14) {
-                        updateObj.is_completed_14 = 1;
-                        if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
-                            const amount = whiteListUser.day_14_rate;
-                            await RewardRecord.update({ amount: amount }, { 
-                                where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
-                                transaction: t, 
-                            });
-                        } else {
-                            const downlineUsers = await this.USER_DOWNLINE_LEVEL(user.id, 3);
-                            if (downlineUsers.length >= 10) {
-                                const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
+                        if (totalCheckIn == 7) {
+                            updateObj.is_completed_7 = 1;
+                            const amount = whiteListUser ? whiteListUser.day_7_rate : this.getRandomInt(20, 29);
+                            const validUntil = new Date(eventStart);
+                            // Valid At Feb 26, 2026 00:00:00 Beijing Time
+                            validUntil.setDate(validUntil.getDate() + 21);
+
+                            await RewardRecord.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                reward_id: 8, // 推荐金提取券
+                                amount: amount,
+                                from_where: '后台补签活动奖励',
+                                validedAt: validUntil,
+                                is_spring_festival_event: 1,
+                                check_in_type: 1
+                            }, { transaction: t });
+                        }
+
+                        if (totalCheckIn == 14) {
+                            updateObj.is_completed_14 = 1;
+                            if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
+                                const amount = whiteListUser.day_14_rate;
                                 await RewardRecord.update({ amount: amount }, { 
                                     where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
                                     transaction: t, 
                                 });
+                            } else {
+                                const downlineUsers = await this.USER_DOWNLINE_LEVEL(user.id, 3);
+                                if (downlineUsers.length >= 10) {
+                                    const amount = whiteListUser ? whiteListUser.day_14_rate : this.getRandomInt(30, 49);
+                                    await RewardRecord.update({ amount: amount }, { 
+                                        where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
+                                        transaction: t, 
+                                    });
+                                }
                             }
                         }
-                    }
-                    if (totalCheckIn == 21) {
-                        updateObj.is_completed_21 = 1;
-                        if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
-                            const amount = whiteListUser.day_21_rate;
-                            await RewardRecord.update({ amount: amount }, { 
-                                where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
-                                transaction: t 
-                            });
-                        } else {
-                            const downlineUsers = await this.USER_DOWNLINE_LEVEL(user.id, 3);
-                            if (downlineUsers.length >= 20) {
-                                const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
+                        if (totalCheckIn == 21) {
+                            updateObj.is_completed_21 = 1;
+                            if (whiteListUser && whiteListUser.is_check_downline_kyc == 0) {
+                                const amount = whiteListUser.day_21_rate;
                                 await RewardRecord.update({ amount: amount }, { 
                                     where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
                                     transaction: t 
                                 });
+                            } else {
+                                const downlineUsers = await this.USER_DOWNLINE_LEVEL(user.id, 3);
+                                if (downlineUsers.length >= 20) {
+                                    const amount = whiteListUser ? whiteListUser.day_21_rate : this.getRandomInt(50, 60);   
+                                    await RewardRecord.update({ amount: amount }, { 
+                                        where: { user_id: user.id, is_spring_festival_event: 1, check_in_type: 1 },
+                                        transaction: t 
+                                    });
+                                }
                             }
                         }
+
+                        await UserSpringFestivalCheckInLog.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            check_in_date: new Date(missingDates[i] + ' ' + currentTime),
+                            is_background_added: 1
+                        }, { transaction: t });
+
+                        await checkInRecord.update(updateObj, { transaction: t });
+                        console.log(`[GIVE_CHECK_IN][User ID: ${user.id}] Date ${missingDates[i]}`);
                     }
 
-                    await UserSpringFestivalCheckInLog.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        check_in_date: new Date(missingDates[0] + ' ' + currentTime),
-                        is_background_added: 1
-                    }, { transaction: t });
-
-                    await checkInRecord.update(updateObj, { transaction: t });
                     await t.commit();
-                    console.log(`[GIVE_CHECK_IN][User ID: ${user.id}] Date ${missingDates[0]}`);
                 } catch (error) {
                     console.log(error);
                     errLogger(`[SpringFestivalEventController][GIVE_CHECK_IN][User ID: ${user.id}] ${error.stack}`);

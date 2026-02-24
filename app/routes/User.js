@@ -92,7 +92,7 @@ class UserRoute extends express.Router {
 
         let TransactionController = require('../controllers/users/TransactionController');
         let TxnCtl = new TransactionController(app);
-        this.post('/recharge-callback', TxnCtl.RECHARGE_CALLBACK);
+        this.post('/recharge-callback/:orderNo', TxnCtl.RECHARGE_CALLBACK);
         this.post('/deposit', FormValidator.deposit(), middleware.isLoggedIn, TxnCtl.DEPOSIT);
         this.get('/deposit-history', middleware.isLoggedIn, TxnCtl.DEPOSIT_HISTORY);
         this.post('/withdraw', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW);

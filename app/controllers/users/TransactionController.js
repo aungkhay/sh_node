@@ -20,7 +20,8 @@ class Controller {
 
     RECHARGE_CALLBACK = async (req, res) => {
         try {
-            commonLogger(`[RECHARGE_CALLBACK] Received callback => ${JSON.stringify(req.body)}`);
+            const orderNo = req.params.orderNo;
+            commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo} | Body: ${JSON.stringify(req.body)}`);
             return 'success';
         } catch (error) {
             return 'success';
@@ -89,20 +90,36 @@ class Controller {
 
             // Generate Payment URL
             const merchant = await DepositMerchant.findOne({
-                where: { status: 1 },
-                attributes: ['id', 'api', 'app_id', 'app_code', 'app_key'],
+                where: { 
+                    status: 1,
+                    allow_type: { [Op.like]: `%${type}%` }
+                },
+                attributes: ['id', 'api', 'app_id', 'app_code', 'app_key', 'min_amount', 'max_amount'],
                 order: db.random()
             });
             if (!merchant) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无可用的充值通道', {});
             }
+            if (amount < parseFloat(merchant.min_amount) || (parseFloat(merchant.max_amount) > 0 && amount > parseFloat(merchant.max_amount))) {
+                let resMsg = `最低充值金额为${merchant.min_amount}`;
+                if (parseFloat(merchant.max_amount) > 0) {
+                    resMsg += `，最高充值金额为${merchant.max_amount}`;
+                }
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, resMsg, {});
+            }
 
             let payload = null;
-            switch (merchant.id) {
-                case 1:
-                    payload = await this.merchantController.MERCHANT1(merchant, amount, userId);
+            switch (merchant.app_code) {
+                case 'longlongzhifu':
+                    const pay_ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                    payload = await this.merchantController.LONGLONGZHIFU(merchant, amount, pay_ip, type, userId);
                     break;
-            
+                case 'mingrizhifu':
+                    payload = await this.merchantController.MINGRIZHIFU(merchant, amount, type, userId);
+                    break;
+                case 'bestzhifu':
+                    payload = await this.merchantController.BESTZHIFU(merchant, amount, type, userId);
+                    break;
                 default:
                     break;
             }
@@ -110,14 +127,44 @@ class Controller {
                 return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, '生成充值订单失败，请稍后再试', {});
             }
 
+            const orderNo = payload.orderNo;
+            delete payload.orderNo;
             console.log(payload);
-            // const res = await axios.post(merchant.api, payload, {
-            //     headers: { "Content-Type": "application/json" }
-            // });
+            const response = await axios.post(merchant.api, payload, {
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            });
+            if (response.status !== 200) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '充值失败，请稍后再试', {});
+            }
+            console.log(response.data);
 
-            // Reserve Fund
-            const t = await db.transaction();
-            try {
+            let resData = response.data;
+            let redirectUrl = null;
+            let success = false;
+            switch (merchant.app_code) {
+                case 'longlongzhifu':
+                    if (resData.status == 1) {
+                        redirectUrl = resData?.h5_url;
+                        success = true;
+                    }
+                    break;
+                case 'mingrizhifu':
+                    if (resData.code == 200) {
+                        redirectUrl = resData?.data?.url;
+                        success = true;
+                    }
+                    break;
+                case 'bestzhifu':
+                    if (resData.status == 0) {
+                        redirectUrl = resData?.result?.payUrl;
+                        success = true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            if (success) {
                 await Deposit.create({
                     deposit_merchant_id: merchant.id,
                     order_no: orderNo,
@@ -127,19 +174,38 @@ class Controller {
                     amount: amount,
                     before_amount: Number(user.reserve_fund),
                     after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
-                    status: 1
-                }, { transaction: t });
-                await user.increment({ reserve_fund: Number(amount) }, { transaction: t });
-
-                await t.commit();
-            } catch (error) {
-                console.log(error);
-                errLogger(`[DEPOSIT][${req.user_id}]: ${error.stack}`);
-                await t.rollback();
-                return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+                });
             }
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '充值成功', {});
+            // Reserve Fund
+            // const t = await db.transaction();
+            // try {
+            //     await Deposit.create({
+            //         deposit_merchant_id: merchant.id,
+            //         order_no: orderNo,
+            //         type: type,
+            //         user_id: user.id,
+            //         relation: user.relation,
+            //         amount: amount,
+            //         before_amount: Number(user.reserve_fund),
+            //         after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
+            //         status: 1
+            //     }, { transaction: t });
+            //     await user.increment({ reserve_fund: Number(amount) }, { transaction: t });
+
+            //     await t.commit();
+            // } catch (error) {
+            //     console.log(error);
+            //     errLogger(`[DEPOSIT][${req.user_id}]: ${error.stack}`);
+            //     await t.rollback();
+            //     return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+            // }
+
+            if (success) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', redirectUrl ? { redirectUrl } : {});
+            } else {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
+            }
         } catch (error) {
             console.log(error)
             errLogger(`[DEPOSIT][${req.user_id}]: ${error.stack}`);
