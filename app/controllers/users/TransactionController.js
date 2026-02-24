@@ -8,6 +8,7 @@ const { Op, Sequelize } = require('sequelize');
 const Decimal = require('decimal.js');
 const axios = require('axios');
 const MerchantController = require('./MerchantController');
+const e = require('cors');
 
 class Controller {
     constructor(app) {
@@ -20,11 +21,61 @@ class Controller {
 
     RECHARGE_CALLBACK = async (req, res) => {
         try {
-            const orderNo = req.params.orderNo;
-            commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo} | Body: ${JSON.stringify(req.body)}`);
-            return res.send('success');
+            const { orderNo, merchantId, userId } = req.params;
+            commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
+            const deposit = await Deposit.findOne({ where: { order_no: orderNo, deposit_merchant_id: merchantId, user_id: userId, status: 0 } });
+            if (!deposit) {
+                return res.send('OK');
+            }
+            const merchant = await DepositMerchant.findByPk(merchantId);
+            if (!merchant) {
+                return res.send('OK');
+            }
+            let status = 0;
+            let resMsg = '';
+            let reqBody = req.body;
+            
+            switch (merchant.app_code) {
+                case 'longlongzhifu':
+                    if (deposit.sign === reqBody.sign && reqBody.returncode === '00') {
+                        status = 1;
+                        resMsg = 'OK';
+                    } else {
+                        status = 2;
+                    }
+                    break;
+                case 'mingrizhifu':
+                    if (deposit.sign === reqBody.sign) {
+                        if (reqBody.trade_status == '1') {
+                            status = 1;
+                            resMsg = 'success';
+                        } else if (reqBody.trade_status == '2') {
+                            status = 2;
+                        }
+                    } else {
+                        status = 2;
+                    }
+                    break;
+                case 'bestzhifu':
+                    if (deposit.sign === reqBody.sign) {
+                        if (reqBody.status == '1') {
+                            status = 1;
+                            resMsg = 'success';
+                        } else if (reqBody.status == '2' || reqBody.status == '3') {
+                            status = 2;
+                        }
+                    } else {
+                        status = 2;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            await deposit.update({ status: status, callback_data: JSON.stringify(reqBody) });
+
+            return res.send(resMsg);
         } catch (error) {
-            return res.send('success');
+            return res.send('');
         }
     }
 
@@ -128,8 +179,12 @@ class Controller {
             }
 
             const orderNo = payload.orderNo;
+            const mySign = payload.mySign;
             delete payload.orderNo;
+            delete payload.mySign;
             console.log(payload);
+
+            // Make Payment Request
             const response = await axios.post(merchant.api, payload, {
                 headers: { "Content-Type": "application/x-www-form-urlencoded" }
             });
@@ -174,6 +229,7 @@ class Controller {
                     amount: amount,
                     before_amount: Number(user.reserve_fund),
                     after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
+                    sign: mySign,
                 });
             }
 

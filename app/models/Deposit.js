@@ -84,7 +84,15 @@ Deposit.init({
     description: {
         type: DataTypes.STRING,
         allowNull: true
-    }
+    },
+    sign: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    callback_data: {
+        type: DataTypes.TEXT('long'),
+        allowNull: true,
+    },
 }, {
     sequelize,
     modelName: 'Deposit',

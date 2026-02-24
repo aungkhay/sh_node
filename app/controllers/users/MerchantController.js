@@ -59,8 +59,8 @@ class Controller {
                 pay_orderid: orderNo,
                 pay_applydate: moment().format('YYYY-MM-DD HH:mm:ss'),
                 pay_bankcode: bankCode,
-                pay_notifyurl: `${this.notifyUrl}/${orderNo}`,
-                pay_callbackurl: `${this.notifyUrl}/${orderNo}`,
+                pay_notifyurl: `${this.notifyUrl}/${orderNo}/${merchant.id}/${userId}`,
+                pay_callbackurl: `${this.notifyUrl}/${orderNo}/${merchant.id}/${userId}`,
                 pay_amount: Number(amount).toFixed(2),
             }
             const sign = this.CREATE_SIGN(body, `&key=${merchant.app_key}`);
@@ -68,6 +68,7 @@ class Controller {
             body.pay_ip = encodeURIComponent(pay_ip);
             body.pay_md5sign = sign.toUpperCase();
             body.orderNo = orderNo;
+            body.mySign = sign;
             return body;
 
         } catch (error) {
@@ -99,13 +100,14 @@ class Controller {
                 app_id: merchant.app_id,
                 product_id: product_id,
                 out_trade_no: orderNo,
-                notify_url: `${this.notifyUrl}/${orderNo}`,
+                notify_url: `${this.notifyUrl}/${orderNo}/${merchant.id}/${userId}`,
                 amount: Number(amount).toFixed(2),
                 time: Math.floor(Date.now() / 1000),
             }
             const sign = this.CREATE_SIGN(body, `&key=${merchant.app_key}`);
             body.sign = sign;
             body.orderNo = orderNo;
+            body.mySign = sign;
             return body;
 
         } catch (error) {
@@ -130,11 +132,12 @@ class Controller {
                 merOrderTid: orderNo,
                 money: Number(amount).toFixed(2),
                 channelCode: channelCode,
-                notifyUrl: `${this.notifyUrl}/${orderNo}`
+                notifyUrl: `${this.notifyUrl}/${orderNo}/${merchant.id}/${userId}`,
             }
             const sign = this.CREATE_SIGN(body, `&${merchant.app_key}`);
             body.sign = sign;
             body.orderNo = orderNo;
+            body.mySign = sign;
             return body;
 
         } catch (error) {
