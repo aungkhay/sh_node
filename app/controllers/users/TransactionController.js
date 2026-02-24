@@ -8,7 +8,6 @@ const { Op, Sequelize } = require('sequelize');
 const Decimal = require('decimal.js');
 const axios = require('axios');
 const MerchantController = require('./MerchantController');
-const e = require('cors');
 
 class Controller {
     constructor(app) {
@@ -271,30 +270,6 @@ class Controller {
                     after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
                 });
             }
-
-            // Reserve Fund
-            // const t = await db.transaction();
-            // try {
-            //     await Deposit.create({
-            //         deposit_merchant_id: merchant.id,
-            //         order_no: orderNo,
-            //         type: type,
-            //         user_id: user.id,
-            //         relation: user.relation,
-            //         amount: amount,
-            //         before_amount: Number(user.reserve_fund),
-            //         after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
-            //         status: 1
-            //     }, { transaction: t });
-            //     await user.increment({ reserve_fund: Number(amount) }, { transaction: t });
-
-            //     await t.commit();
-            // } catch (error) {
-            //     console.log(error);
-            //     errLogger(`[DEPOSIT][${req.user_id}]: ${error.stack}`);
-            //     await t.rollback();
-            //     return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
-            // }
 
             if (success) {
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', redirectUrl ? { redirectUrl } : {});
