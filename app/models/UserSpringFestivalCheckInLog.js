@@ -30,6 +30,10 @@ UserSpringFestivalCheckInLog.init({
     is_repair: {
         type: DataTypes.TINYINT,
         defaultValue: 0
+    },
+    is_background_added: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0
     }
 }, {
     sequelize,

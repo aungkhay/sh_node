@@ -730,7 +730,8 @@ class CronJob {
                     await UserSpringFestivalCheckInLog.create({
                         user_id: user.id,
                         relation: user.relation,
-                        check_in_date: new Date(missingDates[0] + ' ' + currentTime)
+                        check_in_date: new Date(missingDates[0] + ' ' + currentTime),
+                        is_background_added: 1
                     }, { transaction: t });
 
                     await checkInRecord.update(updateObj, { transaction: t });
