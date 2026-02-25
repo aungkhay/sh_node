@@ -559,6 +559,9 @@ class Controller {
             const checkInDates = checkInLogs.map(log => {
                 return moment(log.check_in_date).format('YYYY-MM-DD');
             });
+            const beforeStartDate = moment(this.eventStart).subtract(1, 'day').format('YYYY-MM-DD');
+            // Add beforeStartDate to the first of the array to make sure the counting start from the event start date
+            checkInDates.unshift(beforeStartDate);
 
             const missingDates = this.GET_MISSING_DATES(checkInDates);
             if (missingDates.length === 0) {
