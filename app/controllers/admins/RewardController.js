@@ -215,10 +215,26 @@ class Controller {
                 });
                 countObj[`reward${i}UserCount`] = Number(result.user_count || 0);
             }
+            // select amount, count(distinct(user_id)) as count from reward_records where reward_id = 8 group by amount;
+            const reward8AmountCount = await RewardRecord.findAll({
+                attributes: ['amount', [fn('COUNT', literal('DISTINCT user_id')), 'user_count']],
+                where: {
+                    reward_id: 8,
+                },
+                group: ['amount'],
+                raw: true
+            });
+            const percent_summary = reward8AmountCount.map(item => {
+                return {
+                    percent: Number(item.amount),
+                    user_count: Number(item.user_count),
+                }
+            });
 
             const data = {
                 rewards: rows,
                 ...countObj,
+                percent_summary: percent_summary,
                 meta: {
                     page: page,
                     perPage: perPage,
