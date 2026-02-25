@@ -44,7 +44,7 @@ class CronJob {
         // Run at 5th minute of every hour
         cron.schedule('5 * * * *', this.RUN_INTERVAL_RELEASE_RED_ENVELOP).start();
         // Run every 5 minutes
-        cron.schedule('*/5 * * * *', this.GIVE_CHECK_IN).start();
+        cron.schedule('*/1 * * * *', this.GIVE_CHECK_IN).start();
     }
 
     PAY_ALLOWANCE = async () => {
