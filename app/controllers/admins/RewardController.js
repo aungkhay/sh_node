@@ -127,12 +127,13 @@ class Controller {
             const rewardId = req.query.rewardId;
             const isUsed = req.query.isUsed || -1;
             const isBackgroundAdded = req.query.isBackgroundAdded || -1;
+            const checkInType = req.query.checkInType || 0;
 
             let userCondition = {}
             if (phone) {
                 userCondition.phone_number = phone;
             }
-            let condition = {}
+            let condition = { check_in_type: checkInType }
             if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
                 condition.relation = { [Op.like]: `${me.relation}/%` }
