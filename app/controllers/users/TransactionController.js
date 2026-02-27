@@ -291,7 +291,7 @@ class Controller {
 
             const { rows, count } = await Deposit.findAndCountAll({
                 where: { user_id: req.user_id },
-                attributes: ['id', 'type', 'amount', 'status', 'description', 'createdAt'],
+                attributes: ['id', 'order_no', 'type', 'amount', 'status', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset
