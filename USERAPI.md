@@ -571,7 +571,7 @@ const url = `${baseURL}/deposit-methods`;
 const url = `${baseURL}/payment-channels/${methodID}`;
 
 // [POST] Deposit
-const url = `${baseURL}/deposit`;
+const url = `${baseURL}/deposit/${channelID}`;
 const data = {
     amount: 100
 }

@@ -306,6 +306,7 @@ class Controller {
 
             let resData = response.data;
             let redirectUrl = null;
+            let data = {};
             let success = false;
             switch (channel.deposit_merchant.app_code) {
                 case 'longlongzhifu':
@@ -328,7 +329,11 @@ class Controller {
                     break;
                 case 'unifiedzhifu':
                     if (resData.code == 0) {
-                        redirectUrl = resData?.data?.payData;
+                        if (['payurl', 'codeImgUrl'].includes(resData.data.payDataType)) {
+                            redirectUrl = resData?.data?.payData;
+                        } else if (resData.data.payDataType === 'form') {
+                            data = resData?.data?.payData;
+                        }
                         success = true;
                     }
                     break;
@@ -350,7 +355,7 @@ class Controller {
             }
 
             if (success) {
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', redirectUrl ? { redirectUrl } : {});
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', redirectUrl ? { redirectUrl } : data);
             } else {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
             }
