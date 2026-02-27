@@ -21,7 +21,7 @@ class Controller {
 
             const merchants = await DepositMerchant.findAll({
                 where: condition,
-                attributes: ['id', 'name', 'api', 'app_id', 'app_code', 'status', 'min_amount', 'max_amount', 'allow_type', 'createdAt', 'updatedAt'],
+                attributes: ['id', 'name', 'api', 'app_id', 'app_code', 'status', 'createdAt', 'updatedAt'],
             });
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', merchants);
