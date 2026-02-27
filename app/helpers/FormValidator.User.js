@@ -196,12 +196,12 @@ exports.forgot_password = () => {
 
 exports.deposit = () => {
     return [
-        check('type').not().isEmpty().withMessage('充值方式不能为空')
-            .bail()
-            .isNumeric()
-            .withMessage('充值方式必须是数字')
-            .bail()
-            .isIn([1, 2, 3, 4]).withMessage('充值方式必须是 1 到 4 之间'),
+        // check('type').not().isEmpty().withMessage('充值方式不能为空')
+        //     .bail()
+        //     .isNumeric()
+        //     .withMessage('充值方式必须是数字')
+        //     .bail()
+        //     .isIn([1, 2, 3, 4]).withMessage('充值方式必须是 1 到 4 之间'),
         check('amount').not().isEmpty().withMessage('充值金额不能为空')
             .bail() // stop running validations if amount is empty
             .isNumeric()

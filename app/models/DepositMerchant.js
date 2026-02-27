@@ -34,19 +34,6 @@ DepositMerchant.init({
         type: DataTypes.TINYINT,
         allowNull: false,
         defaultValue: 1
-    },
-    allow_type: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: '1,2,3,4,...'
-    },
-    min_amount: {
-        type: DataTypes.DECIMAL(10, 2),
-        defaultValue: 0.00
-    },
-    max_amount: {
-        type: DataTypes.DECIMAL(10, 2),
-        defaultValue: 0.00
     }
 }, {
     sequelize,

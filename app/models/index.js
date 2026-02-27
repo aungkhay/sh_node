@@ -23,6 +23,7 @@ const Ticket = require('./Ticket');
 const TicketRecord = require('./TicketRecord');
 const InheritOwner = require('./InheritOwner');
 const DepositMerchant = require('./DepositMerchant');
+const MerchantChannel = require('./MerchantChannel');
 const Deposit = require('./Deposit');
 const Withdraw = require('./Withdraw');
 const Transfer = require('./Transfer');
@@ -121,6 +122,8 @@ Deposit.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE'
 // ========= DEPOSIT_MERCHANT ↔️ DEPOSIT (1:N) ==========
 DepositMerchant.hasMany(Deposit, { foreignKey: 'deposit_merchant_id', as: 'deposits', onDelete: 'CASCADE' });
 Deposit.belongsTo(DepositMerchant, { foreignKey: 'deposit_merchant_id', as: 'deposit_merchant', onDelete: 'CASCADE' });
+MerchantChannel.belongsTo(DepositMerchant, { foreignKey: 'deposit_merchant_id', as: 'deposit_merchant', onDelete: 'CASCADE' });
+DepositMerchant.hasMany(MerchantChannel, { foreignKey: 'deposit_merchant_id', as: 'channels', onDelete: 'CASCADE' });
 
 // ========== USER ↔️ WITHDRAW (1:N) ==========
 User.hasMany(Withdraw, { foreignKey: 'user_id', as: 'withdraws', onDelete: 'CASCADE' });

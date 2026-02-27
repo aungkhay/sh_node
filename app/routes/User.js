@@ -94,7 +94,8 @@ class UserRoute extends express.Router {
         let TxnCtl = new TransactionController(app);
         this.post('/recharge-callback/:orderNo/:merchantId/:userId', TxnCtl.RECHARGE_CALLBACK);
         this.get('/deposit-methods', middleware.isLoggedIn, TxnCtl.DEPOSIT_METHOD);
-        this.post('/deposit', FormValidator.deposit(), middleware.isLoggedIn, TxnCtl.DEPOSIT);
+        this.get('/payment-channels/:method_id', middleware.isLoggedIn, TxnCtl.GET_PAYMENT_CHANNELS);
+        this.post('/deposit/:channel_id', FormValidator.deposit(), middleware.isLoggedIn, TxnCtl.DEPOSIT);
         this.get('/deposit-history', middleware.isLoggedIn, TxnCtl.DEPOSIT_HISTORY);
         this.post('/withdraw', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW);
         this.get('/withdraw-history', middleware.isLoggedIn, TxnCtl.WITHDRAW_HISTORY);

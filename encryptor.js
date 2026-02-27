@@ -14,10 +14,10 @@ const startEncrypt = () => {
     });
 
     const loginData = JSON.stringify({
-        phone: "13900000000",
-        password: "admin@123",
-        uuid: "45a8fa8c-980e-40f8-ace6-255a55ad22a7",
-        verification_code: "46775"
+        phone: "13428999696",
+        password: "superadmin@123",
+        uuid: "487b7359-c19c-4858-96b5-657d33e22802",
+        verification_code: "87676"
     });
 
     const kyc = JSON.stringify({
@@ -126,7 +126,6 @@ const startEncrypt = () => {
     const redemptCode = JSON.stringify({ phone: '13914725811', amount: 500 });
     const getRedemptCode = JSON.stringify({ code: '8416385750814066' });
     const depositData = JSON.stringify({
-        type: 2,
         amount: 1000
     })
     const updateWallet = JSON.stringify({
@@ -201,7 +200,7 @@ const startEncrypt = () => {
             }
         ]
     });
-    const encrypted = encrypt(loginData, API_KEY, API_IV);
+    const encrypted = encrypt(depositData, API_KEY, API_IV);
     console.log(encrypted);
 }
 

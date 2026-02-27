@@ -8,6 +8,7 @@ const { Op, Sequelize } = require('sequelize');
 const Decimal = require('decimal.js');
 const axios = require('axios');
 const MerchantController = require('./MerchantController');
+const MerchantChannel = require('../../models/MerchantChannel');
 
 class Controller {
     constructor(app) {
@@ -148,28 +149,36 @@ class Controller {
             if (depositMethods) {
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, JSON.parse(depositMethods));
             }
-
-            const maps = {
-                1: '微信',
-                2: '支付宝',
-                3: '云闪付',
-                4: '银联',
-            }
-            const merchats = await DepositMerchant.findAll({ attributes: ['id', 'allow_type'] });
-            const methods = [];
-            merchats.forEach(m => {
-                const types = m.allow_type.split(',').map(t => t.trim());
-                types.forEach(t => {    
-                    if (maps[t] && !methods.some(m => m.type === Number(t))) {
-                        methods.push({ type: Number(t), name: maps[t]});
-                    }
-                });
-            });
-            await this.redisHelper.setValue('deposit_methods', JSON.stringify(methods), 600); // 10 min cache
+            
+            const methods = [
+                { id: 1, name: '微信' },
+                { id: 2, name: '支付宝' },
+                { id: 3, name: '云闪付' },
+                { id: 4, name: '银联' },
+            ]
+            await this.redisHelper.setValue('deposit_methods', JSON.stringify(methods)); // 10 min cache
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, methods);
         } catch (error) {
             errLogger(`[DEPOSIT_METHOD]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GET_PAYMENT_CHANNELS = async (req, res) => {
+        try {
+            const { method_id } = req.params;
+            const channels = await MerchantChannel.findAll({
+                where: { 
+                    status: 1, 
+                    payment_method: method_id 
+                },
+                attributes: ['id', 'payment_method', 'channel_name', 'min_amount', 'max_amount'],
+                order: [['sort', 'ASC']],
+            });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, channels);
+        } catch (error) {
+            errLogger(`[GET_PAYMENT_CHANNELS]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
@@ -215,6 +224,10 @@ class Controller {
             const userId = req.user_id;
             const { type, amount } = req.body;
 
+            if (amount <= 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '充值金额必须大于0', {});
+            }
+
             const user = await User.findByPk(userId, {
                 include: {
                     model: UserKYC,
@@ -234,40 +247,42 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
             }
 
-            // Generate Payment URL
-            const merchant = await DepositMerchant.findOne({
-                where: { 
-                    status: 1,
-                    allow_type: { [Op.like]: `%${type}%` }
+            // Get Channel
+            const channel = await MerchantChannel.findOne({
+                include: {
+                    model: DepositMerchant,
+                    as: 'deposit_merchant',
                 },
-                attributes: ['id', 'api', 'app_id', 'app_code', 'app_key', 'min_amount', 'max_amount'],
-                order: db.random()
+                where: { id: req.params.channel_id, status: 1 },
             });
-            if (!merchant) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无可用的充值通道', {});
+            if (!channel || !channel.deposit_merchant) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '充值通道无效', {});
             }
-            if (amount < parseFloat(merchant.min_amount) || (parseFloat(merchant.max_amount) > 0 && amount > parseFloat(merchant.max_amount))) {
-                let resMsg = `最低充值金额为${merchant.min_amount}`;
-                if (parseFloat(merchant.max_amount) > 0) {
-                    resMsg += `，最高充值金额为${merchant.max_amount}`;
+            if (parseFloat(channel.min_amount) > 0) {
+                if (amount < parseFloat(channel.min_amount)) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最低充值金额为${channel.min_amount}`, {});
                 }
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, resMsg, {});
+            }
+            if (parseFloat(channel.max_amount) > 0) {
+                if (amount > parseFloat(channel.max_amount)) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最高充值金额为${channel.max_amount}`, {});
+                }
             }
 
             let payload = null;
-            switch (merchant.app_code) {
+            switch (channel.deposit_merchant.app_code) {
                 case 'longlongzhifu':
                     const pay_ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                    payload = await this.merchantController.LONGLONGZHIFU(merchant, amount, pay_ip, type, userId);
+                    payload = await this.merchantController.LONGLONGZHIFU(channel, amount, pay_ip, userId);
                     break;
                 case 'mingrizhifu':
-                    payload = await this.merchantController.MINGRIZHIFU(merchant, amount, type, userId);
+                    payload = await this.merchantController.MINGRIZHIFU(channel, amount, userId);
                     break;
                 case 'bestzhifu':
-                    payload = await this.merchantController.BESTZHIFU(merchant, amount, type, userId);
+                    payload = await this.merchantController.BESTZHIFU(channel, amount, userId);
                     break;
                 case 'unifiedzhifu':
-                    payload = await this.merchantController.UNIFIEDZHIFU(merchant, amount, type, userId);
+                    payload = await this.merchantController.UNIFIEDZHIFU(channel, amount, userId);
                     break;
                 default:
                     break;
@@ -281,7 +296,7 @@ class Controller {
             console.log(payload);
 
             // Make Payment Request
-            const response = await axios.post(merchant.api, payload, {
+            const response = await axios.post(channel.deposit_merchant.api, payload, {
                 headers: { "Content-Type": "application/x-www-form-urlencoded" }
             });
             if (response.status !== 200) {
@@ -292,7 +307,7 @@ class Controller {
             let resData = response.data;
             let redirectUrl = null;
             let success = false;
-            switch (merchant.app_code) {
+            switch (channel.deposit_merchant.app_code) {
                 case 'longlongzhifu':
                     if (resData.status == 1) {
                         redirectUrl = resData?.h5_url;
@@ -323,9 +338,9 @@ class Controller {
 
             if (success) {
                 await Deposit.create({
-                    deposit_merchant_id: merchant.id,
+                    deposit_merchant_id: channel.deposit_merchant_id,
                     order_no: orderNo,
-                    type: type,
+                    type: channel.payment_method,
                     user_id: user.id,
                     relation: user.relation,
                     amount: amount,
