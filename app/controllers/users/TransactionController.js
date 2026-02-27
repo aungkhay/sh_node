@@ -120,6 +120,38 @@ class Controller {
         }
     }
 
+    DEPOSIT_METHOD = async (req, res) => {
+        try {
+            const depositMethods = await this.redisHelper.getValue('deposit_methods');
+            if (depositMethods) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, JSON.parse(depositMethods));
+            }
+
+            const maps = {
+                1: '微信',
+                2: '支付宝',
+                3: '云闪付',
+                4: '银联',
+            }
+            const merchats = await DepositMerchant.findAll({ attributes: ['id', 'allow_type'] });
+            const methods = [];
+            merchats.forEach(m => {
+                const types = m.allow_type.split(',').map(t => t.trim());
+                types.forEach(t => {    
+                    if (maps[t] && !methods.some(m => m.type === Number(t))) {
+                        methods.push({ type: Number(t), name: maps[t]});
+                    }
+                });
+            });
+            await this.redisHelper.setValue('deposit_methods', JSON.stringify(methods), 600); // 10 min cache
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, methods);
+        } catch (error) {
+            errLogger(`[DEPOSIT_METHOD]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     DEPOSIT = async (req, res) => {
         const lockKey = `lock:deposit:${req.user_id}`;
         let redisLocked = false;

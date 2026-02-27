@@ -564,6 +564,9 @@ const data = { amount: 100 }
 ```
 ### Deposit And Withdraw
 ``` js
+// [GET] Deposit Method
+const url = `${baseURL}/deposit-methods`;
+
 // [POST] Deposit
 const url = `${baseURL}/deposit`;
 const data = {
