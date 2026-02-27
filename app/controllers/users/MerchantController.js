@@ -166,13 +166,13 @@ class Controller {
             const body = {
                 mchNo: merchant.app_id,
                 mchOrderNo: orderNo,
-                channelId: 8008,
+                channelId: 55555,
                 amount: Number(amount * 100).toFixed(0),
                 notifyUrl: `${this.notifyUrl}/${orderNo}/${merchant.id}/${userId}`,
                 reqTime: Date.now(),
             }
-            const sign = this.CREATE_SIGN(body, `&${merchant.app_key}`);
-            body.sign = sign;
+            const sign = this.CREATE_SIGN(body, `&key=${merchant.app_key}`);
+            body.sign = sign.toUpperCase();
             body.orderNo = orderNo;
             return body;
 

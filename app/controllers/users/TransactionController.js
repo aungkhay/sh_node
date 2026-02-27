@@ -98,6 +98,28 @@ class Controller {
                         status = 2;
                     }
                     break;
+                case 'unifiedzhifu':
+                    // {"amount":"10000","payOrderId":"P2027270781915430913","mchOrderNo":"SH4459618035647253","sign":"8A931D44B8FA9AEF6F2884342DBFC88D","ifId":"8001","reqTime":"1772174061616","state":"2","mchNo":"M1771850456","channelId":"55555"}
+                    const unifiedReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const unifiedCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "")
+                    );
+                    const unifiedSign = this.merchantController.CREATE_SIGN(unifiedCleaned, `&key=${merchant.app_key}`);
+                    console.log("unifiedSign:", unifiedSign, "unifiedReqSign:", unifiedReqSign);
+                    
+                    // 支付订单状态 state(int): 0-订单生成, 1-待确认, 2-已确认, 3-支付失败, 4-已撤销, 5-订单关闭
+                    if (unifiedSign === unifiedReqSign) {
+                        if (reqBody.state == '2') {
+                            status = 1;
+                            resMsg = 'success';
+                        } else if (['3', '4', '5'].includes(reqBody.state)) {
+                            status = 2;
+                        }
+                    } else {
+                        status = 2;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -290,8 +312,8 @@ class Controller {
                     }
                     break;
                 case 'unifiedzhifu':
-                    if (resData.status == 0) {
-                        // redirectUrl = resData?.result?.payUrl;
+                    if (resData.code == 0) {
+                        redirectUrl = resData?.data?.payData;
                         success = true;
                     }
                     break;

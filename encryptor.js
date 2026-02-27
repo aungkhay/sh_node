@@ -14,10 +14,10 @@ const startEncrypt = () => {
     });
 
     const loginData = JSON.stringify({
-        phone: "13914725800",
-        password: "superadmin@123",
-        uuid: "e1178aa0-9995-4109-8380-38cfff11ef63",
-        verification_code: "03311"
+        phone: "13900000000",
+        password: "admin@123",
+        uuid: "45a8fa8c-980e-40f8-ace6-255a55ad22a7",
+        verification_code: "46775"
     });
 
     const kyc = JSON.stringify({
@@ -201,7 +201,7 @@ const startEncrypt = () => {
             }
         ]
     });
-    const encrypted = encrypt(springWhiteList, API_KEY, API_IV);
+    const encrypted = encrypt(loginData, API_KEY, API_IV);
     console.log(encrypted);
 }
 
