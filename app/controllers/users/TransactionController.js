@@ -244,6 +244,9 @@ class Controller {
                 case 'bestzhifu':
                     payload = await this.merchantController.BESTZHIFU(merchant, amount, type, userId);
                     break;
+                case 'unifiedzhifu':
+                    payload = await this.merchantController.UNIFIEDZHIFU(merchant, amount, type, userId);
+                    break;
                 default:
                     break;
             }
@@ -283,6 +286,12 @@ class Controller {
                 case 'bestzhifu':
                     if (resData.status == 0) {
                         redirectUrl = resData?.result?.payUrl;
+                        success = true;
+                    }
+                    break;
+                case 'unifiedzhifu':
+                    if (resData.status == 0) {
+                        // redirectUrl = resData?.result?.payUrl;
                         success = true;
                     }
                     break;

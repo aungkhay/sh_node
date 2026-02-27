@@ -142,6 +142,28 @@ class Controller {
             return null;
         }
     }
+
+    UNIFIEDZHIFU = async (merchant, amount, type, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                mchNo: merchant.app_id,
+                mchOrderNo: orderNo,
+                channelId: 8008,
+                amount: Number(amount * 100).toFixed(0),
+                notifyUrl: `${this.notifyUrl}/${orderNo}/${merchant.id}/${userId}`,
+                reqTime: Date.now(),
+            }
+            const sign = this.CREATE_SIGN(body, `&${merchant.app_key}`);
+            body.sign = sign;
+            body.orderNo = orderNo;
+            return body;
+
+        } catch (error) {
+            errLogger(`[UNIFIEDZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
 }
 
 module.exports = Controller
