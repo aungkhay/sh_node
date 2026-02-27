@@ -286,6 +286,9 @@ class Controller {
                         const id = row['提现编号'];
                         const status = row['审核状态1通过2拒绝']; // 0 => PENDIGN | 1 => SUCCESS | 2 => FAILED
                         const description = row['不通过原因'];
+                        if (!id) {
+                            continue;
+                        }
 
                         const withdraw = await Withdraw.findOne({ 
                             where: { 
