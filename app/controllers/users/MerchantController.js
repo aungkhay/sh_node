@@ -98,7 +98,7 @@ class Controller {
      * @param {Numeric} userId 
      * @returns 
      */
-    BESTZHIFU = async (channel, amount, type, userId) => {
+    BESTZHIFU = async (channel, amount, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
@@ -126,7 +126,7 @@ class Controller {
      * @param {Numeric} userId 
      * @returns 
      */
-    UNIFIEDZHIFU = async (channel, amount, type, userId) => {
+    UNIFIEDZHIFU = async (channel, amount, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {

@@ -14,10 +14,10 @@ const startEncrypt = () => {
     });
 
     const loginData = JSON.stringify({
-        phone: "13428999696",
+        phone: "13900000000",
         password: "superadmin@123",
-        uuid: "487b7359-c19c-4858-96b5-657d33e22802",
-        verification_code: "87676"
+        uuid: "81af820e-74f7-4059-a4ac-1683d4294443",
+        verification_code: "21616"
     });
 
     const kyc = JSON.stringify({
@@ -200,7 +200,7 @@ const startEncrypt = () => {
             }
         ]
     });
-    const encrypted = encrypt(depositData, API_KEY, API_IV);
+    const encrypted = encrypt(loginData, API_KEY, API_IV);
     console.log(encrypted);
 }
 

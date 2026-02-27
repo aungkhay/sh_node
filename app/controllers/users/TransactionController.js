@@ -296,9 +296,15 @@ class Controller {
             console.log(payload);
 
             // Make Payment Request
-            const response = await axios.post(channel.deposit_merchant.api, payload, {
-                headers: { "Content-Type": "application/x-www-form-urlencoded" }
-            });
+            let response = null;
+            try {
+                response = await axios.post(channel.deposit_merchant.api, payload, {
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" }
+                });
+            } catch (error) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
+            }
+            
             if (response.status !== 200) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '充值失败，请稍后再试', {});
             }
