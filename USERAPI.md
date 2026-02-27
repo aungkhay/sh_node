@@ -567,10 +567,12 @@ const data = { amount: 100 }
 // [GET] Deposit Method
 const url = `${baseURL}/deposit-methods`;
 
+// [GET] Channel List
+const url = `${baseURL}/payment-channels/${methodID}`;
+
 // [POST] Deposit
 const url = `${baseURL}/deposit`;
 const data = {
-    type: '1 => 微信, 2 => 支付宝, 3 => 云闪付, 4 => 银联',
     amount: 100
 }
 
