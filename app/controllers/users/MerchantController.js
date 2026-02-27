@@ -1,3 +1,4 @@
+const { Model } = require('sequelize');
 const CommonHelper = require('../../helpers/CommonHelper');
 const { errLogger } = require('../../helpers/Logger');
 const crypto = require("crypto");
@@ -114,6 +115,14 @@ class Controller {
         }
     }
 
+    /**
+     * 
+     * @param {Model} merchant 
+     * @param {Numeric} amount 
+     * @param {Numeric} type 充值类型：1 => 微信, 2 => 支付宝, 3 => 云闪付, 4 => 银联
+     * @param {Numeric} userId 
+     * @returns 
+     */
     BESTZHIFU = async (merchant, amount, type, userId) => {
         try {
             // 编码666 资金转账单100-20000
@@ -143,6 +152,14 @@ class Controller {
         }
     }
 
+    /**
+     * 
+     * @param {Model} merchant 
+     * @param {Numeric} amount 
+     * @param {Numeric} type 充值类型：1 => 微信, 2 => 支付宝, 3 => 云闪付, 4 => 银联
+     * @param {Numeric} userId 
+     * @returns 
+     */
     UNIFIEDZHIFU = async (merchant, amount, type, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
