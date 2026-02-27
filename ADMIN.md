@@ -1096,6 +1096,52 @@ const url = `${baseURL}/merchants/${merchantId}/change-status`;
 const data = {
     status: 1 // 0 => Disabled | 1 => Enabled
 }
+
+// [GET] Payment Methods
+const url = `${baseURL}/merchants/payment-methods`;
+
+// [GET] Channel List
+const url = `${baseURL}/channels`;
+const params = {
+    page: 1,
+    perPage: 10,
+    merchantId: 1,
+    paymentMethod: 1
+}
+
+// [POST] Create Channel
+const url = `${baseURL}/channels/create`;
+const data = {
+    merchant_id: '',
+    payment_method: '',
+    merchant_channel: 123, // code
+    channel_name: '', // 支付宝
+    min_amount: 0, // optional
+    max_amount: 0, // optional
+}
+
+// [POST] Update Channel
+const url = `${baseURL}/channels/${channelID}/update`;
+const data = {
+    merchant_id: '',
+    payment_method: '',
+    merchant_channel: 123, // code
+    channel_name: '', // 支付宝
+    min_amount: 0, // optional
+    max_amount: 0, // optional
+}
+
+// [POST] Change Channel Status
+const url = `${baseURL}/channels/${channelID}/change-status`;
+const data = {
+    status: 1
+}
+
+// [POST] Sort Channel
+const url = `${baseURL}/channels/${channelID}/sort`;
+const data = {
+    sort: 1
+}
 ```
 
 ### Role & Permissions

@@ -146,5 +146,12 @@
     { "model": "春节活动", "title": "发放补签卡", "name": "spring-festival-event-give-repair-card" },
     { "model": "春节活动", "title": "更新白名单", "name": "spring-festival-event-update-white-list" },
     { "model": "春节活动", "title": "查看白名单", "name": "spring-festival-event-view-white-list" },
-    { "model": "春节活动", "title": "补签", "name": "spring-festival-event-import-check-in" }
+    { "model": "春节活动", "title": "补签", "name": "spring-festival-event-import-check-in" },
+
+    { "model": "商户管理", "title": "支付方式列表", "name": "merchant-list" },
+    { "model": "商户管理", "title": "修改商户状态", "name": "update-merchant-status" },
+    { "model": "商户管理", "title": "通道列表", "name": "channel-list" },
+    { "model": "商户管理", "title": "创建通道", "name": "create-channel" },
+    { "model": "商户管理", "title": "编辑通道", "name": "update-channel" },
+    { "model": "商户管理", "title": "修改通道状态", "name": "update-channel-status" }
 ]

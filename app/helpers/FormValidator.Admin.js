@@ -633,3 +633,11 @@ exports.create_channel = () => {
             .withMessage('最大金额必须是数字'),
     ]
 }
+
+exports.sort_channel = () => {
+    return [
+        check('sort').not().isEmpty().withMessage('排序顺序不能为空')
+            .bail()
+            .isInt({ min: 0 }).withMessage('排序顺序必须是非负整数'),
+    ]
+}

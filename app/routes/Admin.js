@@ -204,11 +204,12 @@ class AdminRoute extends express.Router {
         let MerchantCtrl = new MerchantController(app);
         this.get('/merchants/payment-methods', middleware.isLoggedIn('merchant-list'), MerchantCtrl.PAYMENT_METHOD);
         this.get('/merchants', middleware.isLoggedIn('merchant-list'), MerchantCtrl.INDEX);
-        this.post('/merchants/:id/change-status', FormValidator.update_status('update-merchant'), middleware.isLoggedIn('update-merchant'), MerchantCtrl.CHANGE_STATUS);
+        this.post('/merchants/:id/change-status', FormValidator.update_status(), middleware.isLoggedIn('update-merchant-status'), MerchantCtrl.CHANGE_STATUS);
         this.get('/channels', middleware.isLoggedIn('channel-list'), MerchantCtrl.CHANNEL_LIST);
         this.post('/channels/create', FormValidator.create_channel(), middleware.isLoggedIn('create-channel'), MerchantCtrl.CHANNEL_CREATE);
         this.post('/channels/:id/update', FormValidator.create_channel(), middleware.isLoggedIn('update-channel'), MerchantCtrl.CHANNEL_UPDATE);
-        this.post('/channels/:id/change-status', FormValidator.update_status('update-channel'), middleware.isLoggedIn('update-channel'), MerchantCtrl.CHANGE_CHANNEL_STATUS);
+        this.post('/channels/:id/change-status', FormValidator.update_status(), middleware.isLoggedIn('update-channel-status'), MerchantCtrl.CHANGE_CHANNEL_STATUS);
+        this.post('/channels/:id/sort', FormValidator.sort_channel(), middleware.isLoggedIn('update-channel'), MerchantCtrl.CHANNEL_SORT);
 
         let RoleController = require('../controllers/admins/RoleController');
         let RoleCtrl = new RoleController();

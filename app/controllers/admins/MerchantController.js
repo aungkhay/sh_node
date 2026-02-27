@@ -42,16 +42,18 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
+            const id = req.params.id;
             const { status } = req.body;
+            const merchant = await DepositMerchant.findOne({ where: { id: id } });
+            if (!merchant) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '商户不存在', {});
+            }
 
-            await DepositMerchant.update(
-                { status: status },
-                { where: { id: req.params.id } }
-            );
+            await merchant.update({ status: status });
 
             await MerchantChannel.update(
                 { status: status },
-                { where: { deposit_merchant_id: req.params.id } }
+                { where: { deposit_merchant_id: id } }
             );
 
             // Log
@@ -139,10 +141,12 @@ class Controller {
 
             const { status } = req.body;
 
-            await MerchantChannel.update(
-                { status: status },
-                { where: { deposit_merchant_id: req.params.id } }
-            );
+            const channel = await MerchantChannel.findOne({ where: { id: req.params.id } });
+            if (!channel) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '通道不存在', {});
+            }
+
+            await channel.update({ status: status });
 
             // Log
             await this.adminLogger(req, 'MerchantChannel', 'update');
@@ -188,8 +192,14 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
+            const id = req.params.id;
             const { payment_method, merchant_channel, channel_name, min_amount, max_amount } = req.body;
-            await MerchantChannel.update(
+
+            const merchantChannel = await MerchantChannel.findOne({ where: { id: id } });
+            if (!merchantChannel) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '通道不存在', {});
+            }
+            await merchantChannel.update(
                 {
                     payment_method: payment_method,
                     merchant_channel: merchant_channel,
@@ -197,13 +207,39 @@ class Controller {
                     min_amount: min_amount,
                     max_amount: max_amount,
                 },
-                { where: { id: req.params.id } }
             );
 
             // Log
             await this.adminLogger(req, 'MerchantChannel', 'update');
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    CHANNEL_SORT = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const id = req.params.id;
+            const { sort } = req.body;
+
+            const merchantChannel = await MerchantChannel.findOne({ where: { id: id } });
+            if (!merchantChannel) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '通道不存在', {});
+            }
+
+            await merchantChannel.update({ sort: sort });
+
+            // Log
+            await this.adminLogger(req, 'MerchantChannel', 'update');
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '排序更新成功', {});
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
