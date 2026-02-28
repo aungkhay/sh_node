@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -45,6 +45,8 @@ class CronJob {
         cron.schedule('5 * * * *', this.RUN_INTERVAL_RELEASE_RED_ENVELOP).start();
         // Run every 5 minutes
         cron.schedule('*/1 * * * *', this.GIVE_CHECK_IN).start();
+        // Run every minute
+        cron.schedule('* * * * *', this.UPDATE_DEPOSIT_STATUS).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -1088,6 +1090,24 @@ class CronJob {
                 running = false;
             }
         }, 10);
+    }
+
+    UPDATE_DEPOSIT_STATUS = async () => {
+        try {
+            // Update deposits that are still pending for more than 30 minutes to failed
+            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+            await Deposit.update(
+                { status: 2 },
+                { 
+                    where: { 
+                        status: 0, 
+                        createdAt: { [Op.lt]: thirtyMinutesAgo } 
+                    } 
+                }
+            );
+        } catch (error) {
+            errLogger(`[UPDATE_DEPOSIT_STATUS]: ${error.stack}`); 
+        }
     }
 }
 
