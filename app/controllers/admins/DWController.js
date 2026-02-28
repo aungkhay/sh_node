@@ -166,8 +166,17 @@ class Controller {
                 offset: offset
             });
 
+            const canWithdrawUserCount = await User.count({
+                where: {
+                    balance: {
+                        [Op.gte]: 100
+                    }
+                }
+            });
+
             const data = {
                 withdraws: rows,
+                can_withdraw_user_count: Number(canWithdrawUserCount || 0),
                 meta: {
                     page: page,
                     perPage: perPage,
