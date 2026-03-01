@@ -906,6 +906,8 @@ class Controller {
     }
 
     TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND_BY_COUPON = async (req, res) => {
+        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂时不可用', {});
+
         const lockKey = `lock:transfer_referral_bonus_to_reserve_fund_by_coupon:${req.user_id}`;
         let redisLocked = false;
 
