@@ -1109,6 +1109,51 @@ class CronJob {
             errLogger(`[UPDATE_DEPOSIT_STATUS]: ${error.stack}`); 
         }
     }
+
+    // Not cron job
+    TRANSFER_RESERVE_TO_BALANCE = async () => {
+        try {
+            const records = await Transfer.findAll({
+                attributes: ['id', 'user_id', 'amount'],
+                where: {
+                    wallet_type: 3, // 推荐金
+                    reward_id: 8, // 推荐金提取券
+                    from: 3, // 推荐金
+                    to: 1, // 储备金
+                    createdAt: {
+                        [Op.gt]: '2026-02-26 00:00:00',
+                    }
+                }
+            });
+            for (let record of records) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(record.user_id, { 
+                        attributes: ['id', 'balance', 'reserve_fund'], 
+                        transaction: t 
+                    });
+                    if (!user || Number(user.reserve_fund) != Number(record.amount)) {
+                        await t.rollback();
+                        continue;
+                    }
+                    await user.increment({ balance: Number(record.amount), reserve_fund: -Number(record.amount) }, { transaction: t });
+                    await record.update({ wallet_type: 3, from: 3, to: 2 }, { transaction: t });
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[TRANSFER_RESERVE_TO_BALANCE][Transaction Error][Record ID: ${record.id}]: ${error.stack}`);
+                    if (t && !t.finished) {
+                        try {
+                            await t.rollback();
+                        } catch (rollbackError) {
+                            errLogger(`[TRANSFER_RESERVE_TO_BALANCE][Rollback Error][Record ID: ${record.id}]: ${rollbackError.stack}`);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_RESERVE_TO_BALANCE]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
