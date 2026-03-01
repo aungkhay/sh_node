@@ -1114,7 +1114,7 @@ class CronJob {
     TRANSFER_RESERVE_TO_BALANCE = async () => {
         try {
             const records = await Transfer.findAll({
-                attributes: ['id', 'user_id', 'amount'],
+                attributes: ['id', 'user_id', 'amount', 'before_from_amount', 'after_from_amount', 'before_to_amount', 'after_to_amount'],
                 where: {
                     wallet_type: 3, // 推荐金
                     reward_id: 8, // 推荐金提取券
@@ -1137,7 +1137,13 @@ class CronJob {
                         continue;
                     }
                     await user.increment({ balance: Number(record.amount), reserve_fund: -Number(record.amount) }, { transaction: t });
-                    await record.update({ wallet_type: 3, from: 3, to: 2 }, { transaction: t });
+                    await record.update({ 
+                        wallet_type: 3, 
+                        from: 3, 
+                        to: 2,
+                        before_to_amount: user.balance,
+                        after_to_amount: Number(user.balance) + Number(record.amount),
+                    }, { transaction: t });
                     await t.commit();
                 } catch (error) {
                     errLogger(`[TRANSFER_RESERVE_TO_BALANCE][Transaction Error][Record ID: ${record.id}]: ${error.stack}`);
