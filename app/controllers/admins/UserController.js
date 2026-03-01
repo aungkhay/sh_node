@@ -5,7 +5,7 @@ const RedisHelper = require('../../helpers/RedisHelper');
 const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
-const { Op, fn, col, Sequelize } = require('sequelize');
+const { Op, fn, col, Sequelize, literal } = require('sequelize');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const multer = require('multer');
@@ -42,6 +42,7 @@ class Controller {
             const inviteCode = req.query.inviteCode || '';
             // const viewChild = req.query.viewChild || 0; // 1 => adjacent child | 2 => all child
             const userId = req.user_id;
+            const referral_bonus = req.query.referral_bonus || 0;
 
             let condition = {};
             if (userId != 1) {
@@ -70,6 +71,11 @@ class Controller {
             }
             if (inviteCode) {
                 condition.invite_code = inviteCode;
+            }
+            if (referral_bonus) {
+                condition.referral_bonus = {
+                    [Op.gte]: referral_bonus
+                }
             }
 
             const { rows, count } = await User.findAndCountAll({
