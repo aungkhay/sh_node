@@ -45,6 +45,11 @@ GoldPackageHistory.init({
         type: DataTypes.STRING(50),
         allowNull: false,
         defaultValue: '0-0'
+    },
+    is_reimbursed: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: 0
     }
 }, {
     sequelize,

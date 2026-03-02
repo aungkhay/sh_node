@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -47,6 +47,7 @@ class CronJob {
         cron.schedule('*/1 * * * *', this.GIVE_CHECK_IN).start();
         // Run every minute
         cron.schedule('* * * * *', this.UPDATE_DEPOSIT_STATUS).start();
+        cron.schedule('* * * * *', this.CHECK_GOLD_PACKAGE_REIMBURSEMENT).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -1158,6 +1159,47 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[TRANSFER_RESERVE_TO_BALANCE]: ${error.stack}`);
+        }
+    }
+
+    CHECK_GOLD_PACKAGE_REIMBURSEMENT = async () => {
+        try {
+            const now = new Date();
+            const packages = await GoldPackageHistory.findAll({
+                where: {
+                    reimbursement_date: {
+                        [Op.lte]: now
+                    },
+                    is_reimbursed: 0
+                },
+                attributes: ['id', 'user_id', 'price', 'reimbursement_rate']
+            });
+
+            const t = await db.transaction();
+            try {
+                for (let pack of packages) {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+                    const reimbursementAmount = new Decimal(Number(pack.price))
+                        .times(Number(pack.reimbursement_rate))
+                        .times(0.01)
+                        .toNumber();
+                    if (reimbursementAmount > 0) {
+                        await user.increment({ balance: reimbursementAmount }, { transaction: t });
+                        await pack.update({ is_reimbursed: 1 }, { transaction: t });
+                    }
+                }
+
+                await t.commit();
+            } catch (error) {
+                errLogger(`[CHECK_GOLD_PACKAGE_REIMBURSEMENT][Transaction Error]: ${error.stack}`);
+                await t.rollback();
+            }
+
+        } catch (error) {
+            errLogger(`[CHECK_GOLD_PACKAGE_REIMBURSEMENT]: ${error.stack}`);
         }
     }
 }
