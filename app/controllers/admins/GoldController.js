@@ -266,7 +266,7 @@ class Controller {
                 include: {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'name'],
+                    attributes: ['id', 'name', 'phone_number'],
                     where: userCondition
                 },
                 where: condition,

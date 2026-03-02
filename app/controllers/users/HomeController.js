@@ -3363,10 +3363,13 @@ class Controller {
 
             // 每个产品每个用户只能购买一次。查询用户是否已经购买过该礼包
             const history = await GoldPackageHistory.findOne({
-                where: { user_id: userId },
+                where: { 
+                    user_id: userId,
+                    package_id: selectedPack.id 
+                },
                 order: [['id', 'DESC']],
             });
-            if (history && history.package_id == selectedPack.id) {
+            if (history) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '每个礼包只能购买一次', {});
             }
 
