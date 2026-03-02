@@ -279,7 +279,7 @@ class Controller {
                     'balance', 'referral_bonus', 'masonic_fund', 'address', 'address_status', 
                     'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
                     'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest',
-                    'can_join_spring_event'
+                    'can_join_spring_event', 'have_reward_6'
                 ],
                 useMaster: userId % 2 === 0 ? true : false
             });
