@@ -136,6 +136,7 @@ class AdminRoute extends express.Router {
         let UserCtrl = new UserController(app);
         this.get('/users', middleware.isLoggedIn('user-list'), UserCtrl.INDEX);
         this.get('/user-certificates', middleware.isLoggedIn(), UserCtrl.CERTIFICATE_LIST);
+        this.get('/users/buy-authorization-letter-history', middleware.isLoggedIn('buy-authorization-letter-history'), UserCtrl.BUY_AUTHORIZATION_LETTER_HISTORY);
         this.get('/user-bonuses', middleware.isLoggedIn('referral-bonus-list'), UserCtrl.BONUS_LIST);
         this.get('/user-rank-points', middleware.isLoggedIn('user-rankpoint-list'), UserCtrl.RANK_POINT_LIST);
         this.post('/users/:id/update-status', FormValidator.update_status(), middleware.isLoggedIn('user-disable-enable'), UserCtrl.UPDATE_USER_STATUS);
@@ -188,6 +189,8 @@ class AdminRoute extends express.Router {
         this.post('/gold-prices/:id/update', middleware.isLoggedIn('gold-price-update'), GoldCtrl.UPDATE_GOLD_PRICE);
         this.get('/gold-prices/user-buy-sell-records', middleware.isLoggedIn('gold-trade-list'), GoldCtrl.USER_GOLD_HISTORY);
         this.get('/gold-prices/interest-records', middleware.isLoggedIn('gold-income-list'), GoldCtrl.GOLD_INTEREST_HISTORY);
+        this.get('/gold-packages/history', middleware.isLoggedIn('gold-package-history-list'), GoldCtrl.GOLD_PACKAGE_HISTORY);
+        this.get('/gold-packages/bonus-history', middleware.isLoggedIn('gold-package-bonus-history-list'), GoldCtrl.GOLD_PACKAGE_BONUS_HISTORY);
 
         let BannerController = require('../controllers/admins/BannerController');
         let BannerCtrl = new BannerController(app);

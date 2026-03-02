@@ -754,6 +754,16 @@ const params = {
     endTime: '2025-11-06 23:59:59',
 }
 
+// [GET] 购买授权书记录
+const url = `${baseURL}/users/buy-authorization-letter-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
 // [GET] User's Bonuses
 const url = `${baseURL}/user-bonuses`;
 const params = {
@@ -1020,6 +1030,27 @@ const params = {
 
 // [GET] Gold Interest
 const url = `${baseURL}/gold-prices/interest-records`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+// 和衷联储黄金礼包
+// [GET] 购买记录
+const url = `${baseURL}/gold-packages/history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    pacgageId: 1, // 1 => 和衷联储黄金初级礼包 | 2 => 和衷联储黄金中级礼包
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/gold-packages/bonus-history`;
 const params = {
     page: 1,
     perPage: 10,

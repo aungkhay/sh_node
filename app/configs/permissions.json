@@ -9,6 +9,7 @@
     { "model": "角色管理", "title": "分配权限", "name": "role-assign-permission" },
 
     { "model": "用户管理", "title": "用户列表", "name": "user-list" },
+    { "model": "用户管理", "title": "购买授权书记录", "name": "buy-authorization-letter-history" },
     { "model": "用户管理", "title": "汇总", "name": "user-child-summary" },
     { "model": "用户管理", "title": "查看上级内部账号", "name": "user-view-superior" },
     { "model": "用户管理", "title": "上下分", "name": "user-add-substract" },
@@ -153,5 +154,8 @@
     { "model": "商户管理", "title": "通道列表", "name": "channel-list" },
     { "model": "商户管理", "title": "创建通道", "name": "create-channel" },
     { "model": "商户管理", "title": "编辑通道", "name": "update-channel" },
-    { "model": "商户管理", "title": "修改通道状态", "name": "update-channel-status" }
+    { "model": "商户管理", "title": "修改通道状态", "name": "update-channel-status" },
+
+    { "model": "和衷联储黄金礼包", "title": "购买记录", "name": "gold-package-history-list"},
+    { "model": "和衷联储黄金礼包", "title": "推荐奖励记录", "name": "gold-package-bonus-history-list"}
 ]

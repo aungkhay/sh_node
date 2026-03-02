@@ -2140,6 +2140,55 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    BUY_AUTHORIZATION_LETTER_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const phone = req.query.phone || '';
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
+            const userId = req.user_id;
+
+            let userCondition = {};
+            if (phone) {
+                userCondition.phone_number = phone;
+            }
+            let condition = { have_reward_6: 1, reward_6_from_where: 2 };
+            if (userId != 1) {
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
+            }
+            if (startTime && endTime) {
+                condition.createdAt = {
+                    [Op.between]: [startTime, endTime]
+                }
+            }
+
+            const { rows, count } = await User.findAndCountAll({
+                where: condition,
+                attributes: ['id', 'name', 'phone_number', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', data);
+        } catch (error) {
+            errLogger(`[User][BUY_AUTHORIZATION_LETTER_HISTORY]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;

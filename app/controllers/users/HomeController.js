@@ -3321,7 +3321,7 @@ class Controller {
             } else {
                 pack = [
                     { id: 1, name: '和衷联储黄金初级礼包', price: 588, return_range: '4826-5324' },
-                    { id: 2, name: '和衷联储黄金高级礼包', price: 1288, return_range: '19780-23256' },
+                    { id: 2, name: '和衷联储黄金中级礼包', price: 1288, return_range: '19780-23256' },
                 ];
                 await this.redisHelper.setValue('gold_gift_pack', JSON.stringify(pack));
             }
