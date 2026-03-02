@@ -651,6 +651,15 @@ const params = {
     perPage: perPage
 }
 
+// [GET] Gold Gift Packages
+const url = `${baseURL}/gold-gift-packages`;
+
+// [POST] Buy Gold Gift Package
+const url = `${baseURL}/gold-gift-packages/${packageId}/buy`;
+
+// [POST] Gold Gift History
+const url = `${baseURL}/gold-gift-packages/history`;
+
 // [POST] Redemption Code
 const url = `${baseURL}/redempt-code`;
 const data = {
@@ -666,6 +675,9 @@ const params = {
 
 // [POST] Use Gift Voucher
 const url = `${baseURL}/gift-voucher/${rewardId}/use`;
+
+// [POST] Buy Authorization Letter 购买上合组织中国区授权书
+const url = `${baseURL}/buy-authorization-letter`;
 ```
 ### Spring Festival Event
 ``` js

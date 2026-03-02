@@ -488,7 +488,7 @@ class CronJob {
             });
             for (let record of rewardRecords) {
                 // await this.redisHelper.setValue(`USER_HAVE_REWARD_6_${record.user_id}`, 1);
-                await User.update({ have_reward_6: 1 }, { where: { id: record.user_id } });
+                await User.update({ have_reward_6: 1, reward_6_from_where: 1 }, { where: { id: record.user_id } });
                 await this.redisHelper.deleteKey(`USER_HAVE_REWARD_6_${record.user_id}`);
             }
             console.log('SET_REWARD_6_TO_REDIS completed.');
@@ -898,7 +898,7 @@ class CronJob {
                                 obj.amount = amount; // 推荐奖励
                             }
                             if (obj.reward_id == 6) {
-                                await user.update({ have_reward_6: 1 }, { transaction: t });
+                                await user.update({ have_reward_6: 1, reward_6_from_where: 1 }, { transaction: t });
                             }
                             rewards.push(obj);
                         }
@@ -1016,7 +1016,7 @@ class CronJob {
 
                 // Set flag for reward 6 to prevent duplicate wins
                 if (reward.reward_id == 6) {
-                    await user.update({ have_reward_6: 1 }, { transaction: t });
+                    await user.update({ have_reward_6: 1, reward_6_from_where: 1 }, { transaction: t });
                 }
                 
                 reward.remain_count = reward.reward_remain_count - 1;

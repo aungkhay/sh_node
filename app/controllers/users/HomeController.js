@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses } = require('../../models');
 const { Op, literal, Sequelize } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -3310,6 +3310,183 @@ class Controller {
         } catch (error) {
             errLogger(`[USE_GIFT_VOUCHER][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GET_GOLD_PACKAGES = async () => {
+        try {
+             let pack = await this.redisHelper.getValue('gold_gift_pack');
+            if (pack) {
+                pack = JSON.parse(pack);
+            } else {
+                pack = [
+                    { id: 1, name: '和衷联储黄金初级礼包', price: 588, return_range: '4826-5324' },
+                    { id: 2, name: '和衷联储黄金高级礼包', price: 1288, return_range: '19780-23256' },
+                ];
+                await this.redisHelper.setValue('gold_gift_pack', JSON.stringify(pack));
+            }
+            return pack;
+        } catch (error) {
+            return [];
+        }
+    }
+
+    GOLD_GIFT_PACKAGE = async (req, res) => {
+        try {
+            let pack = await this.GET_GOLD_PACKAGES();
+            pack = pack.map(p => ({
+                id: p.id,
+                name: p.name,
+                price: Number(p.price)
+            }));
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', pack);
+        } catch (error) {
+            errLogger(`[GOLD_GIFT_PACKAGE][${req.user_id}]: ${error.stack}`); 
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BUY_GOLD_PACKAGE = async (req, res) => {
+        try {
+            const id = req.params.id;
+            let pack = await this.GET_GOLD_PACKAGES();
+            const selectedPack = pack.find(p => p.id === parseInt(id));
+            if (!selectedPack) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
+            }
+
+            const userId = req.user_id;
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'balance'] });
+            if (Number(user.reserve_fund) < selectedPack.price) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+
+            // 每个产品每个用户只能购买一次。查询用户是否已经购买过该礼包
+            const history = await GoldPackageHistory.findOne({
+                where: { user_id: userId },
+                order: [['id', 'DESC']],
+            });
+            if (history && history.package_id == selectedPack.id) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '每个礼包只能购买一次', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await user.increment({ reserve_fund: -selectedPack.price }, { transaction: t });
+                await GoldPackageHistory.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    package_id: selectedPack.id,
+                    price: selectedPack.price,
+                    reimbursement_rate: 70, // 固定70%返还比例
+                    reimbursement_date: moment().add(15, 'days').format('YYYY-MM-DD' + ' 00:00:00'), // after 15 days
+                    return_rate: selectedPack.return_range
+                }, { transaction: t });
+
+                const bonusArr = [10, 2, 1];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3); // remove first & last empty string (limit to 3 levels)
+                commonLogger(`[BUY_GOLD_PACKAGE] Bonus Settings: LV1=${10}, LV2=${2}, LV3=${1}`);
+                commonLogger(`[BUY_GOLD_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(selectedPack.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[BUY_GOLD_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await GoldPackageBonuses.bulkCreate(bonuses, { transaction: t });
+                }
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买礼包成功', {});
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买礼包失败', {});
+            }
+
+        } catch (error) {
+            errLogger(`[BUY_GOLD_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    GOLD_PACKAGE_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            let histories = await GoldPackageHistory.findAll({
+                where: { user_id: userId },
+                attributes: ['id', 'package_id', 'price', 'reimbursement_rate', 'reimbursement_date', 'createdAt'],
+                order: [['id', 'DESC']]
+            });
+
+            const pack = await this.GET_GOLD_PACKAGES();
+            if (histories.length > 0) {
+                histories = histories.map(h => {
+                    const selectedPack = pack.find(p => p.id === h.package_id);
+                    return {
+                        id: h.id,
+                        package_id: h.package_id,
+                        package_name: selectedPack ? selectedPack.name : '',
+                        price: h.price,
+                        return_rate: h.reimbursement_rate,
+                        return_date: h.reimbursement_date,
+                        createdAt: h.createdAt
+                    }
+                });
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取礼包历史成功', histories);
+        } catch (error) {
+            errLogger(`[GOLD_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BUY_AUTHORIZATION_LETTER = async (req, res) => {
+        try {
+            const userId = req.user_id || 156;
+            const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund', 'have_reward_6'] });
+            if (user.have_reward_6) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
+            }
+            if (Number(user.reserve_fund) < 120) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足: 价格120元', {});
+            }
+
+            await user.update({ reserve_fund: Number(user.reserve_fund) - 120, have_reward_6: 1, reward_6_from_where: 2 });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+        } catch (error) {
+            errLogger(`[BUY_AUTHORIZATION_LETTER][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
 }

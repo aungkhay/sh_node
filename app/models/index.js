@@ -46,6 +46,8 @@ const RedemptCode = require('./RedemptCode');
 const UserSpringFestivalCheckIn = require('./UserSpringFestivalCheckIn');
 const UserSpringFestivalCheckInLog = require('./UserSpringFestivalCheckInLog');
 const SpringWhiteList = require('./SpringWhiteList');
+const GoldPackageHistory = require('./GoldPackageHistory');
+const GoldPackageBonuses = require('./GoldPackageBonuses');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -201,6 +203,15 @@ UserSpringFestivalCheckInLog.belongsTo(User, { foreignKey: 'user_id', as: 'user'
 User.hasOne(SpringWhiteList, { foreignKey: 'user_id', as: 'spring_white_list', onDelete: 'CASCADE' });
 SpringWhiteList.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ GOLD_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(GoldPackageHistory, { foreignKey: 'user_id', as: 'gold_package_histories', onDelete: 'CASCADE' });
+GoldPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ GOLD_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(GoldPackageBonuses, { foreignKey: 'user_id', as: 'gold_package_bonuses', onDelete: 'CASCADE' });
+GoldPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+GoldPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -243,7 +254,9 @@ const models = {
     RedemptCode,
     UserSpringFestivalCheckIn,
     UserSpringFestivalCheckInLog,
-    SpringWhiteList
+    SpringWhiteList,
+    GoldPackageHistory,
+    GoldPackageBonuses,
 };
 
 // Export models + db connection

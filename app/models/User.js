@@ -211,6 +211,12 @@ User.init({
         defaultValue: 0,
         comment: '1 => Have received the Reward 6 (上合组织中国区授权书) from the red envelope rain event'
     },
+    reward_6_from_where: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1,
+        comment: '0 => No Reward | 1 => Red Envelope | 2 => Gold Gift Package'
+    },
     status: {
         type: DataTypes.TINYINT,
         defaultValue: 1,
