@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord } = require('../../models');
+const { db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory } = require('../../models');
 const { encrypt } = require('../../helpers/AESHelper');
 const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
 const { commonLogger, errLogger } = require('../../helpers/Logger');
@@ -333,6 +333,11 @@ class Controller {
                 data.next_rank_percentage = Number(parseFloat(next_rank_percentage).toFixed(0));
             }
             data.can_impeach_count = currentRank?.number_of_impeach;
+
+            // Check Gold Gift Package already bought
+            const goldGiftPackHistory = await GoldPackageHistory.findAll({ where: { user_id: userId }, attributes: ['package_id'] });
+            const boughtPackageIds = goldGiftPackHistory.map(g => g.package_id);
+            data.bought_gold_gift_package_ids = boughtPackageIds;
 
             // Update Active
             await user.update({ activedAt: new Date, isActive: 1 });
