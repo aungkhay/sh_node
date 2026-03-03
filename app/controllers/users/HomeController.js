@@ -3492,6 +3492,43 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
+
+    GET_GOLD_PACKAGE_BONUS = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await GoldPackageBonuses.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                bonuses: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[GET_GOLD_PACKAGE_BONUS][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
 }
 
 module.exports = Controller;
