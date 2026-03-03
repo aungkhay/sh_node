@@ -3382,7 +3382,7 @@ class Controller {
                     package_id: selectedPack.id,
                     price: selectedPack.price,
                     reimbursement_rate: 70, // 固定70%返还比例
-                    reimbursement_date: moment().add(15, 'days').format('YYYY-MM-DD' + ' 00:00:00'), // after 15 days
+                    reimbursement_date: moment().add(15, 'days').format('YYYY-MM-DD HH:mm:ss'), // after 15 days
                     return_rate: selectedPack.return_range
                 }, { transaction: t });
 
