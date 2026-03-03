@@ -660,6 +660,13 @@ const url = `${baseURL}/gold-gift-packages/${packageId}/buy`;
 // [POST] Gold Gift History
 const url = `${baseURL}/gold-gift-packages/history`;
 
+// [GET] Gold Package Bunes
+const url = `${baseURL}/gold-gift-packages/bonuses`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+
 // [POST] Redemption Code
 const url = `${baseURL}/redempt-code`;
 const data = {
