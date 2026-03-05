@@ -232,10 +232,15 @@ exports.create_referral_reward_setting = () => {
 exports.add_reward_record = () => {
     return [
         // user_id is optional
-        check('user_id')
+        // check('user_id')
+        //     .optional({ checkFalsy: true })
+        //     .isNumeric()
+        //     .withMessage('用户ID必须是数字'),
+        // phone_numbers array
+        check('phone_numbers')
             .optional({ checkFalsy: true })
-            .isNumeric()
-            .withMessage('用户ID必须是数字'),
+            .isArray({ min: 1 })
+            .withMessage('手机号列表无效'),
         // is_all_user is optional
         check('is_all_user')
             .optional({ checkFalsy: true })

@@ -257,7 +257,7 @@ class Controller {
             if (!err.isEmpty()) {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
-            const { user_id, is_all_user, reward_id, amount } = req.body;
+            const { user_id, phone_numbers, is_all_user, reward_id, amount } = req.body;
             const rewardType = await RewardType.findByPk(reward_id, { attributes: ['id', 'title'] });
             if (reward_id != 9 && !rewardType) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到奖励类型', {});
@@ -268,87 +268,101 @@ class Controller {
                 // Cron job will do this at 20th minute of every hour
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '已设置为批量发放奖励任务，系统每10分钟自动处理', {});
             }
-            const user = await User.findByPk(user_id, { attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund'] });
-            if (!user) {
-                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
-            }
 
-            const obj = {
-                user_id: user.id,
-                relation: user.relation,
-                reward_id: Number(reward_id == 9 ? 8 : reward_id), // 补签卡按共济基金处理
-                is_background_added: 1,
-                from_where: '',
-                is_spring_festival_event: reward_id == 9 ? 1 : 0,
-                check_in_type: reward_id == 9 ? 2 : 0
-            }
+            const users = await User.findAll({
+                where: {
+                    phone_number: { [Op.in]: phone_numbers }
+                },
+                attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund']
+            });
+
+            // const user = await User.findByPk(user_id, { attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund'] });
+            // if (!user) {
+            //     return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
+            // }
+            
             const t = await db.transaction();
             try {
-                if (obj.reward_id == 1) {
-                    // 共济基金
-                    obj.amount = amount;
-                    obj.is_used = 1;
-                    obj.before_amount = user.masonic_fund;
-                    obj.after_amount = Number(user.masonic_fund) + Number(amount);
-                    obj.from_where = '后台发放共济基金';
-                    await RewardRecord.create(obj, { transaction: t });
-                    await user.increment({ masonic_fund: amount }, { transaction: t });
-                }
-                if (obj.reward_id == 2) {
-                    // 上合战略黄金持有克数
-                    const now = new Date();
-                    const validUntil = new Date(now);
-                    validUntil.setMonth(validUntil.getMonth() + 3);
-                    obj.amount = amount;
-                    obj.validedAt = validUntil;
-                    obj.from_where = '后台发放上合战略黄金持有克数';
-                    await RewardRecord.create(obj, { transaction: t });
-                }
-                if (obj.reward_id == 3) {
-                    // 账户余额
-                    obj.amount = amount;
-                    obj.is_used = 1;
-                    obj.before_amount = user.balance;   
-                    obj.after_amount = Number(user.balance) + Number(amount);
-                    obj.from_where = '后台发放账户余额';
-                    await RewardRecord.create(obj, { transaction: t });
-                    await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
-                }
-                if ([4,6,8,9].includes(obj.reward_id)) {
-                    if (obj.reward_id == 6) {
-                        obj.amount = 100;
-                        obj.from_where = '后台发放上合组织中国区授权书';
-                        await user.update({ have_reward_6: 1 }, { transaction: t });
+                for (let user of users) {
+
+                    const obj = {
+                        user_id: user.id,
+                        relation: user.relation,
+                        reward_id: Number(reward_id == 9 ? 8 : reward_id), // 补签卡按共济基金处理
+                        is_background_added: 1,
+                        from_where: '',
+                        is_spring_festival_event: reward_id == 9 ? 1 : 0,
+                        check_in_type: reward_id == 9 ? 2 : 0
                     }
-                    if (obj.reward_id == 8) {
+
+                    if (obj.reward_id == 1) {
+                        // 共济基金
                         obj.amount = amount;
-                        obj.from_where = '后台发放推荐奖励';
+                        obj.is_used = 1;
+                        obj.before_amount = user.masonic_fund;
+                        obj.after_amount = Number(user.masonic_fund) + Number(amount);
+                        obj.from_where = '后台发放共济基金';
+                        await RewardRecord.create(obj, { transaction: t });
+                        await user.increment({ masonic_fund: amount }, { transaction: t });
                     }
-                    if (obj.reward_id == 9) {
+                    if (obj.reward_id == 2) {
+                        // 上合战略黄金持有克数
+                        const now = new Date();
+                        const validUntil = new Date(now);
+                        validUntil.setMonth(validUntil.getMonth() + 3);
                         obj.amount = amount;
-                        obj.from_where = '后台发放春节活动补签卡';
+                        obj.validedAt = validUntil;
+                        obj.from_where = '后台发放上合战略黄金持有克数';
+                        await RewardRecord.create(obj, { transaction: t });
                     }
-                    await RewardRecord.create(obj, { transaction: t });
+                    if (obj.reward_id == 3) {
+                        // 账户余额
+                        obj.amount = amount;
+                        obj.is_used = 1;
+                        obj.before_amount = user.balance;   
+                        obj.after_amount = Number(user.balance) + Number(amount);
+                        obj.from_where = '后台发放账户余额';
+                        await RewardRecord.create(obj, { transaction: t });
+                        await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
+                    }
+                    if ([4,6,8,9].includes(obj.reward_id)) {
+                        if (obj.reward_id == 6) {
+                            obj.amount = 100;
+                            obj.from_where = '后台发放上合组织中国区授权书';
+                            await user.update({ have_reward_6: 1 }, { transaction: t });
+                        }
+                        if (obj.reward_id == 8) {
+                            obj.amount = amount;
+                            obj.from_where = '后台发放推荐奖励';
+                        }
+                        if (obj.reward_id == 9) {
+                            obj.amount = amount;
+                            obj.from_where = '后台发放春节活动补签卡';
+                        }
+                        await RewardRecord.create(obj, { transaction: t });
+                    }
+                    if (obj.reward_id == 7) {
+                        // 上合战略储备黄金券
+                        const now = new Date();
+                        const validUntil = new Date(now);
+                        validUntil.setMonth(validUntil.getMonth() + 3);
+                        obj.amount = amount;
+                        obj.validedAt = validUntil;
+                        obj.from_where = '后台发放上合战略储备黄金券';
+                        await RewardRecord.create(obj, { transaction: t });
+                    }
+                    if (obj.reward_id == 10) {
+                        // 新春献礼兑换券
+                        obj.amount = 1000;
+                        obj.from_where = '后台发放新春献礼兑换券';
+                        await RewardRecord.create(obj, { transaction: t });
+                    }
                 }
-                if (obj.reward_id == 7) {
-                    // 上合战略储备黄金券
-                    const now = new Date();
-                    const validUntil = new Date(now);
-                    validUntil.setMonth(validUntil.getMonth() + 3);
-                    obj.amount = amount;
-                    obj.validedAt = validUntil;
-                    obj.from_where = '后台发放上合战略储备黄金券';
-                    await RewardRecord.create(obj, { transaction: t });
-                }
-                if (obj.reward_id == 10) {
-                    // 新春献礼兑换券
-                    obj.amount = 1000;
-                    obj.from_where = '后台发放新春献礼兑换券';
-                    await RewardRecord.create(obj, { transaction: t });
-                }
+
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '添加奖励成功', {});
             } catch (error) {
+                errLogger(`[ADD_REWARD_TRANSACTION]: ${error.stack}`);
                 await t.rollback();
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '添加奖励失败', {});
             }
