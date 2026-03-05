@@ -389,6 +389,9 @@ class Controller {
             if (reward.is_used == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '奖励已使用，无法删除', {});
             }
+            if (reward.reward_id == 1 || reward.reward_id == 3) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '共济基金和账户余额奖励不允许删除', {});
+            }
 
             await reward.destroy();
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '删除成功', {});
