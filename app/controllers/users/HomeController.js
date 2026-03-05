@@ -3446,7 +3446,7 @@ class Controller {
             const userId = req.user_id;
             let histories = await GoldPackageHistory.findAll({
                 where: { user_id: userId },
-                attributes: ['id', 'package_id', 'price', 'reimbursement_rate', 'reimbursement_date', 'is_reimbursed', 'createdAt'],
+                attributes: ['id', 'package_id', 'price', 'reimbursement_rate', 'reimbursement_date', 'is_reimbursed', 'return_rate', 'createdAt'],
                 order: [['id', 'DESC']]
             });
 
@@ -3461,6 +3461,7 @@ class Controller {
                         price: h.price,
                         return_rate: h.reimbursement_rate,
                         return_date: h.reimbursement_date,
+                        estimated_earn: h.return_rate,
                         is_reimbursed: h.is_reimbursed,
                         createdAt: h.createdAt
                     }
