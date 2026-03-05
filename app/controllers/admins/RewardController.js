@@ -276,6 +276,10 @@ class Controller {
                 attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund']
             });
 
+            if (users.length == 0) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
+            }
+
             // const user = await User.findByPk(user_id, { attributes: ['id', 'relation', 'balance', 'referral_bonus', 'masonic_fund'] });
             // if (!user) {
             //     return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
