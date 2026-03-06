@@ -3451,9 +3451,19 @@ class Controller {
             });
 
             const pack = await this.GET_GOLD_PACKAGES();
+            let total1 = 0;
+            let total2 = 0;
             if (histories.length > 0) {
                 histories = histories.map(h => {
                     const selectedPack = pack.find(p => p.id === h.package_id);
+                    const splitEarn = h.return_rate.split('-');
+                    if (splitEarn.length === 1) {
+                        total1 += Number(splitEarn[0]);
+                    }
+                    if (splitEarn.length === 2) {
+                        total1 += Number(splitEarn[0]);
+                        total2 += Number(splitEarn[1]);
+                    }
                     return {
                         id: h.id,
                         package_id: h.package_id,
@@ -3467,8 +3477,16 @@ class Controller {
                     }
                 });
             }
+            let total_estimated_earn = `${total1}`;
+            if (total2 > 0) {
+                total_estimated_earn += `-${total2}`;
+            }
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取礼包历史成功', histories);
+            const data = {
+                total_estimated_earn: total_estimated_earn,
+                histories: histories
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取礼包历史成功', data);
         } catch (error) {
             errLogger(`[GOLD_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
