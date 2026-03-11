@@ -291,6 +291,7 @@ class Controller {
             }
 
             let payload = null;
+            let headers = { "Content-Type": "application/x-www-form-urlencoded" }
             switch (channel.deposit_merchant.app_code) {
                 case 'longlongzhifu':
                     const pay_ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -308,6 +309,7 @@ class Controller {
                 case 'hongtuzhifu':
                     const hongtuClientIp = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                     payload = await this.merchantController.HONGTUZHIFU(channel, amount, hongtuClientIp, userId);
+                    headers = { "Content-Type": "application/json" }
                     break;
                 default:
                     break;
@@ -324,7 +326,7 @@ class Controller {
             let response = null;
             try {
                 response = await axios.post(channel.deposit_merchant.api, payload, {
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" }
+                    headers: headers
                 });
             } catch (error) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
