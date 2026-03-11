@@ -122,11 +122,13 @@ class Controller {
                     }
                     break;
                 case 'hongtuzhifu':
+                    // {"mchId":"49727212754830085","tradeNo":"50081297642554117","outTradeNo":"SH5307091540326529","originTradeNo":null,"amount":"100000","subject":"5-SH5307091540326529","body":"body","state":"2","notifyTime":"1773210307117","sign":"2fe86f017672846da3a22236dfa31a3f"}
                     const hongtuReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
                     const hongtuCleaned = Object.fromEntries(
-                        Object.entries(reqBody).filter(([key, value]) => value !== "")
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
                     );
+                    console.log("hongtuCleaned:", hongtuCleaned);
                     const hongtuSign = this.merchantController.CREATE_SIGN(hongtuCleaned, `&key=${merchant.app_key}`);
                     console.log("hongtuSign:", hongtuSign, "hongtuReqSign:", hongtuReqSign);
 
