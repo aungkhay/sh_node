@@ -313,7 +313,7 @@ class Controller {
                 gold_count_in_coupon: goldCouponCount
             }
 
-            const currentRankIndex = ranks.findIndex(r => r.id === user.rank_id);
+            const currentRankIndex = ranks.findIndex(r => r.id == user.rank_id);
             const lastRank = ranks[ranks.length - 1];
             let nextRankPoint = 0;
             const nextRank = ranks.find(r => r?.point > ranks[currentRankIndex]?.point);
