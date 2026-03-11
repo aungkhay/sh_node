@@ -39,6 +39,7 @@ class Controller {
      */
     LONGLONGZHIFU = async (channel, amount, pay_ip, userId) => {
         try {
+            console.log("LONGLONGZHIFU");
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
                 pay_memberid: channel.deposit_merchant.app_id,
@@ -71,6 +72,7 @@ class Controller {
      */
     MINGRIZHIFU = async (channel, amount, userId) => {
         try {
+            console.log("MINGRIZHIFU");
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
                 app_id: channel.deposit_merchant.app_id,
@@ -100,6 +102,7 @@ class Controller {
      */
     BESTZHIFU = async (channel, amount, userId) => {
         try {
+            console.log("BESTZHIFU");
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
                 mid: channel.deposit_merchant.app_id,
@@ -128,6 +131,7 @@ class Controller {
      */
     UNIFIEDZHIFU = async (channel, amount, userId) => {
         try {
+            console.log("UNIFIEDZHIFU");
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
                 mchNo: channel.deposit_merchant.app_id,
@@ -158,6 +162,7 @@ class Controller {
      */
     HONGTUZHIFU = async (channel, amount, clientIp, userId) => {
         try {
+            console.log("HONGTUZHIFU");
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
                 mchId: channel.deposit_merchant.app_id,
