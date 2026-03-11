@@ -306,7 +306,8 @@ class Controller {
                     payload = await this.merchantController.UNIFIEDZHIFU(channel, amount, userId);
                     break;
                 case 'hongtuzhifu':
-                    payload = await this.merchantController.HONGTUZHIFU(channel, amount, userId);
+                    const hongtuClientIp = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                    payload = await this.merchantController.HONGTUZHIFU(channel, amount, hongtuClientIp, userId);
                     break;
                 default:
                     break;
