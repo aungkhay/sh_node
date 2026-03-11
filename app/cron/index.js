@@ -1229,50 +1229,55 @@ class CronJob {
                     offset += batchSize;
                 }
 
-                const t = await db.transaction();
-                try {
+                // const t = await db.transaction();
+                await db.transaction(async (t) => {
                     for (let user of users) {
                         // Give Rank Points to all uplines based on relation path
                         // /1/2/7/10/12/13/14
                         const rankPointRelationArr = user.relation ? user.relation.split("/").filter(v => v).slice(1, -1).map(Number) : [];
                         const rankPointRelArr = rankPointRelationArr.reverse(); // [13,12,10,7,2]
 
-                        if (rankPointRelArr.length > 0) {
-                            const rankPoints = [];
-                            const levelAmounts = [10, 5, 1]; // First three levels
-                            const defaultAmount = 0.5;       // Remaining levels
-                            
-                            const parents = await User.findAll({
-                                where: {
-                                    id: { [Op.in]: rankPointRelArr },
-                                    type: 2 // only User type can get rank points
-                                },
-                                attributes: ['id', 'relation']
-                            });
-                            
-                            for (let i = 0; i < rankPointRelArr.length; i++) {
-                                const parentId = rankPointRelArr[i];
-                                const amount = levelAmounts[i] ?? defaultAmount; // Use default if beyond defined levels
-                                const parent = parents.find(p => p.id == parentId);
+                        if (rankPointRelArr.length === 0) continue;
+                        
+                        const levelAmounts = [10, 5, 1]; // First three levels
+                        const defaultAmount = 0.5;       // Remaining levels
+                        
+                        const parents = await User.findAll({
+                            where: {
+                                id: { [Op.in]: rankPointRelArr },
+                                type: 2 // only User type can get rank points
+                            },
+                            attributes: ['id', 'relation']
+                        });
 
-                                if (parent) {
-                                    rankPoints.push({ type: 1, from: user.id, to: parentId, amount, relation: parent.relation });
-                                    await parent.increment({ rank_point: Number(amount) }, { transaction: t });
-                                }
-                            }
+                        const rankPoints = [];
+                        const parentMap = new Map(parents.map(p => [p.id, p]));
+                        const parentUpdates = {};
 
-                            // Bulk create all rank points at once
-                            if (rankPoints.length > 0) {
-                                await UserRankPoint.bulkCreate(rankPoints, { transaction: t });
-                            }
+                        for (let i = 0; i < rankPointRelArr.length; i++) {
+                            const parentId = rankPointRelArr[i];
+                            const amount = levelAmounts[i] ?? defaultAmount;
+                            // const parent = parents.find(p => p.id == parentId);
+                            const parent = parentMap.get(String(parentId));
+                            if (!parent) continue;
+
+                            rankPoints.push({ type: 1, from: user.id, to: parentId, amount, relation: parent.relation });
+                            parentUpdates[parentId] = (parentUpdates[parentId] || 0) + amount;
+                            
+                        }
+                        // Bulk create all rank points at once
+                        if (rankPoints.length > 0) {
+                            await UserRankPoint.bulkCreate(rankPoints, { transaction: t });
+                        }
+                        for (const [id, amount] of Object.entries(parentUpdates)) {
+                            await User.increment(
+                                { rank_point: amount },
+                                { where: { id }, transaction: t }
+                            );
                         }
                     }
-                    await t.commit();
-                    commonLogger(`[PAY_RANK_POINT][Batch Processed]: Processed users from offset ${offset} to ${offset + users.length}`);
-                } catch (error) {
-                    errLogger(`[PAY_RANK_POINT][Transaction Error]: ${error.stack}`);
-                    await t.rollback();
-                }
+                });
+                console.log(`[PAY_RANK_POINT][Batch Processed]: Processed users from offset ${offset} to ${offset + users.length}`);
             }
 
             commonLogger('[PAY_RANK_POINT]: Completed processing all users for rank points.');
