@@ -121,6 +121,27 @@ class Controller {
                         status = 2;
                     }
                     break;
+                case 'hongtuzhifu':
+                    const hongtuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const hongtuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "")
+                    );
+                    const hongtuSign = this.merchantController.CREATE_SIGN(hongtuCleaned, `&key=${merchant.app_key}`);
+                    console.log("hongtuSign:", hongtuSign, "hongtuReqSign:", hongtuReqSign);
+
+                    // 订单状态：0=未出码，1=待支付，2=支付成功，3=支付失败，4=冲正
+                    if (hongtuSign.toLowerCase() === hongtuReqSign) {
+                        if (reqBody.state == 2) {
+                            status = 1;
+                            resMsg = 'SUCCESS';
+                        } else if ([3, 4, 5].includes(reqBody.state)) {
+                            status = 2;
+                        }
+                    } else {
+                        status = 2;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -284,6 +305,9 @@ class Controller {
                 case 'unifiedzhifu':
                     payload = await this.merchantController.UNIFIEDZHIFU(channel, amount, userId);
                     break;
+                case 'hongtuzhifu':
+                    payload = await this.merchantController.HONGTUZHIFU(channel, amount, userId);
+                    break;
                 default:
                     break;
             }
@@ -312,6 +336,7 @@ class Controller {
 
             let resData = response.data;
             let redirectUrl = null;
+            let expiredTime = null;
             let data = {};
             let success = false;
             switch (channel.deposit_merchant.app_code) {
@@ -343,6 +368,13 @@ class Controller {
                         success = true;
                     }
                     break;
+                case 'hongtuzhifu':
+                    if (resData.code == 0) {
+                        redirectUrl = resData?.data?.payUrl;
+                        expiredTime = resData?.data?.expiredTime;
+                        success = true;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -361,7 +393,7 @@ class Controller {
             }
 
             if (success) {
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', redirectUrl ? { redirectUrl } : data);
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', redirectUrl ? { redirectUrl, expiredTime } : data);
             } else {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
             }
