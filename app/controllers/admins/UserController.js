@@ -378,6 +378,7 @@ class Controller {
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
             const userId = req.user_id;
+            const type = req.query.type || 0; // 1 => KYC | 2 => News | 3 => Agreement Status
 
             let userCondition = {};
             if (phone) {
@@ -392,6 +393,9 @@ class Controller {
                 condition.createdAt = {
                     [Op.between]: [startTime, endTime]
                 }
+            }
+            if (type) {
+                condition.type = type;
             }
 
             const { rows, count } = await UserRankPoint.findAndCountAll({
@@ -641,6 +645,11 @@ class Controller {
 
             const { status, remark } = req.body;
             const kyc = await UserKYC.findOne({
+                include: {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'relation'],
+                },
                 attributes: ['id', 'nrc_name', 'relation', 'user_id', 'status'],
                 where: { id: req.params.id, status: 'PENDING' }
             });
@@ -701,6 +710,41 @@ class Controller {
                             await UserBonus.bulkCreate(bonuses, { transaction: t });
                         }
                     }
+
+                    // Give Rank Points to all uplines based on relation path
+                    // /1/2/7/10/12/13/14
+                    const rankPointRelationArr = (kyc.user && kyc.user.relation) ? kyc.user.relation.split("/").filter(v => v).slice(1, -1).map(Number) : [];
+                    const rankPointRelArr = rankPointRelationArr.reverse(); // [13,12,10,7,2]
+
+                    if (rankPointRelArr.length > 0) {
+                        const rankPoints = [];
+                        const levelAmounts = [10, 5, 1]; // First three levels
+                        const defaultAmount = 0.5;       // Remaining levels
+                        
+                        const parents = await User.findAll({
+                            where: {
+                                id: { [Op.in]: rankPointRelArr },
+                                type: 2 // only User type can get rank points
+                            },
+                            attributes: ['id', 'relation']
+                        });
+                        
+                        for (let i = 0; i < rankPointRelArr.length; i++) {
+                            const parentId = rankPointRelArr[i];
+                            const amount = levelAmounts[i] ?? defaultAmount; // Use default if beyond defined levels
+                            const parent = parents.find(p => p.id == parentId);
+
+                            if (parent) {
+                                rankPoints.push({ type: 1, from: kyc.user.id, to: parentId, amount, relation: parent.relation });
+                                await parent.increment({ rank_point: amount }, { transaction: t });
+                            }
+                        }
+
+                        // Bulk create all rank points at once
+                        if (rankPoints.length > 0) {
+                            await UserRankPoint.bulkCreate(rankPoints, { transaction: t });
+                        }
+                    }
                 }
 
                 await t.commit();
@@ -732,6 +776,11 @@ class Controller {
             try {
                 for (const id of ids) {
                     const kyc = await UserKYC.findOne({
+                        include: {
+                            model: User,
+                            as: 'user',
+                            attributes: ['id', 'relation'],
+                        },
                         attributes: ['id', 'nrc_name', 'relation', 'user_id', 'status'],
                         where: { id: id, status: 'PENDING' }
                     });
@@ -787,6 +836,41 @@ class Controller {
 
                         if (bonuses.length > 0) {
                             await UserBonus.bulkCreate(bonuses, { transaction: t });
+                        }
+                    }
+
+                    // Give Rank Points to all uplines based on relation path
+                    // /1/2/7/10/12/13/14
+                    const rankPointRelationArr = (kyc.user && kyc.user.relation) ? kyc.user.relation.split("/").filter(v => v).slice(1, -1).map(Number) : [];
+                    const rankPointRelArr = rankPointRelationArr.reverse(); // [13,12,10,7,2]
+
+                    if (rankPointRelArr.length > 0) {
+                        const rankPoints = [];
+                        const levelAmounts = [10, 5, 1]; // First three levels
+                        const defaultAmount = 0.5;       // Remaining levels
+                        
+                        const parents = await User.findAll({
+                            where: {
+                                id: { [Op.in]: rankPointRelArr },
+                                type: 2 // only User type can get rank points
+                            },
+                            attributes: ['id', 'relation']
+                        });
+                        
+                        for (let i = 0; i < rankPointRelArr.length; i++) {
+                            const parentId = rankPointRelArr[i];
+                            const amount = levelAmounts[i] ?? defaultAmount; // Use default if beyond defined levels
+                            const parent = parents.find(p => p.id == parentId);
+
+                            if (parent) {
+                                rankPoints.push({ type: 1, from: kyc.user.id, to: parentId, amount, relation: parent.relation });
+                                await parent.increment({ rank_point: amount }, { transaction: t });
+                            }
+                        }
+
+                        // Bulk create all rank points at once
+                        if (rankPoints.length > 0) {
+                            await UserRankPoint.bulkCreate(rankPoints, { transaction: t });
                         }
                     }
                 }
@@ -2086,6 +2170,41 @@ class Controller {
                 }
                 if (bonuses.length > 0) {
                     await UserBonus.bulkCreate(bonuses, { transaction: t });
+                }
+
+                // Give Rank Points to all uplines based on relation path
+                // /1/2/7/10/12/13/14
+                const rankPointRelationArr = user.relation ? user.relation.split("/").filter(v => v).slice(1, -1).map(Number) : [];
+                const rankPointRelArr = rankPointRelationArr.reverse(); // [13,12,10,7,2]
+
+                if (rankPointRelArr.length > 0) {
+                    const rankPoints = [];
+                    const levelAmounts = [10, 5, 1]; // First three levels
+                    const defaultAmount = 0.5;       // Remaining levels
+                    
+                    const parents = await User.findAll({
+                        where: {
+                            id: { [Op.in]: rankPointRelArr },
+                            type: 2 // only User type can get rank points
+                        },
+                        attributes: ['id', 'relation']
+                    });
+                    
+                    for (let i = 0; i < rankPointRelArr.length; i++) {
+                        const parentId = rankPointRelArr[i];
+                        const amount = levelAmounts[i] ?? defaultAmount; // Use default if beyond defined levels
+                        const parent = parents.find(p => p.id == parentId);
+
+                        if (parent) {
+                            rankPoints.push({ type: 1, from: userId, to: parentId, amount, relation: parent.relation });
+                            await parent.increment({ rank_point: amount }, { transaction: t });
+                        }
+                    }
+
+                    // Bulk create all rank points at once
+                    if (rankPoints.length > 0) {
+                        await UserRankPoint.bulkCreate(rankPoints, { transaction: t });
+                    }
                 }
 
                 await t.commit();

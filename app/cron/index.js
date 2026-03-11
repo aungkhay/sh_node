@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -1200,6 +1200,85 @@ class CronJob {
 
         } catch (error) {
             errLogger(`[CHECK_GOLD_PACKAGE_REIMBURSEMENT]: ${error.stack}`);
+        }
+    }
+
+    // Pay rank point to every users for kyc approval
+    PAY_RANK_POINT = async () => {
+        try {
+            const batchSize = 500;
+            let offset = 0;
+            let hasMore = true;
+
+            while (hasMore) {
+                const users = await User.findAll({
+                    where: { type: 2 },
+                    include: {
+                        model: UserKYC,
+                        as: 'kyc',
+                        where: { status: 'APPROVED' },
+                        attributes: []
+                    },
+                    attributes: ['id', 'relation'],
+                    limit: batchSize,
+                    offset: offset
+                });
+                if (users.length < batchSize) {
+                    hasMore = false;
+                } else {
+                    offset += batchSize;
+                }
+
+                const t = await db.transaction();
+                try {
+                    for (let user of users) {
+                        // Give Rank Points to all uplines based on relation path
+                        // /1/2/7/10/12/13/14
+                        const rankPointRelationArr = user.relation ? user.relation.split("/").filter(v => v).slice(1, -1).map(Number) : [];
+                        const rankPointRelArr = rankPointRelationArr.reverse(); // [13,12,10,7,2]
+
+                        if (rankPointRelArr.length > 0) {
+                            const rankPoints = [];
+                            const levelAmounts = [10, 5, 1]; // First three levels
+                            const defaultAmount = 0.5;       // Remaining levels
+                            
+                            const parents = await User.findAll({
+                                where: {
+                                    id: { [Op.in]: rankPointRelArr },
+                                    type: 2 // only User type can get rank points
+                                },
+                                attributes: ['id', 'relation']
+                            });
+                            
+                            for (let i = 0; i < rankPointRelArr.length; i++) {
+                                const parentId = rankPointRelArr[i];
+                                const amount = levelAmounts[i] ?? defaultAmount; // Use default if beyond defined levels
+                                const parent = parents.find(p => p.id == parentId);
+
+                                if (parent) {
+                                    rankPoints.push({ type: 1, from: user.id, to: parentId, amount, relation: parent.relation });
+                                    await parent.increment({ rank_point: amount }, { transaction: t });
+                                }
+                            }
+
+                            // Bulk create all rank points at once
+                            if (rankPoints.length > 0) {
+                                await UserRankPoint.bulkCreate(rankPoints, { transaction: t });
+                            }
+                        }
+                    }
+                    await t.commit();
+                    console.log(`[PAY_RANK_POINT][Batch Processed]: Processed users from offset ${offset} to ${offset + users.length}`);
+                } catch (error) {
+                    errLogger(`[PAY_RANK_POINT][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+
+            console.log('[PAY_RANK_POINT]: Completed processing all users for rank points.');
+            
+        } catch (error) {
+            errLogger(`[PAY_RANK_POINT]: ${error.stack}`);
         }
     }
 }

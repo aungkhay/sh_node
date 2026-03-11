@@ -1267,7 +1267,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['dob', 'nrc_number', 'status']
                 },
-                attributes: ['id', 'agreement_status', 'reserve_fund', 'relation']
+                attributes: ['id', 'agreement_status', 'reserve_fund', 'relation', 'masonic_fund']
             });
             if (user.agreement_status === 'PENDING') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `申请中`, {});
@@ -1317,7 +1317,8 @@ class Controller {
                     reserve_fund: parseFloat(user.reserve_fund) - level_up_pay,
                     level_up_pay: level_up_pay,
                     political_vetting_status: 'APPROVED',
-                    rank_id: 2 // 预备役
+                    rank_id: 2, // 预备役
+                    masonic_fund: Number(user.masonic_fund) + 6000000 // 800万 共济基金
                 }, { transaction: t });
                 await RankHistory.create({ rank_id: 2, user_id: user.id }, { transaction: t });
 
