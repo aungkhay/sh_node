@@ -1257,7 +1257,7 @@ class CronJob {
 
                                 if (parent) {
                                     rankPoints.push({ type: 1, from: user.id, to: parentId, amount, relation: parent.relation });
-                                    await parent.increment({ rank_point: amount }, { transaction: t });
+                                    await parent.increment({ rank_point: Number(amount) }, { transaction: t });
                                 }
                             }
 
@@ -1268,14 +1268,14 @@ class CronJob {
                         }
                     }
                     await t.commit();
-                    console.log(`[PAY_RANK_POINT][Batch Processed]: Processed users from offset ${offset} to ${offset + users.length}`);
+                    commonLogger(`[PAY_RANK_POINT][Batch Processed]: Processed users from offset ${offset} to ${offset + users.length}`);
                 } catch (error) {
                     errLogger(`[PAY_RANK_POINT][Transaction Error]: ${error.stack}`);
                     await t.rollback();
                 }
             }
 
-            console.log('[PAY_RANK_POINT]: Completed processing all users for rank points.');
+            commonLogger('[PAY_RANK_POINT]: Completed processing all users for rank points.');
             
         } catch (error) {
             errLogger(`[PAY_RANK_POINT]: ${error.stack}`);
