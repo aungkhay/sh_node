@@ -51,6 +51,8 @@ class Controller {
                     } else {
                         userCondition.phone_number = phone;
                     }
+                } else {
+                    userCondition.phone_number = phone;
                 }
             }
 
