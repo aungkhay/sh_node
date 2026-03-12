@@ -52,10 +52,10 @@ class Controller {
 
                     if (longlongSign.toUpperCase() === longlongReqSign && reqBody.returncode === '00') {
                         status = 1;
-                        resMsg = 'OK';
                     } else {
                         status = 2;
                     }
+                    resMsg = 'OK';
                     break;
                 case 'mingrizhifu':
                     // {"trade_no":"9022447186385998","product_id":"66","app_id":"5fd28cb0ebb68e3105242560","out_trade_no":"SH0416990468295762","trade_status":"1","amount":"100.00","real_amount":"100.00","desc":"","time":"1771939137","sign":"f3e2114774904f9c8cfbcc72649e292d"}
@@ -70,13 +70,13 @@ class Controller {
                     if (mingriSign === mingriReqSign) {
                         if (reqBody.trade_status == '1') {
                             status = 1;
-                            resMsg = 'success';
                         } else if (reqBody.trade_status == '2') {
                             status = 2;
                         }
                     } else {
                         status = 2;
                     }
+                    resMsg = 'success';
                     break;
                 case 'bestzhifu':
                     // {"merOrderTid":"SH1089649960530725","tid":"BS7773172551926455356","money":"100.00","status":1,"sign":"04696E5C831C3C3390819524A2C79B73"}
@@ -91,13 +91,13 @@ class Controller {
                     if (bestSign === bestReqSign) {
                         if (reqBody.status == '1') {
                             status = 1;
-                            resMsg = 'success';
                         } else if (reqBody.status == '2' || reqBody.status == '3') {
                             status = 2;
                         }
                     } else {
                         status = 2;
                     }
+                    resMsg = 'success';
                     break;
                 case 'unifiedzhifu':
                     // {"amount":"10000","payOrderId":"P2027270781915430913","mchOrderNo":"SH4459618035647253","sign":"8A931D44B8FA9AEF6F2884342DBFC88D","ifId":"8001","reqTime":"1772174061616","state":"2","mchNo":"M1771850456","channelId":"55555"}
@@ -113,13 +113,13 @@ class Controller {
                     if (unifiedSign === unifiedReqSign) {
                         if (reqBody.state == '2') {
                             status = 1;
-                            resMsg = 'success';
                         } else if (['3', '4', '5'].includes(reqBody.state)) {
                             status = 2;
                         }
                     } else {
                         status = 2;
                     }
+                    resMsg = 'success';
                     break;
                 case 'hongtuzhifu':
                     // {"mchId":"49727212754830085","tradeNo":"50081297642554117","outTradeNo":"SH5307091540326529","originTradeNo":null,"amount":"100000","subject":"5-SH5307091540326529","body":"body","state":"2","notifyTime":"1773210307117","sign":"2fe86f017672846da3a22236dfa31a3f"}
@@ -136,13 +136,13 @@ class Controller {
                     if (hongtuSign.toLowerCase() === hongtuReqSign) {
                         if (reqBody.state == 2) {
                             status = 1;
-                            resMsg = 'SUCCESS';
                         } else if ([3, 4, 5].includes(reqBody.state)) {
                             status = 2;
                         }
                     } else {
                         status = 2;
                     }
+                    resMsg = 'SUCCESS';
                     break;
                 default:
                     break;
