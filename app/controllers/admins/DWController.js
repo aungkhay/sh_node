@@ -5,6 +5,7 @@ const { errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
 const XLSX = require("xlsx");
 const multer = require("multer");
+const axios = require('axios');
 
 class Controller {
     constructor(app) {
@@ -12,6 +13,7 @@ class Controller {
         this.ResCode = this.commonHelper.ResCode;
         this.adminLogger = this.commonHelper.adminLogger;
         this.getOffset = this.commonHelper.getOffset;
+        this.notifyUrl = `${process.env.CALLBACK_DOMAIN}/api/recharge-callback`;
     }
 
     DEPOSIT_LIST = async (req, res) => {
@@ -92,6 +94,33 @@ class Controller {
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    REPAIR_FIALED_DEPOSIT = async (req, res) => {
+        try {
+            const deposit = await Deposit.findOne({
+                where: {
+                    id: req.params.id,
+                    status: 2,
+                    callback_data: {
+                        [Op.eq]: null
+                    }
+                }
+            });
+
+            if (!deposit) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到信息', {});
+            }
+            const callbackURL = `${this.notifyUrl}/${deposit.order_no}/${deposit.deposit_merchant_id}/${deposit.user_id}`;
+            const response = await axios.post(callbackURL, JSON.parse(deposit.callback_data));
+            if (response.status == 200) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
+            } else {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到信息', {});
+            }
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
