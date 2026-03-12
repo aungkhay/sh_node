@@ -23,13 +23,13 @@ class Controller {
         try {
             const { orderNo, merchantId, userId } = req.params;
             commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
-            const deposit = await Deposit.findOne({ where: { order_no: orderNo, deposit_merchant_id: merchantId, user_id: userId, status: 0 } });
+            const deposit = await Deposit.findOne({ where: { order_no: orderNo, deposit_merchant_id: merchantId, user_id: userId } });
             if (!deposit) {
-                return res.send('ok');
+                return res.send('');
             }
             const merchant = await DepositMerchant.findByPk(merchantId);
             if (!merchant) {
-                return res.send('ok');
+                return res.send('');
             }
 
             const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund'] });
@@ -148,21 +148,23 @@ class Controller {
                     break;
             }
 
-            const t = await db.transaction();
-            try {
-                await deposit.update({ status: status, callback_data: JSON.stringify(reqBody) }, { transaction: t });
-                if (status === 1) {
-                    await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
+            if (deposit.status == 0) {
+                const t = await db.transaction();
+                try {
+                    await deposit.update({ status: status, callback_data: JSON.stringify(reqBody) }, { transaction: t });
+                    if (status === 1) {
+                        await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
+                    }
+                    await t.commit();
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RECHARGE_CALLBACK][${userId}]: ${error.stack}`);
                 }
-                await t.commit();
-            } catch (error) {
-                await t.rollback();
-                errLogger(`[RECHARGE_CALLBACK][${userId}]: ${error.stack}`);
             }
 
             return res.send(resMsg);
         } catch (error) {
-            return res.send('');
+            return res.send('OK');
         }
     }
 
