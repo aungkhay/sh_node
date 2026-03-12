@@ -46,7 +46,7 @@ class CronJob {
         // Run every 5 minutes
         cron.schedule('*/1 * * * *', this.GIVE_CHECK_IN).start();
         // Run every minute
-        cron.schedule('* * * * *', this.UPDATE_DEPOSIT_STATUS).start();
+        // cron.schedule('* * * * *', this.UPDATE_DEPOSIT_STATUS).start();
         cron.schedule('* * * * *', this.CHECK_GOLD_PACKAGE_REIMBURSEMENT).start();
     }
 
