@@ -2493,7 +2493,7 @@ class Controller {
                 await MasonicFundHistory.create({
                     relation: user.relation,
                     user_id: userId,
-                    amount: reward.amount,
+                    amount: 100,
                     status: 'PENDING'
                 });
             }
