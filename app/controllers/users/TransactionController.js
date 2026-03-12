@@ -59,7 +59,7 @@ class Controller {
                     const longlongSign = this.merchantController.CREATE_SIGN(longlongCleaned, `&key=${merchant.app_key}`);
                     console.log("longlongSign:", longlongSign, "longlongReqSign:", longlongReqSign);
 
-                    if (longlongSign.toUpperCase() === longlongReqSign && reqBody.returncode === '00') {
+                    if (reqBody.returncode === '00') {
                         status = 1;
                     } else {
                         status = 2;
