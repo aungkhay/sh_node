@@ -2471,13 +2471,13 @@ class Controller {
     GET_MASONIC_FUND = async (req, res) => {
         try {
             const userId = req.user_id;
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'rank_id', 'masonic_fund'] });
-            const reward = await RewardRecord.findOne({
-                where: { user_id: userId, reward_id: 6, is_used: 0 },
-                attributes: ['id', 'amount']
-            });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'rank_id', 'masonic_fund', 'have_reward_6'] });
+            // const reward = await RewardRecord.findOne({
+            //     where: { user_id: userId, reward_id: 6, is_used: 0 },
+            //     attributes: ['id', 'amount']
+            // });
 
-            if (!reward) {
+            if (!Number(user.have_reward_6)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请获取上合组织各国授权书后重试', {});
             }
 
