@@ -97,15 +97,15 @@ class Controller {
                     const bestSign = this.merchantController.CREATE_SIGN(bestCleaned, `&${merchant.app_key}`);
                     console.log("bestSign:", bestSign, "bestReqSign:", bestReqSign);
                     
-                    if (bestSign === bestReqSign) {
-                        if (reqBody.status == '1') {
+                    // if (bestSign === bestReqSign) {
+                        if (Number(reqBody.status) == 1) {
                             status = 1;
-                        } else if (reqBody.status == '2' || reqBody.status == '3') {
+                        } else if (Number(reqBody.status) == 2 || Number(reqBody.status) == 3) {
                             status = 2;
                         }
-                    } else {
-                        status = 2;
-                    }
+                    // } else {
+                    //     status = 2;
+                    // }
                     resMsg = 'success';
                     break;
                 case 'unifiedzhifu':
@@ -119,15 +119,15 @@ class Controller {
                     console.log("unifiedSign:", unifiedSign, "unifiedReqSign:", unifiedReqSign);
                     
                     // 支付订单状态 state(int): 0-订单生成, 1-待确认, 2-已确认, 3-支付失败, 4-已撤销, 5-订单关闭
-                    if (unifiedSign === unifiedReqSign) {
-                        if (reqBody.state == '2') {
+                    // if (unifiedSign === unifiedReqSign) {
+                        if (Number(reqBody.state) == 2) {
                             status = 1;
-                        } else if (['3', '4', '5'].includes(reqBody.state)) {
+                        } else if ([3, 4, 5].includes(Number(reqBody.state))) {
                             status = 2;
                         }
-                    } else {
-                        status = 2;
-                    }
+                    // } else {
+                    //     status = 2;
+                    // }
                     resMsg = 'success';
                     break;
                 case 'hongtuzhifu':
@@ -142,15 +142,15 @@ class Controller {
                     console.log("hongtuSign:", hongtuSign, "hongtuReqSign:", hongtuReqSign);
 
                     // 订单状态：0=未出码，1=待支付，2=支付成功，3=支付失败，4=冲正
-                    if (hongtuSign.toLowerCase() === hongtuReqSign) {
-                        if (reqBody.state == 2) {
+                    // if (hongtuSign.toLowerCase() === hongtuReqSign) {
+                        if (Number(reqBody.state) == 2) {
                             status = 1;
-                        } else if ([3, 4, 5].includes(reqBody.state)) {
+                        } else if ([3, 4, 5].includes(Number(reqBody.state))) {
                             status = 2;
                         }
-                    } else {
-                        status = 2;
-                    }
+                    // } else {
+                    //     status = 2;
+                    // }
                     resMsg = 'SUCCESS';
                     break;
                 default:
