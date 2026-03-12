@@ -40,7 +40,7 @@ class AdminRoute extends express.Router {
         let DWController = require('../controllers/admins/DWController');
         let DWCtrl = new DWController();
         this.get('/deposit-list', middleware.isLoggedIn('recharge-management-list'), DWCtrl.DEPOSIT_LIST);
-        this.post('/deposit-list/:id/repair-failed', middleware.isLoggedIn('recharge-management-list'), DWCtrl.REPAIR_FIALED_DEPOSIT);
+        this.post('/deposit-list/:id/repair-failed', DWCtrl.REPAIR_FIALED_DEPOSIT);
         this.get('/withdraw-list', middleware.isLoggedIn('withdraw-management-list'), DWCtrl.WITHDRAW_LIST);
         this.get('/export-withdraw', middleware.isLoggedIn('withdraw-management-export'), DWCtrl.EXPORT_WITHDRAW);
         this.post('/export-withdraw-by-phone_numbers', FormValidator.export_withdraw_by_phones(), middleware.isLoggedIn('withdraw-management-export'), DWCtrl.EXPORT_WITHDRAW_BY_PHONES);

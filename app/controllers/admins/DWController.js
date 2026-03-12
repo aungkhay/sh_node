@@ -106,7 +106,7 @@ class Controller {
                     id: req.params.id,
                     status: 2,
                     callback_data: {
-                        [Op.eq]: null
+                        [Op.ne]: null
                     }
                 }
             });
@@ -122,6 +122,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作失败', {});
             }
         } catch (error) {
+            console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

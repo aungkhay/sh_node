@@ -25,11 +25,11 @@ class Controller {
             commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
             const deposit = await Deposit.findOne({ where: { order_no: orderNo, deposit_merchant_id: merchantId, user_id: userId, status: 0 } });
             if (!deposit) {
-                return res.send('');
+                return res.send('ok');
             }
             const merchant = await DepositMerchant.findByPk(merchantId);
             if (!merchant) {
-                return res.send('');
+                return res.send('ok');
             }
 
             const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund'] });
