@@ -3375,7 +3375,7 @@ class Controller {
             if (user.kyc.status === 'PENDING') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
             }
-            if (user.have_reward_6 == 0) {
+            if (Number(user.have_reward_6) == 0) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请获取上合组织各国授权书后重试', {})
             }
 
