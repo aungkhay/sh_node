@@ -23,7 +23,16 @@ class Controller {
         try {
             const { orderNo, merchantId, userId } = req.params;
             commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
-            const deposit = await Deposit.findOne({ where: { order_no: orderNo, deposit_merchant_id: merchantId, user_id: userId } });
+            const deposit = await Deposit.findOne({ 
+                where: { 
+                    order_no: orderNo, 
+                    deposit_merchant_id: merchantId, 
+                    user_id: userId,
+                    status: {
+                        [Op.ne]: 1
+                    }  
+                } 
+            });
             if (!deposit) {
                 return res.send('');
             }
