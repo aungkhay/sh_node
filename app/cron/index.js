@@ -1096,7 +1096,7 @@ class CronJob {
     UPDATE_DEPOSIT_STATUS = async () => {
         try {
             // Update deposits that are still pending for more than 30 minutes to failed
-            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+            const thirtyMinutesAgo = new Date(Date.now() - 60 * 60 * 1000);
             await Deposit.update(
                 { status: 2 },
                 { 
