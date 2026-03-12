@@ -3500,7 +3500,7 @@ class Controller {
         try {
             const userId = req.user_id || 156;
             const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund', 'have_reward_6'] });
-            if (user.have_reward_6) {
+            if (Number(user.have_reward_6) == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
             }
             if (Number(user.reserve_fund) < 120) {
