@@ -119,7 +119,7 @@ class Controller {
             if (response.status == 200) {
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
             } else {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到信息', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作失败', {});
             }
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
