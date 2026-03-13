@@ -1306,14 +1306,13 @@ class CronJob {
                         attributes: ['id'],
                         where: { user_id: user.id }
                     });
-                    console.log(masonicFund)
-                    if (masonicFund) continue;
                     const obj = {
                         user_id: user.id,
                         relation: user.relation,
                         reward_id: 6,
                         amount: 100,
                         from_where: `购买上合组织中国区授权书`,
+                        is_used: masonicFund ? 1 : 0
                     }
                     console.log(obj)
                     await RewardRecord.create(obj, { transaction: t });
