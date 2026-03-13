@@ -2270,10 +2270,6 @@ class Controller {
             const endTime = req.query.endTime;
             const userId = req.user_id;
 
-            let userCondition = {};
-            if (phone) {
-                userCondition.phone_number = phone;
-            }
             let condition = { have_reward_6: 1, reward_6_from_where: 2 };
             if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
@@ -2283,6 +2279,9 @@ class Controller {
                 condition.createdAt = {
                     [Op.between]: [startTime, endTime]
                 }
+            }
+            if (phone) {
+                condition.phone_number = phone;
             }
 
             const { rows, count } = await User.findAndCountAll({
