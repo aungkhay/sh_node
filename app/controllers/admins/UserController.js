@@ -2296,7 +2296,7 @@ class Controller {
                 },
                 where: condition,
                 attributes: ['id', 'amount', 'createdAt'],
-                order: [['id', 'DESC']],
+                order: [['createdAt', 'DESC']],
                 limit: perPage,
                 offset: offset,
             });
