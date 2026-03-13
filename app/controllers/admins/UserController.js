@@ -2284,13 +2284,30 @@ class Controller {
                 condition.phone_number = phone;
             }
 
-            const { rows, count } = await User.findAndCountAll({
-                where: condition,
-                attributes: ['id', 'name', 'phone_number', 'createdAt'],
-                order: [['id', 'DESC']],
-                limit: perPage,
-                offset: offset,
-            });
+            const { rows, count } = await RewardRecord.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'user',
+                    where: {
+                        have_reward_6: 1,
+                        reward_6_from_where: 2
+                    },
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: {
+                    reward_id: 6,
+                    from_where: '购买上合组织中国区授权书'
+                },
+                attributes: ['id', 'createdAt']
+            })
+
+            // const { rows, count } = await User.findAndCountAll({
+            //     where: condition,
+            //     attributes: ['id', 'name', 'phone_number', 'createdAt'],
+            //     order: [['id', 'DESC']],
+            //     limit: perPage,
+            //     offset: offset,
+            // });
 
             const data = {
                 history: rows,
