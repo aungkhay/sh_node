@@ -2298,8 +2298,8 @@ class Controller {
                     reward_id: 6,
                     from_where: '购买上合组织中国区授权书'
                 },
-                attributes: ['id', 'createdAt']
-            })
+                attributes: ['id', 'amount', 'createdAt']
+            });
 
             // const { rows, count } = await User.findAndCountAll({
             //     where: condition,
