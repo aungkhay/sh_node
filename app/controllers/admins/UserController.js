@@ -2268,7 +2268,7 @@ class Controller {
             const phone = req.query.phone || '';
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
-            const userId = req.user_id;
+            const userId = req.user_id || 1;
 
             let condition = { reward_id: 6, from_where: '购买上合组织中国区授权书' }
             if (userId != 1) {
@@ -2308,9 +2308,16 @@ class Controller {
             //     limit: perPage,
             //     offset: offset,
             // });
+            const records = rows.map((r) => ({
+                id: r.id,
+                name: r.user.name,
+                phone_number: r.user.phone_number,
+                amount: r.amount,
+                createdAt: r.createdAt
+            }));
 
             const data = {
-                history: rows,
+                history: records,
                 meta: {
                     page: page,
                     perPage: perPage,
