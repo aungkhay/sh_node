@@ -2472,51 +2472,56 @@ class Controller {
         try {
             const userId = req.user_id;
             const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'rank_id', 'masonic_fund', 'have_reward_6'] });
-            // const reward = await RewardRecord.findOne({
-            //     where: { user_id: userId, reward_id: 6, is_used: 0 },
-            //     attributes: ['id', 'amount']
-            // });
-
+            
             if (!Number(user.have_reward_6)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请获取上合组织各国授权书后重试', {});
             }
 
-            const fundHistory = await MasonicFundHistory.findOne({
-                where: { 
-                    user_id: userId, 
-                    status: 'PENDING' 
-                },
-                attributes: ['id']
-            });
-            // Check existing pending fund history
-            if (!fundHistory) {
-                await MasonicFundHistory.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    amount: 100,
-                    status: 'PENDING'
-                });
-            }
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, `请添加官方专属联系人员激活授权书领取`, {});
-
-            // const t = await db.transaction();
-            // try {
+            // const fundHistory = await MasonicFundHistory.findOne({
+            //     where: { 
+            //         user_id: userId, 
+            //         status: 'PENDING' 
+            //     },
+            //     attributes: ['id']
+            // });
+            // // Check existing pending fund history
+            // if (!fundHistory) {
             //     await MasonicFundHistory.create({
             //         relation: user.relation,
             //         user_id: userId,
-            //         amount: reward.amount,
-            //         status: 'PENDING'
-            //     }, { transaction: t });
-            //     await reward.update({ is_used: 1 }, { transaction: t });
-            //     await t.commit();
-
-            //     return MyResponse(res, this.ResCode.SUCCESS.code, true, `恭喜您成功使用「上合组织成员国授权书」，已成功领取 ${reward.amount} 元奖励！`, {});
-            // } catch (error) {
-            //     errLogger(`[GET_MASONIC_FUND][${req.user_id}]: ${error.stack}`);
-            //     await t.rollback();
-            //     return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+            //         amount: 100,
+            //         status: 'APPROVED'
+            //     });
             // }
+
+            // return MyResponse(res, this.ResCode.SUCCESS.code, true, `请添加官方专属联系人员激活授权书领取`, {});
+
+            const reward = await RewardRecord.findOne({
+                where: { user_id: userId, reward_id: 6, is_used: 0 },
+                attributes: ['id', 'amount']
+            });
+            if (!reward) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '「上合组织各国授权书」已使用! 请获取新授权书后重试', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await MasonicFundHistory.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    amount: reward.amount,
+                    status: 'APPROVED'
+                }, { transaction: t });
+                await reward.update({ is_used: 1 }, { transaction: t });
+                await user.increment({ balance: Number(reward.amount), masonic_fund: -Number(reward.amount) }, { transaction: t })
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, `恭喜您成功使用「上合组织成员国授权书」，已成功领取 ${Number(reward.amount)} 元奖励！`, {});
+            } catch (error) {
+                errLogger(`[GET_MASONIC_FUND][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+            }
         } catch (error) {
             errLogger(`[GET_MASONIC_FUND][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
