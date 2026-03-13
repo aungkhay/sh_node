@@ -95,7 +95,7 @@ if (Number(process.env.IS_MASTER || 1) == 1) {
     const CronJob = require('./app/cron');
     const cron = new CronJob(APP);
     cron.START();
-    // cron.PAY_RANK_POINT();
+    // cron.GIVE_AUTHORIZATION_LETTER();
 }
 
 // Start Server

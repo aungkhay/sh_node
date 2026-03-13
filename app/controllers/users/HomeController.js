@@ -2471,7 +2471,7 @@ class Controller {
     GET_MASONIC_FUND = async (req, res) => {
         try {
             const userId = req.user_id;
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'rank_id', 'masonic_fund', 'have_reward_6'] });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'rank_id', 'masonic_fund', 'have_reward_6', 'reward_6_from_where'] });
             
             if (!Number(user.have_reward_6)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请获取上合组织各国授权书后重试', {});
@@ -3504,7 +3504,7 @@ class Controller {
     BUY_AUTHORIZATION_LETTER = async (req, res) => {
         try {
             const userId = req.user_id || 156;
-            const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund', 'have_reward_6'] });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6'] });
             if (Number(user.have_reward_6) == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
             }
@@ -3512,9 +3512,25 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足: 价格120元', {});
             }
 
-            await user.update({ reserve_fund: Number(user.reserve_fund) - 120, have_reward_6: 1, reward_6_from_where: 2 });
+            const t = await db.transaction();
+            try {
+                await user.update({ reserve_fund: Number(user.reserve_fund) - 120, have_reward_6: 1, reward_6_from_where: 2 });
+                const obj = {
+                    user_id: user.id,
+                    relation: user.relation,
+                    reward_id: 6,
+                    amount: 100,
+                    from_where: `购买上合组织中国区授权书`,
+                }
+                await RewardRecord.create(obj, { transaction: t });
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+            } catch (error) {
+                errLogger(`[BUY_AUTHORIZATION_LETTER][${req.user_id}]: ${error.stack}`);
+                await db.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '购买失败', {});
+            }
         } catch (error) {
             errLogger(`[BUY_AUTHORIZATION_LETTER][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 

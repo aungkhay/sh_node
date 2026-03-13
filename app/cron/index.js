@@ -1286,6 +1286,48 @@ class CronJob {
             errLogger(`[PAY_RANK_POINT]: ${error.stack}`);
         }
     }
+
+    // Give Authorization Letter
+    GIVE_AUTHORIZATION_LETTER = async () => {
+        try {
+            const users = await User.findAll({
+                attributes: ['id', 'relation'],
+                where: {
+                    reward_6_from_where: 2
+                }
+            });
+            console.log(users.length)
+
+            const t = await db.transaction();
+            try {
+                for (let i = 0; i < users.length; i++) {
+                    const user = users[i];
+                    const masonicFund = await MasonicFundHistory.findOne({
+                        attributes: ['id'],
+                        where: { user_id: user.id }
+                    });
+                    console.log(masonicFund)
+                    if (masonicFund) continue;
+                    const obj = {
+                        user_id: user.id,
+                        relation: user.relation,
+                        reward_id: 6,
+                        amount: 100,
+                        from_where: `购买上合组织中国区授权书`,
+                    }
+                    console.log(obj)
+                    await RewardRecord.create(obj, { transaction: t });
+                }
+                await t.commit();
+            } catch (error) {
+                errLogger(`[GIVE_AUTHORIZATION_LETTER]: ${error.stack}`);
+                await t.rollback();
+            }
+            
+        } catch (error) {
+            errLogger(`[GIVE_AUTHORIZATION_LETTER]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
