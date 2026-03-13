@@ -2501,7 +2501,7 @@ class Controller {
                 attributes: ['id', 'amount']
             });
             if (!reward) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '「上合组织各国授权书」已使用! 请获取新授权书后重试', {});
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '「上合组织各国授权书」已使用!', {});
             }
 
             const t = await db.transaction();
