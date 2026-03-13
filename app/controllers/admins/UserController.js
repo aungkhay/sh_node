@@ -2270,7 +2270,7 @@ class Controller {
             const endTime = req.query.endTime;
             const userId = req.user_id;
 
-            let condition = { have_reward_6: 1, reward_6_from_where: 2 };
+            let condition = { reward_id: 6, from_where: '购买上合组织中国区授权书' }
             if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
                 condition.relation = { [Op.like]: `${me.relation}/%` }
@@ -2294,11 +2294,11 @@ class Controller {
                     },
                     attributes: ['id', 'name', 'phone_number']
                 },
-                where: {
-                    reward_id: 6,
-                    from_where: '购买上合组织中国区授权书'
-                },
-                attributes: ['id', 'amount', 'createdAt']
+                where: condition,
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
             });
 
             // const { rows, count } = await User.findAndCountAll({
