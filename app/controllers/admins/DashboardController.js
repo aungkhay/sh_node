@@ -78,7 +78,7 @@ class Controller {
 
             const agreementCount = await User.count({
                 where: {
-                    agreement_status: 1
+                    agreement_status: 'APPROVED'
                 }
             });
 
