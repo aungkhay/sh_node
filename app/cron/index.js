@@ -1348,7 +1348,7 @@ class CronJob {
                     const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'balance'], transaction: t });
                     if (!user) continue;
                     await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
-                    await withdraw.update({ status: 2 }, { transaction: t });
+                    await withdraw.update({ status: 2, description: 'CRON REFUND' }, { transaction: t });
                     console.log(`[REFUND_WITHDRAW_AFTER_3_DAYS][Withdraw ID: ${withdraw.id}]: Refunded ${withdraw.amount} to user ID ${user.id}`);
                 }
                 await t.commit();
