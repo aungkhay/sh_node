@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -48,6 +48,8 @@ class CronJob {
         // Run every minute
         // cron.schedule('* * * * *', this.UPDATE_DEPOSIT_STATUS).start();
         cron.schedule('* * * * *', this.CHECK_GOLD_PACKAGE_REIMBURSEMENT).start();
+        // Run at 30th minute of every hour
+        cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -1203,7 +1205,7 @@ class CronJob {
         }
     }
 
-    // Pay rank point to every users for kyc approval
+    // Not cron job => Pay rank point to every users for kyc approval
     PAY_RANK_POINT = async () => {
         try {
             const batchSize = 500;
@@ -1287,7 +1289,7 @@ class CronJob {
         }
     }
 
-    // Give Authorization Letter
+    // Not cron job => Give Authorization Letter
     GIVE_AUTHORIZATION_LETTER = async () => {
         try {
             const users = await User.findAll({
@@ -1325,6 +1327,37 @@ class CronJob {
             
         } catch (error) {
             errLogger(`[GIVE_AUTHORIZATION_LETTER]: ${error.stack}`);
+        }
+    }
+
+    REFUND_WITHDRAW_AFTER_3_DAYS = async () => {
+        try {
+            const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+            const withdraws = await Withdraw.findAll({
+                where: {
+                    status: 0,
+                    createdAt: { [Op.lt]: threeDaysAgo }
+                },
+                attributes: ['id', 'user_id', 'amount']
+            });
+            console.log(`[REFUND_WITHDRAW_AFTER_3_DAYS]: Found ${withdraws.length} withdraw(s) to refund.`);
+
+            const t = await db.transaction();
+            try {
+                for (let withdraw of withdraws) {
+                    const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    if (!user) continue;
+                    await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
+                    await withdraw.update({ status: 2 }, { transaction: t });
+                    console.log(`[REFUND_WITHDRAW_AFTER_3_DAYS][Withdraw ID: ${withdraw.id}]: Refunded ${withdraw.amount} to user ID ${user.id}`);
+                }
+                await t.commit();
+            } catch (error) {                
+                errLogger(`[REFUND_WITHDRAW_AFTER_3_DAYS][Transaction Error]: ${error.stack}`);
+                await t.rollback();
+            }
+        } catch (error) {
+            errLogger(`[REFUND_WITHDRAW_AFTER_3_DAYS]: ${error.stack}`);
         }
     }
 }
