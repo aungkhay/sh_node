@@ -69,6 +69,19 @@ class Controller {
             const totalRefferalBonus = await User.sum('referral_bonus');
             const totalMasonicFundRelease = await RewardRecord.sum('amount', { where: { reward_id: 1 } })
 
+            const boughtLetterCount = await User.count({
+                where: {
+                    have_reward_6: 1,
+                    reward_6_from_where: 2
+                }
+            });
+
+            const agreementCount = await User.count({
+                where: {
+                    agreement_status: 'APPROVED'
+                }
+            });
+
             const data = {
                 today_deposit_amount: todayDepositAmount ? Number(todayDepositAmount) : 0,
                 today_deposit_count: todayDepositCount ?? 0,
@@ -81,7 +94,9 @@ class Controller {
                 kyc_approved_count: kycApprovedCount ?? 0,
                 yesterday_check_in: yesterdayCheckIn ?? 0,
                 total_refferal_bonus: totalRefferalBonus ? Number(totalRefferalBonus) : 0,
-                total_masonic_fund_release: totalMasonicFundRelease ? Number(totalMasonicFundRelease) : 0
+                total_masonic_fund_release: totalMasonicFundRelease ? Number(totalMasonicFundRelease) : 0,
+                bought_letter_count: boughtLetterCount,
+                agreement_count: agreementCount
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
