@@ -2280,8 +2280,9 @@ class Controller {
                     [Op.between]: [startTime, endTime]
                 }
             }
+            let userCondition = {}
             if (phone) {
-                condition.phone_number = phone;
+                userCondition.phone_number = phone;
             }
 
             const { rows, count } = await RewardRecord.findAndCountAll({
@@ -2290,7 +2291,8 @@ class Controller {
                     as: 'user',
                     where: {
                         have_reward_6: 1,
-                        reward_6_from_where: 2
+                        reward_6_from_where: 2,
+                        ...userCondition
                     },
                     attributes: ['id', 'name', 'phone_number']
                 },
