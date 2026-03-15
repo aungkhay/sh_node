@@ -153,7 +153,7 @@ class AdminRoute extends express.Router {
         this.get('/users/export-child-register-list', middleware.isLoggedIn('user-export-subordinate'), UserCtrl.EXPORT_CHILD_REGISTER_LIST);
         this.post('/users/:id/update-wallet', FormValidator.update_wallet(), middleware.isLoggedIn('user-add-substract'), UserCtrl.UPDATE_WALLET);
         this.post('/users/:id/update-contact-info', FormValidator.update_contact_info(), middleware.isLoggedIn('user-change-contact'), UserCtrl.UPDATE_CONTACT_INFO);
-        this.get('/users/:id/money-tracking', UserCtrl.MONEY_TRACKING);
+        this.get('/users/:id/money-tracking', middleware.isLoggedIn('user-list'), UserCtrl.MONEY_TRACKING);
         // 2FA
         this.post('/users/:id/setup-2fa', FormValidator.setup_2fa(), middleware.isLoggedIn(), UserCtrl.SETUP_2FA);
         this.post('/users/:id/disable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn(), UserCtrl.DISABLE_2FA);

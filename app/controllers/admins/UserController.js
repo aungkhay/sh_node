@@ -2456,20 +2456,6 @@ class Controller {
                     description: '扣除100储备金'
                 });
             }
-            // Authorization Letter [授权书]
-            const letter = await RewardRecord.findOne({
-                where: { user_id: user.id, reward_id: 6 },
-                attributes: ['id', 'is_used', 'createdAt', 'updatedAt']
-            });
-            if (letter && letter.is_used) {
-                mergedData.push({
-                    id: Number(letter.id),
-                    amount: 100,
-                    createdAt: letter.updatedAt,
-                    type: '使用上合组织中国区授权书',
-                    description: '扣除100共济基金，添加100余额'
-                });
-            }
             
             // Withdrawals [提现]
             const withdrawals = await Withdraw.findAll({
@@ -2520,6 +2506,21 @@ class Controller {
                 ...newCustomizeWallet,
                 ...newBuyGoldPackages
             ];
+
+            // Authorization Letter [授权书]
+            const letter = await RewardRecord.findOne({
+                where: { user_id: user.id, reward_id: 6 },
+                attributes: ['id', 'is_used', 'createdAt', 'updatedAt']
+            });
+            if (letter && letter.is_used) {
+                mergedData.push({
+                    id: Number(letter.id),
+                    amount: 100,
+                    createdAt: letter.updatedAt,
+                    type: '使用上合组织中国区授权书',
+                    description: '扣除100共济基金，添加100余额'
+                });
+            }
 
             mergedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort by createdAt descending
             const modifiedUser = {
