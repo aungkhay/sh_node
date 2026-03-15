@@ -2355,7 +2355,7 @@ class Controller {
                     amount: Number(r.amount),
                     createdAt: r.createdAt,
                     type: '红包雨奖励',
-                    description: `添加${Number(r.amount)}余额`
+                    description: `添加 ${Number(r.amount)} 余额`
                 }
             });
 
@@ -2370,7 +2370,7 @@ class Controller {
                     amount: Number(d.amount),
                     createdAt: d.createdAt,
                     type: '充值',
-                    description: `添加${Number(d.amount)}余额`
+                    description: `添加 ${Number(d.amount)} 余额`
                 }
             });
 
@@ -2396,7 +2396,7 @@ class Controller {
                     amount: Number(t.amount),
                     createdAt: t.createdAt,
                     type: '转账',
-                    description: `从${walletType[t.from]}转${Number(t.amount)}到${walletType[t.to]}`
+                    description: `从${walletType[t.from]}转 ${Number(t.amount)} 到${walletType[t.to]}`
                 }
             });
 
@@ -2411,7 +2411,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '购买黄金',
-                    description: `扣除${Number(g.amount)}余额，获得${Number(g.gold_count)}克黄金`
+                    description: `扣除 ${Number(g.amount)} 余额，获得 ${Number(g.gold_count)} 克黄金`
                 }
             });
 
@@ -2426,7 +2426,7 @@ class Controller {
                     amount: Number(g.price),
                     createdAt: g.createdAt,
                     type: '购买黄金礼包',
-                    description: `扣除${Number(g.price)}储备金`
+                    description: `扣除 ${Number(g.price)} 储备金`
                 }
             });
 
@@ -2441,7 +2441,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '购买黄金礼包奖励',
-                    description: `添加${Number(g.amount)}余额`
+                    description: `添加 ${Number(g.amount)} 余额`
                 }
             });
 
@@ -2458,7 +2458,7 @@ class Controller {
                         amount: 100,
                         createdAt: record7.createdAt,
                         type: '签署协议',
-                        description: '扣除100储备金'
+                        description: '扣除 100 储备金'
                     });
                 }
             }
@@ -2474,7 +2474,7 @@ class Controller {
                     amount: Number(w.amount),
                     createdAt: w.createdAt,
                     type: '提现',
-                    description: `扣除${Number(w.amount)}余额`
+                    description: `扣除 ${Number(w.amount)} 余额`
                 }
             });
 
@@ -2496,8 +2496,8 @@ class Controller {
                     id: Number(c.id),
                     amount: Math.abs(Number(content.amount)),
                     createdAt: c.createdAt,
-                    type: `管理员[${c.admin_id}]调整钱包`,
-                    description: `${content.addOrSubstract == 1 ? '添加' : '扣除'}${Math.abs(Number(content.amount))}到${walletType[content.walletType]}`
+                    type: `管理员 ID:${c.admin_id} 调整钱包`,
+                    description: `${content.addOrSubstract == 1 ? '添加' : '扣除'} ${Math.abs(Number(content.amount))} 到 ${walletType[content.walletType]}`
                 }
             });
 
@@ -2524,7 +2524,7 @@ class Controller {
                     amount: 100,
                     createdAt: letter.updatedAt,
                     type: '使用上合组织中国区授权书',
-                    description: '扣除100共济基金，添加100余额'
+                    description: '扣除 100 共济基金，添加 100 余额'
                 });
             }
 
@@ -2536,9 +2536,9 @@ class Controller {
                 reserve_fund: Number(user.reserve_fund),
                 masonic_fund: Number(user.masonic_fund),
                 rank_point: Number(user.rank_point),
-                agreement_status: user.agreement_status === 'APPROVED' ? '签署电子协议 扣[100]储备金' : '未签署电子协议',
+                agreement_status: user.agreement_status === 'APPROVED' ? '签署电子协议 扣 100 储备金' : '未签署电子协议',
                 authorize_letter: user.have_reward_6 && user.reward_6_from_where == 2 
-                    ? '[购买] 扣120储备金'
+                    ? '[购买] 扣 120 储备金'
                     : user.have_reward_6 == 1 && user.reward_6_from_where == 1 
                     ? '[红包雨]上合组织中国区授权书' 
                     : '-',
