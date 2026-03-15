@@ -2448,13 +2448,19 @@ class Controller {
             // Sign Agreement [签署协议]
             const signAgreement = [];
             if (user.agreement_status === 'APPROVED') {
-                signAgreement.push({
-                    id: 1,
-                    amount: 100,
-                    createdAt: user.createdAt,
-                    type: '签署协议',
-                    description: '扣除100储备金'
+                const record7 = await RewardRecord.findOne({
+                    where: { user_id: user.id, reward_id: 7, amount: 20, from_where: '签署电子协议 获得上合战略储备黄金券' },
+                    attributes: ['id', 'is_used', 'createdAt']
                 });
+                    if (record7) {
+                        signAgreement.push({
+                        id: 1,
+                        amount: 100,
+                        createdAt: record7.createdAt,
+                        type: '签署协议',
+                        description: '扣除100储备金'
+                    });
+                }
             }
             
             // Withdrawals [提现]
