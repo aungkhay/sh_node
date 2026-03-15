@@ -486,8 +486,11 @@ class Controller {
             const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
             const user = await User.findByPk(userId, {
-                attributes: ['id', 'balance', 'relation']
+                attributes: ['id', 'balance', 'relation', 'can_withdraw']
             });
+            if (!user.can_withdraw) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
+            }
 
             if (amount < 100) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '最低提现金额为100', {});

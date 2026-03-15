@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2331,6 +2331,216 @@ class Controller {
         } catch (error) {
             errLogger(`[User][BUY_AUTHORIZATION_LETTER_HISTORY]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    MONEY_TRACKING = async (req, res) => {
+        try {
+
+            const user = await User.findByPk(req.params.id, { 
+                attributes: ['id', 'name', 'balance', 'reserve_fund', 'masonic_fund', 'rank_point', 'agreement_status', 'have_reward_6', 'reward_6_from_where'] 
+            });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
+            }
+
+            // Red Envelope Rain Reward [红包雨奖励]
+            const reward3 = await RewardRecord.findAll({
+                where: { user_id: user.id, reward_id: 3 },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newReward3 = reward3.map(r => {
+                return {
+                    id: Number(r.id),
+                    amount: Number(r.amount),
+                    createdAt: r.createdAt,
+                    type: '红包雨奖励',
+                    description: `添加${Number(r.amount)}余额`
+                }
+            });
+
+            // Deposit [充值]
+            const deposits = await Deposit.findAll({
+                where: { user_id: user.id, status: 1 },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newDeposits = deposits.map(d => {
+                return {
+                    id: Number(d.id),
+                    amount: Number(d.amount),
+                    createdAt: d.createdAt,
+                    type: '充值',
+                    description: `添加${Number(d.amount)}余额`
+                }
+            });
+
+            // Transfer [转账]
+            const transfers = await Transfer.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'from', 'to', 'amount', 'createdAt']
+            });
+            const walletType = {
+                1: '储备金',
+                2: '余额',
+                3: '推荐金',
+                4: '共济基金',
+                5: '军职津贴',
+                6: '预压津贴',
+                7: '余额宝',
+                8: '黄金利息',
+                9: '缴纳保证金',
+            }
+            const newTransfers = transfers.map(t => {
+                return {
+                    id: Number(t.id),
+                    amount: Number(t.amount),
+                    createdAt: t.createdAt,
+                    type: '转账',
+                    description: `从${walletType[t.from]}转${Number(t.amount)}到${walletType[t.to]}`
+                }
+            });
+
+            // Buy Gold [购买黄金]
+            const buyGolds = await UserGoldPrice.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'amount', 'gold_count', 'createdAt']
+            });
+            const newBuyGolds = buyGolds.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买黄金',
+                    description: `扣除${Number(g.amount)}余额，获得${Number(g.gold_count)}克黄金`
+                }
+            });
+
+            // Buy Gold Package [购买黄金礼包]
+            const buyGoldPackages = await GoldPackageHistory.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'price', 'createdAt']
+            });
+            const newBuyGoldPackages = buyGoldPackages.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.price),
+                    createdAt: g.createdAt,
+                    type: '购买黄金礼包',
+                    description: `扣除${Number(g.price)}储备金`
+                }
+            });
+
+            // Buy Gold Package Bonus [购买黄金礼包奖励]
+            const goldPackageBonuses = await GoldPackageBonuses.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newGoldPackageBonuses = goldPackageBonuses.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买黄金礼包奖励',
+                    description: `添加${Number(g.amount)}余额`
+                }
+            });
+
+            // Sign Agreement [签署协议]
+            const signAgreement = [];
+            if (user.agreement_status === 'APPROVED') {
+                signAgreement.push({
+                    id: 1,
+                    amount: 100,
+                    createdAt: user.createdAt,
+                    type: '签署协议',
+                    description: '扣除100储备金'
+                });
+            }
+            // Authorization Letter [授权书]
+            const letter = await RewardRecord.findOne({
+                where: { user_id: user.id, reward_id: 6 },
+                attributes: ['id', 'is_used', 'createdAt', 'updatedAt']
+            });
+            if (letter && letter.is_used) {
+                mergedData.push({
+                    id: Number(letter.id),
+                    amount: 100,
+                    createdAt: letter.updatedAt,
+                    type: '使用上合组织中国区授权书',
+                    description: '扣除100共济基金，添加100余额'
+                });
+            }
+            
+            // Withdrawals [提现]
+            const withdrawals = await Withdraw.findAll({
+                where: { user_id: user.id, status: 1 },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newWithdrawals = withdrawals.map(w => {
+                return {
+                    id: Number(w.id),
+                    amount: Number(w.amount),
+                    createdAt: w.createdAt,
+                    type: '提现',
+                    description: `扣除${Number(w.amount)}余额`
+                }
+            });
+
+            // Customize Wallet [管理员调整钱包]
+            const customizeWallet = await AdminLog.findAll({
+                where: { 
+                    type: 'update_wallet',
+                    model: 'User',
+                    // url: {
+                    //     [Op.like]: `%/users/${user.id}/update-wallet`
+                    // },
+                    'content.user_id': user.id
+                },
+                attributes: ['id', 'admin_id', 'url', 'content', 'createdAt']
+            });
+            const newCustomizeWallet = customizeWallet.map(c => {
+                const content = c.content;
+                return {
+                    id: Number(c.id),
+                    amount: Math.abs(Number(content.amount)),
+                    createdAt: c.createdAt,
+                    type: `管理员[${c.admin_id}]调整钱包`,
+                    description: `${content.addOrSubstract == 1 ? '添加' : '扣除'}${Math.abs(Number(content.amount))}到${walletType[content.walletType]}`
+                }
+            });
+
+            const mergedData = [
+                ...newReward3, 
+                ...newDeposits, 
+                ...newTransfers, 
+                ...newBuyGolds, 
+                ...newGoldPackageBonuses, 
+                ...signAgreement,
+                ...newWithdrawals,
+                ...newCustomizeWallet,
+                ...newBuyGoldPackages
+            ];
+
+            mergedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // Sort by createdAt descending
+            const modifiedUser = {
+                id: Number(user.id),
+                name: user.name,    
+                balance: Number(user.balance),
+                reserve_fund: Number(user.reserve_fund),
+                masonic_fund: Number(user.masonic_fund),
+                rank_point: Number(user.rank_point),
+                agreement_status: user.agreement_status === 'APPROVED' ? '签署电子协议 扣[100]储备金' : '未签署电子协议',
+                authorize_letter: user.have_reward_6 && user.reward_6_from_where == 2 
+                    ? '[购买] 扣120储备金'
+                    : user.have_reward_6 == 1 && user.reward_6_from_where == 1 
+                    ? '[红包雨]上合组织中国区授权书' 
+                    : '-',
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { user: modifiedUser, history: mergedData });
+        } catch (error) {
+            errLogger(`[User][BALANCE_TRACKING]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
 }

@@ -262,6 +262,10 @@ User.init({
         type: DataTypes.TEXT('medium'),
         allowNull: true,
     },
+    can_withdraw: {
+        type: DataTypes.TINYINT,
+        defaultValue: 1,
+    },
     google_2fa_secret: {
         type: DataTypes.STRING,
         allowNull: true,
