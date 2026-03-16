@@ -2466,7 +2466,7 @@ class Controller {
             // Withdrawals [提现]
             const withdrawals = await Withdraw.findAll({
                 where: { user_id: user.id, status: { [Op.ne]: 2 } },
-                attributes: ['id', 'amount', 'createdAt']
+                attributes: ['id', 'amount', 'status', 'createdAt']
             });
             const newWithdrawals = withdrawals.map(w => {
                 return {
