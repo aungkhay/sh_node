@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { errLogger, commonLogger } = require('../../helpers/Logger');
+const { errLogger, commonLogger, callbackLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant } = require('../../models');
 const { Op, Sequelize } = require('sequelize');
@@ -22,7 +22,7 @@ class Controller {
     RECHARGE_CALLBACK = async (req, res) => {
         try {
             const { orderNo, merchantId, userId } = req.params;
-            commonLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
+            callbackLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
             const deposit = await Deposit.findOne({ 
                 where: { 
                     order_no: orderNo, 
