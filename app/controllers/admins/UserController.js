@@ -2370,7 +2370,7 @@ class Controller {
                     amount: Number(d.amount),
                     createdAt: d.createdAt,
                     type: '充值',
-                    description: `添加 ${Number(d.amount)} 余额`
+                    description: `添加 ${Number(d.amount)} 储备金`
                 }
             });
 
