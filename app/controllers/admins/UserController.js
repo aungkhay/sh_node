@@ -2507,7 +2507,7 @@ class Controller {
                 ...newTransfers, 
                 ...newBuyGolds, 
                 ...newGoldPackageBonuses, 
-                ...signAgreement,
+                // ...signAgreement,
                 ...newWithdrawals,
                 ...newCustomizeWallet,
                 ...newBuyGoldPackages
