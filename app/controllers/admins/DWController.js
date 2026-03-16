@@ -28,6 +28,7 @@ class Controller {
             const endTime = req.query.endTime;
             const userId = req.user_id;
             const merchantId = req.query.merchantId;
+            const orderNo = req.query.orderNo;
 
             let condition = {}
             if (userId != 1) {
@@ -44,6 +45,9 @@ class Controller {
             }
             if (merchantId) {
                 condition.deposit_merchant_id = merchantId;
+            }
+            if (orderNo) {
+                condition.order_no = orderNo;
             }
 
             let userCondition = {}
