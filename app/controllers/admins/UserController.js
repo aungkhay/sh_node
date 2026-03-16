@@ -2474,7 +2474,7 @@ class Controller {
                     amount: Number(w.amount),
                     createdAt: w.createdAt,
                     type: '提现',
-                    description: `(${w.status === 1 ? '成功' : '待处理'}) 扣除 ${Number(w.amount)} 余额`
+                    description: `(${w.status == 1 ? '成功' : '待处理'}) 扣除 ${Number(w.amount)} 余额`
                 }
             });
 
