@@ -492,11 +492,11 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
 
-            if (amount < 100) {
+            if (Number(amount) < 100) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '最低提现金额为100', {});
             }
 
-            if (amount > parseFloat(user.balance)) {
+            if (Number(amount) > Number(user.balance)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '余额不足', {});
             }
 
@@ -507,11 +507,11 @@ class Controller {
                     type: withdrawBy,
                     user_id: userId,
                     relation: user.relation,
-                    amount: amount,
+                    amount: Number(amount),
                     before_amount: Number(user.balance),
-                    after_amount: Number(parseFloat(user.balance) - amount),
+                    after_amount: Number(user.balance) - Number(amount),
                 }, { transaction: t });
-                await user.increment({ balance: -amount }, { transaction: t });
+                await user.increment({ balance: -Number(amount) }, { transaction: t });
 
                 await t.commit();
 
