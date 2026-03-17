@@ -2395,7 +2395,7 @@ class Controller {
                     id: Number(t.id),
                     amount: Number(t.amount),
                     createdAt: t.createdAt,
-                    type: '转账[推荐金提取券]',
+                    type: '转账 [推荐金提取券]',
                     description: `从${walletType[t.from]}转 ${Number(t.amount)} 到${walletType[t.to]}`
                 }
             });
