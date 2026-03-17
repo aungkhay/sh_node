@@ -2377,7 +2377,7 @@ class Controller {
             // Transfer [转账]
             const transfers = await Transfer.findAll({
                 where: { user_id: user.id },
-                attributes: ['id', 'from', 'to', 'amount', 'createdAt']
+                attributes: ['id', 'from', 'to', 'amount', 'reward_id', 'createdAt']
             });
             const walletType = {
                 1: '储备金',
