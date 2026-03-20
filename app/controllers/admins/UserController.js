@@ -1749,8 +1749,11 @@ class Controller {
             });
 
             const result = rows.map(u => {
+                const u = u.toJSON();
+                u.total_deposit = Number(u.total_deposit);
+                u.total_withdraw = Number(u.total_withdraw);
                 return {
-                    ... u.toJSON(),
+                    ... u,
                     level: levelMap[u.id] || null
                 }
             });
