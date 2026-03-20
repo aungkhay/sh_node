@@ -1749,12 +1749,12 @@ class Controller {
             });
 
             const result = rows.map(u => {
-                const u = u.toJSON();
-                u.total_deposit = Number(u.total_deposit);
-                u.total_withdraw = Number(u.total_withdraw);
+                const user = u.toJSON();
+                user.total_deposit = Number(user.total_deposit);
+                user.total_withdraw = Number(user.total_withdraw);
                 return {
-                    ... u,
-                    level: levelMap[u.id] || null
+                    ... user,
+                    level: levelMap[user.id] || null
                 }
             });
 
