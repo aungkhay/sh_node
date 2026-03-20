@@ -1723,7 +1723,26 @@ class Controller {
                 //     'address_status', 'agreement_status', 'rank_point', 'level_up_pay', 'win_per_day', 'status', 'political_vetting_status', 
                 //     'is_internal_account','profile_picture', 'isActive', 'activedAt', 'createdAt'
                 // ],
-                attributes: ['id', 'name', 'phone_number', 'invite_code', 'createdAt'],
+                // attributes: ['id', 'name', 'phone_number', 'invite_code', 'createdAt'],
+                attributes: [
+                    'id', 'name', 'phone_number', 'invite_code', 'createdAt',
+                    [
+                        literal(`(
+                            SELECT COALESCE(SUM(d.amount), 0)
+                            FROM deposits d
+                            WHERE d.user_id = User.id AND d.status = 1
+                        )`),
+                        "total_deposit",
+                    ],
+                    [
+                        literal(`(
+                            SELECT COALESCE(SUM(w.amount), 0)
+                            FROM withdraws w
+                            WHERE w.user_id = User.id AND w.status = 1
+                        )`),
+                        "total_withdraw",
+                    ],
+                ],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset
