@@ -1657,6 +1657,7 @@ class Controller {
             const phone = req.query.phone || '';
             const level = parseInt(req.query.level || 0); // 0 means all levels
             const isKycVerified = req.query.isKycVerified; // '1' => verified, '0' => unverified, others => all
+            const isBoughtGoldPackage = req.query.isBoughtGoldPackage; // 1 => 588 gold package, 2 => 1288 gold package
 
             const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {
@@ -1713,6 +1714,14 @@ class Controller {
                     where: { status: Number(isKycVerified) === 1 ? 'APPROVED' : 'PENDING' }
                 });
             }
+            if (isBoughtGoldPackage && isBoughtGoldPackage > 0) {
+                includes.push({
+                    model: GoldPackageHistory,
+                    as: 'gold_package_histories',
+                    attributes: [],
+                    where: { package_id: Number(isBoughtGoldPackage) }
+                });
+            }
 
             const { rows, count} = await User.findAndCountAll({
                 include: includes,
@@ -1725,7 +1734,7 @@ class Controller {
                 // ],
                 // attributes: ['id', 'name', 'phone_number', 'invite_code', 'createdAt'],
                 attributes: [
-                    'id', 'name', 'phone_number', 'invite_code', 'createdAt',
+                    'id', 'name', 'phone_number', 'invite_code', 'createdAt', 'agreement_status',
                     [
                         literal(`(
                             SELECT COALESCE(SUM(d.amount), 0)
@@ -1742,6 +1751,17 @@ class Controller {
                         )`),
                         "total_withdraw",
                     ],
+                    [
+                        literal(`(
+                            SELECT JSON_OBJECT(
+                                'package_588', SUM(CASE WHEN g.package_id = 1 THEN 1 ELSE 0 END),
+                                'package_1288', SUM(CASE WHEN g.package_id = 2 THEN 1 ELSE 0 END)
+                            )
+                            FROM gold_package_history g
+                            WHERE g.user_id = User.id
+                        )`),
+                        "gold_packages",
+                    ],
                 ],
                 order: [['id', 'DESC']],
                 limit: perPage,
@@ -1750,8 +1770,10 @@ class Controller {
 
             const result = rows.map(u => {
                 const user = u.toJSON();
-                user.total_deposit = Number(user.total_deposit);
-                user.total_withdraw = Number(user.total_withdraw);
+                user.total_deposit = Number(user.total_deposit || 0);
+                user.total_withdraw = Number(user.total_withdraw || 0);
+                user.gold_packages = JSON.parse(user.gold_packages || '{}');
+
                 return {
                     ... user,
                     level: levelMap[user.id] || null
