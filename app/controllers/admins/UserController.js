@@ -1753,15 +1753,17 @@ class Controller {
                     ],
                     [
                         literal(`(
-                            SELECT JSON_OBJECT(
-                                'package_588', SUM(CASE WHEN g.package_id = 1 THEN 1 ELSE 0 END),
-                                'package_1288', SUM(CASE WHEN g.package_id = 2 THEN 1 ELSE 0 END)
+                            SELECT CAST(
+                                JSON_OBJECT(
+                                    'package_588', SUM(CASE WHEN g.package_id = 1 THEN 1 ELSE 0 END),
+                                    'package_1288', SUM(CASE WHEN g.package_id = 2 THEN 1 ELSE 0 END)
+                                ) AS CHAR
                             )
                             FROM gold_package_history g
                             WHERE g.user_id = User.id
                         )`),
                         "gold_packages",
-                    ],
+                    ]
                 ],
                 order: [['id', 'DESC']],
                 limit: perPage,
