@@ -1654,10 +1654,11 @@ class Controller {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
-            const phone = req.query.phone || '';
+            const phone = req.query.phone || '13914725802';
             const level = parseInt(req.query.level || 0); // 0 means all levels
             const isKycVerified = req.query.isKycVerified; // '1' => verified, '0' => unverified, others => all
             const isBoughtGoldPackage = req.query.isBoughtGoldPackage; // 1 => 588 gold package, 2 => 1288 gold package
+            const agreementStatus = req.query.agreementStatus;
 
             const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {
@@ -1721,6 +1722,9 @@ class Controller {
                     attributes: [],
                     where: { package_id: Number(isBoughtGoldPackage) }
                 });
+            }
+            if (agreementStatus) {
+                condition.agreement_status = agreementStatus;
             }
 
             const { rows, count} = await User.findAndCountAll({
