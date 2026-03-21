@@ -1659,6 +1659,7 @@ class Controller {
             const isKycVerified = req.query.isKycVerified; // '1' => verified, '0' => unverified, others => all
             const isBoughtGoldPackage = req.query.isBoughtGoldPackage; // 1 => 588 gold package, 2 => 1288 gold package
             const agreementStatus = req.query.agreementStatus;
+            const haveReward6 = req.query.haveReward6; // 0 | 1
 
             const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {
@@ -1726,6 +1727,9 @@ class Controller {
             if (agreementStatus) {
                 condition.agreement_status = agreementStatus;
             }
+            if (haveReward6 && haveReward6 >= 0) {
+                condition.have_reward_6 = Number(haveReward6);
+            }
 
             const { rows, count} = await User.findAndCountAll({
                 include: includes,
@@ -1738,7 +1742,7 @@ class Controller {
                 // ],
                 // attributes: ['id', 'name', 'phone_number', 'invite_code', 'createdAt'],
                 attributes: [
-                    'id', 'name', 'phone_number', 'invite_code', 'createdAt', 'agreement_status',
+                    'id', 'name', 'phone_number', 'invite_code', 'createdAt', 'agreement_status', 'have_reward_6', 'reward_6_from_where',
                     [
                         literal(`(
                             SELECT COALESCE(SUM(d.amount), 0)
