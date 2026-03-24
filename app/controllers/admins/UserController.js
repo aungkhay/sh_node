@@ -1528,18 +1528,22 @@ class Controller {
                 }
             }) || 0;
 
-            const total_team_deposit_count = await Deposit.count({
+            const total_deposit_child_count = await Deposit.count({
                 where: {
                     status: 1,
                     ... condition
-                }
+                },
+                distinct: true,
+                col: 'user_id'
             });
 
-            const total_team_withdraw_count = await Withdraw.count({
+            const total_withdraw_child_count = await Withdraw.count({
                 where: {
                     status: 1,
                     ... condition
-                }
+                },
+                distinct: true,
+                col: 'user_id'
             });
 
             const data = {
@@ -1552,9 +1556,8 @@ class Controller {
                 total_persional_withdraw: parseFloat(total_persional_withdraw),
                 total_team_deposit: parseFloat(total_team_deposit),
                 total_team_withdraw: parseFloat(total_team_withdraw),
-                total_team_deposit_count: parseInt(total_team_deposit_count || 0),
-                total_team_withdraw_count: parseInt(total_team_withdraw_count || 0)
-
+                total_deposit_child_count: parseInt(total_deposit_child_count || 0),
+                total_withdraw_child_count: parseInt(total_withdraw_child_count || 0)
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
