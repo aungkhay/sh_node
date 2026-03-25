@@ -2597,6 +2597,21 @@ class Controller {
                 }
             });
 
+            // Re-purchase package
+            const repurchasePackages = await GoldPackageReturn.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'handling_fee', 'createdAt']
+            });
+            const newRepurchasePackages = repurchasePackages.map(r => {
+                return {
+                    id: Number(r.id),
+                    amount: Number(r.handling_fee),
+                    createdAt: r.createdAt,
+                    type: `礼包回购`,
+                    description: `扣除 ${Number(r.handling_fee)} 储备金`
+                }
+            });
+
             const mergedData = [
                 ...newReward3, 
                 ...newDeposits, 
@@ -2607,7 +2622,8 @@ class Controller {
                 ...newWithdrawals,
                 ...newCustomizeWallet,
                 ...newBuyGoldPackages,
-                ...newGoldPackageReturns
+                ...newGoldPackageReturns,
+                ...newRepurchasePackages
             ];
 
             // Authorization Letter [授权书]
