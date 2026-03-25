@@ -1078,6 +1078,17 @@ const params = {
     startTime: '',
     endTime: ''
 }
+
+// 签到赢黄金计划
+// [GET] 签到记录
+const url = `${baseURL}/gold-plan/check-in-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
 ```
 ### Banner
 ``` js

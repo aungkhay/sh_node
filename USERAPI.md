@@ -701,3 +701,12 @@ const url = `${baseURL}/spring-festival-event/repair-card/${cardId}/use`;
 // [GET] Logs [签到记录]
 const url = `${baseURL}/spring-festival-event/logs`;
 ```
+
+### Gold Plan CheckIn
+``` js
+// [POST] Check In
+const url = `${baseURL}/gold-plan/check-in`;
+
+// [GET] Check In history
+const url = `${baseURL}/gold-plan/check-in-history`;
+```

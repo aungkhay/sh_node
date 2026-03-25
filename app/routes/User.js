@@ -123,6 +123,12 @@ class UserRoute extends express.Router {
         this.post('/spring-festival-event/check-in', middleware.isLoggedIn, SpringFestivalEventCtrl.CHECK_IN_EVENT);
         this.post('/spring-festival-event/repair-card/:id/use', middleware.isLoggedIn, SpringFestivalEventCtrl.USE_REPAIR_CARD);
         this.get('/spring-festival-event/logs', middleware.isLoggedIn, SpringFestivalEventCtrl.CHECK_IN_LOGS);
+
+        // Gold Plan Check-In Routes
+        let GoldPlanCheckInController = require('../controllers/users/GoldPlanCheckInController');
+        const GoldPlanCheckInCtrl = new GoldPlanCheckInController(app);
+        this.post('/gold-plan/check-in', middleware.isLoggedIn, GoldPlanCheckInCtrl.CHECK_IN);
+        this.get('/gold-plan/check-in-history', middleware.isLoggedIn, GoldPlanCheckInCtrl.CHECK_IN_HISTORY);
     }
 }
 

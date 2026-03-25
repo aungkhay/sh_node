@@ -3528,10 +3528,12 @@ class Controller {
         // 回购开启后，您当前持有黄金券克数将在归集后由所在国统一下发入库并回购，
         // 回购后您的预计收益为：xxx元。
         try {
-            const id = req.params.id;
             const userId = req.user_id;
             const history = await GoldPackageHistory.findOne({
-                where: { id, user_id: userId },
+                where: { 
+                    id: { [Op.in]: [3, 4, 5] }, 
+                    user_id: userId 
+                },
                 attributes: ['id'],
             });
             if (!history) {
@@ -3654,7 +3656,7 @@ class Controller {
                     const splitedReturn = h.return_rate.split('-');
                     expectedReturn[0] += Number(splitedReturn[0]) || 0;
                     expectedReturn[1] += Number(splitedReturn[1]) || 0;
-                    
+
                     return {
                         id: h.id,
                         package_id: h.package_id,

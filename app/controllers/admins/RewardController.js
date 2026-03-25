@@ -266,6 +266,10 @@ class Controller {
                 const obj = { reward_id: Number(reward_id), amount: Number(amount) }
                 await this.redisHelper.setValue('RELEASE_REWARD_TO_ALL_USERS', JSON.stringify(obj));
                 // Cron job will do this at 20th minute of every hour
+
+                // log
+                await this.adminLogger(req, 'Reward', 'create');
+                
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '已设置为批量发放奖励任务，系统每10分钟自动处理', {});
             }
 
@@ -341,7 +345,8 @@ class Controller {
                         }
                         if (obj.reward_id == 9) {
                             obj.amount = amount;
-                            obj.from_where = '后台发放春节活动补签卡';
+                            // obj.from_where = '后台发放春节活动补签卡';
+                            obj.from_where = '[签到赢黄金计划]后台发放补签卡';
                         }
                         await RewardRecord.create(obj, { transaction: t });
                     }
@@ -364,6 +369,9 @@ class Controller {
                 }
 
                 await t.commit();
+                // log
+                await this.adminLogger(req, 'Reward', 'create');
+
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '添加奖励成功', {});
             } catch (error) {
                 errLogger(`[ADD_REWARD_TRANSACTION]: ${error.stack}`);

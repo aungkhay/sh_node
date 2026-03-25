@@ -50,6 +50,7 @@ const GoldPackageHistory = require('./GoldPackageHistory');
 const GoldPackageBonuses = require('./GoldPackageBonuses');
 const GoldPackageReturn = require('./GoldPackageReturn');
 const GoldPackageRepurchase = require('./GoldPackageRepurchase');
+const GoldPlanCheckIn = require('./GoldPlanCheckIn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -223,6 +224,10 @@ GoldPackageReturn.belongsTo(GoldPackageHistory, { foreignKey: 'package_history_i
 User.hasMany(GoldPackageRepurchase, { foreignKey: 'user_id', as: 'gold_package_repurchase', onDelete: 'CASCADE' });
 GoldPackageRepurchase.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========= USER ↔️ GOLD_PLAN_CHECK_IN (1:N) ==========
+User.hasMany(GoldPlanCheckIn, { foreignKey: 'user_id', as: 'gold_plan_check_ins', onDelete: 'CASCADE' });
+GoldPlanCheckIn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -269,7 +274,8 @@ const models = {
     GoldPackageHistory,
     GoldPackageBonuses,
     GoldPackageReturn,
-    GoldPackageRepurchase
+    GoldPackageRepurchase,
+    GoldPlanCheckIn
 };
 
 // Export models + db connection
