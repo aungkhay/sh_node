@@ -2624,6 +2624,37 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
+
+    GOLD_COUPON_USER_COUNT = async (req, res) => {
+        try {
+            const reward_id = 7;
+
+            const ranges = [
+                { range: "1-10克",    where: { amount: { [Op.between]: [1, 10] } } },
+                { range: "11-50克",   where: { amount: { [Op.between]: [11, 50] } } },
+                { range: "51-100克",  where: { amount: { [Op.between]: [51, 100] } } },
+                { range: "101-200克", where: { amount: { [Op.between]: [101, 200] } } },
+                { range: "201-500克", where: { amount: { [Op.between]: [201, 500] } } },
+                { range: "500克以上", where: { amount: { [Op.gt]: 500 } } },
+            ];
+
+            const data = await Promise.all(
+                ranges.map(async ({ range, where }) => ({
+                    range,
+                    count: await RewardRecord.count({
+                        where: { reward_id, ...where },
+                        distinct: true,
+                        col: "user_id",
+                    }),
+                }))
+            );
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, "获取成功", data);
+        } catch (error) {
+            errLogger(`[User][GOLD_COUNT_SUMMARY]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
 }
 
 module.exports = Controller;
