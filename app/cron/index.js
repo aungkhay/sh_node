@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -34,6 +34,7 @@ class CronJob {
         cron.schedule('0 0 * * *', this.RESET_CAN_GET_RED_ENVELOPE).start();
         // Run at 23:30 every day
         cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
+        cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run 10th minute of every hour
@@ -47,7 +48,7 @@ class CronJob {
         cron.schedule('*/1 * * * *', this.GIVE_CHECK_IN).start();
         // Run every minute
         // cron.schedule('* * * * *', this.UPDATE_DEPOSIT_STATUS).start();
-        cron.schedule('* * * * *', this.CHECK_GOLD_PACKAGE_REIMBURSEMENT).start();
+        cron.schedule('* * * * *', this.CHECK_GOLD_PACKAGE_REIMBURSEMENT).start(); // package_id 1 and 2 are eligible for reimbursement
         // Run at 30th minute of every hour
         cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
     }
@@ -1169,12 +1170,13 @@ class CronJob {
             const now = new Date();
             const packages = await GoldPackageHistory.findAll({
                 where: {
+                    package_id: { [Op.in]: [1, 2] },
                     reimbursement_date: {
                         [Op.lte]: now
                     },
                     is_reimbursed: 0
                 },
-                attributes: ['id', 'user_id', 'price', 'reimbursement_rate']
+                attributes: ['id', 'user_id', 'package_id', 'price', 'reimbursement_rate']
             });
 
             const t = await db.transaction();
@@ -1191,6 +1193,14 @@ class CronJob {
                     if (reimbursementAmount > 0) {
                         await user.increment({ balance: reimbursementAmount }, { transaction: t });
                         await pack.update({ is_reimbursed: 1 }, { transaction: t });
+                        await GoldPackageReturn.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: reimbursementAmount,
+                            description: '礼包报销返还',
+                        }, { transaction: t });
                     }
                 }
 
@@ -1202,6 +1212,54 @@ class CronJob {
 
         } catch (error) {
             errLogger(`[CHECK_GOLD_PACKAGE_REIMBURSEMENT]: ${error.stack}`);
+        }
+    }
+
+    CHECK_GOLD_PACKAGE_DAILY_RETURN = async () => {
+        try {
+            const now = new Date();
+
+            const packages = await GoldPackageHistory.findAll({
+                where: {
+                    package_id: { [Op.in]: [3, 4, 5] },
+                    validUntil: {
+                        [Op.gte]: now
+                    },
+                },
+                attributes: ['id', 'user_id', 'package_id', 'price']
+            });
+
+            const t = await db.transaction();
+            try {
+                for (let pack of packages) {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+                    const dailyReward = new Decimal(Number(pack.price))
+                        .times(0.01) // 1% daily reward
+                        .toNumber();
+                    if (dailyReward > 0) {
+                        await user.increment({ balance: dailyReward }, { transaction: t });
+                        await GoldPackageReturn.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: dailyReward,
+                            description: '礼包每日储备奖励',
+                        }, { transaction: t });
+                    }
+                }
+
+                await t.commit();
+            } catch (error) {
+                errLogger(`[CHECK_GOLD_PACKAGE_DAILY_RETURN][Transaction Error]: ${error.stack}`);
+                await t.rollback();
+            }
+
+        } catch (error) {
+            errLogger(`[CHECK_GOLD_PACKAGE_DAILY_RETURN]: ${error.stack}`); 
         }
     }
 

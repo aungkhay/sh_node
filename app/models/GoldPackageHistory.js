@@ -39,7 +39,7 @@ GoldPackageHistory.init({
     },
     reimbursement_date: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: true
     },
     return_rate: {
         type: DataTypes.STRING(50),
@@ -50,6 +50,10 @@ GoldPackageHistory.init({
         type: DataTypes.TINYINT,
         allowNull: false,
         defaultValue: 0
+    },
+    validUntil: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
 }, {
     sequelize,

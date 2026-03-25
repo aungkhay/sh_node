@@ -3321,13 +3321,16 @@ class Controller {
 
     GET_GOLD_PACKAGES = async () => {
         try {
-             let pack = await this.redisHelper.getValue('gold_gift_pack');
+            let pack = await this.redisHelper.getValue('gold_gift_pack');
             if (pack) {
                 pack = JSON.parse(pack);
             } else {
                 pack = [
-                    { id: 1, name: '和衷联储黄金初级礼包', price: 588, return_range: '4826-5324' },
-                    { id: 2, name: '和衷联储黄金中级礼包', price: 1288, return_range: '19780-23256' },
+                    { id: 1, name: '和衷联储黄金初级礼包', price: 588, return_range: '4826-5324', reimbursement_rate: 70, reserve_peroid: 0 },
+                    { id: 2, name: '和衷联储黄金中级礼包', price: 1288, return_range: '19780-23256', reimbursement_rate: 70, reserve_peroid: 0 },
+                    { id: 3, name: '和衷联储黄金初级礼包（第二批）', price: 1000, return_range: '17200-20400', reimbursement_rate: 0, reserve_peroid: 45 },
+                    { id: 4, name: '和衷联储黄金中级礼包（第二批）', price: 2000, return_range: '35000-58000', reimbursement_rate: 0, reserve_peroid: 45 },
+                    { id: 5, name: '和衷联储黄金高级礼包（第二批）', price: 3000, return_range: '73200-94800', reimbursement_rate: 0, reserve_peroid: 45 },
                 ];
                 await this.redisHelper.setValue('gold_gift_pack', JSON.stringify(pack));
             }
@@ -3408,8 +3411,9 @@ class Controller {
                     user_id: userId,
                     package_id: selectedPack.id,
                     price: selectedPack.price,
-                    reimbursement_rate: 70, // 固定70%返还比例
-                    reimbursement_date: moment().add(15, 'days').format('YYYY-MM-DD HH:mm:ss'), // after 15 days
+                    reimbursement_rate: selectedPack?.reimbursement_rate || 70,
+                    reimbursement_date: selectedPack?.reimbursement_rate ? moment().add(15, 'days').format('YYYY-MM-DD HH:mm:ss') : null, // after 15 days
+                    validUntil: selectedPack.reserve_peroid ? moment().add(selectedPack.reserve_peroid, 'days').format('YYYY-MM-DD HH:mm:ss') : null, // valid for X days after reimbursement starts
                     return_rate: selectedPack.return_range
                 }, { transaction: t });
 
