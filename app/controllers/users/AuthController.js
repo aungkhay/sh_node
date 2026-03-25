@@ -338,7 +338,6 @@ class Controller {
             const goldGiftPackHistory = await GoldPackageHistory.findAll({ 
                 where: { 
                     user_id: userId,
-                    package_id: { [Op.in]: [1, 2] }
                 }, 
                 attributes: ['package_id'] 
             });
