@@ -3604,7 +3604,7 @@ class Controller {
                 .minus(transferFee)
                 .toNumber();
             
-            const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund', 'repurchase_fund'] });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'repurchase_fund'] });
             if (Number(user.reserve_fund) < transferFee) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足，无法回购', {});
             }
