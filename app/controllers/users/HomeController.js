@@ -3435,7 +3435,7 @@ class Controller {
                     user_id: userId,
                     package_id: selectedPack.id,
                     price: selectedPack.price,
-                    reimbursement_rate: selectedPack?.reimbursement_rate || 70,
+                    reimbursement_rate: selectedPack?.reimbursement_rate != 0 ? selectedPack.reimbursement_rate : 0,
                     reimbursement_date: selectedPack?.reimbursement_rate ? moment().add(15, 'days').format('YYYY-MM-DD HH:mm:ss') : null, // after 15 days
                     validUntil: selectedPack.reserve_peroid ? moment().add(selectedPack.reserve_peroid, 'days').format('YYYY-MM-DD HH:mm:ss') : null, // valid for X days after reimbursement starts
                     return_rate: selectedPack.return_range
