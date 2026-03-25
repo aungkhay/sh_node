@@ -522,7 +522,7 @@ class Controller {
 
             const data = {
                 history: rows.map(r => {
-                    r.gold_count = Number(r.amount);
+                    r.gold_count = Number(r.gold_count);
                     return r;
                 }),
                 meta: {
