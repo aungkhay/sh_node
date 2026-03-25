@@ -3326,11 +3326,31 @@ class Controller {
                 pack = JSON.parse(pack);
             } else {
                 pack = [
-                    { id: 1, name: '和衷联储黄金初级礼包', price: 588, return_range: '4826-5324', reimbursement_rate: 70, reserve_peroid: 0 },
-                    { id: 2, name: '和衷联储黄金中级礼包', price: 1288, return_range: '19780-23256', reimbursement_rate: 70, reserve_peroid: 0 },
-                    { id: 3, name: '和衷联储黄金初级礼包（第二批）', price: 1000, return_range: '17200-20400', reimbursement_rate: 0, reserve_peroid: 45 },
-                    { id: 4, name: '和衷联储黄金中级礼包（第二批）', price: 2000, return_range: '35000-58000', reimbursement_rate: 0, reserve_peroid: 45 },
-                    { id: 5, name: '和衷联储黄金高级礼包（第二批）', price: 3000, return_range: '73200-94800', reimbursement_rate: 0, reserve_peroid: 45 },
+                    { 
+                        id: 1, name: '和衷联储黄金初级礼包', price: 588, return_range: '4826-5324', reimbursement_rate: 70, reserve_peroid: 0,
+                        description: '产品详情：该产品为上合组织2026年度首批联合储备初级黄金礼包，持有中国授权书的用户，国家将会报销70%本次黄金储备费用，报销周期为15日，储备收益预计为4826-5324元，储备收益下发时间为下个财务季。',
+                        note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益不享有黄金实物持有权。'
+                    },
+                    { 
+                        id: 2, name: '和衷联储黄金中级礼包', price: 1288, return_range: '19780-23256', reimbursement_rate: 70, reserve_peroid: 0, 
+                        description: '产品详情：该产品为上合组织2026年度首批联合储备初级黄金礼包，持有中国授权书的用户，国家将会报销70%本次黄金储备费用，报销周期为15日，储备收益预计为19780-23256元，储备收益下发时间为下个财务季。', 
+                        note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益不享有黄金实物持有权。' 
+                    },
+                    { 
+                        id: 3, name: '和衷联储黄金初级礼包（第二批）', price: 1000, return_range: '17200-20400', reimbursement_rate: 0, reserve_peroid: 45, 
+                        description: '产品详情：该产品为上合组织2026年度第二批联合储备初级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为17200-20400元，储备收益下发时间为下个财务季。', 
+                        note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
+                    },
+                    { 
+                        id: 4, name: '和衷联储黄金中级礼包（第二批）', price: 2000, return_range: '35000-58000', reimbursement_rate: 0, reserve_peroid: 45, 
+                        description: '产品详情：该产品为上合组织2026年度第二批联合储备中级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为35000-58000元，储备收益下发时间为下个财务季。', 
+                        note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
+                    },
+                    { 
+                        id: 5, name: '和衷联储黄金高级礼包（第二批）', price: 3000, return_range: '73200-94800', reimbursement_rate: 0, reserve_peroid: 45, 
+                        description: '产品详情：该产品为上合组织2026年度第二批联合储备高级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为73200-94800元，储备收益下发时间为下个财务季。', 
+                        note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
+                    },
                 ];
                 await this.redisHelper.setValue('gold_gift_pack', JSON.stringify(pack));
             }
@@ -3347,7 +3367,9 @@ class Controller {
                 id: p.id,
                 name: p.name,
                 price: Number(p.price),
-                estimated_earn: p.return_range
+                estimated_earn: p.return_range,
+                description: p.description,
+                note: p.note,
             }));
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', pack);
         } catch (error) {
