@@ -1247,7 +1247,7 @@ class CronJob {
                             package_id: pack.package_id,
                             package_history_id: pack.id,
                             amount: dailyReward,
-                            description: '礼包每日储备奖励',
+                            description: '礼包每日储备收益',
                         }, { transaction: t });
                     }
                 }

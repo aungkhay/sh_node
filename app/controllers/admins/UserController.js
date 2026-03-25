@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2575,6 +2575,28 @@ class Controller {
                 }
             });
 
+            // Gold Package Return
+            const goldPackageReturns = await GoldPackageReturn.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'amount', 'package_id', 'description', 'createdAt']
+            });
+            const packageMap = {
+                1: '和衷联储黄金初级礼包 588元',
+                2: '和衷联储黄金中级礼包 1288元',
+                3: '和衷联储黄金初级礼包（第二批）1000元',
+                4: '和衷联储黄金中级礼包（第二批）2000元',
+                5: '和衷联储黄金高级礼包（第二批）3000元',
+            }
+            const newGoldPackageReturns = goldPackageReturns.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: `${packageMap[g.package_id]}`,
+                    description: `${g.description}，${Number(g.amount)} 余额`
+                }
+            });
+
             const mergedData = [
                 ...newReward3, 
                 ...newDeposits, 
@@ -2584,7 +2606,8 @@ class Controller {
                 // ...signAgreement,
                 ...newWithdrawals,
                 ...newCustomizeWallet,
-                ...newBuyGoldPackages
+                ...newBuyGoldPackages,
+                ...newGoldPackageReturns
             ];
 
             // Authorization Letter [授权书]
