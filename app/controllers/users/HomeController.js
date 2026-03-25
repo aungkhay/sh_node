@@ -3630,7 +3630,7 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await user.increment({ reserve_fund: -transferFee, repurchase_fund: estimatedEarn }, { transaction: t });
+                await user.increment({ reserve_fund: -transferFee, repurchase_fund: totalValue }, { transaction: t });
                 await RewardRecord.update({ is_used: 1, description: '回购黄金券' }, { where: { id: { [Op.in]: rewardIds } }, transaction: t });
                 await GoldPackageRepurchase.create({
                     user_id: userId,
@@ -3639,7 +3639,6 @@ class Controller {
                     gold_rate: 980, 
                     amount: totalValue,
                     transfer_fee: transferFee,
-                    expected_earn: estimatedEarn,
                 }, { transaction: t });
                 
                 await t.commit();
