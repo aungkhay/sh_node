@@ -99,7 +99,7 @@ class Controller {
                 where: condition,
                 attributes: [
                     'id', 'type', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 'balance',
-                    'referral_bonus', 'masonic_fund', 'rank_allowance', 'freeze_allowance', 'earn', 'gold', 'gold_interest', 'address',
+                    'referral_bonus', 'masonic_fund', 'repurchase_fund', 'rank_allowance', 'freeze_allowance', 'earn', 'gold', 'gold_interest', 'address',
                     'address_status', 'agreement_status', 'rank_point', 'level_up_pay', 'win_per_day', 'status', 'political_vetting_status', 
                     'is_internal_account','profile_picture', 'isActive', 'activedAt', 'contact_info', 'can_withdraw', 'createdAt'
                 ],

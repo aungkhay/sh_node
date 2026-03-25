@@ -49,6 +49,7 @@ const SpringWhiteList = require('./SpringWhiteList');
 const GoldPackageHistory = require('./GoldPackageHistory');
 const GoldPackageBonuses = require('./GoldPackageBonuses');
 const GoldPackageReturn = require('./GoldPackageReturn');
+const GoldPackageRepurchase = require('./GoldPackageRepurchase');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -218,6 +219,10 @@ User.hasMany(GoldPackageReturn, { foreignKey: 'user_id', as: 'gold_package_retur
 GoldPackageReturn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 GoldPackageReturn.belongsTo(GoldPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
+// ========= USER ↔️ GOLD_PACKAGE_REPURCHASE (1:N) ==========
+User.hasMany(GoldPackageRepurchase, { foreignKey: 'user_id', as: 'gold_package_repurchase', onDelete: 'CASCADE' });
+GoldPackageRepurchase.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -264,6 +269,7 @@ const models = {
     GoldPackageHistory,
     GoldPackageBonuses,
     GoldPackageReturn,
+    GoldPackageRepurchase
 };
 
 // Export models + db connection

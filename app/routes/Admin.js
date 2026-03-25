@@ -195,6 +195,7 @@ class AdminRoute extends express.Router {
         this.get('/gold-packages/history', middleware.isLoggedIn('gold-package-history-list'), GoldCtrl.GOLD_PACKAGE_HISTORY);
         this.get('/gold-packages/bonus-history', middleware.isLoggedIn('gold-package-bonus-history-list'), GoldCtrl.GOLD_PACKAGE_BONUS_HISTORY);
         this.get('/gold-packages/return-history', middleware.isLoggedIn('gold-package-return-history-list'), GoldCtrl.GOLD_PACKAGE_RETURN_HISTORY);
+        this.get('/gold-packages/repurchase-history', middleware.isLoggedIn('gold-package-repurchase-history-list'), GoldCtrl.GOLD_PACKAGE_REPURCHASE_HISTORY);
 
         let BannerController = require('../controllers/admins/BannerController');
         let BannerCtrl = new BannerController(app);

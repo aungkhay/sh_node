@@ -78,6 +78,8 @@ class UserRoute extends express.Router {
         this.get('/gold-gift-packages/history', middleware.isLoggedIn, HomeCtrl.GOLD_PACKAGE_HISTORY);
         this.post('/buy-authorization-letter', middleware.isLoggedIn, HomeCtrl.BUY_AUTHORIZATION_LETTER);
         this.get('/gold-gift-packages/bonuses', middleware.isLoggedIn, HomeCtrl.GET_GOLD_PACKAGE_BONUS);
+        this.get('/gold-gift-packages/repurchase-dialog-info', middleware.isLoggedIn, HomeCtrl.REPURCHASE_PACKAGE_DIALOG);
+        this.post('/gold-gift-packages/repurchase', middleware.isLoggedIn, HomeCtrl.REPURCHASE_PACKAGE);
 
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);

@@ -124,6 +124,12 @@ User.init({
         defaultValue: 2000000,
         comment: '共济基金'
     },
+    repurchase_fund: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '礼包回购金'
+    },
     rank_allowance: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,

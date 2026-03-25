@@ -1058,6 +1058,26 @@ const params = {
     startTime: '',
     endTime: ''
 }
+
+// [GET] 礼包返还记录
+const url = `${baseURL}/gold-packages/return-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 礼包回购记录
+const url = `${baseURL}/gold-packages/repurchase-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
 ```
 ### Banner
 ``` js

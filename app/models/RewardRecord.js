@@ -84,7 +84,11 @@ RewardRecord.init({
         type: DataTypes.INTEGER,
         defaultValue: 0,
         comment: '1: 签到 2: 补签'
-    }
+    },
+    description: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
 }, {
     sequelize,
     modelName: 'RewardRecord',

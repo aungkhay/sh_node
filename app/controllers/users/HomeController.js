@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase } = require('../../models');
 const { Op, literal, Sequelize } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -3413,16 +3413,18 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
 
-            // 每个产品每个用户只能购买一次。查询用户是否已经购买过该礼包
-            const history = await GoldPackageHistory.findOne({
-                where: { 
-                    user_id: userId,
-                    package_id: selectedPack.id 
-                },
-                order: [['id', 'DESC']],
-            });
-            if (history) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '每个礼包只能购买一次', {});
+            if (id == 1 || id == 2) {
+                // 每个产品每个用户只能购买一次。查询用户是否已经购买过该礼包
+                const history = await GoldPackageHistory.findOne({
+                    where: { 
+                        user_id: userId,
+                        package_id: selectedPack.id 
+                    },
+                    order: [['id', 'DESC']],
+                });
+                if (history) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '每个礼包只能购买一次', {});
+                }
             }
 
             const t = await db.transaction();
@@ -3494,6 +3496,146 @@ class Controller {
         }
     }
 
+    REPURCHASE_PACKAGE_TRANSFER_FEE = (amount) => {
+        try {
+            // 转储费用暂定（当前未回购黄金券克数*980）：
+            // 一万以下     300元
+            // 一万-5万    588元
+            // 5万-15万    1288元
+            // 15万以上   1688 元
+
+            let transferFee = 0;
+            if (amount < 10000) {
+                transferFee = 300;
+            } else if (amount >= 10000 && amount < 50000) {
+                transferFee = 588;
+            } else if (amount >= 50000 && amount < 150000) {
+                transferFee = 1288;
+            } else {
+                transferFee = 1688;
+            }
+
+            return transferFee;
+        } catch (error) {
+            return 0;
+        }
+    }
+
+    REPURCHASE_PACKAGE_DIALOG = async (req, res) => {
+        // 点击后弹窗提示：
+        // 您的黄金券持有总克数为xx克，回购价格为980元/克，回购需缴纳黄金转储费用：xxx元，
+        // 黄金转储费用将用于黄金券回购过程中产生的外汇消耗部分，
+        // 回购开启后，您当前持有黄金券克数将在归集后由所在国统一下发入库并回购，
+        // 回购后您的预计收益为：xxx元。
+        try {
+            const id = req.params.id;
+            const userId = req.user_id;
+            const history = await GoldPackageHistory.findOne({
+                where: { id, user_id: userId },
+                attributes: ['id'],
+            });
+            if (!history) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '购买记录不存在', {});
+            }
+
+            const goldCouponCount = await RewardRecord.sum('amount', {
+                where: { 
+                    user_id: userId,
+                    reward_id: 7,
+                    is_used: 0, // 只计算未使用的黄金券
+                },
+            }) || 0;
+            if (goldCouponCount <= 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有可回购的黄金券', {});
+            }
+
+            const goldCouponPrice = 980; // 980元/克
+            const totalValue = new Decimal(goldCouponCount)
+                .times(goldCouponPrice)
+                .toNumber();
+
+            const transferFee = this.REPURCHASE_PACKAGE_TRANSFER_FEE(totalValue);
+            const estimatedEarn = new Decimal(totalValue)
+                .minus(transferFee)
+                .toNumber();
+
+            const data = `您的黄金券持有总克数为${goldCouponCount}克，回购价格为${goldCouponPrice}元/克，回购需缴纳黄金转储费用：${transferFee}元，黄金转储费用将用于黄金券回购过程中产生的外汇消耗部分，回购开启后，您当前持有黄金券克数将在归集后由所在国统一下发入库并回购，回购后您的预计收益为：${estimatedEarn}元。`;
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { message: data });  
+
+        } catch (error) {
+            errLogger(`[REPURCHASE_PACKAGE_DIALOG][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    REPURCHASE_PACKAGE = async (req, res) => {
+        try {
+             const id = req.params.id;
+            const userId = req.user_id;
+            const history = await GoldPackageHistory.findOne({
+                where: { id, user_id: userId },
+                attributes: ['id'],
+            });
+            if (!history) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '购买记录不存在', {});
+            }
+            const goldCoupon = await RewardRecord.findAll({
+                where: { 
+                    user_id: userId,
+                    reward_id: 7,
+                    is_used: 0, // 只计算未使用的黄金券
+                },
+                attributes: ['id', 'amount'],
+            });
+            if (!goldCoupon || goldCoupon.length <= 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有可回购的黄金券', {});
+            }
+
+            const rewardIds = goldCoupon.map(g => g.id);
+            const goldCouponCount = goldCoupon.reduce((sum, g) => sum + Number(g.amount), 0);
+            const goldCouponPrice = 980;
+            const totalValue = new Decimal(goldCouponCount)
+                .times(goldCouponPrice)
+                .toNumber();
+            const transferFee = this.REPURCHASE_PACKAGE_TRANSFER_FEE(totalValue);
+            const estimatedEarn = new Decimal(totalValue)
+                .minus(transferFee)
+                .toNumber();
+            
+            const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund', 'repurchase_fund'] });
+            if (Number(user.reserve_fund) < transferFee) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足，无法回购', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await user.increment({ reserve_fund: -transferFee, repurchase_fund: estimatedEarn }, { transaction: t });
+                await RewardRecord.update({ is_used: 1, description: '回购黄金券' }, { where: { id: { [Op.in]: rewardIds } }, transaction: t });
+                await GoldPackageRepurchase.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    gold_count: goldCouponCount,
+                    gold_rate: 980, 
+                    amount: totalValue,
+                    transfer_fee: transferFee,
+                    expected_earn: estimatedEarn,
+                }, { transaction: t });
+                
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '回购成功', { });
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '回购失败', {});
+            }
+
+        } catch (error) {
+            errLogger(`[REPURCHASE_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     GOLD_PACKAGE_HISTORY = async (req, res) => {
         try {
             const userId = req.user_id;
@@ -3503,10 +3645,16 @@ class Controller {
                 order: [['id', 'DESC']]
             });
 
+            let expectedReturn = [0, 0];
+
             const pack = await this.GET_GOLD_PACKAGES();
             if (histories.length > 0) {
                 histories = histories.map(h => {
                     const selectedPack = pack.find(p => p.id === h.package_id);
+                    const splitedReturn = h.return_rate.split('-');
+                    expectedReturn[0] += Number(splitedReturn[0]) || 0;
+                    expectedReturn[1] += Number(splitedReturn[1]) || 0;
+                    
                     return {
                         id: h.id,
                         package_id: h.package_id,
@@ -3521,7 +3669,12 @@ class Controller {
                     }
                 });
             }
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取礼包历史成功', histories);
+
+            const data = {
+                histories,
+                expectedReturn
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取礼包历史成功', data);
         } catch (error) {
             errLogger(`[GOLD_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});

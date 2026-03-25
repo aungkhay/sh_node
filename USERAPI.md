@@ -666,6 +666,10 @@ const params = {
     page: 1,
     perPage: 10
 }
+// [GET] Re-purchase dialog info
+const url = `${baseURL}/gold-gift-packages/repurchase-dialog-info`;
+// [POST] Re-purchase package
+const url = `${baseURL}/gold-gift-packages/repurchase`;
 
 // [POST] Redemption Code
 const url = `${baseURL}/redempt-code`;
