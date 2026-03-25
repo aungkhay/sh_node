@@ -398,8 +398,13 @@ class Controller {
                 offset: offset
             });
 
+            let history = rows.map(r => {
+                r.amount = Number(r.amount);
+                return r;
+            });
+
             const data = {
-                history: rows,
+                history: history,
                 meta: {
                     page: page,
                     perPage: perPage,
@@ -453,8 +458,16 @@ class Controller {
                 offset: offset
             });
 
+            const history = rows.map(r => {
+                r.gold_rate = Number(r.gold_rate);
+                r.gold_count = Number(r.gold_count);
+                r.amount = Number(r.amount);
+                r.handling_fee = Number(r.handling_fee);
+                return r;
+            });
+
             const data = {
-                history: rows,
+                history: history,
                 meta: {
                     page: page,
                     perPage: perPage,
@@ -508,7 +521,10 @@ class Controller {
             });
 
             const data = {
-                history: rows,
+                history: rows.map(r => {
+                    r.gold_count = Number(r.amount);
+                    return r;
+                }),
                 meta: {
                     page: page,
                     perPage: perPage,
