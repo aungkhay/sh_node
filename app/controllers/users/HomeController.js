@@ -3531,7 +3531,7 @@ class Controller {
             const userId = req.user_id;
             const history = await GoldPackageHistory.findOne({
                 where: { 
-                    id: { [Op.in]: [3, 4, 5] }, 
+                    package_id: { [Op.in]: [3, 4, 5] }, 
                     user_id: userId 
                 },
                 attributes: ['id'],
@@ -3573,10 +3573,9 @@ class Controller {
 
     REPURCHASE_PACKAGE = async (req, res) => {
         try {
-             const id = req.params.id;
             const userId = req.user_id;
             const history = await GoldPackageHistory.findOne({
-                where: { id, user_id: userId },
+                where: { package_id: { [Op.in]: [3, 4, 5] }, user_id: userId },
                 attributes: ['id'],
             });
             if (!history) {
