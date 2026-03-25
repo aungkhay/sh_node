@@ -3,7 +3,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const moment = require('moment');
 const { Op } = require('sequelize');
 const { errLogger } = require('../../helpers/Logger');
-const { GoldPlanCheckIn, db, User, RewardRecord } = require('../../models');
+const { GoldPlanCheckIn, db, User, RewardRecord, UserKYC } = require('../../models');
 
 class Controller {
     constructor(app) {
@@ -27,9 +27,19 @@ class Controller {
             if (existingCheckIn) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
             }
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+            const user = await User.findByPk(userId, { 
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id']
+                },
+                attributes: ['id', 'relation'] 
+            });
+            if (!user || !user.kyc) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
 
-            const goldCount = this.getRandomInt(1, 20);
+            const goldCount = this.getRandomInt(5, 20);
 
             const t = await db.transaction();
             try {
