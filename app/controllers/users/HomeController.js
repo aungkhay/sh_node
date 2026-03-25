@@ -3638,7 +3638,7 @@ class Controller {
                     gold_count: goldCouponCount,
                     gold_rate: 980, 
                     amount: totalValue,
-                    transfer_fee: transferFee,
+                    handling_fee: transferFee,
                 }, { transaction: t });
                 
                 await t.commit();

@@ -43,11 +43,6 @@ GoldPackageRepurchase.init({
         defaultValue: '0.0',
         comment: '回购手续费'
     },
-    expected_earn: {
-        type: DataTypes.DECIMAL(20, 8),
-        defaultValue: '0.0',
-        comment: '预计回购收益'
-    },
 }, {
     sequelize,
     modelName: 'GoldPackageRepurchase',
