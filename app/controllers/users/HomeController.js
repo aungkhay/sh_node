@@ -3530,7 +3530,7 @@ class Controller {
         try {
 
             const currentDate = moment();
-            const repurchaseStartDate = moment('2024-04-09 00:00:00');
+            const repurchaseStartDate = moment('2026-04-09 00:00:00');
             if (currentDate.isBefore(repurchaseStartDate)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '首批黄金券回购预计在4月9日开放，15个工作日内完成回购拨款，持有和衷联储黄金礼包（第二批）的用户可获得首批回购资格，回购价格预计为980元/克', {});
             }
