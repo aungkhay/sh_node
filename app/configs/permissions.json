@@ -157,5 +157,6 @@
     { "model": "商户管理", "title": "修改通道状态", "name": "update-channel-status" },
 
     { "model": "和衷联储黄金礼包", "title": "购买记录", "name": "gold-package-history-list"},
-    { "model": "和衷联储黄金礼包", "title": "推荐奖励记录", "name": "gold-package-bonus-history-list"}
+    { "model": "和衷联储黄金礼包", "title": "推荐奖励记录", "name": "gold-package-bonus-history-list"},
+    { "model": "和衷联储黄金礼包", "title": "返还记录", "name": "gold-package-return-history-list"}
 ]

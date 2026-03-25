@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { GoldPrice, UserGoldPrice, User, Config, GoldInterest, db, GoldPackageHistory, GoldPackageBonuses } = require('../../models');
+const { GoldPrice, UserGoldPrice, User, Config, GoldInterest, db, GoldPackageHistory, GoldPackageBonuses, GoldPackageReturn } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
 let { validationResult } = require('express-validator');
@@ -349,6 +349,69 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GOLD_PACKAGE_RETURN_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const phone = req.query.phone;
+            const userId = req.user_id;
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
+
+            let condition = {};
+            if (userId != 1) {
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
+            }
+            if (startTime && endTime) {
+                condition.createdAt = {
+                    [Op.between]: [startTime, endTime]
+                }
+            }
+            let userCondition = {}
+            if (phone) {
+                userCondition.phone_number = phone;
+            }
+
+            const { rows, count } = await GoldPackageReturn.findAndCountAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number'],
+                        where: userCondition
+                    },
+                    {
+                        model: GoldPackageHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'package_id', 'price'],
+                    }
+                ],
+                attributes: ['id', 'amount', 'description', 'createdAt'],
+                where: condition,
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
 }
