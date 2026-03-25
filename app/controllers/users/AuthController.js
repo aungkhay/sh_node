@@ -335,7 +335,13 @@ class Controller {
             data.can_impeach_count = currentRank?.number_of_impeach;
 
             // Check Gold Gift Package already bought
-            const goldGiftPackHistory = await GoldPackageHistory.findAll({ where: { user_id: userId }, attributes: ['package_id'] });
+            const goldGiftPackHistory = await GoldPackageHistory.findAll({ 
+                where: { 
+                    user_id: userId,
+                    package_id: { [Op.in]: [1, 2] }
+                }, 
+                attributes: ['package_id'] 
+            });
             const boughtPackageIds = goldGiftPackHistory.map(g => g.package_id);
             data.bought_gold_gift_package_ids = boughtPackageIds;
 
