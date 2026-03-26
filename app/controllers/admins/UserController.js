@@ -2593,7 +2593,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: `${packageMap[g.package_id]}`,
-                    description: `[${[1,2].includes(g.package_id) ? '报销' : '收益'}]，${Number(g.amount)} 余额`
+                    description: `[${[1,2].includes(g.package_id) ? '报销' : '收益'}] ${Number(g.amount)} 余额`
                 }
             });
 
