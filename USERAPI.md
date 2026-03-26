@@ -670,6 +670,12 @@ const params = {
 const url = `${baseURL}/gold-gift-packages/repurchase-dialog-info`;
 // [POST] Re-purchase package
 const url = `${baseURL}/gold-gift-packages/repurchase`;
+// [GET] Gold Package's Earn History
+const url = `${baseURL}/gold-gift-packages/earn-history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
 
 // [POST] Redemption Code
 const url = `${baseURL}/redempt-code`;

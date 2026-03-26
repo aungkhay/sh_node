@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2593,12 +2593,12 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: `${packageMap[g.package_id]}`,
-                    description: `${g.description}，${Number(g.amount)} 余额`
+                    description: `[${[1,2].includes(g.package_id) ? '报销' : '收益'}]，${Number(g.amount)} 余额`
                 }
             });
 
             // Re-purchase package
-            const repurchasePackages = await GoldPackageReturn.findAll({
+            const repurchasePackages = await GoldPackageRepurchase.findAll({
                 where: { user_id: user.id },
                 attributes: ['id', 'handling_fee', 'createdAt']
             });

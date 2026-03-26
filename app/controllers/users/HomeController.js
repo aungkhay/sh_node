@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn } = require('../../models');
 const { Op, literal, Sequelize } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -3557,7 +3557,7 @@ class Controller {
                     reward_id: 7,
                     is_used: 0, // 只计算未使用的黄金券
                     createdAt: {
-                        [Op.lte]: moment('2024-04-09 23:59:59')
+                        [Op.lte]: moment('2026-04-09 23:59:59', 'YYYY-MM-DD HH:mm:ss').toDate()
                     }
                 },
             }) || 0;
@@ -3607,7 +3607,7 @@ class Controller {
                     reward_id: 7,
                     is_used: 0, // 只计算未使用的黄金券
                     createdAt: {
-                        [Op.lte]: moment('2024-04-09 23:59:59')
+                        [Op.lte]: moment('2026-04-09 23:59:59', 'YYYY-MM-DD HH:mm:ss').toDate()
                     }
                 },
                 attributes: ['id', 'amount'],
@@ -3701,6 +3701,54 @@ class Controller {
         } catch (error) {
             errLogger(`[GOLD_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GOLD_PACKAGE_EARN_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await GoldPackageReturn.findAndCountAll({
+                where: { 
+                    user_id: userId,
+                    package_id: { [Op.in]: [3, 4, 5] } // 储备收益 
+                },
+                attributes: ['id', 'package_id', 'amount', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const pack = await this.GET_GOLD_PACKAGES();
+            const formattedRows = rows.map(r => {
+                const selectedPack = pack.find(p => p.id === r.package_id);
+                return {
+                    id: r.id,
+                    package_id: r.package_id,
+                    package_name: selectedPack ? selectedPack.name : '',
+                    amount: Number(r.amount),
+                    description: r.description,
+                    createdAt: r.createdAt
+                }
+            });
+
+            const data = {
+                history: formattedRows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[GOLD_PACKAGE_EARN_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
 
