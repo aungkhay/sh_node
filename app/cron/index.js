@@ -269,7 +269,7 @@ class CronJob {
             });
 
             const latestPrice = await GoldPrice.findOne({
-                attributes: ['id', 'price', 'reserve_price'],
+                attributes: ['id', 'price', 'reserve_price', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: 1
             })
@@ -278,7 +278,15 @@ class CronJob {
                                 .times(conf.val)
                                 .times(0.01)
                                 .toNumber();
-                await GoldPrice.create({ price: pricePerGram, reserve_price: pricePerGram + reserve_price });
+                const obj = {
+                    price: pricePerGram, 
+                    reserve_price: pricePerGram + reserve_price
+                }
+                if (moment(latestPrice.createdAt).isSame(moment(), 'day')) {
+                    await latestPrice.update(obj);
+                } else {
+                    await GoldPrice.create({ price: pricePerGram, reserve_price: pricePerGram + reserve_price });
+                }
             } else {
                 await GoldPrice.create({ price: pricePerGram, reserve_price: pricePerGram });
             }

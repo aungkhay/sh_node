@@ -3337,17 +3337,17 @@ class Controller {
                         note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益不享有黄金实物持有权。' 
                     },
                     { 
-                        id: 3, name: '和衷联储黄金初级礼包（第二批）', price: 1000, return_range: '17200-20400', reimbursement_rate: 0, reserve_peroid: 45, 
+                        id: 3, name: '和衷联储黄金初级礼包（第二批）', price: 988, return_range: '17200-20400', reimbursement_rate: 0, reserve_peroid: 45, 
                         description: '产品详情：该产品为上合组织2026年度第二批联合储备初级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为17200-20400元，储备收益下发时间为45天。', 
                         note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
                     },
                     { 
-                        id: 4, name: '和衷联储黄金中级礼包（第二批）', price: 2000, return_range: '35000-58000', reimbursement_rate: 0, reserve_peroid: 45, 
+                        id: 4, name: '和衷联储黄金中级礼包（第二批）', price: 1988, return_range: '35000-58000', reimbursement_rate: 0, reserve_peroid: 45, 
                         description: '产品详情：该产品为上合组织2026年度第二批联合储备中级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为35000-58000元，储备收益下发时间为45天。', 
                         note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
                     },
                     { 
-                        id: 5, name: '和衷联储黄金高级礼包（第二批）', price: 3000, return_range: '73200-94800', reimbursement_rate: 0, reserve_peroid: 45, 
+                        id: 5, name: '和衷联储黄金高级礼包（第二批）', price: 2988, return_range: '73200-94800', reimbursement_rate: 0, reserve_peroid: 45, 
                         description: '产品详情：该产品为上合组织2026年度第二批联合储备高级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为73200-94800元，储备收益下发时间为45天。', 
                         note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
                     },
@@ -3371,6 +3371,10 @@ class Controller {
                 description: p.description,
                 note: p.note,
             }));
+
+            // order by id desc
+            pack.sort((a, b) => b.id - a.id);
+
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', pack);
         } catch (error) {
             errLogger(`[GOLD_GIFT_PACKAGE][${req.user_id}]: ${error.stack}`); 
