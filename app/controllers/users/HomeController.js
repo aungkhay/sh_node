@@ -3338,17 +3338,17 @@ class Controller {
                     },
                     { 
                         id: 3, name: '和衷联储黄金初级礼包（第二批）', price: 988, return_range: '17200-20400', reimbursement_rate: 0, reserve_peroid: 45, 
-                        description: '产品详情：该产品为上合组织2026年度第二批联合储备初级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为17200-20400元，储备收益下发时间为45天。', 
+                        description: '产品详情：该产品为上合组织2026年度第二批联合储备初级黄金礼包，本批次礼包持有者可优先享有上合黄金券兑现名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为17200-20400元，储备收益下发时间为45天。', 
                         note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
                     },
                     { 
                         id: 4, name: '和衷联储黄金中级礼包（第二批）', price: 1988, return_range: '35000-58000', reimbursement_rate: 0, reserve_peroid: 45, 
-                        description: '产品详情：该产品为上合组织2026年度第二批联合储备中级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为35000-58000元，储备收益下发时间为45天。', 
+                        description: '产品详情：该产品为上合组织2026年度第二批联合储备中级黄金礼包，本批次礼包持有者可优先享有上合黄金券兑现名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为35000-58000元，储备收益下发时间为45天。', 
                         note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
                     },
                     { 
                         id: 5, name: '和衷联储黄金高级礼包（第二批）', price: 2988, return_range: '73200-94800', reimbursement_rate: 0, reserve_peroid: 45, 
-                        description: '产品详情：该产品为上合组织2026年度第二批联合储备高级黄金礼包，本批次礼包持有者可优先享有上合黄金券回购名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为73200-94800元，储备收益下发时间为45天。', 
+                        description: '产品详情：该产品为上合组织2026年度第二批联合储备高级黄金礼包，本批次礼包持有者可优先享有上合黄金券兑现名额，持有中国区授权书的用户即可进行购买，礼包产品储备周期为45天，储备期间每日储备收益为1%，储备周期结束后，预计储备收益为73200-94800元，储备收益下发时间为45天。', 
                         note: '注：本产品储备收益为用户持有，黄金实物储备为国家持有，用户只可获取储备收益，不享有黄金实物持有权。' 
                     },
                 ];
@@ -3526,17 +3526,17 @@ class Controller {
     }
 
     REPURCHASE_PACKAGE_DIALOG = async (req, res) => {
-        // 恭喜您获得首批黄金券回购资格，您的黄金券持有总克数为xx克，
-        // 回购价格为980元/克，回购需缴纳黄金转储费用：xxx元，
-        // 黄金转储费用将用于黄金券回购过程中产生的外汇消耗部分，回购开启后，您当前持有黄金券克数将在归集后由所在国统一下发入库并回购，
-        // 回购后您的预计收益为：xxx元，预计15个工作日内完成回购拨款
+        // 恭喜您获得首批黄金券兑现资格，您的黄金券持有总克数为xx克，
+        // 兑现价格为980元/克，兑现需缴纳黄金转储费用：xxx元，
+        // 黄金转储费用将用于黄金券兑现过程中产生的外汇消耗部分，兑现开启后，您当前持有黄金券克数将在归集后由所在国统一下发入库并兑现，
+        // 兑现后您的预计收益为：xxx元，预计15个工作日内完成兑现拨款
 
         try {
 
             const currentDate = moment();
             const repurchaseStartDate = moment('2026-04-09 00:00:00');
             if (currentDate.isBefore(repurchaseStartDate)) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '首批黄金券回购预计在4月9日开放，15个工作日内完成回购拨款，持有和衷联储黄金礼包（第二批）的用户可获得首批回购资格，回购价格预计为980元/克', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '首批黄金券兑现预计在4月9日开放，15个工作日内完成兑现拨款，持有和衷联储黄金礼包（第二批）的用户可获得首批兑现资格，兑现价格预计为980元/克', {});
             }
 
             const userId = req.user_id;
@@ -3562,7 +3562,7 @@ class Controller {
                 },
             }) || 0;
             if (goldCouponCount <= 0) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有可回购的黄金券', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有可兑现的黄金券', {});
             }
 
             const goldCouponPrice = 980; // 980元/克
@@ -3575,7 +3575,7 @@ class Controller {
                 .minus(transferFee)
                 .toNumber();
 
-            const data = `恭喜您获得首批黄金券回购资格，您的黄金券持有总克数为${goldCouponCount}克，回购价格为980元/克，回购需缴纳黄金转储费用：${transferFee}元，黄金转储费用将用于黄金券回购过程中产生的外汇消耗部分，回购开启后，您当前持有黄金券克数将在归集后由所在国统一下发入库并回购，回购后您的预计收益为：${estimatedEarn}元，预计15个工作日内完成回购拨款`;
+            const data = `恭喜您获得首批黄金券兑现资格，您的黄金券持有总克数为${goldCouponCount}克，兑现价格为980元/克，兑现需缴纳黄金转储费用：${transferFee}元，黄金转储费用将用于黄金券兑现过程中产生的外汇消耗部分，兑现开启后，您当前持有黄金券克数将在归集后由所在国统一下发入库并兑现，兑现后您的预计收益为：${estimatedEarn}元，预计15个工作日内完成兑现拨款`;
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { message: data });  
 
@@ -3590,7 +3590,7 @@ class Controller {
             const currentDate = moment();
             const repurchaseStartDate = moment('2026-04-09 00:00:00');
             if (currentDate.isBefore(repurchaseStartDate)) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '首批黄金券回购预计在4月9日开放，15个工作日内完成回购拨款，持有和衷联储黄金礼包（第二批）的用户可获得首批回购资格，回购价格预计为980元/克', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '首批黄金券兑现预计在4月9日开放，15个工作日内完成兑现拨款，持有和衷联储黄金礼包（第二批）的用户可获得首批兑现资格，兑现价格预计为980元/克', {});
             }
 
             const userId = req.user_id;
@@ -3613,7 +3613,7 @@ class Controller {
                 attributes: ['id', 'amount'],
             });
             if (!goldCoupon || goldCoupon.length <= 0) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有可回购的黄金券', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有可兑现的黄金券', {});
             }
 
             const rewardIds = goldCoupon.map(g => g.id);
@@ -3629,13 +3629,13 @@ class Controller {
             
             const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'repurchase_fund'] });
             if (Number(user.reserve_fund) < transferFee) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足，无法回购', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足，无法兑现', {});
             }
 
             const t = await db.transaction();
             try {
                 await user.increment({ reserve_fund: -transferFee, repurchase_fund: totalValue }, { transaction: t });
-                await RewardRecord.update({ is_used: 1, description: '回购黄金券' }, { where: { id: { [Op.in]: rewardIds } }, transaction: t });
+                await RewardRecord.update({ is_used: 1, description: '兑现黄金券' }, { where: { id: { [Op.in]: rewardIds } }, transaction: t });
                 await GoldPackageRepurchase.create({
                     user_id: userId,
                     relation: user.relation,
@@ -3646,11 +3646,11 @@ class Controller {
                 }, { transaction: t });
                 
                 await t.commit();
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '回购成功', { });
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '兑现成功', { });
             } catch (error) {
                 console.log(error);
                 await t.rollback();
-                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '回购失败', {});
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '兑现失败', {});
             }
 
         } catch (error) {
