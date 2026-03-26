@@ -3373,7 +3373,7 @@ class Controller {
             }));
 
             // order by id desc
-            pack.sort((a, b) => b.id - a.id);
+            pack = pack.sort((a, b) => b.id - a.id);
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', pack);
         } catch (error) {
