@@ -309,7 +309,7 @@ class Controller {
                     }
                 };
 
-                await this.redisHelper.setValue(cacheKey, JSON.stringify(data), 120);
+                // await this.redisHelper.setValue(cacheKey, JSON.stringify(data), 120);
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
             }
 
