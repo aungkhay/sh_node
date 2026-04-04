@@ -3697,7 +3697,7 @@ class Controller {
                 histories,
                 expectedReturn
             }
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取礼包历史成功', histories);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取礼包历史成功', data);
         } catch (error) {
             errLogger(`[GOLD_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
