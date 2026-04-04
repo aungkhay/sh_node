@@ -256,7 +256,7 @@ class Controller {
             * =============================== */
             if (isRead === 1) {
                 const rows = await Notification.findAll({
-                    attributes: ['id', 'title', 'subtitle', 'createdAt'],
+                    attributes: ['id', 'type', 'title', 'subtitle', 'createdAt'],
                     where: {
                         [Op.or]: [
                             { type: { [Op.in]: [1, 2, 3] } }, // global
@@ -317,7 +317,7 @@ class Controller {
             * UNREAD NOTIFICATIONS
             * =============================== */
             const rows = await Notification.findAll({
-                attributes: ['id', 'title', 'subtitle', 'createdAt'],
+                attributes: ['id', 'type', 'title', 'subtitle', 'createdAt'],
                 where: {
                     [Op.or]: [
                         { type: { [Op.in]: [1, 2, 3] } },
