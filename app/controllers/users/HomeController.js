@@ -229,10 +229,10 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST CLICK)
             * =============================== */
-            const locked = await this.redisHelper.setLock(lockKey, 1, 1);
-            if (locked !== 'OK') {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
-            }
+            // const locked = await this.redisHelper.setLock(lockKey, 1, 1);
+            // if (locked !== 'OK') {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            // }
 
             /* ===============================
             * PARAMS
@@ -245,11 +245,11 @@ class Controller {
             /* ===============================
             * REDIS CACHE
             * =============================== */
-            const cacheKey = `notifications:${userId}:${isRead}:${page}:${perPage}`;
-            const cached = await this.redisHelper.getValue(cacheKey);
-            if (cached) {
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cached));
-            }
+            // const cacheKey = `notifications:${userId}:${isRead}:${page}:${perPage}`;
+            // const cached = await this.redisHelper.getValue(cacheKey);
+            // if (cached) {
+            //     return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cached));
+            // }
 
             /* ===============================
             * READ NOTIFICATIONS
@@ -259,7 +259,7 @@ class Controller {
                     attributes: ['id', 'title', 'subtitle', 'createdAt'],
                     where: {
                         [Op.or]: [
-                            { type: { [Op.in]: [1, 2] } }, // global
+                            { type: { [Op.in]: [1, 2, 3] } }, // global
                             literal(`EXISTS (
                                 SELECT 1
                                 FROM specific_user_notifications sn
@@ -282,7 +282,7 @@ class Controller {
                 const total = await Notification.count({
                     where: {
                         [Op.or]: [
-                            { type: { [Op.in]: [1, 2] } },
+                            { type: { [Op.in]: [1, 2, 3] } },
                             literal(`EXISTS (
                                 SELECT 1
                                 FROM specific_user_notifications sn
@@ -320,7 +320,7 @@ class Controller {
                 attributes: ['id', 'title', 'subtitle', 'createdAt'],
                 where: {
                     [Op.or]: [
-                        { type: { [Op.in]: [1, 2] } },
+                        { type: { [Op.in]: [1, 2, 3] } },
                         literal(`EXISTS (
                             SELECT 1
                             FROM specific_user_notifications sn
@@ -343,7 +343,7 @@ class Controller {
             const total = await Notification.count({
                 where: {
                     [Op.or]: [
-                        { type: { [Op.in]: [1, 2] } },
+                        { type: { [Op.in]: [1, 2, 3] } },
                         literal(`EXISTS (
                             SELECT 1
                             FROM specific_user_notifications sn
@@ -370,7 +370,7 @@ class Controller {
                 }
             };
 
-            await this.redisHelper.setValue(cacheKey, JSON.stringify(data), 120);
+            // await this.redisHelper.setValue(cacheKey, JSON.stringify(data), 120);
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
 
         } catch (error) {
