@@ -35,14 +35,6 @@ BalanceTransfer.init({
         type: DataTypes.STRING(333),
         allowNull: true,
     },
-    user_id: {
-        type: DataTypes.BIGINT,
-        references: {
-            model: User,
-            key: 'id'
-        },
-        allowNull: false,
-    },
     from_user: {
         type: DataTypes.BIGINT,
         references: {
