@@ -194,7 +194,7 @@ class Controller {
                     resMsg = 'success';
                     break;
 
-                case 'huitongzhifu':
+                case 'dongfanghuitongzhifu':
                     const huitongReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
                     const huitongCleaned = Object.fromEntries(
@@ -392,8 +392,8 @@ class Controller {
                     payload = await this.merchantController.ALIZHIFU(channel, amount, alizhifuClientIp, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
-                case 'huitongzhifu':
-                    payload = await this.merchantController.HUITONGZHIFU(channel, amount, userId);
+                case 'dongfanghuitongzhifu':
+                    payload = await this.merchantController.DONGFANG_HUITONGZHIFU(channel, amount, userId);
                     break;
 
                 default:
@@ -475,7 +475,7 @@ class Controller {
                         success = true;
                     }
                     break;
-                case 'huitongzhifu':
+                case 'dongfanghuitongzhifu':
                     if (resData.status == 0) {
                         redirectUrl = resData?.result?.payUrl;
                         success = true;

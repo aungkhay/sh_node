@@ -231,10 +231,8 @@ class Controller {
         }
     }
     
-    HUITONGZHIFU = async (channel, amount, userId) => {
+    DONGFANG_HUITONGZHIFU = async (channel, amount, userId) => {
         try {
-            // sign=md5(channelCode=3333&merOrderTid=2310140101445119&mid=M200002&money=100.00&notifyUrl=https://localhost:44311&ca06ddfb84a8676887510849c2b1e829)
-
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
                 mid: channel.deposit_merchant.app_id,

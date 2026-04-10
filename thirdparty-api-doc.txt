@@ -21,3 +21,5 @@ https://ali-mch-api.yzcbcb.com/api/anon/apiDoc
 
 东方汇通
 http://vw8p8ahcf09wosds6hup.itxt002.xyz/#/publicapidoc
+
+https://merchant.hjzf.one/public/Integration-guide
