@@ -1646,7 +1646,7 @@ class Controller {
                     }
                 ],
                 where: condition,
-                attributes: ['id', 'amount', 'freeze_amount', 'allowance_rate', 'createdAt', 'updatedAt'],
+                attributes: ['id', 'amount', 'freeze_amount', 'allowance_rate', 'is_released', 'createdAt', 'updatedAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset

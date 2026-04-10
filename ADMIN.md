@@ -197,7 +197,7 @@ const params = {
 const url = `${baseURL}/deposit-list/${depositID}/approve`;
 
 // [POST] Denied
-const url = `${baseURL}/deposit-list/${depositID}/deny`;
+const url = `${baseURL}/deposit-list/${depositID}/reject`;
 
 // [GET] Withdraw List
 const url = `${baseURL}/withdraw-list`;

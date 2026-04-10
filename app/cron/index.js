@@ -137,7 +137,7 @@ class CronJob {
                                         },
                                         transaction: t
                                     });
-                                    await user.increment({ rank_allowance: totalAmount }, { transaction: t })
+                                    // await user.increment({ rank_allowance: totalAmount }, { transaction: t })
                                 }
                                 // ✅End Calculate remain 80%
                             }
@@ -164,7 +164,7 @@ class CronJob {
                                 return;
                             }
 
-                            await user.increment({ rank_allowance, freeze_allowance }, { transaction: t });
+                            // await user.increment({ rank_allowance, freeze_allowance }, { transaction: t });
                             await Allowance.create({
                                 relation: user.relation,
                                 user_id: user.id,

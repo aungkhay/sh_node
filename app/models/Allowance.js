@@ -57,6 +57,11 @@ Allowance.init({
         type: DataTypes.TINYINT,
         defaultValue: 0,
         comment: '0 => Not Calculate | 1 => Calculated (80% remaining)'
+    },
+    is_released: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+        comment: '0 => Not Released | 1 => Released'
     }
 }, {
     sequelize,
