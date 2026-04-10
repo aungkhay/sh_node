@@ -133,6 +133,7 @@
     { "model": "军职津贴-奖券兑换", "title": "历史记录", "name": "military-allowance-ticket-history" },
 
     { "model": "充值管理", "title": "列表", "name": "recharge-management-list" },
+    { "model": "充值管理", "title": "修复失败", "name": "recharge-management-repair" },
     { "model": "充值管理", "title": "通过", "name": "recharge-management-approve" },
     { "model": "充值管理", "title": "拒绝", "name": "recharge-management-reject" },
 

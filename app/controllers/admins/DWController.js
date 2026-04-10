@@ -135,6 +135,60 @@ class Controller {
         }
     }
 
+    APPROVE_DEPOSIT = async (req, res) => {
+        try {
+            const deposit = await Deposit.findOne({
+                where: {
+                    id: req.params.id,
+                    status: 0,
+                }
+            });
+
+            if (!deposit) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到信息', {});
+            }
+            const user = await User.findOne({
+                where: { id: deposit.user_id },
+                attributes: ['id', 'reserve_fund']
+            });
+
+            const t = await db.transaction();
+            try {
+                await deposit.update({ status: 1 }, { transaction: t });
+                await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
+            } catch (error) {
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作失败', {});
+            }
+                
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    REJECT_DEPOSIT = async (req, res) => {
+        try {
+            const deposit = await Deposit.findOne({
+                where: {
+                    id: req.params.id,
+                    status: 0,
+                }
+            });
+            if (!deposit) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到信息', {});
+            }
+            await deposit.update({ status: 2 });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     WITHDRAW_LIST = async (req, res) => {
         try {
             const page = parseInt(req.query.page || 1);

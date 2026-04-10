@@ -12,6 +12,8 @@ class Withdraw extends Model {
         }
         if (attributes.amount !== undefined)
             attributes.amount = Number(attributes.amount);
+        if (attributes.handle_fee !== undefined)
+            attributes.handle_fee = Number(attributes.handle_fee);
         if (attributes.before_amount !== undefined)
             attributes.before_amount = Number(attributes.before_amount);
         if (attributes.after_amount !== undefined)
@@ -49,6 +51,10 @@ Withdraw.init({
         allowNull: true,
     },
     amount: {
+        type: DataTypes.DECIMAL(28, 6),
+        defaultValue: '0.0',
+    },
+    handle_fee: {
         type: DataTypes.DECIMAL(28, 6),
         defaultValue: '0.0',
     },

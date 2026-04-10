@@ -193,6 +193,12 @@ const params = {
     endTime: '2025-11-06 23:59:59',
 }
 
+// [POST] Approve
+const url = `${baseURL}/deposit-list/${depositID}/approve`;
+
+// [POST] Denied
+const url = `${baseURL}/deposit-list/${depositID}/deny`;
+
 // [GET] Withdraw List
 const url = `${baseURL}/withdraw-list`;
 const params = { 

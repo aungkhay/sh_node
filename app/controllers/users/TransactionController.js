@@ -492,13 +492,16 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
 
-            if (Number(amount) < 100) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '最低提现金额为100', {});
+            if (Number(amount) < 50) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '最低提现金额为50', {});
             }
 
             if (Number(amount) > Number(user.balance)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '余额不足', {});
             }
+
+            // 10% handle_fee
+            const handle_fee = new Decimal(amount).times(0.1).toNumber();
 
             const t = await db.transaction();
             try {
@@ -508,6 +511,7 @@ class Controller {
                     user_id: userId,
                     relation: user.relation,
                     amount: Number(amount),
+                    handle_fee: Number(handle_fee),
                     before_amount: Number(user.balance),
                     after_amount: Number(user.balance) - Number(amount),
                 }, { transaction: t });
@@ -535,7 +539,7 @@ class Controller {
 
             const { rows, count } = await Withdraw.findAndCountAll({
                 where: { user_id: req.user_id },
-                attributes: ['id', 'type', 'amount', 'status', 'description', 'createdAt'],
+                attributes: ['id', 'type', 'amount', 'handle_fee', 'status', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset
