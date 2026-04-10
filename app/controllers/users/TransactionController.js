@@ -1524,7 +1524,7 @@ class Controller {
             } catch (error) {
                 errLogger(`[TRANSFER_BALANCE][${req.user_id}]: ${error.stack}`);
                 await t.rollback();
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, this.ResCode.DB_ERROR.msg, {});
             }
         } catch (error) {
             errLogger(`[TRANSFER_BALANCE][${req.user_id}]: ${error.stack}`);
