@@ -233,18 +233,20 @@ class Controller {
     
     HUITONGZHIFU = async (channel, amount, userId) => {
         try {
+            // sign=md5(channelCode=3333&merOrderTid=2310140101445119&mid=M200002&money=100.00&notifyUrl=https://localhost:44311&ca06ddfb84a8676887510849c2b1e829)
+
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
                 mid: channel.deposit_merchant.app_id,
                 merOrderTid: orderNo,
-                money: Number(amount * 100).toFixed(0),
+                money: Number(amount).toFixed(2),
                 channelCode: channel.merchant_channel,
                 notifyUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                 reqTime: Date.now(),
             }
 
             const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
-            body.sign = sign.toUpperCase();
+            body.sign = sign.toLowerCase();
             body.orderNo = orderNo;
             return body;
         } catch (error) {
