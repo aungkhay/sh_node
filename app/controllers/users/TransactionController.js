@@ -193,6 +193,25 @@ class Controller {
                     resMsg = 'success';
                     break;
 
+                case 'huitongzhifu':
+                    const huitongReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const huitongCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("huitongCleaned:", huitongCleaned);
+                    const huitongSign = this.merchantController.CREATE_SIGN(huitongCleaned, `&key=${merchant.app_key}`);
+                    console.log("huitongSign:", huitongSign, "huitongReqSign:", huitongReqSign);
+
+                    // 状态 0=待处理 1=成功 2=失败 3=异常 4=超时关闭
+                    if (Number(reqBody.status) === 1) {
+                        status = 1;
+                    } else if ([2, 3, 4].includes(Number(reqBody.status))) {
+                        status = 2;
+                    }
+                    resMsg = 'success';
+                    break;
+
                 default:
                     break;
             }
@@ -372,6 +391,9 @@ class Controller {
                     payload = await this.merchantController.ALIZHIFU(channel, amount, alizhifuClientIp, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'huitongzhifu':
+                    payload = await this.merchantController.HUITONGZHIFU(channel, amount, userId);
+                    break;
 
                 default:
                     break;
@@ -449,6 +471,12 @@ class Controller {
                 case 'alizhifu':
                     if (resData.code == 0 && resData.data?.payDataType === 'payDataType') {
                         redirectUrl = resData?.data?.payData;
+                        success = true;
+                    }
+                    break;
+                case 'huitongzhifu':
+                    if (resData.status == 0) {
+                        redirectUrl = resData?.result?.payUrl;
                         success = true;
                     }
                     break;

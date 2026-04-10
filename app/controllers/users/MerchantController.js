@@ -230,6 +230,28 @@ class Controller {
             return null;
         }
     }
+    
+    HUITONGZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                mid: channel.deposit_merchant.app_id,
+                merOrderTid: orderNo,
+                money: Number(amount * 100).toFixed(0),
+                channelCode: channel.merchant_channel,
+                notifyUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                reqTime: Date.now(),
+            }
+
+            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            body.sign = sign.toUpperCase();
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[HUITONGZHIFU] ${error.stack}`); 
+            return null;
+        }
+    }
 }
 
 module.exports = Controller
