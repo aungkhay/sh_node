@@ -19,5 +19,5 @@ https://www.showdoc.com.cn/2142755221566946/9626141373898792
 阿里支付
 https://ali-mch-api.yzcbcb.com/api/anon/apiDoc
 
-汇通
+东方汇通
 http://vw8p8ahcf09wosds6hup.itxt002.xyz/#/publicapidoc

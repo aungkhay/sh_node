@@ -216,7 +216,7 @@ class Controller {
                 mchNo: channel.deposit_merchant.app_id,
                 mchOrderNo: orderNo,
                 productId: channel.merchant_channel,
-                amount: Number(amount * 100).toFixed(0),
+                amount: Number(amount).toFixed(0),
                 clientIp: clientIp,
                 notifyUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                 reqTime: Date.now(),
