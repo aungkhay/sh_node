@@ -153,6 +153,25 @@ class Controller {
                     // }
                     resMsg = 'SUCCESS';
                     break;
+
+                case 'mzhifu':
+                    const mzhifuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const mzhifuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("mzhifuCleaned:", mzhifuCleaned);
+                    const mzhifuSign = this.merchantController.CREATE_SIGN(mzhifuCleaned, `&key=${merchant.app_key}`);
+                    console.log("mzhifuSign:", mzhifuSign, "mzhifuReqSign:", mzhifuReqSign);
+
+                    // 交易状态:1成功,-1处理中,2失败
+                    if (Number(reqBody.trade_status) === 1) {
+                        status = 1;
+                    } else if (Number(reqBody.trade_status) === 2) {
+                        status = 2;
+                    }
+                    resMsg = 'success';
+
                 default:
                     break;
             }
@@ -324,6 +343,10 @@ class Controller {
                     payload = await this.merchantController.HONGTUZHIFU(channel, amount, hongtuClientIp, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'mzhifu':
+                    payload = await this.merchantController.MZHIFU(channel, amount, userId);
+                    break;
+
                 default:
                     break;
             }
@@ -388,6 +411,12 @@ class Controller {
                     if (resData.code == 0) {
                         redirectUrl = resData?.data?.payUrl;
                         expiredTime = resData?.data?.expiredTime;
+                        success = true;
+                    }
+                    break;
+                case 'mzhifu':
+                    if (resData.code == 200) {
+                        redirectUrl = resData?.data?.url;
                         success = true;
                     }
                     break;
