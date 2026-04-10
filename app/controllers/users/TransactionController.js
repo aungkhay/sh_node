@@ -437,6 +437,7 @@ class Controller {
                     headers: headers
                 });
             } catch (error) {
+                console.log(error);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
             }
             
