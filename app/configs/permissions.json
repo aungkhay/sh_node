@@ -23,6 +23,7 @@
     { "model": "用户管理", "title": "联系方式", "name": "user-change-contact" },
     { "model": "用户管理", "title": "禁用、启用用户", "name": "user-disable-enable" },
     { "model": "用户管理", "title": "分配角色", "name": "user-assign-role" },
+    { "model": "用户管理", "title": "生成提现激活码", "name": "user-generate-withdraw-active-code" },
 
     { "model": "实名认证管理", "title": "实名认证列表", "name": "kyc-list" },
     { "model": "实名认证管理", "title": "添加", "name": "kyc-add" },
@@ -162,5 +163,7 @@
     { "model": "和衷联储黄金礼包", "title": "返还记录", "name": "gold-package-return-history-list"},
     { "model": "和衷联储黄金礼包", "title": "回购记录", "name": "gold-package-repurchase-history-list"},
 
-    { "model": "签到赢黄金计划", "title": "签到记录", "name": "gold-plan-check-in-history" }
+    { "model": "签到赢黄金计划", "title": "签到记录", "name": "gold-plan-check-in-history" },
+
+    { "model": "余额转账记录", "title": "列表", "name": "balance-transfer-list" }
 ]

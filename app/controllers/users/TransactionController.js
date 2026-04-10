@@ -3,7 +3,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { errLogger, commonLogger, callbackLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
-const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant } = require('../../models');
+const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer } = require('../../models');
 const { Op, Sequelize } = require('sequelize');
 const Decimal = require('decimal.js');
 const axios = require('axios');
@@ -608,10 +608,13 @@ class Controller {
             const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
             const user = await User.findByPk(userId, {
-                attributes: ['id', 'balance', 'relation', 'can_withdraw']
+                attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used']
             });
             if (!user.can_withdraw) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
+            }
+            if (!user.is_withdraw_active_code_used) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请您在个人中心-我的军职-当前军职中，查看上级联系方式，按提示添加联系人并登记后使用激活码恢复账户', {});
             }
 
             if (Number(amount) < 50) {
@@ -1414,6 +1417,162 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    GET_RECEIVER_ACCOUNT = async (req, res) => {
+        try {
+            const receiver_phone = req.query.receiver_phone;
+            if (!receiver_phone) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请输入收款账号', {});
+            }
+
+            const user = await User.findOne({
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status'],
+                },
+                where: { phone_number: receiver_phone },
+                attributes: ['id', 'name', 'phone_number']
+            });
+
+            if (!user) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到收款账号', {});
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { receiver: user });
+        } catch (error) {
+            errLogger(`[GET_RECEIVER_ACCOUNT][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_BALANCE = async (req, res) => {
+        const lockKey = `lock:transfer_balance:${req.user_id}`;
+        let redisLocked = false;
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const { amount, receiver_phone } = req.body;
+
+            const sender = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status'],
+                },
+                attributes: ['id', 'relation', 'balance'],
+            });
+
+            if (sender.kyc.status !== 'APPROVED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请实名认证后再进行转账', {});
+            }
+
+            if (parseFloat(amount) > parseFloat(sender.balance)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '余额不足', {});
+            }
+
+            const receiver = await User.findOne({
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status'],
+                },
+                where: { phone_number: receiver_phone },
+                attributes: ['id', 'name', 'phone_number']
+            });
+
+            if (!receiver) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到收款账号', {});
+            }
+            if (receiver.id === sender.id) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不能转账给自己', {});
+            }
+            if (receiver.kyc.status !== 'APPROVED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '收款账号未实名认证', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await BalanceTransfer.create({
+                    relation: sender.relation,
+                    from_user: sender.id,
+                    to_user: receiver.id,
+                    amount: amount,
+                    before_from_amount: Number(sender.balance),
+                    after_from_amount: Number(parseFloat(sender.balance) - parseFloat(amount)),
+                    before_to_amount: Number(receiver.balance),
+                    after_to_amount: Number(parseFloat(receiver.balance) + parseFloat(amount)),
+                }, { transaction: t });
+                await sender.increment({ balance: -amount }, { transaction: t });
+                await receiver.increment({ balance: amount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
+            } catch (error) {
+                errLogger(`[TRANSFER_BALANCE][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, error.message || this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_BALANCE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BALANCE_TRANSFER_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page) || 1;
+            const perPage = parseInt(req.query.perPage) || 10;
+
+            const { rows, count } = await BalanceTransfer.findAndCountAll({
+                where: {
+                    [Op.or]: [
+                        { from_user: userId },
+                        { to_user: userId }
+                    ]
+                },
+                include: {
+                    model: User,
+                    as: 'to',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: this.getOffset(page, perPage)
+            });
+
+            const data = {
+                records: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    total: count,
+                    totalPages: Math.ceil(count / perPage)
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取转账记录成功', data);
+        } catch (error) {
+            errLogger(`[TRANSFER_BALANCE_RECORDS][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
 }
 
 module.exports = Controller

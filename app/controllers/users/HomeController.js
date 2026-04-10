@@ -3824,6 +3824,30 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
+
+    APPLY_WITHDRAW_ACTIVE_CODE = async (req, res) => {
+        try {
+            const code = req.body.code;
+            if (!code) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请输入激活码', {});
+            }
+            
+            const userId = req.user_id;
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'withdraw_active_code', 'is_withdraw_active_code_used'] });
+            if (user.withdraw_active_code !== code) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '激活码无效', {});
+            }
+            if (user.is_withdraw_active_code_used) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '激活码已被使用', {});
+            }
+            await user.update({ is_withdraw_active_code_used: 1 });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '激活码激活成功', {});
+        } catch (error) {
+            errLogger(`[APPLY_WITHDRAW_ACTIVE_CODE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
 }
 
 module.exports = Controller;

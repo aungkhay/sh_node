@@ -81,6 +81,7 @@ class UserRoute extends express.Router {
         this.get('/gold-gift-packages/repurchase-dialog-info', middleware.isLoggedIn, HomeCtrl.REPURCHASE_PACKAGE_DIALOG);
         this.post('/gold-gift-packages/repurchase', middleware.isLoggedIn, HomeCtrl.REPURCHASE_PACKAGE);
         this.get('/gold-gift-packages/earn-history', middleware.isLoggedIn, HomeCtrl.GOLD_PACKAGE_EARN_HISTORY);
+        this.post('/apply-withdraw-active-code', middleware.isLoggedIn, HomeCtrl.APPLY_WITHDRAW_ACTIVE_CODE);
 
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);
@@ -117,6 +118,9 @@ class UserRoute extends express.Router {
         this.post('/transfer-balance-to-earn', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE_TO_EARN);
         this.post('/transfer-earn-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_EARN_TO_BALANCE);
         this.post('/transfer-gold-interest-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_GOLD_INTEREST_TO_BALANCE);
+        this.get('/balance-transfers/get-receiver-account', middleware.isLoggedIn, TxnCtl.GET_RECEIVER_ACCOUNT);
+        this.post('/balance-transfers/send', FormValidator.balance_transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE);
+        this.get('/balance-transfers/history', middleware.isLoggedIn, TxnCtl.BALANCE_TRANSFER_HISTORY);
 
         // Spring Festival Event Routes
         let SpringFestivalEventController = require('../controllers/users/SpringFestivalEventController');

@@ -39,7 +39,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
             }
 
-            const goldCount = this.getRandomInt(5, 20);
+            const goldCount = this.getRandomInt(5, 10);
 
             const t = await db.transaction();
             try {

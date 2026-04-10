@@ -181,6 +181,7 @@ class AdminRoute extends express.Router {
         this.post('/payment-methods/:id/update-alipay-status', FormValidator.update_kyc_status(), middleware.isLoggedIn('alipay-status-update'), UserCtrl.UPDATE_ALI_STATUS);
         // Set Roles
         this.post('/users/:id/assign-roles', FormValidator.assign_roles(), middleware.isLoggedIn('user-assign-role'), UserCtrl.ASSIGN_ROLES_TO_USER);
+        this.post('/users/:id/generate-withdraw-active-code', middleware.isLoggedIn('user-generate-withdraw-active-code'), UserCtrl.GENERATE_WITHDRAW_ACTIVE_CODE);
 
         let LogController = require('../controllers/admins/LogController');
         let LogCtrl = new LogController();
@@ -241,6 +242,11 @@ class AdminRoute extends express.Router {
         this.post('/spring-festival-event/add-white-list', FormValidator.spring_whitelist(), middleware.isLoggedIn('spring-festival-event-update-white-list'), SpringFestivalEventCtrl.ADD_WHITE_LIST);
         this.get('/spring-festival-event/white-list', middleware.isLoggedIn('spring-festival-event-view-white-list'), SpringFestivalEventCtrl.WHITE_LIST);
         this.post('/spring-festival-event/import-check-in', middleware.isLoggedIn('spring-festival-event-import-check-in'), SpringFestivalEventCtrl.GIVE_CHECK_IN);
+
+        // Balance Transfer between users
+        let BalanceTransferController = require('../controllers/admins/BalanceTransferController');
+        let BalanceTransferCtrl = new BalanceTransferController(app);
+        this.get('/balance-transfers', middleware.isLoggedIn('wallet-transfer-list'), BalanceTransferCtrl.INDEX);
     }
 }
 

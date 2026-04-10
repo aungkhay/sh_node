@@ -978,6 +978,9 @@ const url = `${baseURL}/users/${userId}/assign-roles`;
 const data = {
     roleIds: [1,2]
 }
+
+// [POST] Generate Withdraw Active Code
+const url = `${baseURL}/users/${userId}/generate-withdraw-active-code`;
 ```
 ### Logs 操作日志
 ``` js
@@ -1306,4 +1309,15 @@ const config = {
     data: formData
 }
 await axios(config);
+```
+### Balance Transfer
+``` js
+// [GET] Balance Transfer History
+const url = `${baseURL}/balance-transfers`;
+const params = {
+    page: 1,
+    perPage: 10,
+    from_phone: '',
+    to_phone: ''
+}
 ```

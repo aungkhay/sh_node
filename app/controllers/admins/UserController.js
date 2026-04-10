@@ -101,7 +101,8 @@ class Controller {
                     'id', 'type', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 'balance',
                     'referral_bonus', 'masonic_fund', 'repurchase_fund', 'rank_allowance', 'freeze_allowance', 'earn', 'gold', 'gold_interest', 'address',
                     'address_status', 'agreement_status', 'rank_point', 'level_up_pay', 'win_per_day', 'status', 'political_vetting_status', 
-                    'is_internal_account','profile_picture', 'isActive', 'activedAt', 'contact_info', 'can_withdraw', 'createdAt'
+                    'is_internal_account','profile_picture', 'isActive', 'activedAt', 'contact_info', 'can_withdraw', 'withdraw_active_code', 'is_withdraw_active_code_used', 
+                    'createdAt'
                 ],
                 order: [['id', 'DESC']],
                 limit: perPage,
@@ -2691,6 +2692,27 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, "获取成功", data);
         } catch (error) {
             errLogger(`[User][GOLD_COUNT_SUMMARY]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    GENERATE_WITHDRAW_ACTIVE_CODE = async (req, res) => {
+        try {
+            const userId = req.params.id;
+            const user = await User.findByPk(userId, { attributes: ['id', 'name', 'is_withdraw_active_code_used'] });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户', {});
+            }
+
+            if (user.is_withdraw_active_code_used) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现激活码已被使用，无法重新生成', {});
+            }
+            
+            const code = this.commonHelper.randomString(6);
+            await user.update({ withdraw_active_code: code });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '生成成功', { code });
+        } catch (error) {
+            errLogger(`[User][GENERATE_WITHDRAW_ACTIVE_CODE]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }

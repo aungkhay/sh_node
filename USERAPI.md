@@ -561,6 +561,26 @@ const data = { amount: 100 }
 // [POST] 黄金息 => 余额
 const url = `${baseURL}/transfer-gold-interest-to-balance`;
 const data = { amount: 100 }
+
+// [GET] Get Receiver Account
+const url = `${baseURL}/balance-transfers/get-receiver-account`;
+const params = {
+    receiver_phone: ''
+}
+
+// [POST] Transfer Balance
+const url = `${baseURL}/balance-transfers/send`;
+const data = {
+    receiver_phone: '',
+    amount: 0
+}
+
+// [GET] Balance Transfer History
+const url = `${baseURL}/balance-transfers/history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
 ```
 ### Deposit And Withdraw
 ``` js
@@ -676,6 +696,9 @@ const params = {
     page: 1,
     perPage: 10
 }
+
+// [POST] Apply withdraw active code
+const url = `${baseURL}/apply-withdraw-active-code`;
 
 // [POST] Redemption Code
 const url = `${baseURL}/redempt-code`;

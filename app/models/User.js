@@ -272,6 +272,14 @@ User.init({
         type: DataTypes.TINYINT,
         defaultValue: 1,
     },
+    withdraw_active_code: {
+        type: DataTypes.STRING,
+        allowNull: true,    
+    },
+    is_withdraw_active_code_used: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+    },
     google_2fa_secret: {
         type: DataTypes.STRING,
         allowNull: true,

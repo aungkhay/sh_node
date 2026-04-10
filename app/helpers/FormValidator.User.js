@@ -302,3 +302,17 @@ exports.redempt_code = () => {
         check('code', { msg: '兑换码不能为空' }).not().isEmpty(),
     ]
 }
+
+exports.balance_transfer = () => {
+    return [
+        check('receiver_phone', { msg: '接收方手机号不能为空' }).not().isEmpty(),
+        // must be greater than 0
+        check('amount').not().isEmpty().withMessage('转账金额不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('转账金额必须是数字')
+            .bail()
+            .isFloat({ gt: 0 })
+            .withMessage('转账金额必须大于0'),
+    ]
+}
