@@ -195,6 +195,7 @@ class Controller {
                     break;
 
                 case 'dongfanghuitongzhifu':
+                    // {"merOrderTid":"SH1640449825152832","tid":"XDF7931813085471411881","money":"100.00","status":1,"sign":"01F45DEF72D5981BBC14EED76C18AE72"}
                     const huitongReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
                     const huitongCleaned = Object.fromEntries(
@@ -211,6 +212,25 @@ class Controller {
                         status = 2;
                     }
                     resMsg = 'success';
+                    break;
+
+                case 'huijuzhifu':
+                    const huijuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const huijuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("huijuCleaned:", huijuCleaned);
+                    const huijuSign = this.merchantController.CREATE_SIGN(huijuCleaned, `&key=${merchant.app_key}`);
+                    console.log("huijuSign:", huijuSign, "huijuReqSign:", huijuReqSign);
+
+                    // 订单状态：1=成功, 0=失败
+                    if (Number(reqBody.code) === 0) {
+                        status = 2;
+                    } else if (Number(reqBody.code) === 1) {
+                        status = 1;
+                    }
+                    resMsg = 'OK';
                     break;
 
                 default:
@@ -395,7 +415,10 @@ class Controller {
                 case 'dongfanghuitongzhifu':
                     payload = await this.merchantController.DONGFANG_HUITONGZHIFU(channel, amount, userId);
                     break;
-
+                case 'huijuzhifu':
+                    payload = await this.merchantController.HUIJUZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
                 default:
                     break;
             }
@@ -478,6 +501,13 @@ class Controller {
                 case 'dongfanghuitongzhifu':
                     if (resData.status == 0) {
                         redirectUrl = resData?.result?.payUrl;
+                        success = true;
+                    }
+                    break;
+                case 'huijuzhifu':
+                    if (resData.code == 0) {
+                        redirectUrl = resData?.data?.pay_url;
+                        expiredTime = resData?.data?.expired_at;
                         success = true;
                     }
                     break;

@@ -252,6 +252,26 @@ class Controller {
             return null;
         }
     }
+
+    HUIJUZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                memberid: channel.deposit_merchant.app_id,
+                orderid: orderNo,
+                bankcode: channel.merchant_channel,
+                amount: Number(amount).toFixed(2),
+                notifyurl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+            }
+            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            body.sign = sign.toUpperCase();
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[HUIJUZHIFU] ${error.stack}`);
+            return null;   
+        }
+    }
 }
 
 module.exports = Controller
