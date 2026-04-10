@@ -1426,6 +1426,34 @@ class CronJob {
             errLogger(`[REFUND_WITHDRAW_AFTER_3_DAYS]: ${error.stack}`);
         }
     }
+
+    REJECT_ALL_PENDING_WITHDRAW = async () => {
+        try {
+            const withdraws = await Withdraw.findAll({
+                where: {
+                    status: 0,
+                },
+                attributes: ['id', 'user_id', 'amount']
+            })
+
+            const t = await db.transaction();
+            try {
+                for (let withdraw of withdraws) {
+                    const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    if (!user) continue;
+                    await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
+                    await withdraw.update({ status: 2, description: 'CRON REFUND' }, { transaction: t });
+                    console.log(`[REJECT_ALL_PENDING_WITHDRAW][Withdraw ID: ${withdraw.id}]: Refunded ${withdraw.amount} to user ID ${user.id}`);
+                }
+                await t.commit();
+            } catch (error) {
+                errLogger(`[REJECT_ALL_PENDING_WITHDRAW][Transaction Error]: ${error.stack}`);
+                await t.rollback();
+            }
+        } catch (error) {
+            errLogger(`[REJECT_ALL_PENDING_WITHDRAW]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
