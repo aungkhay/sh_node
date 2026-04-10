@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory } = require('../../models');
+const { db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory, GoldPrice } = require('../../models');
 const { encrypt } = require('../../helpers/AESHelper');
 const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
 const { commonLogger, errLogger } = require('../../helpers/Logger');
@@ -300,17 +300,25 @@ class Controller {
             const goldCouponCount = await RewardRecord.sum('amount', {
                 where: {
                     user_id: userId,
-                    reward_id: 7
+                    reward_id: 7,
+                    is_used: 0,
+                    validedAt: { [Op.lte]: new Date() }
                 },
                 useMaster: userId % 2 === 0 ? true : false
             }) || 0;
+
+            const goldPrice = await GoldPrice.findOne({
+                order: [['createdAt', 'DESC']],
+                attributes: ['price']
+            });
 
             let data = {
                 ... user.get({ plain: true }),
                 can_impeach_count: 0,
                 next_rank_percentage: 0,
                 next_rank_point: 0,
-                gold_count_in_coupon: goldCouponCount
+                gold_count_in_coupon: goldCouponCount,
+                total_coupon_gold_price: goldCouponCount * (goldPrice ? goldPrice.price : 0)
             }
 
             const currentRankIndex = ranks.findIndex(r => r.id == user.rank_id);
