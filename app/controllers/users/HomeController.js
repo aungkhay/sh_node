@@ -3532,7 +3532,7 @@ class Controller {
         // 折现后您的预计收益为：xxx元，预计15个工作日内完成折现拨款
 
         try {
-            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未开发！请稍后再试', {});
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未开放！请稍后再试', {});
 
             const currentDate = moment();
             const repurchaseStartDate = moment('2026-04-09 00:00:00');
@@ -3588,7 +3588,7 @@ class Controller {
 
     REPURCHASE_PACKAGE = async (req, res) => {
         try {
-            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未开发！请稍后再试', {});
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未开放！请稍后再试', {});
 
             const currentDate = moment();
             const repurchaseStartDate = moment('2026-04-09 00:00:00');
