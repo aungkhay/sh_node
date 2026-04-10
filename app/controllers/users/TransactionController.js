@@ -1499,7 +1499,7 @@ class Controller {
             if (receiver.id === sender.id) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不能转账给自己', {});
             }
-            if (receiver.kyc.status !== 'APPROVED') {
+            if (!receiver.kyc || receiver.kyc.status !== 'APPROVED') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '收款账号未实名认证', {});
             }
 
