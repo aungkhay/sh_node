@@ -215,6 +215,7 @@ class Controller {
                     break;
 
                 case 'huijuzhifu':
+                    // {"order_id":"G1457001775814500171","merchant_order_id":"SH6785662927417759","memberid":"M930245857","amount":"100.00","paid_at":1775814606,"status":1,"sign":"6488C466368C722B111E6369153C0EE4"}
                     const huijuReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
                     const huijuCleaned = Object.fromEntries(
@@ -225,9 +226,9 @@ class Controller {
                     console.log("huijuSign:", huijuSign, "huijuReqSign:", huijuReqSign);
 
                     // 订单状态：1=成功, 0=失败
-                    if (Number(reqBody.code) === 0) {
+                    if (Number(reqBody.status) === 0) {
                         status = 2;
-                    } else if (Number(reqBody.code) === 1) {
+                    } else if (Number(reqBody.status) === 1) {
                         status = 1;
                     }
                     resMsg = 'OK';
