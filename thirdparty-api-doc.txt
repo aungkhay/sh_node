@@ -12,3 +12,9 @@ https://docs.google.com/document/d/1GirgZRrI9-ukrz3Jr8k3k1YIN-F8qs3eox9Qr_8CPiw/
 
 鸿途支付
 https://hongtu.jkosiuwn.xyz/api/doc#doc1
+
+MPay
+https://www.showdoc.com.cn/2142755221566946/9626141373898792
+
+阿里支付
+https://ali-mch-api.yzcbcb.com/api/anon/apiDoc

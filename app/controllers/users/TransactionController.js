@@ -155,6 +155,7 @@ class Controller {
                     break;
 
                 case 'mzhifu':
+                    // {"trade_no":"9041025059075120","product_id":"1","app_id":"483237a48f498b94f0317578","out_trade_no":"SH1117753039748973","trade_status":"1","amount":"300.00","real_amount":"300.00","desc":"5-SH1117753039748973","time":"1775806498","sign":"d125163599b8c936107513b2654ea814"}
                     const mzhifuReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
                     const mzhifuCleaned = Object.fromEntries(
@@ -171,6 +172,26 @@ class Controller {
                         status = 2;
                     }
                     resMsg = 'success';
+                    break;
+
+                case 'alizhifu':
+                    const alizhifuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const alizhifuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("alizhifuCleaned:", alizhifuCleaned);
+                    const alizhifuSign = this.merchantController.CREATE_SIGN(alizhifuCleaned, `&key=${merchant.app_key}`);
+                    console.log("alizhifuSign:", alizhifuSign, "alizhifuReqSign:", alizhifuReqSign);
+
+                    // 订单状态：1=支付中，2=支付成功，3=支付失败，5=测试冲正，6=订单关闭，7=出码失败
+                    if (Number(reqBody.state) === 2) {
+                        status = 1;
+                    } else {
+                        status = 2;
+                    }
+                    resMsg = 'success';
+                    break;
 
                 default:
                     break;
@@ -346,6 +367,11 @@ class Controller {
                 case 'mzhifu':
                     payload = await this.merchantController.MZHIFU(channel, amount, userId);
                     break;
+                case 'alizhifu':
+                    const alizhifuClientIp = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                    payload = await this.merchantController.ALIZHIFU(channel, amount, alizhifuClientIp, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
 
                 default:
                     break;
@@ -417,6 +443,12 @@ class Controller {
                 case 'mzhifu':
                     if (resData.code == 200) {
                         redirectUrl = resData?.data?.url;
+                        success = true;
+                    }
+                    break;
+                case 'alizhifu':
+                    if (resData.code == 0 && resData.data?.payDataType === 'payDataType') {
+                        redirectUrl = resData?.data?.payData;
                         success = true;
                     }
                     break;
