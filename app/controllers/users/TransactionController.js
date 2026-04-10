@@ -469,7 +469,7 @@ class Controller {
                     }
                     break;
                 case 'alizhifu':
-                    if (resData.code == 0 && resData.data?.payDataType === 'payDataType') {
+                    if (resData.code == 0 && resData.data?.payDataType === 'payUrl') {
                         redirectUrl = resData?.data?.payData;
                         success = true;
                     }
