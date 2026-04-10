@@ -175,6 +175,7 @@ class Controller {
                     break;
 
                 case 'alizhifu':
+                    // {"amount":"10000","clientIp":"103.148.104.112","createdAt":"1775809060000","ifCode":"tengcheng","mchNo":"M1775792806","mchOrderNo":"SH9441994894823039","payOrderId":"AL2042517354625167362","state":"2","successTime":"1775809180000","reqTime":"1775809180442","sign":"3D0AC9351DD8C67B5AD011EEA6196B51"}
                     const alizhifuReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
                     const alizhifuCleaned = Object.fromEntries(

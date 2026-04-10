@@ -245,7 +245,7 @@ class Controller {
                 reqTime: Date.now(),
             }
 
-            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            const sign = this.CREATE_SIGN(body, `&${channel.deposit_merchant.app_key}`);
             body.sign = sign.toLowerCase();
             body.orderNo = orderNo;
             return body;
