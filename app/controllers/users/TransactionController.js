@@ -1475,7 +1475,7 @@ class Controller {
                 attributes: ['id', 'relation', 'balance'],
             });
 
-            if (sender.kyc.status !== 'APPROVED') {
+            if (!sender.kyc || sender.kyc.status !== 'APPROVED') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请实名认证后再进行转账', {});
             }
 
