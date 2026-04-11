@@ -2851,7 +2851,7 @@ class Controller {
                     transaction: t
                 });
                 
-                await rewardRecord.update({ is_used: 1, description: '转为金额' }, { transaction: t });
+                await rewardRecord.update({ is_used: 1, description: `转为金额 黄金价格 ${goldPrice.reserve_price} x 80% = ${amount}` }, { transaction: t });
                 await user.increment({ balance: Number(amount) }, { transaction: t });
 
                 await t.commit();
