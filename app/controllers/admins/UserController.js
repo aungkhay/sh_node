@@ -2540,16 +2540,24 @@ class Controller {
             
             // Withdrawals [提现]
             const withdrawals = await Withdraw.findAll({
-                where: { user_id: user.id, status: { [Op.ne]: 2 } },
+                where: { user_id: user.id },
                 attributes: ['id', 'amount', 'status', 'createdAt']
             });
             const newWithdrawals = withdrawals.map(w => {
+                let status = '待处理';
+                if (w.status == 1) {
+                    status = '成功';
+                }
+                if (w.status == 2) {                    
+                    status = '失败';
+                }
+
                 return {
                     id: Number(w.id),
                     amount: Number(w.amount),
                     createdAt: w.createdAt,
                     type: '提现',
-                    description: `(${w.status == 1 ? '成功' : '待处理'}) 扣除 ${Number(w.amount)} 余额`
+                    description: `(${status}) ${w.status == 2 ? '返回' : '扣除'} ${Number(w.amount)} 余额`
                 }
             });
 
@@ -2708,7 +2716,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现激活码已被使用，无法重新生成', {});
             }
             
-            const code = this.commonHelper.randomString(6);
+            const code = this.commonHelper.randomNumber(6);
 
             const t = await db.transaction();
             try {
