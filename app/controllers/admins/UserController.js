@@ -10,6 +10,7 @@ const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const multer = require('multer');
 const path = require('path');
+const XLSX = require("xlsx");
 const AliOSS = require('../../helpers/AliOSS');
 const MasonicPackageHistory = require('../../models/MasonicPackageHistory');
 
@@ -2797,6 +2798,64 @@ class Controller {
         } catch (error) {
             errLogger(`[User][GENERATE_WITHDRAW_ACTIVE_CODE]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    GENERATE_WITHDRAW_ACTIVE_CODE_BY_EXCEL = async (req, res) => {
+        try {
+            req.uploadDir = `./uploads/excels`;
+
+            const upload = require('../../middlewares/UploadExcel');
+            upload(req, res, async (err) => {
+                if (err instanceof multer.MulterError) {
+                    if (err.code == 'LIMIT_FILE_SIZE') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件过大', { allow_size: '50MB' });
+                    }
+                    if (err.code == 'ENOENT') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, 'ENOENT', {});
+                    }
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, err.message, {});
+                } else if (err) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '上传失败', {});
+                }
+
+                if (req.file == null) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请选文件', {});
+                }
+
+                const filePath = req.file.path;
+                const workbook = XLSX.readFile(filePath);
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+
+                const excelData = XLSX.utils.sheet_to_json(sheet);
+                const t = await db.transaction();
+                try {
+                    for (let i = 0; i < excelData.length; i++) {
+                        const row = excelData[i];
+                        const phone = row['手机号'];
+                        if (!phone) {
+                            continue;
+                        }
+
+                        await User.update(
+                            { withdraw_active_code: this.commonHelper.randomNumber(6) },
+                            { where: { phone_number: phone, is_withdraw_active_code_used: 0 }, transaction: t }
+                        );
+                    }
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[GENERATE_WITHDRAW_ACTIVE_CODE_BY_EXCEL]: ${error.stack}`);
+                    await t.rollback();
+                    return MyResponse(res, this.ResCode.DB_ERROR.code, true, '操作失败', {});
+                }
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '上传成功', {});
+            });
+        } catch (error) {
+            errLogger(`[GENERATE_WITHDRAW_ACTIVE_CODE_BY_EXCEL]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
 }

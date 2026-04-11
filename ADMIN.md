@@ -1006,6 +1006,20 @@ const data = {
 
 // [POST] Generate Withdraw Active Code
 const url = `${baseURL}/users/${userId}/generate-withdraw-active-code`;
+
+const url = `${baseURL}/users/generate-withdraw-active-code-by-excel`;
+const formData = new FormData();
+formData.append('file', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
 ```
 ### Logs 操作日志
 ``` js

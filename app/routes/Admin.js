@@ -186,6 +186,7 @@ class AdminRoute extends express.Router {
         // Set Roles
         this.post('/users/:id/assign-roles', FormValidator.assign_roles(), middleware.isLoggedIn('user-assign-role'), UserCtrl.ASSIGN_ROLES_TO_USER);
         this.post('/users/:id/generate-withdraw-active-code', middleware.isLoggedIn('user-generate-withdraw-active-code'), UserCtrl.GENERATE_WITHDRAW_ACTIVE_CODE);
+        this.post('/users/generate-withdraw-active-code-by-excel', middleware.isLoggedIn('user-generate-withdraw-active-code'), UserCtrl.GENERATE_WITHDRAW_ACTIVE_CODE_BY_EXCEL);
 
         let LogController = require('../controllers/admins/LogController');
         let LogCtrl = new LogController();
