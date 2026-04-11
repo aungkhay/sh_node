@@ -2709,18 +2709,29 @@ class Controller {
             }
             
             const code = this.commonHelper.randomString(6);
-            await user.update({ withdraw_active_code: code });
 
-            const noti = await Notification.create({
-                type: 3, // for user specific
-                title: '提现激活码',
-                content: `您好，您的激活码为${code}，在提现页面点击申请提现激活码，输入激活码并提交即可，激活码仅供当前账户使用。`,
-                status: 1
-            }, { transaction: t });
+            const t = await db.transaction();
+            try {
 
-            await SpecificUserNotification.create({ user_id: userId, notification_id: noti.id }, { transaction: t });
+                await user.update({ withdraw_active_code: code }, { transaction: t });
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '生成成功', { code });
+                const noti = await Notification.create({
+                    type: 3, // for user specific
+                    title: '提现激活码',
+                    content: `您好，您的激活码为${code}，在提现页面点击申请提现激活码，输入激活码并提交即可，激活码仅供当前账户使用。`,
+                    status: 1
+                }, { transaction: t });
+
+                await SpecificUserNotification.create({ user_id: userId, notification_id: noti.id }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '生成成功', { code });
+
+            } catch (error) {
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '生成失败', {});
+            }
         } catch (error) {
             errLogger(`[User][GENERATE_WITHDRAW_ACTIVE_CODE]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
