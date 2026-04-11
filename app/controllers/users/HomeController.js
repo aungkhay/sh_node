@@ -2798,7 +2798,7 @@ class Controller {
         try {
 
             return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '黄金券到可用期后，将自动转入”个人黄金“', {});
-            
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
@@ -3942,6 +3942,11 @@ class Controller {
             const userId = req.user_id;
 
             const { rows, count } = await MasonicPackageEarn.findAndCountAll({
+                include: {
+                    model: MasonicPackageHistory,
+                    as: 'package_history',
+                    attributes: ['id', 'price'],
+                },
                 where: { user_id: userId },
                 attributes: ['id', 'package_id', 'amount', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
