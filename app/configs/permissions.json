@@ -98,6 +98,10 @@
     { "model": "共济基金记录", "title": "导入扣除", "name": "masonic-fund-import-deduction" },
     { "model": "共济基金记录", "title": "没有注册账号的导入记录", "name": "masonic-fund-user-not-register-list" },
 
+    { "model": "共济基金预审终身礼包", "title": "购买记录", "name": "masonic-package-history-list" },
+    { "model": "共济基金预审终身礼包", "title": "推荐奖励记录", "name": "masonic-package-bonus-history-list" },
+    { "model": "共济基金预审终身礼包", "title": "收益记录", "name": "masonic-package-earn-history-list" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 

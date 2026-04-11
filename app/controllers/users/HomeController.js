@@ -3962,6 +3962,43 @@ class Controller {
         }
     }
 
+    MASONIC_PACKAGE_BONUS_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await MasonicPackageBonuses.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                bonuses: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[MASONIC_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     BUY_AUTHORIZATION_LETTER = async (req, res) => {
         try {
             const userId = req.user_id || 156;
@@ -4051,15 +4088,6 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '激活码已被使用', {});
             }
             await user.update({ is_withdraw_active_code_used: 1 });
-
-            const noti = await Notification.create({
-                type: 3, // for user specific
-                title: '激活成功',
-                content: '激活成功 ***********',
-                status: 1
-            }, { transaction: t });
-
-            await SpecificUserNotification.create({ user_id: userId, notification_id: noti.id }, { transaction: t });
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '激活码激活成功', {});
         } catch (error) {

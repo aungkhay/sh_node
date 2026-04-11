@@ -400,6 +400,31 @@ const config = {
     data: formData
 }
 await axios(config);
+
+// 共济基金预审终身礼包
+// [GET] 购买记录
+const url = `${baseURL}/masonic-package/history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: ''
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/masonic-package/bonus-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/masonic-package/earn-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: ''
+}
 ```
 ### News
 ``` js

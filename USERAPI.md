@@ -713,6 +713,12 @@ const params = {
     page: 1,
     perPage: 10
 }
+// [GET] Masonic Package Bonus History
+const url = `${baseURL}/masonic-gift-packages/bonus-history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
 
 // [POST] Apply withdraw active code
 const url = `${baseURL}/apply-withdraw-active-code`;

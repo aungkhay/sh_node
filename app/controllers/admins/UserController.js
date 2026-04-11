@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2710,6 +2710,16 @@ class Controller {
             
             const code = this.commonHelper.randomString(6);
             await user.update({ withdraw_active_code: code });
+
+            const noti = await Notification.create({
+                type: 3, // for user specific
+                title: '提现激活码',
+                content: `您好，您的激活码为${code}，在提现页面点击申请提现激活码，输入激活码并提交即可，激活码仅供当前账户使用。`,
+                status: 1
+            }, { transaction: t });
+
+            await SpecificUserNotification.create({ user_id: userId, notification_id: noti.id }, { transaction: t });
+
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '生成成功', { code });
         } catch (error) {
             errLogger(`[User][GENERATE_WITHDRAW_ACTIVE_CODE]: ${error.stack}`);
