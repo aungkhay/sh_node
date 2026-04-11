@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -11,6 +11,7 @@ const QRCode = require('qrcode');
 const multer = require('multer');
 const path = require('path');
 const AliOSS = require('../../helpers/AliOSS');
+const MasonicPackageHistory = require('../../models/MasonicPackageHistory');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -2521,7 +2522,7 @@ class Controller {
             });
 
             // Buy Masonic Package [购买共济礼包]
-            const buyMasonicPackages = await MasonicFundHistory.findAll({
+            const buyMasonicPackages = await MasonicPackageHistory.findAll({
                 where: { user_id: user.id },
                 attributes: ['id', 'price', 'createdAt']
             });
@@ -2537,6 +2538,11 @@ class Controller {
             
             // Buy Masonic Package Bonus [购买共济礼包奖励]
             const masonicPackageBonuses = await MasonicPackageBonuses.findAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['name'],
+                },
                 where: { user_id: user.id },
                 attributes: ['id', 'amount', 'createdAt']
             });
@@ -2546,7 +2552,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '购买共济礼包奖励',
-                    description: `添加 ${Number(g.amount)} 余额`
+                    description: `${g.from_user ? `来自 ${g.from_user.name}` : ''} 添加 ${Number(g.amount)} 余额`
                 }
             });
 
