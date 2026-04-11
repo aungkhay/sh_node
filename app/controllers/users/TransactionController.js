@@ -596,6 +596,15 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在工作日进行提现提交', {});
             }
 
+            const withdraw_time = await this.redisHelper.getValue('withdraw_time'); // 10:00:00-17:00:00
+            if (withdraw_time) {
+                const [startTime, endTime] = withdraw_time.split('-'); // ['10:00:00', '17:00:00']
+                const currentTime = new Date().toTimeString().split(' ')[0];
+                if (currentTime < startTime || currentTime >= endTime) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在提现时间内提交申请', { allow: { start: startTime, end: endTime } });
+                }
+            }
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {

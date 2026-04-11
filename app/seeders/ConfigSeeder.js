@@ -171,6 +171,13 @@ module.exports = async () => {
             description: '-',
             data_type: 'html'
         },
+        {
+            type: 'withdraw_time',
+            title: 'Withdraw Time',
+            val: '10:00:00-17:00:00',
+            description: '-',
+            data_type: 'string'
+        }
     ];
 
     const count = await Config.count();
