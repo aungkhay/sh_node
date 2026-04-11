@@ -2838,10 +2838,25 @@ class Controller {
                             continue;
                         }
 
-                        await User.update(
-                            { withdraw_active_code: this.commonHelper.randomNumber(6) },
-                            { where: { phone_number: phone, is_withdraw_active_code_used: 0 }, transaction: t }
-                        );
+                        const user = await User.findOne({
+                            where: { phone_number: phone, is_withdraw_active_code_used: 0 },
+                            attributes: ['id', 'is_withdraw_active_code_used'],
+                            transaction: t,
+                        });
+                        if (!user) {
+                            continue;
+                        }
+                        const code = this.commonHelper.randomNumber(6);
+                        await user.update({ withdraw_active_code: code }, { transaction: t });
+
+                        const noti = await Notification.create({
+                            type: 3, // for user specific
+                            title: '提现激活码',
+                            content: `您好，您的激活码为${code}，在提现页面点击申请提现激活码，输入激活码并提交即可，激活码仅供当前账户使用。`,
+                            status: 1
+                        }, { transaction: t });
+
+                        await SpecificUserNotification.create({ user_id: user.id, notification_id: noti.id }, { transaction: t });
                     }
 
                     await t.commit();
