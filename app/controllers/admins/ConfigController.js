@@ -67,7 +67,7 @@ class Controller {
             if(config.type === 'deposit_time' || config.type == 'withdraw_time' || config.type === 'withdrawal_time_for_referral_bonus') {
                 // format 12:00:00-17:00:00
                 if (!/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/.test(val)) {
-                    const valError = [{ field: 'val', msg: '值格式无效，正确格式如：12:00:00-17:00:00' }];
+                    const valError = [{ field: 'val', msg: '值格式无效' }];
                     return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, valError);
                 }
             }

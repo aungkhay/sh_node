@@ -601,7 +601,7 @@ class Controller {
                 const [startTime, endTime] = withdraw_time.split('-'); // ['10:00:00', '17:00:00']
                 const currentTime = new Date().toTimeString().split(' ')[0];
                 if (currentTime < startTime || currentTime >= endTime) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在提现时间内提交申请', { allow: { start: startTime, end: endTime } });
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `提现时段：每日${startTime}-${endTime}`, {});
                 }
             }
 
@@ -609,6 +609,19 @@ class Controller {
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const todayWithdrawCount = await Withdraw.count({
+                where: {
+                    user_id: req.user_id,
+                    createdAt: {
+                        [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)),
+                        [Op.lt]: new Date(new Date().setHours(23, 59, 59, 999))
+                    }
+                }
+            });
+            if (todayWithdrawCount == 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '每天可以申请提现一次，预计一个工作日内到账', {}); 
             }
 
             const userId = req.user_id;
@@ -1474,6 +1487,10 @@ class Controller {
 
             const userId = req.user_id;
             const { amount, receiver_phone } = req.body;
+
+            if (amount < 50) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '转账金额不能小于50', {});
+            }
 
             const sender = await User.findByPk(userId, {
                 include: {
