@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2520,6 +2520,36 @@ class Controller {
                 }
             });
 
+            // Buy Masonic Package [购买共济礼包]
+            const buyMasonicPackages = await MasonicFundHistory.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'price', 'createdAt']
+            });
+            const newBuyMasonicPackages = buyMasonicPackages.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.price),
+                    createdAt: g.createdAt,
+                    type: '购买共济礼包',
+                    description: `扣除 ${Number(g.price)} 储备金`
+                }
+            });
+            
+            // Buy Masonic Package Bonus [购买共济礼包奖励]
+            const masonicPackageBonuses = await MasonicPackageBonuses.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newMasonicPackageBonuses = masonicPackageBonuses.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买共济礼包奖励',
+                    description: `添加 ${Number(g.amount)} 余额`
+                }
+            });
+
             // Sign Agreement [签署协议]
             // const signAgreement = [];
             // if (user.agreement_status === 'APPROVED') {
@@ -2626,7 +2656,9 @@ class Controller {
                 ...newDeposits, 
                 ...newTransfers, 
                 ...newBuyGolds, 
-                ...newGoldPackageBonuses, 
+                ...newGoldPackageBonuses,
+                ...newBuyMasonicPackages,
+                ...newMasonicPackageBonuses,
                 // ...signAgreement,
                 ...newWithdrawals,
                 ...newCustomizeWallet,
