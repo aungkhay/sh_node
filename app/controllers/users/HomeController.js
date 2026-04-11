@@ -2774,7 +2774,7 @@ class Controller {
                     transaction: t 
                 });
                 
-                await rewardRecord.update({ is_used: 1 }, { transaction: t });
+                await rewardRecord.update({ is_used: 1, description: '转为黄金' }, { transaction: t });
                 await user.increment({ gold: rewardRecord.amount }, { transaction: t });
 
                 await t.commit();
@@ -2851,7 +2851,7 @@ class Controller {
                     transaction: t
                 });
                 
-                await rewardRecord.update({ is_used: 1 }, { transaction: t });
+                await rewardRecord.update({ is_used: 1, description: '转为金额' }, { transaction: t });
                 await user.increment({ balance: Number(amount) }, { transaction: t });
 
                 await t.commit();

@@ -2435,6 +2435,21 @@ class Controller {
                 }
             });
 
+            // Use 黄金券
+            const reward7 = await RewardRecord.findAll({
+                where: { user_id: user.id, reward_id: 7, is_used: 1 },
+                attributes: ['id', 'amount', 'description', 'updatedAt']
+            });
+            const newReward7 = reward7.map(r => {
+                return {
+                    id: Number(r.id),
+                    amount: Number(r.amount),
+                    createdAt: r.updatedAt,
+                    type: '使用黄金券',
+                    description: `${Number(r.amount)} 克黄金，${r.description}`
+                }
+            });
+
             // Deposit [充值]
             const deposits = await Deposit.findAll({
                 where: { user_id: user.id, status: 1 },
@@ -2659,6 +2674,7 @@ class Controller {
 
             const mergedData = [
                 ...newReward3, 
+                ...newReward7,
                 ...newDeposits, 
                 ...newTransfers, 
                 ...newBuyGolds, 
