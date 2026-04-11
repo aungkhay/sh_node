@@ -697,6 +697,23 @@ const params = {
     perPage: 10
 }
 
+// [GET] Masonic Gift Package
+const url = `${baseURL}/masonic-gift-packages`;
+// [POST] Buy Masonic Package
+const url = `${baseURL}/masonic-gift-packages/${packageId}/buy`;
+// [GET] Masonic Package History
+const url = `${baseURL}/masonic-gift-packages/history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+// [GET] Masonic Package Earn History
+const url = `${baseURL}/masonic-gift-packages/earn-history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+
 // [POST] Apply withdraw active code
 const url = `${baseURL}/apply-withdraw-active-code`;
 

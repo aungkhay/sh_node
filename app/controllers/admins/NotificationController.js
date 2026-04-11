@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { Notification } = require('../../models');
+const { Notification, User, SpecificUserNotification } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
 
@@ -67,8 +67,33 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { type, title, subtitle, content } = req.body;
-            await Notification.create({ type, title, subtitle, content });
+            const { type, title, subtitle, content, phone_numbers } = req.body;
+
+            const users = await User.findAll({
+                where: {
+                    phone_number: {
+                        [Op.in]: phone_numbers
+                    }
+                },
+                attributes: ['id']
+            });
+
+            const noti = await Notification.create({ 
+                type: users.length ? 3 : type, 
+                title, 
+                subtitle,
+                content 
+            });
+            
+            if (users.length > 0) {
+                const notiData = users.map(u => {
+                    return {
+                        notification_id: noti.id,
+                        user_id: u.id
+                    }
+                });
+                await SpecificUserNotification.bulkCreate(notiData);
+            }
 
             // Log
             await this.adminLogger(req, 'Notification', 'create');

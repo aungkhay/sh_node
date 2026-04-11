@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory } = require('../../models');
 const { Op, literal, Sequelize } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -13,6 +13,8 @@ const AliOSS = require('../../helpers/AliOSS');
 const NewsReports = require('../../models/NewsReports');
 const RankHistory = require('../../models/RankHistory');
 const moment = require('moment');
+const MasonicPackageBonuses = require('../../models/MasonicPackageBonuses');
+const MasonicPackageEarn = require('../../models/MasonicPackageEarn');
 
 class Controller {
     constructor(app) {
@@ -259,7 +261,7 @@ class Controller {
                     attributes: ['id', 'type', 'title', 'subtitle', 'createdAt'],
                     where: {
                         [Op.or]: [
-                            { type: { [Op.in]: [1, 2, 3] } }, // global
+                            { type: { [Op.in]: [1, 2] } }, // global
                             literal(`EXISTS (
                                 SELECT 1
                                 FROM specific_user_notifications sn
@@ -282,7 +284,7 @@ class Controller {
                 const total = await Notification.count({
                     where: {
                         [Op.or]: [
-                            { type: { [Op.in]: [1, 2, 3] } },
+                            { type: { [Op.in]: [1, 2] } }, // global
                             literal(`EXISTS (
                                 SELECT 1
                                 FROM specific_user_notifications sn
@@ -320,7 +322,7 @@ class Controller {
                 attributes: ['id', 'type', 'title', 'subtitle', 'createdAt'],
                 where: {
                     [Op.or]: [
-                        { type: { [Op.in]: [1, 2, 3] } },
+                        { type: { [Op.in]: [1, 2] } }, // global
                         literal(`EXISTS (
                             SELECT 1
                             FROM specific_user_notifications sn
@@ -343,7 +345,7 @@ class Controller {
             const total = await Notification.count({
                 where: {
                     [Op.or]: [
-                        { type: { [Op.in]: [1, 2, 3] } },
+                        { type: { [Op.in]: [1, 2] } }, // global
                         literal(`EXISTS (
                             SELECT 1
                             FROM specific_user_notifications sn
@@ -3755,6 +3757,211 @@ class Controller {
         }
     }
 
+    GET_MASONIC_PACKAGES = async () => {
+        try {     
+            let pack = await this.redisHelper.getValue('masonic_gift_pack');
+            if (pack) {
+                pack = JSON.parse(pack);
+            } else {
+                const note = '首批共济基金发放名额预审礼包，购买后可获得首批共济基金发放预审名额，并且可激活礼包金额1%/天的预审资格用户终身特权，伞下用户参与时，用户可一次性获得分别为15%、7%、3%的推荐奖励。';
+                pack = [
+                    { id: 1, price: 100, note: note },
+                    { id: 2, price: 300, note: note },
+                    { id: 3, price: 500, note: note },
+                    { id: 4, price: 1000, note: note },
+                    { id: 5, price: 2000, note: note },
+                    { id: 6, price: 5000, note: note },
+                    { id: 7, price: 10000, note: note },
+                ];
+
+                await this.redisHelper.setValue('masonic_gift_pack', JSON.stringify(pack));
+            };
+            return pack;
+        } catch (error) {
+            return [];
+        }
+    }
+
+    MASONIC_GIFT_PACKAGE = async (req, res) => {
+        try {
+            let pack = await this.GET_MASONIC_PACKAGES();
+            pack = pack.map(p => ({
+                id: p.id,
+                price: Number(p.price),
+                note: p.note
+            }));
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', pack);
+        } catch (error) {
+            errLogger(`[MASONIC_GIFT_PACKAGE][${req.user_id}]: ${error.stack}`); 
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BUY_MASONIC_PACKAGE = async (req, res) => {
+        try {
+            const id = req.params.id;
+            let pack = await this.GET_MASONIC_PACKAGES();
+            const selectedPack = pack.find(p => p.id === parseInt(id));
+            if (!selectedPack) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
+            }
+
+            const userId = req.user_id;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6']
+            });
+            if (!user.kyc) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+
+            if (Number(user.reserve_fund) < selectedPack.price) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await user.update({ reserve_fund: Number(user.reserve_fund) - selectedPack.price }, { transaction: t });
+                const obj = {
+                    relation: user.relation,
+                    user_id: user.id,
+                    package_id: selectedPack.id,
+                    price: selectedPack.price,
+                }
+                await MasonicPackageHistory.create(obj, { transaction: t });
+
+                const bonusArr = [15, 7, 3];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
+                commonLogger(`[BUY_MASONIC_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_MASONIC_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(selectedPack.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[BUY_MASONIC_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await MasonicPackageBonuses.bulkCreate(bonuses, { transaction: t });
+                }
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买礼包失败', {}); 
+            }
+
+        } catch (error) {
+            errLogger(`[BUY_RESERVE_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    MASONIC_PACKAGE_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+
+            const { rows, count } = await MasonicPackageHistory.findAndCountAll({
+                where: { user_id: userId },
+                attributes: ['id', 'package_id', 'price', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[MASONIC_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    MASONIC_PACKAGE_EARN_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await MasonicPackageEarn.findAndCountAll({
+                where: { user_id: userId },
+                attributes: ['id', 'package_id', 'amount', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+        } catch (error) {
+            errLogger(`[MASONIC_PACKAGE_EARN_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     BUY_AUTHORIZATION_LETTER = async (req, res) => {
         try {
             const userId = req.user_id || 156;
@@ -3844,6 +4051,16 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '激活码已被使用', {});
             }
             await user.update({ is_withdraw_active_code_used: 1 });
+
+            const noti = await Notification.create({
+                type: 3, // for user specific
+                title: '激活成功',
+                content: '激活成功 ***********',
+                status: 1
+            }, { transaction: t });
+
+            await SpecificUserNotification.create({ user_id: userId, notification_id: noti.id }, { transaction: t });
+
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '激活码激活成功', {});
         } catch (error) {
             errLogger(`[APPLY_WITHDRAW_ACTIVE_CODE][${req.user_id}]: ${error.stack}`);

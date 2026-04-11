@@ -82,6 +82,11 @@ class UserRoute extends express.Router {
         this.post('/gold-gift-packages/repurchase', middleware.isLoggedIn, HomeCtrl.REPURCHASE_PACKAGE);
         this.get('/gold-gift-packages/earn-history', middleware.isLoggedIn, HomeCtrl.GOLD_PACKAGE_EARN_HISTORY);
         this.post('/apply-withdraw-active-code', middleware.isLoggedIn, HomeCtrl.APPLY_WITHDRAW_ACTIVE_CODE);
+        // Masonic Package Routes
+        this.get('/masonic-gift-packages', middleware.isLoggedIn, HomeCtrl.MASONIC_GIFT_PACKAGE);
+        this.post('/masonic-gift-packages/:id/buy', middleware.isLoggedIn, HomeCtrl.BUY_MASONIC_PACKAGE);
+        this.get('/masonic-gift-packages/history', middleware.isLoggedIn, HomeCtrl.MASONIC_PACKAGE_HISTORY);
+        this.get('/masonic-gift-packages/earn-history', middleware.isLoggedIn, HomeCtrl.MASONIC_PACKAGE_EARN_HISTORY);
 
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);

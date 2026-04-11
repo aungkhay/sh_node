@@ -52,6 +52,9 @@ const GoldPackageReturn = require('./GoldPackageReturn');
 const GoldPackageRepurchase = require('./GoldPackageRepurchase');
 const GoldPlanCheckIn = require('./GoldPlanCheckIn');
 const BalanceTransfer = require('./BalanceTransfer');
+const MasonicPackageHistory = require('./MasonicPackageHistory');
+const MasonicPackageBonuses = require('./MasonicPackageBonuses');
+const MasonicPackageEarn = require('./MasonicPackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -235,6 +238,24 @@ BalanceTransfer.belongsTo(User, { foreignKey: 'from_user', as: 'from', onDelete:
 User.hasMany(BalanceTransfer, { foreignKey: 'to_user', as: 'received_transfers', onDelete: 'CASCADE' });
 BalanceTransfer.belongsTo(User, { foreignKey: 'to_user', as: 'to', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ MASONIC_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(MasonicPackageHistory, { foreignKey: 'user_id', as: 'masonic_package_histories', onDelete: 'CASCADE' });
+MasonicPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ MASONIC_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(MasonicPackageBonuses, { foreignKey: 'user_id', as: 'masonic_package_bonuses', onDelete: 'CASCADE' });
+MasonicPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+MasonicPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ MASONIC_PACKAGE_EARN (1:N) ==========
+User.hasMany(MasonicPackageEarn, { foreignKey: 'user_id', as: 'masonic_package_earn', onDelete: 'CASCADE' });
+MasonicPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+MasonicPackageEarn.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== MASONIC_PACKAGE_HISTORY ↔️ MASONIC_PACKAGE_EARN (1:N) ==========
+MasonicPackageHistory.hasMany(MasonicPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+MasonicPackageEarn.belongsTo(MasonicPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -284,6 +305,9 @@ const models = {
     GoldPackageRepurchase,
     GoldPlanCheckIn,
     BalanceTransfer,
+    MasonicPackageHistory,
+    MasonicPackageBonuses,
+    MasonicPackageEarn,
 };
 
 // Export models + db connection

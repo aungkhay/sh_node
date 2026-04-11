@@ -149,6 +149,11 @@ exports.create_noti = () => {
             .withMessage('状态无效'),
         check('title', { msg: '标题不能为空' }).not().isEmpty(),
         check('content', { msg: '内容不能为空' }).not().isEmpty(),
+        // phone_numbers optional
+        check('phone_numbers')
+            .optional({ checkFalsy: true })
+            .isArray({ min: 1 })
+            .withMessage('手机号列表无效'),
     ]
 }
 
