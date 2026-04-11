@@ -250,7 +250,6 @@ MasonicPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_us
 // ========== USER ↔️ MASONIC_PACKAGE_EARN (1:N) ==========
 User.hasMany(MasonicPackageEarn, { foreignKey: 'user_id', as: 'masonic_package_earn', onDelete: 'CASCADE' });
 MasonicPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
-MasonicPackageEarn.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
 
 // ========== MASONIC_PACKAGE_HISTORY ↔️ MASONIC_PACKAGE_EARN (1:N) ==========
 MasonicPackageHistory.hasMany(MasonicPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });

@@ -6,6 +6,8 @@ const Decimal = require('decimal.js');
 const axios = require('axios');
 const RedisHelper = require('../helpers/RedisHelper');
 const moment = require('moment');
+const MasonicPackageHistory = require('../models/MasonicPackageHistory');
+const MasonicPackageEarn = require('../models/MasonicPackageEarn');
 
 class CronJob {
     constructor(app) {
@@ -35,6 +37,7 @@ class CronJob {
         // Run at 23:30 every day
         cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
         cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
+        cron.schedule('30 22 * * *', this.GIVE_MASONIC_BONUS).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run 10th minute of every hour
@@ -1452,6 +1455,52 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[REJECT_ALL_PENDING_WITHDRAW]: ${error.stack}`);
+        }
+    }
+
+    GIVE_MASONIC_BONUS = async () => {
+        // 1%
+        try {
+            const packages = await MasonicPackageHistory.findAll({
+                attributes: ['id', 'user_id', 'package_id', 'price']
+            });
+
+            // chunks of 100 to avoid too many transactions at once
+            const chunkSize = 100;
+            for (let i = 0; i < packages.length; i += chunkSize) {
+                const chunk = packages.slice(i, i + chunkSize);
+
+                const t = await db.transaction();
+                try {
+                    for (let pack of chunk) {
+                        const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance'], transaction: t });
+                        if (!user) {
+                            continue;
+                        }
+                        const dailyReward = new Decimal(Number(pack.price))
+                            .times(0.01) // 1% daily reward
+                            .toNumber();
+                        if (dailyReward > 0) {
+                            await user.increment({ balance: dailyReward }, { transaction: t });
+                            await MasonicPackageEarn.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                package_id: pack.package_id,
+                                package_history_id: pack.id,
+                                amount: dailyReward,
+                                description: '共计资金礼包每日收益',
+                            }, { transaction: t });
+                        }
+                    }
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[CHECK_GOLD_PACKAGE_DAILY_RETURN][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[GIVE_MASONIC_BONUS]: ${error.stack}`); 
         }
     }
 }
