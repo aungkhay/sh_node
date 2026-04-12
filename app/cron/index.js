@@ -1543,7 +1543,6 @@ class CronJob {
                             },
                             attributes: ['id', 'reserve_price'],
                             order: [['createdAt', 'DESC']],
-                            transaction: t
                         });
 
                         const goldValue = new Decimal(reward.amount * goldPrice.reserve_price)
