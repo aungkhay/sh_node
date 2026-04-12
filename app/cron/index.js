@@ -1506,21 +1506,33 @@ class CronJob {
 
     RECALL_GOLD_COUPON_TEMP = async () => {
         try {
-            const rewards = await RewardRecord.findAll({
+            const rewardGroup = await RewardRecord.findAll({
                 where: {
                     reward_id: 7,
                     is_used: 1
                 },
-                attributes: ['id', 'user_id', 'amount', 'createdAt', 'updatedAt']
+                attributes: ['user_id'],
+                group: ['user_id']
             });
 
             const chunkSize = 100;
-            for (let i = 0; i < rewards.length; i += chunkSize) {
-                const chunk = rewards.slice(i, i + chunkSize);
+            for (let i = 0; i < rewardGroup.length; i += chunkSize) {
+                const chunk = rewardGroup.slice(i, i + chunkSize);
                 
-                for (let reward of chunk) {
-                    const t = await db.transaction();
-                    try {
+                for (let group of chunk) {
+                    const rewards = await RewardRecord.findAll({
+                        where: {
+                            user_id: group.user_id,
+                            reward_id: 7,
+                            is_used: 1,
+                            user_id: group.user_id
+                        },
+                        attributes: ['id', 'user_id', 'amount', 'updatedAt'],
+                    });
+
+                    let totalGoldValue = 0;
+                    for (let i = 0; i < rewards.length; i++) {
+                        const reward = rewards[i];
                         const date = moment(reward.updatedAt).format('YYYY-MM-DD');
                         const goldPrice = await GoldPrice.findOne({
                             where: {
@@ -1533,222 +1545,230 @@ class CronJob {
                             order: [['createdAt', 'DESC']],
                             transaction: t
                         });
+
                         const goldValue = new Decimal(reward.amount * goldPrice.reserve_price)
                             .times(80) // 80% [八折兑换为余额]
                             .times(0.01)
                             .toNumber();
 
-                        const user = await User.findByPk(reward.user_id, { attributes: ['id', 'balance', 'reserve_fund'], transaction: t });
-                        
-                        const withdraws = await Withdraw.findAll({
-                            where: {
-                                user_id: reward.user_id,
-                                status: 0,
-                                createdAt: {
-                                    [Op.gt]: rewards[0].updatedAt,
-                                }
-                            },
-                            attributes: ['id', 'amount'],
-                            transaction: t
-                        });
-                        if (withdraws.length > 0) {
-                            let returnAmount = 0;
-                            for (const withdraw of withdraws) {
-                                returnAmount += Number(withdraw.amount);
-                                await withdraw.update({ status: 2, description: '黄金券入库' }, { transaction: t });
-                                await GoldCouponTemp.create({
-                                    user_id: reward.user_id,
-                                    reward_record_id: reward.id,
-                                    model: 'Withdraw',
-                                    content: withdraw.get({ plain: true }),
-                                }, { transaction: t });
-                            }
+                        totalGoldValue += goldValue;
+                    }
 
-                            const remainBalance = new Decimal(user.balance).plus(returnAmount).toNumber();
-                            const realRemainBalance = new Decimal(remainBalance).minus(goldValue).toNumber();
-                            if (realRemainBalance >= 0) {
-                                await GoldCouponTemp.create({
-                                    user_id: reward.user_id,
-                                    reward_record_id: reward.id,
-                                    model: 'User',
-                                    content: {
-                                        before_balance: user.balance,
-                                        return_amount: returnAmount,
-                                        gold_count: Number(reward.amount),
-                                        gold_value: goldValue,
-                                        after_balance: realRemainBalance,
-                                    },
-                                }, { transaction: t });
-                                await user.update({ balance: realRemainBalance }, { transaction: t });
-                            }
-                        }
-                        
-                        const goldPackages = await GoldPackageHistory.findAll({
-                            where: {
-                                user_id: reward.user_id,
-                                createdAt: {
-                                    [Op.gte]: rewards[0].updatedAt,
-                                }
-                            },
-                            attributes: ['id', 'price'],
-                        });
-                        for (const pack of goldPackages) {
-                            const bonuses = await GoldPackageBonuses.findAll({
+                    for (let reward of rewards) {
+                        const t = await db.transaction();
+                        try {
+                            const user = await User.findByPk(reward.user_id, { attributes: ['id', 'balance', 'reserve_fund'], transaction: t });
+                            
+                            const withdraws = await Withdraw.findAll({
                                 where: {
-                                    from_user_id: reward.user_id,
+                                    user_id: reward.user_id,
+                                    status: 0,
+                                    createdAt: {
+                                        [Op.gt]: rewards[0].updatedAt,
+                                    }
+                                },
+                                attributes: ['id', 'amount'],
+                                transaction: t
+                            });
+                            if (withdraws.length > 0) {
+                                let returnAmount = 0;
+                                for (const withdraw of withdraws) {
+                                    returnAmount += Number(withdraw.amount);
+                                    await withdraw.update({ status: 2, description: '黄金券入库' }, { transaction: t });
+                                    await GoldCouponTemp.create({
+                                        user_id: reward.user_id,
+                                        reward_record_id: reward.id,
+                                        model: 'Withdraw',
+                                        content: withdraw.get({ plain: true }),
+                                    }, { transaction: t });
+                                }
+
+                                const remainBalance = new Decimal(user.balance).plus(returnAmount).toNumber();
+                                const realRemainBalance = new Decimal(remainBalance).minus(totalGoldValue).toNumber();
+                                if (realRemainBalance >= 0) {
+                                    await GoldCouponTemp.create({
+                                        user_id: reward.user_id,
+                                        reward_record_id: reward.id,
+                                        model: 'User',
+                                        content: {
+                                            before_balance: user.balance,
+                                            return_amount: returnAmount,
+                                            gold_count: Number(reward.amount),
+                                            gold_value: totalGoldValue,
+                                            after_balance: realRemainBalance,
+                                        },
+                                    }, { transaction: t });
+                                    await user.update({ balance: realRemainBalance }, { transaction: t });
+                                }
+                            }
+                            
+                            const goldPackages = await GoldPackageHistory.findAll({
+                                where: {
+                                    user_id: reward.user_id,
                                     createdAt: {
                                         [Op.gte]: rewards[0].updatedAt,
                                     }
                                 },
-                                attributes: ['id', 'amount', 'user_id'],
+                                attributes: ['id', 'price'],
                             });
-
-                            await GoldCouponTemp.create({
-                                user_id: reward.user_id,
-                                reward_record_id: reward.id,
-                                model: 'GoldPackageHistory',
-                                content: pack.get({ plain: true }),
-                            }, { transaction: t });
-                            await pack.destroy({ transaction: t });
-
-                            for (const bonus of bonuses) {
-
-                                const parentUser = await User.findByPk(bonus.user_id, { attributes: ['id', 'balance', 'reserve_fund'], transaction: t });
-                                // 
-                                if (parentUser && Number(parentUser.balance) >= Number(bonus.amount)) {
-                                    await parentUser.increment({ balance: -Number(bonus.amount) }, { transaction: t });
-                                } else {
-                                    const withdraw = await Withdraw.findOne({
-                                        where: {
-                                            user_id: bonus.user_id,
-                                            status: 0,
-                                        },
-                                        attributes: ['id', 'amount'],
-                                        transaction: t
-                                    });
-                                    if (withdraw) {
-                                        if ((Number(withdraw.amount) + Number(parentUser.balance)) > bonus.amount) {
-                                            const parentRemainBalance = new Decimal(parentUser.balance).plus(withdraw.amount).minus(bonus.amount).toNumber();
-
-                                            await GoldCouponTemp.create({
-                                                user_id: bonus.user_id,
-                                                reward_record_id: reward.id,
-                                                model: 'Withdraw',
-                                                content: withdraw.get({ plain: true }),
-                                            }, { transaction: t });
-
-                                            await GoldCouponTemp.create({
-                                                user_id: bonus.user_id,
-                                                reward_record_id: reward.id,
-                                                model: 'User',
-                                                content: {
-                                                    type: 'parent',
-                                                    before_balance: parentUser.balance,
-                                                    return_amount: withdraw.amount,
-                                                    after_balance: parentRemainBalance,
-                                                },
-                                            }, { transaction: t });
-
-                                            await withdraw.update({ status: 2, description: 'Not Enought To Substract' }, { transaction: t });
-                                            await parentUser.update({ balance: parentRemainBalance }, { transaction: t });
+                            for (const pack of goldPackages) {
+                                const bonuses = await GoldPackageBonuses.findAll({
+                                    where: {
+                                        from_user_id: reward.user_id,
+                                        createdAt: {
+                                            [Op.gte]: rewards[0].updatedAt,
                                         }
+                                    },
+                                    attributes: ['id', 'amount', 'user_id'],
+                                });
+
+                                await GoldCouponTemp.create({
+                                    user_id: reward.user_id,
+                                    reward_record_id: reward.id,
+                                    model: 'GoldPackageHistory',
+                                    content: pack.get({ plain: true }),
+                                }, { transaction: t });
+                                await pack.destroy({ transaction: t });
+
+                                for (const bonus of bonuses) {
+
+                                    const parentUser = await User.findByPk(bonus.user_id, { attributes: ['id', 'balance', 'reserve_fund'], transaction: t });
+                                    // 
+                                    if (parentUser && Number(parentUser.balance) >= Number(bonus.amount)) {
+                                        await parentUser.increment({ balance: -Number(bonus.amount) }, { transaction: t });
                                     } else {
-                                        if ((Number(parentUser.reserve_fund) + Number(parentUser.balance)) > bonus.amount) {
-                                            const parentRemainBalance = new Decimal(parentUser.balance).plus(parentUser.reserve_fund).minus(bonus.amount).toNumber();
-
-                                            await GoldCouponTemp.create({
+                                        const withdraw = await Withdraw.findOne({
+                                            where: {
                                                 user_id: bonus.user_id,
-                                                reward_record_id: reward.id,
-                                                model: 'User',
-                                                content: {
-                                                    type: 'parent',
-                                                    before_balance: parentUser.balance,
-                                                    reserve_fund: parentUser.reserve_fund,
-                                                    after_balance: parentRemainBalance,
-                                                },
-                                            }, { transaction: t });
+                                                status: 0,
+                                            },
+                                            attributes: ['id', 'amount'],
+                                            transaction: t
+                                        });
+                                        if (withdraw) {
+                                            if ((Number(withdraw.amount) + Number(parentUser.balance)) > bonus.amount) {
+                                                const parentRemainBalance = new Decimal(parentUser.balance).plus(withdraw.amount).minus(bonus.amount).toNumber();
 
-                                            await parentUser.update({ balance: parentRemainBalance, reserve_fund: 0 }, { transaction: t });
+                                                await GoldCouponTemp.create({
+                                                    user_id: bonus.user_id,
+                                                    reward_record_id: reward.id,
+                                                    model: 'Withdraw',
+                                                    content: withdraw.get({ plain: true }),
+                                                }, { transaction: t });
 
-                                            const tr = await Transfer.create({
-                                                user_id: parentUser.id,
-                                                wallet_type: 2,
-                                                amount: parentUser.reserve_fund,
-                                                from: 2,
-                                                to: 1,
-                                                before_from_amount: parentUser.reserve_fund,
-                                                after_from_amount: 0,
-                                                before_to_amount: parentUser.balance,
-                                                after_to_amount: parentRemainBalance,
-                                                status: 'APPROVED'
-                                            }, { transaction: t });
+                                                await GoldCouponTemp.create({
+                                                    user_id: bonus.user_id,
+                                                    reward_record_id: reward.id,
+                                                    model: 'User',
+                                                    content: {
+                                                        type: 'parent',
+                                                        before_balance: parentUser.balance,
+                                                        return_amount: withdraw.amount,
+                                                        after_balance: parentRemainBalance,
+                                                    },
+                                                }, { transaction: t });
 
-                                            await GoldCouponTemp.create({
-                                                user_id: bonus.user_id,
-                                                reward_record_id: reward.id,
-                                                model: 'Transfer',
-                                                content: tr.get({ plain: true }),
-                                            }, { transaction: t });
+                                                await withdraw.update({ status: 2, description: 'Not Enought To Substract' }, { transaction: t });
+                                                await parentUser.update({ balance: parentRemainBalance }, { transaction: t });
+                                            }
+                                        } else {
+                                            if ((Number(parentUser.reserve_fund) + Number(parentUser.balance)) > bonus.amount) {
+                                                const parentRemainBalance = new Decimal(parentUser.balance).plus(parentUser.reserve_fund).minus(bonus.amount).toNumber();
+
+                                                await GoldCouponTemp.create({
+                                                    user_id: bonus.user_id,
+                                                    reward_record_id: reward.id,
+                                                    model: 'User',
+                                                    content: {
+                                                        type: 'parent',
+                                                        before_balance: parentUser.balance,
+                                                        reserve_fund: parentUser.reserve_fund,
+                                                        after_balance: parentRemainBalance,
+                                                    },
+                                                }, { transaction: t });
+
+                                                await parentUser.update({ balance: parentRemainBalance, reserve_fund: 0 }, { transaction: t });
+
+                                                const tr = await Transfer.create({
+                                                    user_id: parentUser.id,
+                                                    wallet_type: 2,
+                                                    amount: parentUser.reserve_fund,
+                                                    from: 2,
+                                                    to: 1,
+                                                    before_from_amount: parentUser.reserve_fund,
+                                                    after_from_amount: 0,
+                                                    before_to_amount: parentUser.balance,
+                                                    after_to_amount: parentRemainBalance,
+                                                    status: 'APPROVED'
+                                                }, { transaction: t });
+
+                                                await GoldCouponTemp.create({
+                                                    user_id: bonus.user_id,
+                                                    reward_record_id: reward.id,
+                                                    model: 'Transfer',
+                                                    content: tr.get({ plain: true }),
+                                                }, { transaction: t });
+                                            }
                                         }
                                     }
+                                    await GoldCouponTemp.create({
+                                        user_id: bonus.user_id,
+                                        reward_record_id: reward.id,
+                                        model: 'GoldPackageBonuses',
+                                        content: bonus.get({ plain: true }),
+                                    }, { transaction: t });
+                                    await bonus.destroy({ transaction: t });
                                 }
-                                await GoldCouponTemp.create({
-                                    user_id: bonus.user_id,
-                                    reward_record_id: reward.id,
-                                    model: 'GoldPackageBonuses',
-                                    content: bonus.get({ plain: true }),
-                                }, { transaction: t });
-                                await bonus.destroy({ transaction: t });
                             }
-                        }
 
-                        if (withdraws.length === 0 && goldPackages.length === 0) {
-                            const remainBalance = new Decimal(user.balance).minus(goldValue).toNumber();
-                            if (remainBalance >= 0) {
-                                await GoldCouponTemp.create({
-                                    user_id: reward.user_id,
-                                    reward_record_id: reward.id,
-                                    model: 'User',
-                                    content: {
-                                        before_balance: user.balance,
-                                        gold_count: Number(reward.amount),
-                                        gold_value: goldValue,
-                                        after_balance: remainBalance,
-                                    },
-                                }, { transaction: t });
+                            if (withdraws.length === 0 && goldPackages.length === 0) {
+                                const remainBalance = new Decimal(user.balance).minus(totalGoldValue).toNumber();
+                                if (remainBalance >= 0) {
+                                    await GoldCouponTemp.create({
+                                        user_id: reward.user_id,
+                                        reward_record_id: reward.id,
+                                        model: 'User',
+                                        content: {
+                                            before_balance: user.balance,
+                                            gold_count: Number(reward.amount),
+                                            gold_value: totalGoldValue,
+                                            after_balance: remainBalance,
+                                        },
+                                    }, { transaction: t });
 
-                                await user.update({ balance: remainBalance }, { transaction: t });
-                            }
-                        }
-
-                        await reward.update({ is_used: 0, description: '黄金券入库', updatedAt: reward.updatedAt }, { transaction: t });
-
-                        const transfers = await Transfer.findAll({
-                            where: {
-                                user_id: reward.user_id,
-                                createdAt: {
-                                    [Op.gt]: rewards[0].updatedAt,
+                                    await user.update({ balance: remainBalance }, { transaction: t });
                                 }
-                            },
-                            transaction: t
-                        });
-
-                        if (transfers.length > 0) {
-                            for (const tr of transfers) {
-                                await GoldCouponTemp.create({
-                                    user_id: reward.user_id,
-                                    reward_record_id: reward.id,
-                                    model: 'Transfer',
-                                    content: tr.get({ plain: true }),
-                                }, { transaction: t });
                             }
-                        }
 
-                        console.log(`[RECALL_GOLD_COUPON_TEMP][Reward Record ID: ${reward.id}]: Processed reward for user ID ${reward.user_id}`);
-                        await t.commit();
-                    } catch (error) {
-                        errLogger(`[RECALL_GOLD_COUPON_TEMP][Transaction Error]: ${error.stack}`);
-                        await t.rollback();
+                            await reward.update({ is_used: 0, description: '黄金券入库', updatedAt: reward.updatedAt }, { transaction: t });
+
+                            const transfers = await Transfer.findAll({
+                                where: {
+                                    user_id: reward.user_id,
+                                    createdAt: {
+                                        [Op.gt]: rewards[0].updatedAt,
+                                    }
+                                },
+                                transaction: t
+                            });
+
+                            if (transfers.length > 0) {
+                                for (const tr of transfers) {
+                                    await GoldCouponTemp.create({
+                                        user_id: reward.user_id,
+                                        reward_record_id: reward.id,
+                                        model: 'Transfer',
+                                        content: tr.get({ plain: true }),
+                                    }, { transaction: t });
+                                }
+                            }
+
+                            console.log(`[RECALL_GOLD_COUPON_TEMP][Reward Record ID: ${reward.id}]: Processed reward for user ID ${reward.user_id}`);
+                            await t.commit();
+                        } catch (error) {
+                            errLogger(`[RECALL_GOLD_COUPON_TEMP][Transaction Error]: ${error.stack}`);
+                            await t.rollback();
+                        }
                     }
                 }
             }
