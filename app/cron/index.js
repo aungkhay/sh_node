@@ -1517,10 +1517,10 @@ class CronJob {
             const chunkSize = 100;
             for (let i = 0; i < rewards.length; i += chunkSize) {
                 const chunk = rewards.slice(i, i + chunkSize);
-
-                const t = await db.transaction();
-                try {
-                    for (let reward of chunk) {
+                
+                for (let reward of chunk) {
+                    const t = await db.transaction();
+                    try {
                         const date = moment(reward.updatedAt).format('YYYY-MM-DD');
                         const goldPrice = await GoldPrice.findOne({
                             where: {
@@ -1745,12 +1745,11 @@ class CronJob {
                         }
 
                         console.log(`[RECALL_GOLD_COUPON_TEMP][Reward Record ID: ${reward.id}]: Processed reward for user ID ${reward.user_id}`);
+                        await t.commit();
+                    } catch (error) {
+                        errLogger(`[RECALL_GOLD_COUPON_TEMP][Transaction Error]: ${error.stack}`);
+                        await t.rollback();
                     }
-
-                    await t.commit();
-                } catch (error) {
-                    errLogger(`[RECALL_GOLD_COUPON_TEMP][Transaction Error]: ${error.stack}`);
-                    await t.rollback();
                 }
             }
 
