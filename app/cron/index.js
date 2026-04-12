@@ -1721,7 +1721,7 @@ class CronJob {
                             }
                         }
 
-                        await reward.update({ is_used: 0, description: '黄金券入库' }, { transaction: t });
+                        await reward.update({ is_used: 0, description: '黄金券入库', updatedAt: reward.updatedAt }, { transaction: t });
 
                         const transfers = await Transfer.findAll({
                             where: {
