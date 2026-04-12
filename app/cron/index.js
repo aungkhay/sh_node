@@ -1743,6 +1743,8 @@ class CronJob {
                                 }, { transaction: t });
                             }
                         }
+
+                        console.log(`[RECALL_GOLD_COUPON_TEMP][Reward Record ID: ${reward.id}]: Processed reward for user ID ${reward.user_id}`);
                     }
 
                     await t.commit();
