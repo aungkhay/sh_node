@@ -1545,7 +1545,7 @@ class CronJob {
                                 user_id: reward.user_id,
                                 status: 0,
                                 createdAt: {
-                                    [Op.gt]: reward.updatedAt,
+                                    [Op.gt]: rewards[0].updatedAt,
                                 }
                             },
                             attributes: ['id', 'amount'],
@@ -1587,7 +1587,7 @@ class CronJob {
                             where: {
                                 user_id: reward.user_id,
                                 createdAt: {
-                                    [Op.gte]: reward.updatedAt,
+                                    [Op.gte]: rewards[0].updatedAt,
                                 }
                             },
                             attributes: ['id', 'price'],
@@ -1597,7 +1597,7 @@ class CronJob {
                                 where: {
                                     from_user_id: reward.user_id,
                                     createdAt: {
-                                        [Op.gte]: reward.updatedAt,
+                                        [Op.gte]: rewards[0].updatedAt,
                                     }
                                 },
                                 attributes: ['id', 'amount', 'user_id'],
@@ -1727,7 +1727,7 @@ class CronJob {
                             where: {
                                 user_id: reward.user_id,
                                 createdAt: {
-                                    [Op.gt]: reward.updatedAt,
+                                    [Op.gt]: rewards[0].updatedAt,
                                 }
                             },
                             transaction: t
@@ -1744,6 +1744,8 @@ class CronJob {
                             }
                         }
                     }
+
+                    await t.commit();
                 } catch (error) {
                     errLogger(`[RECALL_GOLD_COUPON_TEMP][Transaction Error]: ${error.stack}`);
                     await t.rollback();
