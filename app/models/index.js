@@ -55,6 +55,7 @@ const BalanceTransfer = require('./BalanceTransfer');
 const MasonicPackageHistory = require('./MasonicPackageHistory');
 const MasonicPackageBonuses = require('./MasonicPackageBonuses');
 const MasonicPackageEarn = require('./MasonicPackageEarn');
+const GoldCouponTemp = require('./GoldCouponTemp');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -255,6 +256,10 @@ MasonicPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete
 MasonicPackageHistory.hasMany(MasonicPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
 MasonicPackageEarn.belongsTo(MasonicPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
+// ========== GoldCouponTemp ↔️ User (1:N) ==========
+User.hasMany(GoldCouponTemp, { foreignKey: 'user_id', as: 'gold_coupon_temps', onDelete: 'CASCADE' });
+GoldCouponTemp.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -307,6 +312,7 @@ const models = {
     MasonicPackageHistory,
     MasonicPackageBonuses,
     MasonicPackageEarn,
+    GoldCouponTemp,
 };
 
 // Export models + db connection
