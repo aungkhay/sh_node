@@ -1810,12 +1810,13 @@ class CronJob {
 
                     // 红包雨奖励
                     const reward3Amount = await RewardRecord.sum('amount', {
-                        where: { user_id: user.id }
+                        where: { user_id: user.id, reward_id: 3 }
                     }) || 0;
                     totalBalance += Number(reward3Amount);
 
                     // Transfer [转账] 2 => 1
                     const transfer21 = await Transfer.sum('amount', {
+                        user_id: user.id,
                         from: 2,
                         to: 1,
                         createdAt: {
@@ -1826,6 +1827,7 @@ class CronJob {
                     
                     // Transfer [转账] 1 => 2
                     const transfer12 = await Transfer.sum('amount', {
+                        user_id: user.id,
                         from: 1,
                         to: 2,
                         createdAt: {
@@ -1836,7 +1838,7 @@ class CronJob {
 
                     // 推荐金提取券
                     const transfers = await Transfer.sum('amount', {
-                        reward_id: 8,
+                        where: { reward_id: 8, user_id: user.id },
                     }) || 0;
                     totalBalance += Number(transfers)
 
@@ -1895,6 +1897,7 @@ class CronJob {
                         }
                     }
 
+                    console.log(`User ID: ${user.id}, Calculated Total Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
                     moneyTrackLogger(`User ID: ${user.id}, Calculated Total Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
                 }
             }
