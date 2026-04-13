@@ -1816,6 +1816,7 @@ class CronJob {
                     const reward3Amount = await RewardRecord.sum('amount', {
                         where: { user_id: user.id, reward_id: 3 }
                     }) || 0;
+                    moneyTrackLogger(`Red Packet Rain Reward: ${reward3Amount}`);
                     totalBalance += Number(reward3Amount);
 
                     // Transfer [转账] 2 => 1
@@ -1827,6 +1828,7 @@ class CronJob {
                             [Op.lte]: '2026-04-10 00:00:00'
                         }
                     }) || 0;
+                    moneyTrackLogger(`Transfer 2 => 1: ${transfer21}`);
                     totalBalance -= Number(transfer21);
                     
                     // Transfer [转账] 1 => 2
@@ -1838,12 +1840,14 @@ class CronJob {
                             [Op.lte]: '2026-04-10 00:00:00'
                         }
                     }) || 0;
+                    moneyTrackLogger(`Transfer 1 => 2: ${transfer12}`);
                     totalBalance += Number(transfer12);
 
                     // 推荐金提取券
                     const transfers = await Transfer.sum('amount', {
                         where: { reward_id: 8, user_id: user.id },
                     }) || 0;
+                    moneyTrackLogger(`Referral Bonus Extraction Coupon: ${transfers}`);
                     totalBalance += Number(transfers)
 
                     // Gold Package Return
@@ -1857,6 +1861,7 @@ class CronJob {
                     const goldPackageBonuses = await GoldPackageBonuses.sum('amount', {
                         where: { user_id: user.id }
                     }) || 0;
+                    moneyTrackLogger(`Buy Gold Package Bonus: ${goldPackageBonuses}`);
                     totalBalance += Number(goldPackageBonuses);
 
                     // Withdraws
@@ -1874,6 +1879,7 @@ class CronJob {
                         if (withdraw.amount === 1000) {
                             continue;
                         }
+                        moneyTrackLogger(`Withdraw: ${withdraw.amount} (Status: ${withdraw.status})`);
                         totalBalance -= Number(withdraw.amount);
 
                         if (withdraw.status == 0 || withdraw.status == 2) {
@@ -1895,6 +1901,7 @@ class CronJob {
                         // remove first one and keep the rest as normal withdraws
                         thousand1000Arr.shift();
                     }
+                    moneyTrackLogger(`Withdraws of 1000: ${thousand1000Arr.length} (Total Deduction: ${thousand1000Arr.length * 1000})`);
                     totalBalance -= (thousand1000Arr.length * 1000);
 
                     // Authorization Letter [授权书]
@@ -1904,6 +1911,7 @@ class CronJob {
                     });
                     if (letter && letter.is_used) {
                         totalBalance += 100;
+                        moneyTrackLogger(`Authorization Letter: 100`);
                     }
 
                     // Customize Wallet [管理员调整钱包]
@@ -1919,8 +1927,10 @@ class CronJob {
                         const content = wallet.content;
                         if (content.addOrSubstract == 1) {
                             totalBalance += Number(content.amount);
+                            moneyTrackLogger(`Customize Wallet: +${content.amount}`);
                         } else {
                             totalBalance -= Number(content.amount);
+                            moneyTrackLogger(`Customize Wallet: -${content.amount}`);
                         }
                     }
 
