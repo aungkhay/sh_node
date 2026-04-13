@@ -1525,15 +1525,18 @@ class CronJob {
                             user_id: group.user_id,
                             reward_id: 7,
                             is_used: 1,
-                            user_id: group.user_id
+                            user_id: group.user_id,
+                            validedAt: {
+                                [Op.lte]: new Date()
+                            }
                         },
-                        attributes: ['id', 'user_id', 'amount', 'updatedAt'],
+                        attributes: ['id', 'user_id', 'amount', 'updatedAt', 'validedAt'],
                     });
 
                     let totalGoldValue = 0;
                     for (let i = 0; i < rewards.length; i++) {
                         const reward = rewards[i];
-                        const date = moment(reward.createdAt).add(3, 'months').format('YYYY-MM-DD');
+                        const date = moment(reward.validedAt).format('YYYY-MM-DD');
                         const goldPrice = await GoldPrice.findOne({
                             where: {
                                 createdAt: {
@@ -1563,7 +1566,7 @@ class CronJob {
                                     user_id: reward.user_id,
                                     status: 0,
                                     createdAt: {
-                                        [Op.gt]: moment(rewards[0].createdAt).add(3, 'months').toDate(),
+                                        [Op.gt]: moment(rewards[0].validedAt).add(3, 'months').toDate(),
                                     }
                                 },
                                 attributes: ['id', 'amount'],
@@ -1610,7 +1613,7 @@ class CronJob {
                                 where: {
                                     user_id: reward.user_id,
                                     createdAt: {
-                                        [Op.gte]: moment(rewards[0].createdAt).add(3, 'months').toDate(),
+                                        [Op.gte]: moment(rewards[0].validedAt).add(3, 'months').toDate(),
                                     }
                                 },
                                 attributes: ['id', 'price'],
@@ -1620,7 +1623,7 @@ class CronJob {
                                     where: {
                                         from_user_id: reward.user_id,
                                         createdAt: {
-                                            [Op.gte]: moment(rewards[0].createdAt).add(3, 'months').toDate(),
+                                            [Op.gte]: moment(rewards[0].validedAt).add(3, 'months').toDate(),
                                         }
                                     },
                                     attributes: ['id', 'amount', 'user_id'],
