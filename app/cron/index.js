@@ -1876,11 +1876,6 @@ class CronJob {
                     });
                     const thousand1000Arr = [];
                     for (const withdraw of withdraws) {
-                        if (Number(withdraw.amount) === 1000) {
-                            thousand1000Arr.push(withdraw);
-                            continue; // skip 1000 withdraws for now, will handle separately
-                        }
-
                         moneyTrackLogger(`Withdraw: ${withdraw.amount} (Status: ${withdraw.status})`);
                         totalBalance -= Number(withdraw.amount);
 
@@ -1901,10 +1896,9 @@ class CronJob {
                     }
                     if (thousand1000Arr.length > 1) {
                         // remove first one and keep the rest as normal withdraws
-                        thousand1000Arr.shift();
+                        moneyTrackLogger(`Withdraws of 1000: ${thousand1000Arr.length} (Total Deduction: ${(thousand1000Arr.length - 1) * 1000})`);
+                        totalBalance -= ((thousand1000Arr.length - 1) * 1000);
                     }
-                    moneyTrackLogger(`Withdraws of 1000: ${thousand1000Arr.length} (Total Deduction: ${thousand1000Arr.length * 1000})`);
-                    totalBalance -= (thousand1000Arr.length * 1000);
 
                     // Authorization Letter [授权书]
                     const letter = await RewardRecord.findOne({
