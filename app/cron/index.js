@@ -1808,7 +1808,7 @@ class CronJob {
                 
                 for (let group of chunk) {
                     const user = await User.findByPk(group.user_id, { attributes: ['id', 'balance', 'gold', 'reserve_fund'] });
-                    moneyTrackLogger(`original: ${JSON.stringify(user)}`);
+                    moneyTrackLogger(`[OriginUser]: ${JSON.stringify(user)}`);
 
                     let totalBalance = 0;
 
@@ -1850,6 +1850,7 @@ class CronJob {
                     const goldPackageReturns = await GoldPackageReturn.sum('amount', {
                         where: { user_id: user.id }
                     }) || 0;
+                    moneyTrackLogger(`Gold Package Return: ${goldPackageReturns}`);
                     totalBalance += Number(goldPackageReturns);
 
                     // Buy Gold Package Bonus [购买黄金礼包奖励]
@@ -1923,8 +1924,7 @@ class CronJob {
                         }
                     }
 
-                    console.log(`User ID: ${user.id}, Calculated Total Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
-                    moneyTrackLogger(`User ID: ${user.id}, Calculated Total Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
+                    moneyTrackLogger(`User ID: ${user.id}, Calculated Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
                 }
             }
 
