@@ -1792,9 +1792,10 @@ class CronJob {
                 where: {
                     reward_id: 7,
                     is_used: 0,
-                    createdAt: {
+                    updatedAt: {
                         [Op.gt]: '2026-04-13 00:00:00'
-                    }
+                    },
+                    description: '黄金券入库'
                 },
                 attributes: ['user_id'],
                 group: ['user_id'],
