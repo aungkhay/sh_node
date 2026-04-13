@@ -1876,9 +1876,6 @@ class CronJob {
                     });
                     const thousand1000Arr = [];
                     for (const withdraw of withdraws) {
-                        if (withdraw.amount === 1000) {
-                            continue;
-                        }
                         moneyTrackLogger(`Withdraw: ${withdraw.amount} (Status: ${withdraw.status})`);
                         totalBalance -= Number(withdraw.amount);
 
