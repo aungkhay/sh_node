@@ -1880,14 +1880,14 @@ class CronJob {
                         
                         totalBalance -= Number(wd.amount);
 
-                        const status = Number(wd.status) === 0 ? 'Pending' : (Number(wd.status) === 1 ? 'Approved' : 'Denied');
+                        const status = Number(wd.status);
                         const amount = Number(wd.amount);
                         moneyTrackLogger(`Withdraw: ${amount} (Status: ${status})`);
 
-                        if (status === 'Denied') {
-                            commonLogger(`Refunded Withdraw: ${amount} (Status: ${status})`);
+                        if (status === 2) {
+                            moneyTrackLogger(`Refunded Withdraw: ${amount} (Status: ${status})`);
                             totalBalance += amount;
-                        } else if (status === 'Pending') {
+                        } else if (status === 0) {
                             // await wd.update({ status: 2, description: '' });
                             // totalBalance += Number(wd.amount);
                         }
