@@ -1883,11 +1883,11 @@ class CronJob {
                         moneyTrackLogger(`Withdraw: ${amount} (Status: ${withdraw.status})`);
                         moneyTrackLogger(`${typeof status} | ${typeof withdraw.status}`);
 
-                        if (status === 2) {
-                            totalBalance += Number(withdraw.amount);
-                            commonLogger(`Refunded Withdraw: ${withdraw.amount} (Status: ${withdraw.status})`);
+                        if (status == 2) {
+                            commonLogger(`Refunded Withdraw: ${amount} (Status: ${withdraw.status})`);
+                            totalBalance += amount;
                         }
-                        if (status === 0) {
+                        if (status == 0) {
                             // await withdraw.update({ status: 2, description: '' });
                             // totalBalance += Number(withdraw.amount);
                         }
