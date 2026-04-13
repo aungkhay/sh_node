@@ -1939,6 +1939,7 @@ class CronJob {
 
         } catch (error) {
             console.log(error) ;
+            moneyTrackLogger(`[MONEY_TRACK]: ${error.stack}`);
         }
     }
 }
