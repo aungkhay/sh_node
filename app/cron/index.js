@@ -1875,26 +1875,25 @@ class CronJob {
                         attributes: ['id', 'amount', 'status']
                     });
                     const thousand1000Arr = [];
-                    for (const withdraw of withdraws) {
-                        totalBalance -= Number(withdraw.amount);
+                    for (const wd of withdraws) {
+                        totalBalance -= Number(wd.amount);
 
-                        const status = Number(String(withdraw.status).trim());
-                        const amount = Number(withdraw.amount);
-                        moneyTrackLogger(`Withdraw: ${amount} (Status: ${withdraw.status})`);
-                        moneyTrackLogger(`${typeof status} | ${typeof withdraw.status}`);
+                        const amount = Number(wd.amount);
+                        moneyTrackLogger(`Withdraw: ${amount} (Status: ${wd.status})`);
 
-                        if (status == 2) {
-                            commonLogger(`Refunded Withdraw: ${amount} (Status: ${withdraw.status})`);
+                        if (wd.status === 2) {
+                            commonLogger(`Refunded Withdraw: ${amount} (Status: ${wd.status})`);
                             totalBalance += amount;
                         }
-                        if (status == 0) {
-                            // await withdraw.update({ status: 2, description: '' });
-                            // totalBalance += Number(withdraw.amount);
+                        if (wd.status === 0) {
+                            // await wd.update({ status: 2, description: '' });
+                            // totalBalance += Number(wd.amount);
                         }
                     }
-                    for (const withdraw of withdraws) {
-                        if (Number(withdraw.amount) === 1000) {
-                            thousand1000Arr.push(withdraw);
+
+                    for (const w of withdraws) {
+                        if (Number(w.amount) === 1000) {
+                            thousand1000Arr.push(w);
                         }
                     }
                     if (thousand1000Arr.length > 1) {
