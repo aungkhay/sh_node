@@ -1807,6 +1807,7 @@ class CronJob {
                 
                 for (let group of chunk) {
                     const user = await User.findByPk(group.user_id, { attributes: ['id', 'balance', 'gold', 'reserve_fund'] });
+                    moneyTrackLogger(`original: ${JSON.stringify(user)}`);
 
                     let totalBalance = 0;
 
@@ -1820,7 +1821,7 @@ class CronJob {
                     const transfer21 = await Transfer.sum('amount', {
                         user_id: user.id,
                         from: 2,
-                        to: 1,
+                        to: 1, // Reserve
                         createdAt: {
                             [Op.lte]: '2026-04-10 00:00:00'
                         }
@@ -1850,7 +1851,6 @@ class CronJob {
                     }) || 0;
                     totalBalance += Number(goldPackageReturns);
 
-                    // 
                     // Buy Gold Package Bonus [购买黄金礼包奖励]
                     const goldPackageBonuses = await GoldPackageBonuses.sum('amount', {
                         where: { user_id: user.id }
@@ -1867,18 +1867,33 @@ class CronJob {
                         },
                         attributes: ['id', 'amount', 'status']
                     });
+                    const thousand1000Arr = [];
                     for (const withdraw of withdraws) {
-                        if (withdraw.amount === 1000) continue;
-
+                        if (withdraw.amount === 1000) {
+                            continue;
+                        }
                         totalBalance -= Number(withdraw.amount);
 
                         if (withdraw.status == 0 || withdraw.status == 2) {
-                            totalBalance += Number(withdraw.amount);
+                            if (withdraw.status == 2) {
+                                totalBalance += Number(withdraw.amount);
+                            }
                             if (withdraw.status == 0) {
                                 // await withdraw.update({ status: 2, description: '' });
+                                // totalBalance += Number(withdraw.amount);
                             }
                         }
                     }
+                    for (const withdraw of withdraws) {
+                        if (withdraw.amount === 1000) {
+                            thousand1000Arr.push(withdraw);
+                        }
+                    }
+                    if (thousand1000Arr.length > 1) {
+                        // remove first one and keep the rest as normal withdraws
+                        thousand1000Arr.shift();
+                    }
+                    totalBalance -= (thousand1000Arr.length * 1000);
 
                     // Authorization Letter [授权书]
                     const letter = await RewardRecord.findOne({
