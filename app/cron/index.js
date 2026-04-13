@@ -1600,6 +1600,7 @@ class CronJob {
                                     }, { transaction: t });
                                     await user.update({ balance: realRemainBalance }, { transaction: t });
                                 } else {
+                                    console.log(`User ID ${user.id} does not have enough balance to cover the gold coupon after returning withdraws. Skipping this reward record.`);
                                     await t.rollback();
                                     continue;
                                 }
