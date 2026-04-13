@@ -1821,12 +1821,14 @@ class CronJob {
 
                     // Transfer [转账] 2 => 1
                     const transfer21 = await Transfer.sum('amount', {
-                        user_id: user.id,
-                        wallet_type: 2,
-                        from: 2,
-                        to: 1, // Reserve
-                        createdAt: {
-                            [Op.lte]: '2026-04-10 00:00:00'
+                        where: {
+                            user_id: user.id,
+                            wallet_type: 2,
+                            from: 2,
+                            to: 1, // Reserve
+                            createdAt: {
+                                [Op.lte]: '2026-04-10 00:00:00'
+                            }
                         }
                     }) || 0;
                     totalBalance -= Number(transfer21);
@@ -1834,12 +1836,14 @@ class CronJob {
                     
                     // Transfer [转账] 1 => 2
                     const transfer12 = await Transfer.sum('amount', {
-                        user_id: user.id,
-                        wallet_type: 1,
-                        from: 1,
-                        to: 2,
-                        createdAt: {
-                            [Op.lte]: '2026-04-10 00:00:00'
+                        where: {
+                            user_id: user.id,
+                            wallet_type: 1,
+                            from: 1,
+                            to: 2,
+                            createdAt: {
+                                [Op.lte]: '2026-04-10 00:00:00'
+                            }
                         }
                     }) || 0;
                     totalBalance += Number(transfer12);
