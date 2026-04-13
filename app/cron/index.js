@@ -1533,7 +1533,7 @@ class CronJob {
                     let totalGoldValue = 0;
                     for (let i = 0; i < rewards.length; i++) {
                         const reward = rewards[i];
-                        const date = moment(reward.updatedAt).format('YYYY-MM-DD');
+                        const date = moment(reward.createdAt).add(3, 'months').format('YYYY-MM-DD');
                         const goldPrice = await GoldPrice.findOne({
                             where: {
                                 createdAt: {
@@ -1563,7 +1563,7 @@ class CronJob {
                                     user_id: reward.user_id,
                                     status: 0,
                                     createdAt: {
-                                        [Op.gt]: rewards[0].updatedAt,
+                                        [Op.gt]: moment(rewards[0].createdAt).add(3, 'months').toDate(),
                                     }
                                 },
                                 attributes: ['id', 'amount'],
@@ -1610,7 +1610,7 @@ class CronJob {
                                 where: {
                                     user_id: reward.user_id,
                                     createdAt: {
-                                        [Op.gte]: rewards[0].updatedAt,
+                                        [Op.gte]: moment(rewards[0].createdAt).add(3, 'months').toDate(),
                                     }
                                 },
                                 attributes: ['id', 'price'],
@@ -1620,7 +1620,7 @@ class CronJob {
                                     where: {
                                         from_user_id: reward.user_id,
                                         createdAt: {
-                                            [Op.gte]: rewards[0].updatedAt,
+                                            [Op.gte]: moment(rewards[0].createdAt).add(3, 'months').toDate(),
                                         }
                                     },
                                     attributes: ['id', 'amount', 'user_id'],
