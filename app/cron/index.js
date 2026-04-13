@@ -1,7 +1,7 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
-const { commonLogger, errLogger } = require('../helpers/Logger');
+const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
 const axios = require('axios');
 const RedisHelper = require('../helpers/RedisHelper');
@@ -1782,6 +1782,126 @@ class CronJob {
 
         } catch (error) {
             errLogger(`[RECALL_GOLD_COUPON_TEMP]: ${error.stack}`); 
+        }
+    }
+
+    MONEY_TRACK = async () => {
+        try {
+            const rewardGroup = await RewardRecord.findAll({
+                where: {
+                    reward_id: 7,
+                    is_used: 0,
+                    createdAt: {
+                        [Op.gt]: '2026-04-13 00:00:00'
+                    }
+                },
+                attributes: ['user_id'],
+                group: ['user_id']
+            });
+
+            const chunkSize = 100;
+            for (let i = 0; i < rewardGroup.length; i += chunkSize) {
+                const chunk = rewardGroup.slice(i, i + chunkSize);
+                
+                for (let group of chunk) {
+                    const user = await User.findByPk(group.user_id, { attributes: ['id', 'balance'] });
+
+                    let totalBalance = 0;
+
+                    // 红包雨奖励
+                    const reward3Amount = await RewardRecord.sum('amount', {
+                        where: { user_id: user.id }
+                    }) || 0;
+                    totalBalance += Number(reward3Amount);
+
+                    // Transfer [转账] 2 => 1
+                    const transfer21 = await Transfer.sum('amount', {
+                        from: 2,
+                        to: 1,
+                        createdAt: {
+                            [Op.lte]: '2026-04-10 00:00:00'
+                        }
+                    }) || 0;
+                    totalBalance -= Number(transfer21);
+                    
+                    // Transfer [转账] 1 => 2
+                    const transfer12 = await Transfer.sum('amount', {
+                        from: 1,
+                        to: 2,
+                        createdAt: {
+                            [Op.lte]: '2026-04-10 00:00:00'
+                        }
+                    }) || 0;
+                    totalBalance += Number(transfer12);
+
+                    // 推荐金提取券
+                    const transfers = await Transfer.sum('amount', {
+                        reward_id: 8,
+                    }) || 0;
+                    totalBalance += Number(transfers)
+
+                    // Gold Package Return
+                    const goldPackageReturns = await GoldPackageReturn.sum('amount', {
+                        where: { user_id: user.id }
+                    }) || 0;
+                    totalBalance += Number(goldPackageReturns);
+
+                    // Withdraws
+                    const withdraws = await Withdraw.findAll({
+                        where: {
+                            user_id: user.id,
+                            createdAt: {
+                                [Op.lte]: '2026-04-10 00:00:00'
+                            }
+                        },
+                        attributes: ['id', 'amount', 'status']
+                    });
+                    for (const withdraw of withdraws) {
+
+                        totalBalance -= Number(withdraw.amount);
+
+                        if (withdraw.status == 0 || withdraw.status == 2) {
+                            totalBalance += Number(withdraw.amount);
+                            if (withdraw.status == 0) {
+                                // await withdraw.update({ status: 2, description: '' });
+                            }
+                        }
+                    }
+
+                    // Authorization Letter [授权书]
+                    const letter = await RewardRecord.findOne({
+                        where: { user_id: user.id, reward_id: 6 },
+                        attributes: ['id', 'is_used', 'createdAt', 'updatedAt']
+                    });
+                    if (letter && letter.is_used) {
+                        totalBalance += 100;
+                    }
+
+                    // Customize Wallet [管理员调整钱包]
+                    const customizeWallet = await AdminLog.findAll({
+                        where: { 
+                            type: 'update_wallet',
+                            model: 'User',
+                            'content.user_id': user.id
+                        },
+                        attributes: ['id', 'admin_id', 'url', 'content', 'createdAt']
+                    });
+                    for (const wallet of customizeWallet) {
+                        const content = wallet.content;
+                        if (content.addOrSubstract == 1) {
+                            totalBalance += Number(content.amount);
+                        } else {
+                            totalBalance -= Number(content.amount);
+                        }
+                    }
+
+                    moneyTrackLogger(`User ID: ${user.id}, Calculated Total Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
+                }
+            }
+
+
+        } catch (error) {
+            console.log(error) ;
         }
     }
 }

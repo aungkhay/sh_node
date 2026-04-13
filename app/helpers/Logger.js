@@ -109,10 +109,31 @@ function createCallbackLogger() {
     }
 }
 
+function createMoneyTrackLogger() {
+    const logger = winston.createLogger({
+        level: 'info',
+        format: combine(
+            timestamp({format: 'YYYY-MM-DD HH:mm:ss'}),
+            align(), 
+            printf(info => `${info.level}: [${[info.timestamp]}]: ${info.message}`)
+        ),
+        transports: [
+            consoleLog,
+            new winston.transports.File({ filename: `app/logs/money/${fileName}.log`, level: 'info' }),
+        ],
+        exitOnError: false
+    });
+
+    return function logInfo(message) {
+        logger.info(message);
+    }
+}
+
 module.exports = {
     reqLogger: createRequestLogger(),
     errLogger: createErrorLogger(),
     queryLogger: createQueryLogger(),
     commonLogger: createCommonLogger(),
     callbackLogger: createCallbackLogger(),
+    moneyTrackLogger: createMoneyTrackLogger
 };
