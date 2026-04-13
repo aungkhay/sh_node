@@ -1876,10 +1876,13 @@ class CronJob {
                     });
                     const thousand1000Arr = [];
                     for (const withdraw of withdraws) {
-                        moneyTrackLogger(`Withdraw: ${withdraw.amount} (Status: ${withdraw.status})`);
                         totalBalance -= Number(withdraw.amount);
 
                         const status = Number(String(withdraw.status).trim());
+                        const amount = Number(withdraw.amount);
+                        moneyTrackLogger(`Withdraw: ${amount} (Status: ${withdraw.status})`);
+                        moneyTrackLogger(`${typeof status} | ${typeof withdraw.status}`);
+
                         if (status === 2) {
                             totalBalance += Number(withdraw.amount);
                             commonLogger(`Refunded Withdraw: ${withdraw.amount} (Status: ${withdraw.status})`);
