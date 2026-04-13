@@ -1822,6 +1822,7 @@ class CronJob {
                     // Transfer [转账] 2 => 1
                     const transfer21 = await Transfer.sum('amount', {
                         user_id: user.id,
+                        wallet_type: 2,
                         from: 2,
                         to: 1, // Reserve
                         createdAt: {
@@ -1834,6 +1835,7 @@ class CronJob {
                     // Transfer [转账] 1 => 2
                     const transfer12 = await Transfer.sum('amount', {
                         user_id: user.id,
+                        wallet_type: 1,
                         from: 1,
                         to: 2,
                         createdAt: {
@@ -1885,8 +1887,8 @@ class CronJob {
                         moneyTrackLogger(`${totalBalance} Withdraw: ${amount} (Status: ${status})`);
 
                         if (status === 2) {
-                            moneyTrackLogger(`${totalBalance} Refunded Withdraw: ${amount} (Status: ${status})`);
                             totalBalance += amount;
+                            moneyTrackLogger(`${totalBalance} Refunded Withdraw: ${amount} (Status: ${status})`);
                         } else if (status === 0) {
                             // await wd.update({ status: 2, description: '' });
                             // totalBalance += Number(wd.amount);
