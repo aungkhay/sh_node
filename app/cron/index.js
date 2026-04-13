@@ -1797,7 +1797,8 @@ class CronJob {
                     }
                 },
                 attributes: ['user_id'],
-                group: ['user_id']
+                group: ['user_id'],
+                limit: 10
             });
 
             const chunkSize = 100;
