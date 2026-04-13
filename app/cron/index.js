@@ -1879,12 +1879,11 @@ class CronJob {
                         moneyTrackLogger(`Withdraw: ${withdraw.amount} (Status: ${withdraw.status})`);
                         totalBalance -= Number(withdraw.amount);
 
-                        moneyTrackLogger(`Withdraw: ${JSON.stringify(withdraw)}`);
-                        if (Number(withdraw.status) == 2) {
+                        if (Number(withdraw.status) === 2) {
                             totalBalance += Number(withdraw.amount);
                             commonLogger(`Refunded Withdraw: ${withdraw.amount} (Status: ${withdraw.status})`);
                         }
-                        if (Number(withdraw.status) == 0) {
+                        if (Number(withdraw.status) === 0) {
                             // await withdraw.update({ status: 2, description: '' });
                             // totalBalance += Number(withdraw.amount);
                         }
