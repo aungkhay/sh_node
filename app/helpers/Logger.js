@@ -135,5 +135,5 @@ module.exports = {
     queryLogger: createQueryLogger(),
     commonLogger: createCommonLogger(),
     callbackLogger: createCallbackLogger(),
-    moneyTrackLogger: createMoneyTrackLogger
+    moneyTrackLogger: createMoneyTrackLogger()
 };

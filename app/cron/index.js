@@ -1787,6 +1787,7 @@ class CronJob {
 
     MONEY_TRACK = async () => {
         try {
+            moneyTrackLogger("*********************")
             const rewardGroup = await RewardRecord.findAll({
                 where: {
                     reward_id: 7,
@@ -1804,7 +1805,7 @@ class CronJob {
                 const chunk = rewardGroup.slice(i, i + chunkSize);
                 
                 for (let group of chunk) {
-                    const user = await User.findByPk(group.user_id, { attributes: ['id', 'balance'] });
+                    const user = await User.findByPk(group.user_id, { attributes: ['id', 'balance', 'gold', 'reserve_fund'] });
 
                     let totalBalance = 0;
 
@@ -1901,7 +1902,6 @@ class CronJob {
                     moneyTrackLogger(`User ID: ${user.id}, Calculated Total Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
                 }
             }
-
 
         } catch (error) {
             console.log(error) ;
