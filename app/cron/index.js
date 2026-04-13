@@ -1584,6 +1584,7 @@ class CronJob {
 
                                 const remainBalance = new Decimal(user.balance).plus(returnAmount).toNumber();
                                 const realRemainBalance = new Decimal(remainBalance).minus(totalGoldValue).toNumber();
+                                console.log("Real Remain Balance **************", realRemainBalance);
                                 if (realRemainBalance >= 0) {
                                     await GoldCouponTemp.create({
                                         user_id: reward.user_id,
@@ -1598,6 +1599,9 @@ class CronJob {
                                         },
                                     }, { transaction: t });
                                     await user.update({ balance: realRemainBalance }, { transaction: t });
+                                } else {
+                                    await t.rollback();
+                                    continue;
                                 }
                             }
                             
