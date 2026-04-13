@@ -1875,17 +1875,19 @@ class CronJob {
                         attributes: ['id', 'amount', 'status']
                     });
                     const thousand1000Arr = [];
-                    for (const wd of withdraws) {
+                    for (let index = 0; index < withdraws.length; index++) {
+                        const wd = withdraws[index];
+                        
                         totalBalance -= Number(wd.amount);
 
+                        const status = Number(wd.status);
                         const amount = Number(wd.amount);
-                        moneyTrackLogger(`Withdraw: ${amount} (Status: ${wd.status})`);
+                        moneyTrackLogger(`Withdraw: ${amount} (Status: ${status})`);
 
-                        if (wd.status === 2) {
-                            commonLogger(`Refunded Withdraw: ${amount} (Status: ${wd.status})`);
+                        if (status === 2) {
+                            commonLogger(`Refunded Withdraw: ${amount} (Status: ${status})`);
                             totalBalance += amount;
-                        }
-                        if (wd.status === 0) {
+                        } else if (status === 0) {
                             // await wd.update({ status: 2, description: '' });
                             // totalBalance += Number(wd.amount);
                         }
