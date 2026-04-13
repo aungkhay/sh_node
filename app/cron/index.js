@@ -1849,6 +1849,13 @@ class CronJob {
                     }) || 0;
                     totalBalance += Number(goldPackageReturns);
 
+                    // 
+                    // Buy Gold Package Bonus [购买黄金礼包奖励]
+                    const goldPackageBonuses = await GoldPackageBonuses.sum('amount', {
+                        where: { user_id: user.id }
+                    }) || 0;
+                    totalBalance += Number(goldPackageBonuses);
+
                     // Withdraws
                     const withdraws = await Withdraw.findAll({
                         where: {
@@ -1860,6 +1867,7 @@ class CronJob {
                         attributes: ['id', 'amount', 'status']
                     });
                     for (const withdraw of withdraws) {
+                        if (withdraw.amount === 1000) continue;
 
                         totalBalance -= Number(withdraw.amount);
 
