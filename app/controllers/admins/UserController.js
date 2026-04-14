@@ -2768,7 +2768,7 @@ class Controller {
             }
 
             if (user.is_withdraw_active_code_used) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现激活码已被使用，无法重新生成', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现激活码已使用，无法重新生成', {});
             }
             
             const code = this.commonHelper.randomNumber(6);

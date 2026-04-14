@@ -630,12 +630,13 @@ class Controller {
             const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
             const user = await User.findByPk(userId, {
-                attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used']
+                attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt']
             });
             if (!user.can_withdraw) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
-            if (!user.is_withdraw_active_code_used) {
+            // check createdAt is before 2026-04-10
+            if (!user.is_withdraw_active_code_used && new Date(user.createdAt) < new Date('2026-04-10')) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请您在个人中心-我的军职-当前军职中，查看上级联系方式，按提示添加联系人并登记后使用激活码恢复账户', {});
             }
 
