@@ -1499,11 +1499,15 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status'],
                 },
-                attributes: ['id', 'relation', 'balance'],
+                attributes: ['id', 'relation', 'balance', 'can_withdraw'],
             });
 
             if (!sender.kyc || sender.kyc.status !== 'APPROVED') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请实名认证后再进行转账', {});
+            }
+
+            if (!sender.can_withdraw) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
 
             if (parseFloat(amount) > parseFloat(sender.balance)) {
