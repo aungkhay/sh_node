@@ -1931,7 +1931,6 @@ class CronJob {
                         [Op.gt]: '2026-04-13 00:00:00'
                     },
                     description: '黄金券入库',
-                    user_id: 1
                 },
                 attributes: ['user_id'],
                 group: ['user_id'],
@@ -2028,6 +2027,8 @@ class CronJob {
                     await this.UPDATE_BALANCE(group.user_id);
                 }
             }
+
+            moneyTrackLogger(`Finished processing ${rewardGroup.length} user(s) for MONEY_TRACK.`);
 
         } catch (error) {
             console.log(error) ;
