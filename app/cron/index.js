@@ -1785,6 +1785,139 @@ class CronJob {
         }
     }
 
+    UPDATE_BALANCE = async (userId) => {
+        try {
+            const user = await User.findByPk(userId, { attributes: ['id', 'balance', 'reserve_fund'] });
+            moneyTrackLogger(`[OriginUser]: ${JSON.stringify(user)}`);
+
+            let totalBalance = 0;
+
+            // 红包雨奖励
+            const reward3Amount = await RewardRecord.sum('amount', {
+                where: { user_id: user.id, reward_id: 3 }
+            }) || 0;
+            totalBalance += Number(reward3Amount);
+
+            // Transfer [转账] 2 => 1
+            const transfer21 = await Transfer.sum('amount', {
+                where: {
+                    user_id: user.id,
+                    wallet_type: 2,
+                    from: 2,
+                    to: 1, // Reserve
+                    createdAt: {
+                        [Op.lte]: '2026-04-10 00:00:00'
+                    }
+                }
+            }) || 0;
+            totalBalance -= Number(transfer21);
+            
+            // Transfer [转账] 1 => 2
+            const transfer12 = await Transfer.sum('amount', {
+                where: {
+                    user_id: user.id,
+                    wallet_type: 1,
+                    from: 1,
+                    to: 2,
+                    createdAt: {
+                        [Op.lte]: '2026-04-10 00:00:00'
+                    }
+                }
+            }) || 0;
+            totalBalance += Number(transfer12);
+
+            // 推荐金提取券
+            const transfers = await Transfer.sum('amount', {
+                where: { reward_id: 8, user_id: user.id },
+            }) || 0;
+            totalBalance += Number(transfers)
+
+            // Gold Package Return
+            const goldPackageReturns = await GoldPackageReturn.sum('amount', {
+                where: { user_id: user.id }
+            }) || 0;
+            totalBalance += Number(goldPackageReturns);
+
+            // Buy Gold Package Bonus [购买黄金礼包奖励]
+            const goldPackageBonuses = await GoldPackageBonuses.sum('amount', {
+                where: { user_id: user.id }
+            }) || 0;
+            totalBalance += Number(goldPackageBonuses);
+
+            // Withdraws
+            const withdraws = await Withdraw.findAll({
+                where: {
+                    user_id: user.id,
+                    createdAt: {
+                        [Op.lte]: '2026-04-10 00:00:00'
+                    }
+                },
+                attributes: ['id', 'amount', 'status']
+            });
+            const thousand1000Arr = [];
+            for (let index = 0; index < withdraws.length; index++) {
+                const wd = withdraws[index];
+                
+                totalBalance -= Number(wd.amount);
+
+                const status = Number(wd.status);
+                const amount = Number(wd.amount);
+
+                if (status === 2) {
+                    totalBalance += amount;
+                } else if (status === 0) {
+                    await wd.update({ status: 2, description: '' });
+                    totalBalance += amount;
+                }
+            }
+
+            for (const w of withdraws) {
+                if (Number(w.amount) === 1000) {
+                    thousand1000Arr.push(w);
+                }
+            }
+            if (thousand1000Arr.length > 1) {
+                // remove first one and keep the rest as normal withdraws
+                totalBalance -= ((thousand1000Arr.length - 1) * 1000);
+            }
+
+            // Authorization Letter [授权书]
+            const letter = await RewardRecord.findOne({
+                where: { user_id: user.id, reward_id: 6 },
+                attributes: ['id', 'is_used', 'createdAt', 'updatedAt']
+            });
+            if (letter && letter.is_used) {
+                totalBalance += 100;
+                moneyTrackLogger(`${totalBalance} Authorization Letter: 100`);
+            }
+
+            // Customize Wallet [管理员调整钱包]
+            const customizeWallet = await AdminLog.findAll({
+                where: { 
+                    type: 'update_wallet',
+                    model: 'User',
+                    'content.user_id': user.id
+                },
+                attributes: ['id', 'admin_id', 'url', 'content', 'createdAt']
+            });
+            for (const wallet of customizeWallet) {
+                const content = wallet.content;
+                if (content.addOrSubstract == 1) {
+                    totalBalance += Number(content.amount);
+                    moneyTrackLogger(`${totalBalance} Customize Wallet: +${content.amount}`);
+                } else {
+                    totalBalance -= Number(content.amount);
+                    moneyTrackLogger(`${totalBalance} Customize Wallet: -${content.amount}`);
+                }
+            }
+
+            moneyTrackLogger(`User ID: ${user.id}, Calculated Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
+            await user.update({ balance: totalBalance.toFixed(2) }, { where: { id: user.id } });
+        } catch (error) {
+            errLogger(`[UPDATE_BALANCE]: ${error.stack}`);
+        }
+    }
+
     MONEY_TRACK = async () => {
         try {
             moneyTrackLogger("*********************")
@@ -1795,11 +1928,11 @@ class CronJob {
                     updatedAt: {
                         [Op.gt]: '2026-04-13 00:00:00'
                     },
-                    description: '黄金券入库'
+                    description: '黄金券入库',
+                    user_id: 1
                 },
                 attributes: ['user_id'],
                 group: ['user_id'],
-                limit: 10
             });
 
             const chunkSize = 100;
@@ -1807,140 +1940,51 @@ class CronJob {
                 const chunk = rewardGroup.slice(i, i + chunkSize);
                 
                 for (let group of chunk) {
-                    const user = await User.findByPk(group.user_id, { attributes: ['id', 'balance', 'gold', 'reserve_fund'] });
-                    moneyTrackLogger(`[OriginUser]: ${JSON.stringify(user)}`);
-
-                    let totalBalance = 0;
-
-                    // 红包雨奖励
-                    const reward3Amount = await RewardRecord.sum('amount', {
-                        where: { user_id: user.id, reward_id: 3 }
-                    }) || 0;
-                    totalBalance += Number(reward3Amount);
-                    moneyTrackLogger(`${totalBalance} Red Packet Rain Reward: ${reward3Amount}`);
-
-                    // Transfer [转账] 2 => 1
-                    const transfer21 = await Transfer.sum('amount', {
+                    await GoldPackageHistory.destroy({
                         where: {
-                            user_id: user.id,
+                            user_id: group.user_id,
+                            createdAt: {
+                                [Op.gt]: '2026-04-10 00:00:00'
+                            }
+                        },
+                    });
+                    const bonuses = await GoldPackageBonuses.findAll({
+                        where: {
+                            from_user_id: group.user_id,
+                            createdAt: {
+                                [Op.gt]: '2026-04-10 00:00:00'
+                            }
+                        },
+                        attributes: ['id', 'amount', 'user_id'],
+                    });
+                    for (const bonus of bonuses) {
+                        const parentId = bonus.user_id;
+                        await bonus.destroy();
+                        await this.UPDATE_BALANCE(parentId);
+                    }
+
+                    await Withdraw.update(
+                        { status: 2, description: '黄金券入库' },
+                        { where: { 
+                            user_id: group.user_id, 
+                            status: 0, 
+                            createdAt: { [Op.gt]: '2026-04-10 00:00:00' } 
+                        } 
+                    });
+
+                    await Transfer.destroy({
+                        where: {
                             wallet_type: 2,
                             from: 2,
-                            to: 1, // Reserve
+                            to: 1,
+                            user_id: group.user_id,
                             createdAt: {
-                                [Op.lte]: '2026-04-10 00:00:00'
-                            }
-                        }
-                    }) || 0;
-                    totalBalance -= Number(transfer21);
-                    moneyTrackLogger(`${totalBalance} Transfer 2 => 1: ${transfer21}`);
-                    
-                    // Transfer [转账] 1 => 2
-                    const transfer12 = await Transfer.sum('amount', {
-                        where: {
-                            user_id: user.id,
-                            wallet_type: 1,
-                            from: 1,
-                            to: 2,
-                            createdAt: {
-                                [Op.lte]: '2026-04-10 00:00:00'
-                            }
-                        }
-                    }) || 0;
-                    totalBalance += Number(transfer12);
-                    moneyTrackLogger(`${totalBalance} Transfer 1 => 2: ${transfer12}`);
-
-                    // 推荐金提取券
-                    const transfers = await Transfer.sum('amount', {
-                        where: { reward_id: 8, user_id: user.id },
-                    }) || 0;
-                    totalBalance += Number(transfers)
-                    moneyTrackLogger(`${totalBalance} Referral Bonus Extraction Coupon: ${transfers}`);
-
-                    // Gold Package Return
-                    const goldPackageReturns = await GoldPackageReturn.sum('amount', {
-                        where: { user_id: user.id }
-                    }) || 0;
-                    totalBalance += Number(goldPackageReturns);
-                    moneyTrackLogger(`${totalBalance} Gold Package Return: ${goldPackageReturns}`);
-
-                    // Buy Gold Package Bonus [购买黄金礼包奖励]
-                    const goldPackageBonuses = await GoldPackageBonuses.sum('amount', {
-                        where: { user_id: user.id }
-                    }) || 0;
-                    totalBalance += Number(goldPackageBonuses);
-                    moneyTrackLogger(`${totalBalance} Buy Gold Package Bonus: ${goldPackageBonuses}`);
-
-                    // Withdraws
-                    const withdraws = await Withdraw.findAll({
-                        where: {
-                            user_id: user.id,
-                            createdAt: {
-                                [Op.lte]: '2026-04-10 00:00:00'
+                                [Op.gt]: '2026-04-10 00:00:00'
                             }
                         },
-                        attributes: ['id', 'amount', 'status']
                     });
-                    const thousand1000Arr = [];
-                    for (let index = 0; index < withdraws.length; index++) {
-                        const wd = withdraws[index];
-                        
-                        totalBalance -= Number(wd.amount);
 
-                        const status = Number(wd.status);
-                        const amount = Number(wd.amount);
-                        moneyTrackLogger(`${totalBalance} Withdraw: ${amount} (Status: ${status})`);
-
-                        if (status === 2) {
-                            totalBalance += amount;
-                            moneyTrackLogger(`${totalBalance} Refunded Withdraw: ${amount} (Status: ${status})`);
-                        } else if (status === 0) {
-                            // await wd.update({ status: 2, description: '' });
-                            // totalBalance += Number(wd.amount);
-                        }
-                    }
-
-                    for (const w of withdraws) {
-                        if (Number(w.amount) === 1000) {
-                            thousand1000Arr.push(w);
-                        }
-                    }
-                    if (thousand1000Arr.length > 1) {
-                        // remove first one and keep the rest as normal withdraws
-                        moneyTrackLogger(`${totalBalance} Withdraws of 1000: ${thousand1000Arr.length} (Total Deduction: ${(thousand1000Arr.length - 1) * 1000})`);
-                        totalBalance -= ((thousand1000Arr.length - 1) * 1000);
-                    }
-
-                    // Authorization Letter [授权书]
-                    const letter = await RewardRecord.findOne({
-                        where: { user_id: user.id, reward_id: 6 },
-                        attributes: ['id', 'is_used', 'createdAt', 'updatedAt']
-                    });
-                    if (letter && letter.is_used) {
-                        totalBalance += 100;
-                        moneyTrackLogger(`${totalBalance} Authorization Letter: 100`);
-                    }
-
-                    // Customize Wallet [管理员调整钱包]
-                    const customizeWallet = await AdminLog.findAll({
-                        where: { 
-                            type: 'update_wallet',
-                            model: 'User',
-                            'content.user_id': user.id
-                        },
-                        attributes: ['id', 'admin_id', 'url', 'content', 'createdAt']
-                    });
-                    for (const wallet of customizeWallet) {
-                        const content = wallet.content;
-                        if (content.addOrSubstract == 1) {
-                            totalBalance += Number(content.amount);
-                            moneyTrackLogger(`${totalBalance} Customize Wallet: +${content.amount}`);
-                        } else {
-                            totalBalance -= Number(content.amount);
-                            moneyTrackLogger(`${totalBalance} Customize Wallet: -${content.amount}`);
-                        }
-                    }
-
-                    moneyTrackLogger(`User ID: ${user.id}, Calculated Balance: ${totalBalance}, Actual Balance: ${user.balance}`);
+                    await this.UPDATE_BALANCE(group.user_id);
                 }
             }
 
