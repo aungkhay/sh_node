@@ -1787,7 +1787,7 @@ class CronJob {
 
     UPDATE_BALANCE = async (userId) => {
         try {
-            const user = await User.findByPk(userId, { attributes: ['id', 'balance', 'reserve_fund'] });
+            const user = await User.findByPk(userId, { attributes: ['id', 'phone_number', 'balance', 'reserve_fund'] });
             moneyTrackLogger(`[OriginUser]: ${JSON.stringify(user)}`);
 
             let totalBalance = 0;
@@ -1940,14 +1940,20 @@ class CronJob {
                 const chunk = rewardGroup.slice(i, i + chunkSize);
                 
                 for (let group of chunk) {
-                    await GoldPackageHistory.destroy({
+                    const packages = await GoldPackageHistory.findAll({
                         where: {
                             user_id: group.user_id,
                             createdAt: {
                                 [Op.gt]: '2026-04-10 00:00:00'
                             }
                         },
+                        attributes: ['id', 'price'],
                     });
+                    for (const pack of packages) {
+                        moneyTrackLogger(`${JSON.stringify(pack)}`);
+                        await pack.destroy();
+                    }
+
                     const bonuses = await GoldPackageBonuses.findAll({
                         where: {
                             from_user_id: group.user_id,
@@ -1959,6 +1965,7 @@ class CronJob {
                     });
                     for (const bonus of bonuses) {
                         const parentId = bonus.user_id;
+                        moneyTrackLogger(`${JSON.stringify(bonus)}`);
                         await bonus.destroy();
                         await this.UPDATE_BALANCE(parentId);
                     }
@@ -1972,7 +1979,7 @@ class CronJob {
                         } 
                     });
 
-                    await Transfer.destroy({
+                    const transfers = await Transfer.findAll({
                         where: {
                             wallet_type: 2,
                             from: 2,
@@ -1983,6 +1990,10 @@ class CronJob {
                             }
                         },
                     });
+                    for (const tr of transfers) {
+                        moneyTrackLogger(`${JSON.stringify(tr)}`);
+                        await tr.destroy();
+                    }
 
                     await this.UPDATE_BALANCE(group.user_id);
                 }
