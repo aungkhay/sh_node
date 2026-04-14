@@ -3,7 +3,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { errLogger, commonLogger, callbackLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
-const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer } = require('../../models');
+const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer, GoldPackageHistory } = require('../../models');
 const { Op, Sequelize } = require('sequelize');
 const Decimal = require('decimal.js');
 const axios = require('axios');
@@ -1489,9 +1489,9 @@ class Controller {
             const userId = req.user_id;
             const { amount, receiver_phone } = req.body;
 
-            if (amount < 50) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '转账金额不能小于50', {});
-            }
+            // if (amount < 50) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不能小于50', {});
+            // }
 
             const sender = await User.findByPk(userId, {
                 include: {
@@ -1499,7 +1499,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status'],
                 },
-                attributes: ['id', 'relation', 'balance', 'can_withdraw'],
+                attributes: ['id', 'relation', 'reserve_fund', 'can_withdraw'],
             });
 
             if (!sender.kyc || sender.kyc.status !== 'APPROVED') {
@@ -1510,8 +1510,25 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
 
-            if (parseFloat(amount) > parseFloat(sender.balance)) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '余额不足', {});
+            if (parseFloat(amount) > parseFloat(sender.reserve_fund)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+
+            // 未激活用户无法转出（储备金有使用记录就算激活）
+            const goldPackageHistoryCount = await GoldPackageHistory.count({
+                where: {
+                    user_id: userId
+                }
+            });
+            const transferOutCount = await Transfer.count({
+                where: {
+                    wallet_type: 1, // reserve fund
+                    user_id: userId,
+                }
+            });
+                
+            if (goldPackageHistoryCount === 0 && transferOutCount === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请激活后再进行转账', {});
             }
 
             const receiver = await User.findOne({
@@ -1541,13 +1558,13 @@ class Controller {
                     from_user: sender.id,
                     to_user: receiver.id,
                     amount: amount,
-                    before_from_amount: Number(sender.balance),
-                    after_from_amount: Number(parseFloat(sender.balance) - parseFloat(amount)),
-                    before_to_amount: Number(receiver.balance),
-                    after_to_amount: Number(parseFloat(receiver.balance) + parseFloat(amount)),
+                    before_from_amount: Number(sender.reserve_fund),
+                    after_from_amount: Number(parseFloat(sender.reserve_fund) - parseFloat(amount)),
+                    before_to_amount: Number(receiver.reserve_fund),
+                    after_to_amount: Number(parseFloat(receiver.reserve_fund) + parseFloat(amount)),
                 }, { transaction: t });
-                await sender.increment({ balance: -amount }, { transaction: t });
-                await receiver.increment({ balance: amount }, { transaction: t });
+                await sender.increment({ reserve_fund: -amount }, { transaction: t });
+                await receiver.increment({ reserve_fund: amount }, { transaction: t });
 
                 await t.commit();
 

@@ -22,7 +22,7 @@ class CronJob {
         console.log(`\x1b[34m[CRON]\x1b[0m Job Started ====>`);
 
         // Run at midnight on the first day of every month
-        cron.schedule('0 0 15 * *', this.PAY_ALLOWANCE).start();
+        // cron.schedule('0 0 15 * *', this.PAY_ALLOWANCE).start();
         // Every day at 3:00 AM
         cron.schedule('0 3 * * *', this.GOLD_INTEREST).start();
         // Every day at 6:00 AM
