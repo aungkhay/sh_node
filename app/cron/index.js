@@ -1866,7 +1866,8 @@ class CronJob {
                 if (status === 2) {
                     totalBalance += amount;
                 } else if (status === 0) {
-                    await wd.update({ status: 2, description: '' });
+                    moneyTrackLogger(`Pending Withdraw ID ${wd.id} with amount ${amount} will be treated as rejected for balance calculation.`);
+                    await wd.update({ status: 2, description: 'RESET BALANCE' });
                     totalBalance += amount;
                 }
             }
