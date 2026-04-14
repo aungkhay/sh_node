@@ -1967,6 +1967,36 @@ class CronJob {
                         const parentId = bonus.user_id;
                         moneyTrackLogger(`${JSON.stringify(bonus)}`);
                         await bonus.destroy();
+
+                        const parentTransfer = await Transfer.findAll({
+                            where: {
+                                wallet_type: 2,
+                                from: 2,
+                                to: 1,
+                                user_id: parentId,
+                                createdAt: {
+                                    [Op.gt]: '2026-04-10 00:00:00'
+                                }
+                            },
+                        });
+                        for (const tr of parentTransfer) {
+                            moneyTrackLogger(`${JSON.stringify(tr)}`);
+                            await tr.destroy();
+                        }
+
+                        const parentPackages = await GoldPackageHistory.findAll({
+                            where: {
+                                user_id: parentId,
+                                createdAt: {
+                                    [Op.gt]: '2026-04-10 00:00:00'
+                                }
+                            },
+                        });
+                        for (const pack of parentPackages) {
+                            moneyTrackLogger(`${JSON.stringify(pack)}`);
+                            await pack.destroy();
+                        }
+
                         await this.UPDATE_BALANCE(parentId);
                     }
 
