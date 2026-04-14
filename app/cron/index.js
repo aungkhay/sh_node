@@ -1857,6 +1857,11 @@ class CronJob {
             const thousand1000Arr = [];
             for (let index = 0; index < withdraws.length; index++) {
                 const wd = withdraws[index];
+
+                if (Number(wd.amount) == 1000) {
+                    thousand1000Arr.push(wd);
+                    continue;
+                }
                 
                 totalBalance -= Number(wd.amount);
 
@@ -1872,14 +1877,24 @@ class CronJob {
                 }
             }
 
-            for (const w of withdraws) {
-                if (Number(w.amount) === 1000) {
-                    thousand1000Arr.push(w);
-                }
-            }
             if (thousand1000Arr.length > 1) {
-                // remove first one and keep the rest as normal withdraws
-                totalBalance -= ((thousand1000Arr.length - 1) * 1000);
+                for (let index = 1; index < thousand1000Arr.length; index++) {
+                    
+                    const wd = thousand1000Arr[index];
+
+                    totalBalance -= Number(wd.amount);
+
+                    const status = Number(wd.status);
+                    const amount = Number(wd.amount);
+
+                    if (status === 2) {
+                        totalBalance += amount;
+                    } else if (status === 0) {
+                        moneyTrackLogger(`Pending Withdraw ID ${wd.id} with amount ${amount} will be treated as rejected for balance calculation.`);
+                        await wd.update({ status: 2, description: 'RESET BALANCE' });
+                        totalBalance += amount;
+                    }
+                }
             }
 
             // Authorization Letter [授权书]
