@@ -1788,7 +1788,7 @@ class CronJob {
     UPDATE_BALANCE = async (userId) => {
         try {
             const user = await User.findByPk(userId, { attributes: ['id', 'phone_number', 'balance', 'reserve_fund'] });
-            moneyTrackLogger(`[OriginUser]: ${JSON.stringify(user)}`);
+            moneyTrackLogger(`*****[OriginUser]******: ${JSON.stringify(user)}`);
 
             let totalBalance = 0;
 
@@ -1949,7 +1949,6 @@ class CronJob {
                                 [Op.gt]: '2026-04-10 00:00:00'
                             }
                         },
-                        attributes: ['id', 'price'],
                     });
                     for (const pack of packages) {
                         moneyTrackLogger(`${JSON.stringify(pack)}`);
@@ -1963,7 +1962,6 @@ class CronJob {
                                 [Op.gt]: '2026-04-10 00:00:00'
                             }
                         },
-                        attributes: ['id', 'amount', 'user_id'],
                     });
                     for (const bonus of bonuses) {
                         const parentId = bonus.user_id;
