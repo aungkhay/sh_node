@@ -4095,7 +4095,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '激活码无效', {});
             }
             if (user.is_withdraw_active_code_used) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '激活码已被使用', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '激活码已使用', {});
             }
             await user.update({ is_withdraw_active_code_used: 1 });
 
