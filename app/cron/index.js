@@ -1903,6 +1903,7 @@ class CronJob {
             });
             for (const wallet of customizeWallet) {
                 const content = wallet.content;
+                if (content.walletType != 2) continue;
                 if (content.addOrSubstract == 1) {
                     totalBalance += Number(content.amount);
                     moneyTrackLogger(`${totalBalance} Customize Wallet: +${content.amount}`);
