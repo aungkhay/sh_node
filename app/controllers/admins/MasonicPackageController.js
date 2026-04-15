@@ -2,6 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const { Op } = require('sequelize');
 const multer = require('multer');
+const path = require('path');
 const { User, MasonicPackageBonuses } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -127,7 +128,7 @@ class Controller {
                     {
                         model: MasonicPackage,
                         as: 'package',
-                        attributes: ['id', 'name']
+                        attributes: ['id', 'product_name']
                     }
                 ],
                 where: condition,
@@ -148,6 +149,7 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            console.log(error)
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
@@ -187,7 +189,7 @@ class Controller {
                     {
                         model: MasonicPackage,
                         as: 'package',
-                        attributes: ['id', 'name']
+                        attributes: ['id', 'product_name']
                     }
                 ],
                 where: condition,
@@ -251,7 +253,7 @@ class Controller {
                         include: {
                             model: MasonicPackage,
                             as: 'package',
-                            attributes: ['id', 'name']
+                            attributes: ['id', 'product_name']
                         }
                     },
                 ],
@@ -273,6 +275,7 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            console.log(error)
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

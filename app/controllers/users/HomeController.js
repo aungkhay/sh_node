@@ -15,6 +15,7 @@ const RankHistory = require('../../models/RankHistory');
 const moment = require('moment');
 const MasonicPackageBonuses = require('../../models/MasonicPackageBonuses');
 const MasonicPackageEarn = require('../../models/MasonicPackageEarn');
+const MasonicPackage = require('../../models/MasonicPackage');
 
 class Controller {
     constructor(app) {
@@ -3789,14 +3790,22 @@ class Controller {
 
     MASONIC_GIFT_PACKAGE = async (req, res) => {
         try {
-            let pack = await this.GET_MASONIC_PACKAGES();
-            pack = pack.map(p => ({
-                id: p.id,
-                price: Number(p.price),
-                note: p.note
-            }));
+            // let pack = await this.GET_MASONIC_PACKAGES();
+            // pack = pack.map(p => ({
+            //     id: p.id,
+            //     price: Number(p.price),
+            //     note: p.note
+            // }));
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', pack);
+            const packages = await MasonicPackage.findAll({
+                where: {
+                    status: {
+                        [Op.ne]: 2
+                    }
+                },
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', packages);
         } catch (error) {
             errLogger(`[MASONIC_GIFT_PACKAGE][${req.user_id}]: ${error.stack}`); 
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
@@ -3805,11 +3814,41 @@ class Controller {
 
     BUY_MASONIC_PACKAGE = async (req, res) => {
         try {
-            const id = req.params.id;
-            let pack = await this.GET_MASONIC_PACKAGES();
-            const selectedPack = pack.find(p => p.id === parseInt(id));
-            if (!selectedPack) {
+            const mPackage = await MasonicPackage.findByPk(req.params.id);
+            if (!mPackage) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
+            }
+
+            if (mPackage.status === 2) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已下架', {});
+            }
+
+            if (mPackage.status === 3) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
+            }
+
+            if (mPackage.perchase_limit === 'DAILY' && mPackage.quantity_limit > 0) {
+                const history = await MasonicPackageHistory.findAll({
+                    where: {
+                        createdAt: {
+                            [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
+                        }
+                    }
+                });
+                if (history.length >= mPackage.quantity_limit) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
+                }
+            }
+
+            if (mPackage.perchase_limit === 'TOTAL' && mPackage.quantity_limit > 0) {
+                const history = await MasonicPackageHistory.findAll({
+                    where: {
+                        package_id: mPackage.id
+                    }
+                });
+                if (history.length >= mPackage.quantity_limit) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包已售罄', {});
+                }
             }
 
             const userId = req.user_id;
@@ -3831,20 +3870,72 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
             }
 
-            if (Number(user.reserve_fund) < selectedPack.price) {
+            if (Number(user.reserve_fund) < mPackage.price) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
 
             const t = await db.transaction();
             try {
-                await user.update({ reserve_fund: Number(user.reserve_fund) - selectedPack.price }, { transaction: t });
-                const obj = {
-                    relation: user.relation,
-                    user_id: user.id,
-                    package_id: selectedPack.id,
-                    price: selectedPack.price,
+                await user.update({ reserve_fund: Number(user.reserve_fund) - mPackage.price }, { transaction: t });
+                
+                const pkgs = [];
+                if (mPackage.buy_one_get_quantity > 0) {
+                    const randomNumber = this.commonHelper.randomNumber(6);
+
+                    for (let index = 0; index < mPackage.buy_one_get_quantity; index++) {
+                        const obj = {
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: mPackage.id,
+                            price: mPackage.price,
+                            daily_earn: mPackage.daily_earn,
+                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                        }
+
+                        const pkgHistory = await MasonicPackageHistory.create(obj, { transaction: t });
+                        pkgs.push(pkgHistory);
+                    }
+                } else {
+                    const obj = {
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: mPackage.id,
+                        price: mPackage.price,
+                        daily_earn: mPackage.daily_earn,
+                    }
+                    const pkgHistory = await MasonicPackageHistory.create(obj, { transaction: t });
+                    pkgs.push(pkgHistory);
                 }
-                await MasonicPackageHistory.create(obj, { transaction: t });
+
+                if (mPackage.masonic_fund > 0) {
+                    let totalMasonicFund = 0;
+                    for (let index = 0; index < pkgs.length; index++) {
+                        const pkg = pkgs[index];
+                        totalMasonicFund += Number(pkg.masonic_fund);
+                            
+                        await MasonicFundHistory.create({
+                            relation: user.relation,
+                            user_id: user.id,
+                            amount: pkg.masonic_fund,
+                            description: `PKG-${pkg.id}`,
+                            status: 'APPROVED'
+                        }, { transaction: t });
+                    }
+                    await user.increment({ masonic_fund: totalMasonicFund }, { transaction: t });
+                }
+
+                if (mPackage.is_release_authorize_letter) {
+                    for (let index = 0; index < pkgs.length; index++) {
+                        const pkg = pkgs[index];
+                        await RewardRecord.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            reward_id: 11, // 上合组织塔吉克斯坦区授权书
+                            amount: 1,
+                            from_where: `PKG-${pkg.id}`
+                        }, { transaction: t });
+                    }
+                }
 
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
@@ -3862,7 +3953,7 @@ class Controller {
 
                 const bonuses = [];
                 for (let index = 0; index < upLevelIds.length; index++) {
-                    const bonus = new Decimal(selectedPack.price)
+                    const bonus = new Decimal(mPackage.price)
                         .times(Number(bonusArr[index]))
                         .times(0.01)
                         .toNumber();
@@ -3881,7 +3972,8 @@ class Controller {
                         relation: upLevelUser.relation,
                         user_id: upLevelUser.id,
                         from_user_id: user.id,
-                        amount: bonus
+                        amount: bonus,
+                        package_history_id: pkgs[0].id
                     });
                 }
                 if (bonuses.length > 0) {
@@ -3911,8 +4003,13 @@ class Controller {
             const offset = this.getOffset(page, perPage);
 
             const { rows, count } = await MasonicPackageHistory.findAndCountAll({
+                include: {
+                    model: MasonicPackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
                 where: { user_id: userId },
-                attributes: ['id', 'package_id', 'price', 'createdAt'],
+                attributes: ['id', 'price', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
@@ -3942,13 +4039,20 @@ class Controller {
             const userId = req.user_id;
 
             const { rows, count } = await MasonicPackageEarn.findAndCountAll({
-                include: {
-                    model: MasonicPackageHistory,
-                    as: 'package_history',
-                    attributes: ['id', 'price'],
-                },
+                include: [
+                    {
+                        model: MasonicPackageHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'price'],
+                    },
+                    {
+                        model: MasonicPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    }
+                ],
                 where: { user_id: userId },
-                attributes: ['id', 'package_id', 'amount', 'description', 'createdAt'],
+                attributes: ['id', 'amount', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
