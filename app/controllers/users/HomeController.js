@@ -3915,8 +3915,8 @@ class Controller {
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
 
-                        const pkgHistory = await MasonicPackageHistory.create(obj, { transaction: t });
-                        pkgHistory.push(pkgHistory);
+                        const pkgHistoryItem = await MasonicPackageHistory.create(obj, { transaction: t });
+                        pkgHistory.push(pkgHistoryItem);
                     }
                 } else {
                     const obj = {
@@ -3926,8 +3926,8 @@ class Controller {
                         price: mPackage.price,
                         daily_earn: mPackage.daily_earn,
                     }
-                    const pkgHistory = await MasonicPackageHistory.create(obj, { transaction: t });
-                    pkgHistory.push(pkgHistory);
+                    const pkgHistoryItem = await MasonicPackageHistory.create(obj, { transaction: t });
+                    pkgHistory.push(pkgHistoryItem);
                 }
 
                 if (mPackage.masonic_fund > 0) {
@@ -4001,7 +4001,7 @@ class Controller {
                         user_id: upLevelUser.id,
                         from_user_id: user.id,
                         amount: bonus,
-                        package_history_id: pkgs[0].id
+                        package_history_id: pkgHistory[0].id
                     });
                 }
                 if (bonuses.length > 0) {
