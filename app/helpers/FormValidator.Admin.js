@@ -659,7 +659,7 @@ exports.update_masonic_package = () => {
             .bail()
             .isNumeric()
             .withMessage('价格必须是数字'),
-        check('daily_earn').not.isEmpty().withMessage('终身日收益不能为空')
+        check('daily_earn').not().isEmpty().withMessage('终身日收益不能为空')
             .bail()
             .isNumeric()
             .withMessage('终身日收益必须是数字'),
