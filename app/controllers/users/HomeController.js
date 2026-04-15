@@ -3960,6 +3960,11 @@ class Controller {
                     }
                 }
 
+                await mPackage.increment({ total_quantity: -pkgHistory.length }, { transaction: t });
+                if (mPackage.total_quantity - pkgHistory.length <= 0) {
+                    await mPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
                 const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
