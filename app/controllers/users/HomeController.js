@@ -3805,7 +3805,30 @@ class Controller {
                 },
             });
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', packages);
+            let package_description = await this.redisHelper.getValue('masonic_package_description');
+            if (!package_description) {
+                const conf = await Config.findOne({ where: { type: 'masonic_package_description' } });
+                package_description = conf ? conf.value : '';
+            }
+            let package_period = await this.redisHelper.getValue('masonic_package_period');
+            if (!package_period) {
+                const conf = await Config.findOne({ where: { type: 'masonic_package_period' } });
+                package_period = conf ? conf.value : '';
+            }
+            let release_qty = await this.redisHelper.getValue('masonic_package_daily_release_qty');
+            if (!release_qty) {
+                const conf = await Config.findOne({ where: { type: 'masonic_package_period' } });
+                release_qty = conf ? conf.value : '';
+            }
+
+            const data = {
+                package_description,
+                package_period,
+                release_qty,
+                packages
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             errLogger(`[MASONIC_GIFT_PACKAGE][${req.user_id}]: ${error.stack}`); 
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});

@@ -9,6 +9,7 @@ let { validationResult } = require('express-validator');
 const MasonicPackageHistory = require('../../models/MasonicPackageHistory');
 const MasonicPackageEarn = require('../../models/MasonicPackageEarn');
 const MasonicPackage = require('../../models/MasonicPackage');
+const AliOSS = require('../../helpers/AliOSS');
 
 class Controller {
     constructor() {
@@ -16,6 +17,7 @@ class Controller {
         this.ResCode = this.commonHelper.ResCode;
         this.getOffset = this.commonHelper.getOffset;
         this.adminLogger = this.commonHelper.adminLogger;
+        this.OSS = new AliOSS();
     }
 
     INDEX = async (req, res) => {

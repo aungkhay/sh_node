@@ -83,7 +83,7 @@ class AdminRoute extends express.Router {
         let MasonicPackageController = require('../controllers/admins/MasonicPackageController');
         let MasonicPackageCtrl = new MasonicPackageController(app);
         this.get('/masonic-packages', middleware.isLoggedIn('masonic-package-list'), MasonicPackageCtrl.INDEX);
-        this.post('/masonic-packages/:id/upload', middleware.isLoggedIn('masonic-package-update'), MasonicPackageCtrl.UPLOAD);
+        this.post('/masonic-packages/:id/upload', MasonicPackageCtrl.UPLOAD);
         this.post('/masonic-packages/:id/update', FormValidator.update_masonic_package(), middleware.isLoggedIn('masonic-package-update'), MasonicPackageCtrl.UPDATE);
         this.get('/masonic-package/history', middleware.isLoggedIn('masonic-package-history-list'), MasonicPackageCtrl.MASONIC_PACKAGE_HISTORY);
         this.get('/masonic-package/bonus-history', middleware.isLoggedIn('masonic-package-bonus-history-list'), MasonicPackageCtrl.MASONIC_PACKAGE_BONUS_HISTORY);

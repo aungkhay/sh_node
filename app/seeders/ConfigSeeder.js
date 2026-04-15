@@ -193,7 +193,7 @@ module.exports = async () => {
             data_type: 'string'
         },
         {
-            type: 'masonic_package_daily_release-qty',
+            type: 'masonic_package_daily_release_qty',
             title: '授权计划每日发放数量',
             val: '200000',
             description: '-',
