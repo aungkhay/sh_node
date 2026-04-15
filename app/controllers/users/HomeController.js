@@ -3934,12 +3934,12 @@ class Controller {
                     let totalMasonicFund = 0;
                     for (let index = 0; index < pkgHistory.length; index++) {
                         const pkg = pkgHistory[index];
-                        totalMasonicFund += Number(pkg.masonic_fund);
+                        totalMasonicFund += Number(mPackage.masonic_fund);
                             
                         await MasonicFundHistory.create({
                             relation: user.relation,
                             user_id: user.id,
-                            amount: pkg.price,
+                            amount: mPackage.masonic_fund,
                             description: `PKG-${pkg.id}`,
                             status: 'APPROVED'
                         }, { transaction: t });
