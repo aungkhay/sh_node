@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2568,7 +2568,22 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '购买共济礼包奖励',
-                    description: `${g.from_user ? `来自 ${g.from_user.name}` : ''} 添加 ${Number(g.amount)} 余额`
+                    description: `${g.from_user ? `来自 ${g.from_user.name} ` : ' '}添加 ${Number(g.amount)} 余额`
+                }
+            });
+
+            // 购买共济礼包收益
+            const masonicPackageEarnings = await MasonicPackageEarn.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newMasonicPackageEarnings = masonicPackageEarnings.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买共济礼包收益',
+                    description: `添加 ${Number(g.amount)} 余额`
                 }
             });
 
@@ -2682,6 +2697,7 @@ class Controller {
                 ...newGoldPackageBonuses,
                 ...newBuyMasonicPackages,
                 ...newMasonicPackageBonuses,
+                ...newMasonicPackageEarnings,
                 // ...signAgreement,
                 ...newWithdrawals,
                 ...newCustomizeWallet,
