@@ -1,14 +1,12 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { MasonicFundHistory, User, MasonicFund, TempMasonicFundHistory, RewardRecord, MasonicPackageBonuses } = require('../../models');
+const { MasonicFundHistory, User, TempMasonicFundHistory, RewardRecord } = require('../../models');
 const { Op } = require('sequelize');
 const XLSX = require("xlsx");
 const multer = require('multer');
 const { db } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
-const MasonicPackageHistory = require('../../models/MasonicPackageHistory');
-const MasonicPackageEarn = require('../../models/MasonicPackageEarn');
 
 class Controller {
     constructor() {
@@ -350,164 +348,6 @@ class Controller {
             });
         } catch (error) {
             errLogger(`[UPDATE_FUND_STATUS_BY_EXCEL]: ${error.stack}`);
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-        }
-    }
-
-    MASONIC_PACKAGE_HISTORY = async (req, res) => {
-        try {
-            const page = parseInt(req.query.page || 1);
-            const perPage = parseInt(req.query.perPage || 10);
-            const offset = this.getOffset(page, perPage);
-            const userId = req.user_id;
-            const phone = req.query.phone;
-
-            let condition = {}
-            if (userId != 1) {
-                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
-                condition.relation = { [Op.like]: `${me.relation}/%` }
-            }
-
-            let userCondition = {}
-            if (phone) {
-                userCondition.phone_number = phone;
-            }
-
-            const { rows, count } = await MasonicPackageHistory.findAndCountAll({
-                include: {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'name', 'phone_number'],
-                    where: userCondition
-                },
-                where: condition,
-                order: [['id', 'DESC']],
-                limit: perPage,
-                offset: offset
-            });
-
-            const data = {
-                packages: rows,
-                meta: {
-                    page: page,
-                    perPage: perPage,
-                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
-                    total: count
-                }
-            }
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
-        } catch (error) {
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-        }
-    }
-
-    MASONIC_PACKAGE_EARN_HISTORY = async (req, res) => {
-        try {
-            const page = parseInt(req.query.page || 1);
-            const perPage = parseInt(req.query.perPage || 10);
-            const offset = this.getOffset(page, perPage);
-            const userId = req.user_id;
-            const phone = req.query.phone;
-
-            let condition = {}
-            if (userId != 1) {
-                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
-                condition.relation = { [Op.like]: `${me.relation}/%` }
-            }
-
-            let userCondition = {}
-            if (phone) {
-                userCondition.phone_number = phone;
-            }
-
-            const { rows, count } = await MasonicPackageEarn.findAndCountAll({
-                include: [
-                    {
-                        model: User,
-                        as: 'user',
-                        attributes: ['id', 'name', 'phone_number'],
-                        where: userCondition
-                    },
-                    {
-                        model: MasonicPackageHistory,
-                        as: 'package_history',
-                        attributes: ['id', 'package_id', 'price']
-                    }
-                ],
-                where: condition,
-                order: [['id', 'DESC']],
-                limit: perPage,
-                offset: offset
-            });
-
-            const data = {
-                packages: rows,
-                meta: {
-                    page: page,
-                    perPage: perPage,
-                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
-                    total: count
-                }
-            }
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
-        } catch (error) {
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-        }
-    }
-
-    MASONIC_PACKAGE_BONUS_HISTORY = async (req, res) => {
-        try {
-            const page = parseInt(req.query.page || 1);
-            const perPage = parseInt(req.query.perPage || 10);
-            const offset = this.getOffset(page, perPage);
-            const userId = req.user_id;
-            const phone = req.query.phone;
-
-            let condition = {}
-            if (userId != 1) {
-                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
-                condition.relation = { [Op.like]: `${me.relation}/%` }
-            }
-
-            let userCondition = {}
-            if (phone) {
-                userCondition.phone_number = phone;
-            }
-
-            const { rows, count } = await MasonicPackageBonuses.findAndCountAll({
-                include: [
-                    {
-                        model: User,
-                        as: 'user',
-                        attributes: ['id', 'name', 'phone_number'],
-                        where: userCondition
-                    },
-                    {
-                        model: User,
-                        as: 'from_user',
-                        attributes: ['id', 'name', 'phone_number']
-                    }
-                ],
-                where: condition,
-                order: [['id', 'DESC']],
-                limit: perPage,
-                offset: offset
-            });
-
-            const data = {
-                packages: rows,
-                meta: {
-                    page: page,
-                    perPage: perPage,
-                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
-                    total: count
-                }
-            }
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
-        } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

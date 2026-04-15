@@ -2,6 +2,7 @@ const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../connections/Mysql');
 const User = require('./User');
 const GoldPackageHistory = require('./GoldPackageHistory');
+const MasonicPackage = require('./MasonicPackage');
 
 class MasonicPackageEarn extends Model {}
 
@@ -25,8 +26,12 @@ MasonicPackageEarn.init({
         defaultValue: 0
     },
     package_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
+        type: DataTypes.BIGINT,
+        references: {
+            model: MasonicPackage,
+            key: 'id'
+        },
+        defaultValue: 0
     },
     package_history_id: {
         type: DataTypes.BIGINT,

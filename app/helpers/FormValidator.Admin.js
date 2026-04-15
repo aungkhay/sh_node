@@ -651,3 +651,49 @@ exports.sort_channel = () => {
             .isInt({ min: 0 }).withMessage('排序顺序必须是非负整数'),
     ]
 }
+
+exports.update_masonic_package = () => {
+    return [
+        check('product_name').not().isEmpty().withMessage('产品名称不能为空'),
+        check('price').not().isEmpty().withMessage('价格不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('价格必须是数字'),
+        check('daily_earn').not.isEmpty().withMessage('终身日收益不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('终身日收益必须是数字'),
+        // masonic_fund optional
+        check('masonic_fund').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('法老基金必须是数字'),
+        
+        // is_release_authorize_letter (0, 1)
+        check('is_release_authorize_letter').not().isEmpty().withMessage('是否发布授权书不能为空')
+            .bail()
+            .isIn([0, 1])
+            .withMessage('是否发布授权书值无效'),
+        // purchase_limit (NONE,DAILY,TOTAL)
+        check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
+            .bail()
+            .isIn(['NONE', 'DAILY', 'TOTAL'])
+            .withMessage('购买限制无效'),
+        // quantity_limit
+        check('quantity_limit').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('购买数量限制必须是数字'),
+        // total_quantity
+        check('total_quantity').not().isEmpty().withMessage('总数量不能为空')
+            .isNumeric()
+            .withMessage('总数量必须是数字'),
+        // buy_one_get_quantity 
+        check('buy_one_get_quantity').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('买一赠一数量必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+    ]
+}

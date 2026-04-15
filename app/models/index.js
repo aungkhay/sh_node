@@ -52,6 +52,7 @@ const GoldPackageReturn = require('./GoldPackageReturn');
 const GoldPackageRepurchase = require('./GoldPackageRepurchase');
 const GoldPlanCheckIn = require('./GoldPlanCheckIn');
 const BalanceTransfer = require('./BalanceTransfer');
+const MasonicPackage = require('./MasonicPackage');
 const MasonicPackageHistory = require('./MasonicPackageHistory');
 const MasonicPackageBonuses = require('./MasonicPackageBonuses');
 const MasonicPackageEarn = require('./MasonicPackageEarn');
@@ -243,10 +244,18 @@ BalanceTransfer.belongsTo(User, { foreignKey: 'to_user', as: 'to', onDelete: 'CA
 User.hasMany(MasonicPackageHistory, { foreignKey: 'user_id', as: 'masonic_package_histories', onDelete: 'CASCADE' });
 MasonicPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ======== MASONIC_PACKAGE ↔️ MASONIC_PACKAGE_HISTORY (1:N) ==========
+MasonicPackage.hasMany(MasonicPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+MasonicPackageHistory.belongsTo(MasonicPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
 // ========== USER ↔️ MASONIC_PACKAGE_BONUSES (1:N) ==========
 User.hasMany(MasonicPackageBonuses, { foreignKey: 'user_id', as: 'masonic_package_bonuses', onDelete: 'CASCADE' });
 MasonicPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 MasonicPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== MASONIC_PACKAGE_HISTORY ↔️ MASONIC_PACKAGE_BONUSES (1:N) ==========
+MasonicPackageHistory.hasMany(MasonicPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+MasonicPackageBonuses.belongsTo(MasonicPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
 // ========== USER ↔️ MASONIC_PACKAGE_EARN (1:N) ==========
 User.hasMany(MasonicPackageEarn, { foreignKey: 'user_id', as: 'masonic_package_earn', onDelete: 'CASCADE' });
@@ -255,6 +264,10 @@ MasonicPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete
 // ========== MASONIC_PACKAGE_HISTORY ↔️ MASONIC_PACKAGE_EARN (1:N) ==========
 MasonicPackageHistory.hasMany(MasonicPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
 MasonicPackageEarn.belongsTo(MasonicPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== MASONIC_PACKAGE ↔️ MASONIC_PACKAGE_EARN (1:N) ==========
+MasonicPackage.hasMany(MasonicPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+MasonicPackageEarn.belongsTo(MasonicPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
 
 // ========== GoldCouponTemp ↔️ User (1:N) ==========
 User.hasMany(GoldCouponTemp, { foreignKey: 'user_id', as: 'gold_coupon_temps', onDelete: 'CASCADE' });

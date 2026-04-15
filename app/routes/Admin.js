@@ -78,10 +78,16 @@ class AdminRoute extends express.Router {
         this.get('/masonic-fund/temp-history', middleware.isLoggedIn('masonic-fund-user-not-register-list'), MasonicCtrl.TEMP_HISTORY);
         this.post('/masonic-fund-history/:id/update-status', FormValidator.update_masonic_fund_status(), middleware.isLoggedIn('masonic-fund-approve,masonic-fund-reject'), MasonicCtrl.UPDATE_FUND_STATUS);
         this.post('/masonic-fund-history/approve-by-excel', middleware.isLoggedIn('masonic-fund-approve'), MasonicCtrl.UPDATE_FUND_STATUS_BY_EXCEL);
+
         // Masonic Package
-        this.get('/masonic-package/history', middleware.isLoggedIn('masonic-package-history-list'), MasonicCtrl.MASONIC_PACKAGE_HISTORY);
-        this.get('/masonic-package/bonus-history', middleware.isLoggedIn('masonic-package-bonus-history-list'), MasonicCtrl.MASONIC_PACKAGE_BONUS_HISTORY);
-        this.get('/masonic-package/earn-history', middleware.isLoggedIn('masonic-package-earn-history-list'), MasonicCtrl.MASONIC_PACKAGE_EARN_HISTORY);
+        let MasonicPackageController = require('../controllers/admins/MasonicPackageController');
+        let MasonicPackageCtrl = new MasonicPackageController(app);
+        this.get('/masonic-packages', middleware.isLoggedIn('masonic-package-list'), MasonicPackageCtrl.INDEX);
+        this.post('/masonic-packages/:id/upload', middleware.isLoggedIn('masonic-package-update'), MasonicPackageCtrl.UPLOAD);
+        this.post('/masonic-packages/:id/update', FormValidator.update_masonic_package(), middleware.isLoggedIn('masonic-package-update'), MasonicPackageCtrl.UPDATE);
+        this.get('/masonic-package/history', middleware.isLoggedIn('masonic-package-history-list'), MasonicPackageCtrl.MASONIC_PACKAGE_HISTORY);
+        this.get('/masonic-package/bonus-history', middleware.isLoggedIn('masonic-package-bonus-history-list'), MasonicPackageCtrl.MASONIC_PACKAGE_BONUS_HISTORY);
+        this.get('/masonic-package/earn-history', middleware.isLoggedIn('masonic-package-earn-history-list'), MasonicPackageCtrl.MASONIC_PACKAGE_EARN_HISTORY);
 
         let NewsController = require('../controllers/admins/NewsController');
         let NewsCtrl = new NewsController();

@@ -1,6 +1,7 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../connections/Mysql');
 const User = require('./User');
+const MasonicPackageHistory = require('./MasonicPackageHistory');
 
 class MasonicPackageBonuses extends Model {
     toJSON() {
@@ -33,6 +34,14 @@ MasonicPackageBonuses.init({
         type: DataTypes.BIGINT,
         references: {
             model: User,
+            key: 'id'
+        },
+        allowNull: false,
+    },
+    package_history_id: {
+        type: DataTypes.BIGINT,
+        references: {
+            model: MasonicPackageHistory,
             key: 'id'
         },
         allowNull: false,
