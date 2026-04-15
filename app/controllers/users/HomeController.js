@@ -3808,24 +3808,27 @@ class Controller {
             let package_description = await this.redisHelper.getValue('masonic_package_description');
             if (!package_description) {
                 const conf = await Config.findOne({ where: { type: 'masonic_package_description' } });
-                package_description = conf ? conf.value : '';
+                package_description = conf ? conf.val : '';
+                await this.redisHelper.setValue('masonic_package_description', package_description);
             }
             let package_period = await this.redisHelper.getValue('masonic_package_period');
             if (!package_period) {
                 const conf = await Config.findOne({ where: { type: 'masonic_package_period' } });
-                package_period = conf ? conf.value : '';
+                package_period = conf ? conf.val : '';
+                await this.redisHelper.setValue('masonic_package_period', package_period);
             }
             let release_qty = await this.redisHelper.getValue('masonic_package_daily_release_qty');
             if (!release_qty) {
-                const conf = await Config.findOne({ where: { type: 'masonic_package_period' } });
-                release_qty = conf ? conf.value : '';
+                const conf = await Config.findOne({ where: { type: 'masonic_package_daily_release_qty' } });
+                release_qty = conf ? conf.val : '';
+                await this.redisHelper.setValue('masonic_package_daily_release_qty', release_qty);
             }
 
             const data = {
-                package_description,
-                package_period,
-                release_qty,
-                packages
+                package_description: package_description,
+                package_period: package_period,
+                release_qty: release_qty,
+                packages: packages
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
