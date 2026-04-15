@@ -3901,7 +3901,7 @@ class Controller {
             try {
                 await user.update({ reserve_fund: Number(user.reserve_fund) - mPackage.price }, { transaction: t });
                 
-                const pkgs = [];
+                const pkgHistory = [];
                 if (mPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
@@ -3916,7 +3916,7 @@ class Controller {
                         }
 
                         const pkgHistory = await MasonicPackageHistory.create(obj, { transaction: t });
-                        pkgs.push(pkgHistory);
+                        pkgHistory.push(pkgHistory);
                     }
                 } else {
                     const obj = {
@@ -3927,19 +3927,19 @@ class Controller {
                         daily_earn: mPackage.daily_earn,
                     }
                     const pkgHistory = await MasonicPackageHistory.create(obj, { transaction: t });
-                    pkgs.push(pkgHistory);
+                    pkgHistory.push(pkgHistory);
                 }
 
                 if (mPackage.masonic_fund > 0) {
                     let totalMasonicFund = 0;
-                    for (let index = 0; index < pkgs.length; index++) {
-                        const pkg = pkgs[index];
+                    for (let index = 0; index < pkgHistory.length; index++) {
+                        const pkg = pkgHistory[index];
                         totalMasonicFund += Number(pkg.masonic_fund);
                             
                         await MasonicFundHistory.create({
                             relation: user.relation,
                             user_id: user.id,
-                            amount: pkg.masonic_fund,
+                            amount: pkg.price,
                             description: `PKG-${pkg.id}`,
                             status: 'APPROVED'
                         }, { transaction: t });
@@ -3948,8 +3948,8 @@ class Controller {
                 }
 
                 if (mPackage.is_release_authorize_letter) {
-                    for (let index = 0; index < pkgs.length; index++) {
-                        const pkg = pkgs[index];
+                    for (let index = 0; index < pkgHistory.length; index++) {
+                        const pkg = pkgHistory[index];
                         await RewardRecord.create({
                             user_id: user.id,
                             relation: user.relation,
