@@ -51,6 +51,11 @@ BalanceTransfer.init({
         },
         allowNull: false,
     },
+    wallet_type: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: '1 => 储备金 | 2 => 余额',
+    },
     amount: {
         type: DataTypes.DECIMAL(28, 6),
         defaultValue: '0.0',
@@ -79,6 +84,7 @@ BalanceTransfer.init({
     paranoid: true,
     indexes: [
         { fields: ['relation'] },
+        { fields: ['wallet_type'] },
         { fields: ['createdAt'] }
     ]
 });

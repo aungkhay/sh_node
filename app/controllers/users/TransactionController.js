@@ -1558,7 +1558,7 @@ class Controller {
                     attributes: ['id', 'status'],
                 },
                 where: { phone_number: receiver_phone },
-                attributes: ['id', 'name', 'phone_number']
+                attributes: ['id', 'name', 'phone_number', 'reserve_fund']
             });
 
             if (!receiver) {
@@ -1577,6 +1577,7 @@ class Controller {
                     relation: sender.relation,
                     from_user: sender.id,
                     to_user: receiver.id,
+                    wallet_type: 1,
                     amount: amount,
                     before_from_amount: Number(sender.reserve_fund),
                     after_from_amount: Number(parseFloat(sender.reserve_fund) - parseFloat(amount)),
