@@ -3840,6 +3840,24 @@ class Controller {
 
     BUY_MASONIC_PACKAGE = async (req, res) => {
         try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const openPeriod = await this.redisHelper.getValue('masonic_package_period');
+            if (openPeriod) {
+                const [start, end] = openPeriod.split('-');
+                const now = moment();
+                if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `共济礼包购买时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
+                }                 
+                if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `共济礼包购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
+                }
+            }
+            
             const mPackage = await MasonicPackage.findByPk(req.params.id);
             if (!mPackage) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
@@ -3878,13 +3896,14 @@ class Controller {
             }
 
             const userId = req.user_id;
+            const payment_password = req.body.payment_password;
             const user = await User.findByPk(userId, {
                 include: {
                     model: UserKYC,
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password']
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -3894,6 +3913,10 @@ class Controller {
             }
             if (user.kyc.status === 'PENDING') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
             if (Number(user.reserve_fund) < mPackage.price) {
@@ -3913,7 +3936,7 @@ class Controller {
                             relation: user.relation,
                             user_id: user.id,
                             package_id: mPackage.id,
-                            price: mPackage.price,
+                            price: index == 0 ? mPackage.price : 0,
                             daily_earn: mPackage.daily_earn,
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }

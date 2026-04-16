@@ -197,6 +197,14 @@ const data = {
     uuid: "0c53f856-e5dd-485e-a362-8933b4423b07",
     verification_code: "Ck5jX"
 }
+
+// [POST] Bind Payment Password
+const url = `${baseURL}/bind-payment-password`;
+const data = {
+    payment_password: '',
+    nrc_last_six_digit: ''
+}
+
 ```
 ### KYC
 ``` js
@@ -572,7 +580,8 @@ const params = {
 const url = `${baseURL}/balance-transfers/send`;
 const data = {
     receiver_phone: '',
-    amount: 0
+    amount: 0,
+    payment_password: ''
 }
 
 // [GET] Balance Transfer History
@@ -601,6 +610,7 @@ const url = `${baseURL}/withdraw`;
 const data = {
     amount: 100,
     withdrawBy: '', // 'BANK', 'ALIPAY'
+    payment_password: ''
 }
 
 // [GET] Deposit History
@@ -699,8 +709,13 @@ const params = {
 
 // [GET] Masonic Gift Package
 const url = `${baseURL}/masonic-gift-packages`;
+
 // [POST] Buy Masonic Package
 const url = `${baseURL}/masonic-gift-packages/${packageId}/buy`;
+const data = {
+    payment_password: ''
+}
+
 // [GET] Masonic Package History
 const url = `${baseURL}/masonic-gift-packages/history`;
 const params = {

@@ -9,6 +9,12 @@ const Decimal = require('decimal.js');
 const axios = require('axios');
 const MerchantController = require('./MerchantController');
 const MerchantChannel = require('../../models/MerchantChannel');
+const { encrypt } = require('../../helpers/AESHelper');
+
+const PASS_KEY = process.env.PASS_KEY;
+const PASS_IV = process.env.PASS_IV;
+const PASS_PREFIX = process.env.PASS_PREFIX;
+const PASS_SUFFIX = process.env.PASS_SUFFIX;
 
 class Controller {
     constructor(app) {
@@ -627,13 +633,18 @@ class Controller {
             const userId = req.user_id;
             const amount = parseFloat(req.body.amount);
             const withdrawBy = req.body.withdrawBy;
+            const paymentPassword = req.body.payment_password;
             const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
             const user = await User.findByPk(userId, {
-                attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt']
+                attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password']
             });
             if (!user.can_withdraw) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + paymentPassword + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
             // check createdAt is before 2026-04-10
             if (!user.is_withdraw_active_code_used && new Date(user.createdAt) < new Date('2026-04-10')) {
@@ -1487,7 +1498,7 @@ class Controller {
             }
 
             const userId = req.user_id;
-            const { amount, receiver_phone } = req.body;
+            const { amount, receiver_phone, payment_password } = req.body;
 
             // if (amount < 50) {
             //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不能小于50', {});
@@ -1499,7 +1510,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status'],
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt'],
+                attributes: ['id', 'relation', 'reserve_fund', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password'],
             });
 
             if (!sender.kyc || sender.kyc.status !== 'APPROVED') {
@@ -1508,6 +1519,11 @@ class Controller {
 
             if (!sender.can_withdraw) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
+            }
+
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== sender.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
             if (parseFloat(amount) > parseFloat(sender.reserve_fund)) {

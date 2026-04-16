@@ -280,7 +280,7 @@ class Controller {
                     'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
                     'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest',
                     'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
-                    'is_withdraw_active_code_used', 'createdAt'
+                    'is_withdraw_active_code_used', 'createdAt', 'payment_password'
                 ],
                 useMaster: userId % 2 === 0 ? true : false
             });
@@ -312,15 +312,31 @@ class Controller {
                 order: [['createdAt', 'DESC']],
                 attributes: ['price']
             });
+            
+            // 上合组织塔吉克斯坦区授权书
+            const letterOfTajikistan = await RewardRecord.count({
+                where: {
+                    user_id: userId,
+                    reward_id: 11,
+                    is_used: 0,
+                },
+                useMaster: userId % 2 === 0 ? true : false
+            });
 
             let data = {
                 ... user.get({ plain: true }),
+                is_already_bind_payment_password: user.payment_password ? true : false,
                 can_impeach_count: 0,
                 next_rank_percentage: 0,
                 next_rank_point: 0,
                 gold_count_in_coupon: goldCouponCount,
-                total_coupon_gold_price: goldCouponCount * (goldPrice ? goldPrice.price : 0)
+                total_coupon_gold_price: goldCouponCount * (goldPrice ? goldPrice.price : 0),
+                letter_of_tajikistan: letterOfTajikistan,
+                gold_count_in_tajikstan: letterOfTajikistan * 2000,
+                total_tajikstan_gold_price: letterOfTajikistan * 2000 * (goldPrice ? goldPrice.price : 0)
             }
+
+            delete data.payment_password;
 
             const currentRankIndex = ranks.findIndex(r => r.id == user.rank_id);
             const lastRank = ranks[ranks.length - 1];
@@ -469,6 +485,44 @@ class Controller {
         } catch (error) {
             errLogger(`[FORGOT_PASSWORD]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BIND_PAYMENT_PASSWORD = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const { payment_password, nrc_last_six_digit } = req.body;
+            const userId = req.user_id;
+
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['nrc_number', 'status']
+                },
+                attributes: ['id', 'phone_number', 'password', 'payment_password'] 
+            });
+
+            if (!user.kyc || user.kyc.status != 'APPROVED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先完成实名认证', {});
+            }
+            if (!user.kyc.nrc_number.endsWith(nrc_last_six_digit)) {
+                const nrcError = { field: 'nrc_last_six_digit', msg: '身份证后六位不正确' };
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [nrcError]);
+            }
+
+            const encPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            await user.update({ payment_password: encPaymentPassword });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '绑定支付密码成功', {});
+        } catch (error) {
+            errLogger(`[BIND_PAYMENT_PASSWORD]: ${error.stack}`);  
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});  
         }
     }
 }

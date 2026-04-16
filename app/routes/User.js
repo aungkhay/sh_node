@@ -17,6 +17,7 @@ class UserRoute extends express.Router {
         this.post('/logout', middleware.isLoggedIn, AuthCtrl.LOGOUT);
         this.post('/modify-password', FormValidator.modify_password(), middleware.isLoggedIn, AuthCtrl.MODIFY_PASSWORD);
         this.post('/forgot-password', FormValidator.forgot_password(), AuthCtrl.FORGOT_PASSWORD);
+        this.post('/bind-payment-password', FormValidator.bind_payment_password(), middleware.isLoggedIn, AuthCtrl.BIND_PAYMENT_PASSWORD);
 
         let HomeController = require('../controllers/users/HomeController');
         const HomeCtrl = new HomeController(app);
@@ -84,7 +85,7 @@ class UserRoute extends express.Router {
         this.post('/apply-withdraw-active-code', middleware.isLoggedIn, HomeCtrl.APPLY_WITHDRAW_ACTIVE_CODE);
         // Masonic Package Routes
         this.get('/masonic-gift-packages', HomeCtrl.MASONIC_GIFT_PACKAGE);
-        this.post('/masonic-gift-packages/:id/buy', middleware.isLoggedIn, HomeCtrl.BUY_MASONIC_PACKAGE);
+        this.post('/masonic-gift-packages/:id/buy', FormValidator.buy_masonic_package(), middleware.isLoggedIn, HomeCtrl.BUY_MASONIC_PACKAGE);
         this.get('/masonic-gift-packages/history', middleware.isLoggedIn, HomeCtrl.MASONIC_PACKAGE_HISTORY);
         this.get('/masonic-gift-packages/earn-history', middleware.isLoggedIn, HomeCtrl.MASONIC_PACKAGE_EARN_HISTORY);
         this.get('/masonic-gift-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.MASONIC_PACKAGE_BONUS_HISTORY);

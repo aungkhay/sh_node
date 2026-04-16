@@ -79,6 +79,10 @@ User.init({
         type: DataTypes.STRING,
         allowNull: false,
     },
+    payment_password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
     invite_code: {
         type: DataTypes.STRING(13),
         allowNull: false,

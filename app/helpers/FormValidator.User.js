@@ -34,6 +34,22 @@ exports.login = () => {
     ]
 }
 
+exports.bind_payment_password = () => {
+    return [
+        check('payment_password')
+            .not().isEmpty().withMessage('支付密码不能为空')
+            .isLength({ min: 6 }).withMessage('支付密码至少需要6个字符')
+            .custom(value => {
+                if (/^(111111|123123|123456)$/.test(value)) {
+                    throw new Error('支付密码太简单，请使用更复杂的密码');
+                }
+                return true;
+            }),
+        check('nrc_last_six_digit', { msg: '身份证后六位不能为空' }).not().isEmpty()
+    ];
+}
+
+
 exports.verify_kyc = () => {
     return [
         check('nrc_name', { msg: '姓名不能为空' }).not().isEmpty(),
@@ -229,7 +245,8 @@ exports.withdraw = () => {
         check('withdrawBy').not().isEmpty().withMessage('提现方式不能为空')
             .bail()
             .isIn(['BANK', 'ALIPAY'])
-            .withMessage('提现方式无效，只能是 BANK 或 ALIPAY')
+            .withMessage('提现方式无效，只能是 BANK 或 ALIPAY'),
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
     ]
 }
 
@@ -314,5 +331,12 @@ exports.balance_transfer = () => {
             .bail()
             .isFloat({ gt: 0 })
             .withMessage('转账金额必须大于0'),
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
+exports.buy_masonic_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
     ]
 }
