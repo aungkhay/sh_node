@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn, BalanceTransfer } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2688,6 +2688,40 @@ class Controller {
                 }
             });
 
+            // Balance Transfer
+            const balanceTransfer = await BalanceTransfer.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'to',
+                        attributes: ['id', 'name', 'phone_number']
+                    },
+                    {
+                        model: User,
+                        as: 'from',
+                        attributes: ['id', 'name', 'phone_number']
+                    }
+                ],
+                where: {
+                    [Op.or]: [
+                        { from_user: user.id },
+                        { to_user: user.id }
+                    ]
+                },
+                attributes: ['id', 'wallet_type', 'amount', 'createdAt', 'from_user', 'to_user']
+            });
+            const newBalanceTransfer = balanceTransfer.map(b => {
+                const isSender = b.from_user == user.id;
+                const walletType = b.wallet_type == 1 ? '储备金' : b.wallet_type == 2 ? '余额' : '其他钱包';
+                return {
+                    id: Number(b.id),
+                    amount: Number(b.amount),
+                    createdAt: b.createdAt,
+                    type: isSender ? `${walletType}转出 [${b.to.phone_number}]` : `${walletType}转入 [${b.from.phone_number}]`,
+                    description: `${isSender ? '扣除' : '添加'} ${Number(b.amount)} ${walletType}`
+                }
+            });
+
             const mergedData = [
                 ...newReward3, 
                 ...newReward7,
@@ -2703,7 +2737,8 @@ class Controller {
                 ...newCustomizeWallet,
                 ...newBuyGoldPackages,
                 ...newGoldPackageReturns,
-                ...newRepurchasePackages
+                ...newRepurchasePackages,
+                ...newBalanceTransfer
             ];
 
             // Authorization Letter [授权书]
