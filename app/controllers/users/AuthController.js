@@ -332,8 +332,8 @@ class Controller {
                 gold_count_in_coupon: goldCouponCount,
                 total_coupon_gold_price: goldCouponCount * (goldPrice ? goldPrice.price : 0),
                 letter_of_tajikistan: letterOfTajikistan,
-                gold_count_in_tajikstan: letterOfTajikistan * 2000,
-                total_tajikstan_gold_price: letterOfTajikistan * 2000 * (goldPrice ? goldPrice.price : 0)
+                gold_count_in_tajikstan: letterOfTajikistan * 1000,
+                total_tajikstan_gold_price: letterOfTajikistan * 1000 * (goldPrice ? goldPrice.price : 0)
             }
 
             delete data.payment_password;
