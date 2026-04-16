@@ -107,6 +107,9 @@ class Controller {
             const offset = this.getOffset(page, perPage);
             const userId = req.user_id;
             const phone = req.query.phone;
+            const packageId = req.query.packageId;
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
 
             let condition = {}
             if (userId != 1) {
@@ -117,6 +120,12 @@ class Controller {
             let userCondition = {}
             if (phone) {
                 userCondition.phone_number = phone;
+            }
+            if (packageId) {
+                condition.package_id = packageId;
+            }
+            if (startTime && endTime) {
+                condition.createdAt = { [Op.between]: [startTime, endTime] }
             }
 
             const { rows, count } = await MasonicPackageHistory.findAndCountAll({
@@ -139,7 +148,14 @@ class Controller {
                 offset: offset
             });
 
+            const totalBought = await MasonicPackageHistory.sum('price', { where: condition }) || 0;
+            const boughtCount = await MasonicPackageHistory.count({ where: condition });
+            const userBoughtCount = await MasonicPackageHistory.count({ where: condition, distinct: true, col: 'user_id' });
+
             const data = {
+                total_bought: totalBought,
+                bought_count: boughtCount,
+                user_bought_count: userBoughtCount,
                 packages: rows,
                 meta: {
                     page: page,

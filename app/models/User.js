@@ -81,7 +81,7 @@ User.init({
     },
     payment_password: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
     },
     invite_code: {
         type: DataTypes.STRING(13),
