@@ -2717,7 +2717,7 @@ class Controller {
                     id: Number(b.id),
                     amount: Number(b.amount),
                     createdAt: b.createdAt,
-                    type: isSender ? `${walletType}转出 [${b.to.phone_number}]` : `${walletType}转入 [${b.from.phone_number}]`,
+                    type: isSender ? `${walletType}转出 [转到 ${b.to.phone_number}]` : `${walletType}转入 [来自 ${b.from.phone_number}]`,
                     description: `${isSender ? '扣除' : '添加'} ${Number(b.amount)} ${walletType}`
                 }
             });
