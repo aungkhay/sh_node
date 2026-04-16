@@ -3944,7 +3944,7 @@ class Controller {
                 if (mPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
-                    for (let index = 0; index < mPackage.buy_one_get_quantity; index++) {
+                    for (let index = 0; index <= mPackage.buy_one_get_quantity; index++) {
                         const obj = {
                             relation: user.relation,
                             user_id: user.id,
