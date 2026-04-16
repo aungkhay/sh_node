@@ -3846,9 +3846,16 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const openPeriod = await this.redisHelper.getValue('masonic_package_period');
+            let openPeriod = await this.redisHelper.getValue('masonic_package_period');
+            if (!openPeriod) {
+                const conf = await Config.findOne({ where: { type: 'masonic_package_period' } });
+                if (conf) {
+                    openPeriod = conf.val;
+                    await this.redisHelper.setValue('masonic_package_period', openPeriod);
+                }
+            }
             if (openPeriod) {
-                const [start, end] = openPeriod.split('-');
+                const [start, end] = openPeriod.split('|');
                 const now = moment();
                 if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `共济礼包购买时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
@@ -3857,6 +3864,13 @@ class Controller {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `共济礼包购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
                 }
             }
+
+            return res.status(400).json({
+                code: this.ResCode.BAD_REQUEST.code,
+                success: false,
+                message: '未开放！请稍后再试',
+                data: {}
+            });
             
             const mPackage = await MasonicPackage.findByPk(req.params.id);
             if (!mPackage) {

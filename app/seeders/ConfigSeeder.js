@@ -188,7 +188,7 @@ module.exports = async () => {
         {
             type: 'masonic_package_period',
             title: '授权计划申报时间',
-            val: '2026-04-20 00:00:00-2026-05-05 23:59:59',
+            val: '2026-04-20 00:00:00-2026|05-05 23:59:59',
             description: '-',
             data_type: 'string'
         },
