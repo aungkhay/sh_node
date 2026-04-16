@@ -3864,13 +3864,6 @@ class Controller {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `共济礼包购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
                 }
             }
-
-            return res.status(400).json({
-                code: this.ResCode.BAD_REQUEST.code,
-                success: false,
-                message: '未开放！请稍后再试',
-                data: {}
-            });
             
             const mPackage = await MasonicPackage.findByPk(req.params.id);
             if (!mPackage) {
