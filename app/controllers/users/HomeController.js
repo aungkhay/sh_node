@@ -16,6 +16,12 @@ const moment = require('moment');
 const MasonicPackageBonuses = require('../../models/MasonicPackageBonuses');
 const MasonicPackageEarn = require('../../models/MasonicPackageEarn');
 const MasonicPackage = require('../../models/MasonicPackage');
+const { encrypt } = require('../../helpers/AESHelper');
+
+const PASS_KEY = process.env.PASS_KEY;
+const PASS_IV = process.env.PASS_IV;
+const PASS_PREFIX = process.env.PASS_PREFIX;
+const PASS_SUFFIX = process.env.PASS_SUFFIX;
 
 class Controller {
     constructor(app) {
