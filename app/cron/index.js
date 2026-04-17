@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -2059,6 +2059,179 @@ class CronJob {
         } catch (error) {
             console.log(error) ;
             moneyTrackLogger(`[MONEY_TRACK]: ${error.stack}`);
+        }
+    }
+
+    RESET_USER_BALANCE_FROM_WITHDRAWAL = async () => {
+        try {
+            const withdraws = await Withdraw.findAll({
+                where: {
+                    id: 33796,
+                    status: 0,
+                    createdAt: {
+                        [Op.between]: ['2026-04-15 00:00:00', '2026-04-15 23:59:59']
+                    }
+                },
+                attributes: ['id', 'user_id', 'amount']
+            });
+
+            for (let index = 0; index < withdraws.length; index++) {
+                const wd = withdraws[index];
+                
+                const userWdPendingCount = await Withdraw.count({
+                    where: {
+                        user_id: wd.user_id,
+                        status: 0,
+                    }
+                });
+                if (userWdPendingCount > 1) continue;
+                
+                const latestSuccessWd = await Withdraw.findOne({
+                    where: {
+                        user_id: wd.user_id,
+                        status: 1,
+                        createdAt: {
+                            [Op.lte]: '2026-04-09 23:59:59'
+                        }
+                    },
+                    order: [['createdAt', 'DESC']],
+                });
+                if (!latestSuccessWd) continue;
+                let latestBalance = Number(latestSuccessWd.after_amount);
+
+                // reward 3
+                const reward3Amount = await RewardRecord.sum('amount', {
+                    where: { 
+                        user_id: wd.user_id, 
+                        reward_id: 3,
+                        createdAt: {
+                            [Op.gt]: latestSuccessWd.createdAt,
+                        } 
+                    }
+                }) || 0;
+                latestBalance += Number(reward3Amount);
+
+                // transfer 2 => 1
+                const transfer21 = await Transfer.sum('amount', {
+                    where: {
+                        user_id: wd.user_id,
+                        wallet_type: 2,
+                        from: 2,
+                        to: 1, // Reserve
+                        createdAt: {
+                            [Op.gt]: latestSuccessWd.createdAt,
+                        }
+                    }
+                }) || 0;
+                latestBalance -= Number(transfer21);
+
+                // transfer 1 => 2
+                const transfer12 = await Transfer.sum('amount', {
+                    where: {
+                        user_id: wd.user_id,
+                        wallet_type: 1,
+                        from: 1,
+                        to: 2,
+                        createdAt: {
+                            [Op.gt]: latestSuccessWd.createdAt,
+                        }
+                    }
+                }) || 0;
+                latestBalance += Number(transfer12);
+
+                // 推荐金提取券
+                const transfers = await Transfer.sum('amount', {
+                    where: {
+                        reward_id: 8,
+                        user_id: wd.user_id,
+                        createdAt: {
+                            [Op.gt]: latestSuccessWd.createdAt,
+                        }
+                    },
+                }) || 0;
+                latestBalance += Number(transfers);
+
+                // Balance Transfer [余额转账]
+                const balanceTransfer = await BalanceTransfer.findAll({
+                    where: {
+                        wallet_type: 2,
+                        [Op.or]: [
+                            { from_user: wd.user_id },
+                            { to_user: wd.user_id }
+                        ],
+                    }
+                }) || 0;
+                for (const bt of balanceTransfer) {
+                    if (bt.from_user == wd.user_id) {
+                        latestBalance -= Number(bt.amount);
+                    } else if (bt.to_user == wd.user_id) {
+                        latestBalance += Number(bt.amount);
+                    }
+                }
+
+                // Gold Package Return
+                const goldPackageReturns = await GoldPackageReturn.sum('amount', {
+                    where: { 
+                        user_id: wd.user_id,
+                        createdAt: {
+                            [Op.gt]: latestSuccessWd.createdAt,
+                        } 
+                    }
+                }) || 0;
+                latestBalance += Number(goldPackageReturns);
+
+                // Buy Gold Package Bonus [购买黄金礼包奖励]
+                const goldPackageBonuses = await GoldPackageBonuses.sum('amount', {
+                    where: { 
+                        user_id: wd.user_id,
+                        createdAt: {
+                            [Op.gt]: latestSuccessWd.createdAt,
+                        } 
+                    }
+                }) || 0;
+                latestBalance += Number(goldPackageBonuses);
+
+                // Authorization Letter [授权书]
+                const letter = await RewardRecord.findOne({
+                    where: {
+                        user_id: wd.user_id,
+                        reward_id: 6,
+                        createdAt: {
+                            [Op.gt]: latestSuccessWd.createdAt,
+                        }
+                    },
+                    attributes: ['id', 'is_used']
+                });
+                if (letter && letter.is_used) {
+                    latestBalance += 100;
+                }
+
+                // Customize Wallet [管理员调整钱包]
+                const customizeWallets = await AdminLog.findAll({
+                    where: {
+                        type: 'update_wallet',
+                        model: 'User',
+                        'content.user_id': wd.user_id,
+                        createdAt: {
+                            [Op.gt]: latestSuccessWd.createdAt,
+                        }
+                    },
+                    attributes: ['id', 'admin_id', 'url', 'content', 'createdAt']
+                });
+                for (const wallet of customizeWallets) {
+                    const content = wallet.content;
+                    if (content.walletType != 2) continue;
+                    if (content.addOrSubstract == 1) {
+                        latestBalance += Number(content.amount);
+                    } else {
+                        latestBalance -= Number(content.amount);
+                    }
+                }
+
+                await User.update({ balance: latestBalance }, { where: { id: wd.user_id } });
+            }
+        } catch (error) {
+            errLogger(`[RESET_USER_BALANCE_FROM_WITHDRAWAL]: ${error.stack}`);
         }
     }
 }
