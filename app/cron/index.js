@@ -2109,6 +2109,7 @@ class CronJob {
                     order: [['createdAt', 'DESC']],
                 });
                 let useFailOrSuccess = null;
+                let latestBalance = 0;
                 if (!latestSuccessWd && !latestFailedWd) continue;
                 if (latestFailedWd && !latestSuccessWd) {
                     latestBalance = Number(latestFailedWd.before_amount);
