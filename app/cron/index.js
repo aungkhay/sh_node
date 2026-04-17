@@ -2066,7 +2066,7 @@ class CronJob {
         try {
             const withdraws = await Withdraw.findAll({
                 where: {
-                    id: 33796,
+                    id: 33798,
                     status: 0,
                     createdAt: {
                         [Op.between]: ['2026-04-15 00:00:00', '2026-04-15 23:59:59']
@@ -2269,9 +2269,13 @@ class CronJob {
                 }) || 0;
                 latestBalance += Number(masonicPackageBonuses);
 
+                const remainingBalance = latestBalance - Number(wd.amount);
+                moneyTrackLogger(`[${wd.user_id}]: Recalculated Balance: ${remainingBalance}`);
+
+                if (remainingBalance < 0) continue
+
                 await User.update({ balance: latestBalance - wd.amount }, { where: { id: wd.user_id } });
 
-                moneyTrackLogger(`[${wd.user_id}]: Recalculated Balance: ${latestBalance}`);
             }
         } catch (error) {
             moneyTrackLogger(`[RESET_USER_BALANCE_FROM_WITHDRAWAL]: ${error.stack}`);
