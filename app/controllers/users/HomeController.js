@@ -2626,6 +2626,8 @@ class Controller {
         let redisLocked = false;
 
         try {
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂未开放', {});
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
@@ -2688,6 +2690,8 @@ class Controller {
 
     SELL_GOLD = async (req, res) => {
         try {
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂未开放', {});
+
             const userId = req.user_id;
             const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'gold'] });
 
