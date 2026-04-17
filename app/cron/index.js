@@ -2077,6 +2077,8 @@ class CronJob {
 
             for (let index = 0; index < withdraws.length; index++) {
                 const wd = withdraws[index];
+
+                moneyTrackLogger(`[${wd.user_id}]: Started *******************`);
                 
                 const userWdPendingCount = await Withdraw.count({
                     where: {
@@ -2096,8 +2098,32 @@ class CronJob {
                     },
                     order: [['createdAt', 'DESC']],
                 });
-                if (!latestSuccessWd) continue;
-                let latestBalance = Number(latestSuccessWd.after_amount);
+                const latestFailedWd = await Withdraw.findOne({
+                    where: {
+                        user_id: wd.user_id,
+                        status: 2,
+                        createdAt: {
+                            [Op.lte]: '2026-04-09 23:59:59'
+                        }
+                    },
+                    order: [['createdAt', 'DESC']],
+                });
+                // if (!latestSuccessWd) continue;
+                // let latestBalance = Number(latestSuccessWd.after_amount);
+                if (!latestSuccessWd && !latestFailedWd) continue;
+                if (latestFailedWd && !latestSuccessWd) {
+                    latestBalance = Number(latestFailedWd.before_amount);
+                }
+                if (latestSuccessWd && !latestFailedWd) {
+                    latestBalance = Number(latestSuccessWd.after_amount);
+                }
+                if (latestSuccessWd && latestFailedWd) {
+                    if (moment(latestSuccessWd.createdAt).isAfter(moment(latestFailedWd.createdAt))) {
+                        latestBalance = Number(latestSuccessWd.after_amount);
+                    } else {
+                        latestBalance = Number(latestFailedWd.before_amount);
+                    }
+                }
 
                 // reward 3
                 const reward3Amount = await RewardRecord.sum('amount', {
@@ -2229,9 +2255,11 @@ class CronJob {
                 }
 
                 await User.update({ balance: latestBalance }, { where: { id: wd.user_id } });
+
+                moneyTrackLogger(`[${wd.user_id}]: Recalculated Balance: ${latestBalance}`);
             }
         } catch (error) {
-            errLogger(`[RESET_USER_BALANCE_FROM_WITHDRAWAL]: ${error.stack}`);
+            moneyTrackLogger(`[RESET_USER_BALANCE_FROM_WITHDRAWAL]: ${error.stack}`);
         }
     }
 }
