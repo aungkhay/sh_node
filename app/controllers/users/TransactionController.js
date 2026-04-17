@@ -240,6 +240,38 @@ class Controller {
                     resMsg = 'OK';
                     break;
 
+                case 'fulinxinzhifu':
+                    // {
+                    //     "ifCode": "dashi",
+                    //     "createdAt": "1748506067266",
+                    //     "amount": 258000,
+                    //     "payOrderId": "P1928000302412279810",
+                    //     "mchOrderNo": "20250529160746479761",
+                    //     "clientIp": "127.0.0.1",
+                    //     "successTime": 1748506080000,
+                    //     "sign": "1152A2725FAA414BD2DF5A009F7BD611",
+                    //     "state": 2,
+                    //     "reqTime": 1748506079790,
+                    //     "mchNo": "M1746863481"
+                    // }
+                    const fulinxinReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const fulinxinCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("fulinxinCleaned:", fulinxinCleaned);
+                    const fulinxinSign = this.merchantController.CREATE_SIGN(fulinxinCleaned, `&key=${merchant.app_key}`);
+                    console.log("fulinxinSign:", fulinxinSign, "fulinxinReqSign:", fulinxinReqSign);
+
+                    // 订单状态：1=支付中，2=支付成功，3=支付失败，5=测试冲正，6=订单关闭，7=出码失败（2, 5 均为支付成功）
+                    if (Number(reqBody.state) === 2 || Number(reqBody.state) === 5) {
+                        status = 1;
+                    } else if ([3, 6, 7].includes(Number(reqBody.state))) {
+                        status = 2;
+                    }
+                    resMsg = 'success';
+                    break;
+
                 default:
                     break;
             }
@@ -427,6 +459,12 @@ class Controller {
                     payload = await this.merchantController.HUIJUZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'fulinxinzhifu':
+                    const fulinxinzhifuClientIp = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                    payload = await this.merchantController.FULINXINZHIFU(channel, amount, fulinxinzhifuClientIp, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
+
                 default:
                     break;
             }
@@ -520,6 +558,13 @@ class Controller {
                         success = true;
                     }
                     break;
+                case 'fulinxinzhifu':
+                    if (resData.code == 0 && resData.data?.payDataType === 'payUrl') {
+                        redirectUrl = resData?.data?.payData;
+                        success = true;
+                    }
+                    break;
+
                 default:
                     break;
             }

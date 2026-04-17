@@ -273,6 +273,29 @@ class Controller {
             return null;   
         }
     }
+
+    FULINXINZHIFU = async (channel, amount, clientIp, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                mchNo: channel.deposit_merchant.app_id,
+                mchOrderNo: orderNo,
+                productId: channel.merchant_channel,
+                amount: Number(amount * 100).toFixed(0),
+                clientIp: clientIp,
+                notifyUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                reqTime: Date.now(),
+            }
+            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            body.sign = sign.toUpperCase();
+            body.orderNo = orderNo;
+            return body;
+
+        } catch (error) {
+            errLogger(`[FULINXINZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
 }
 
 module.exports = Controller
