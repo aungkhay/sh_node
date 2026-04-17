@@ -320,7 +320,6 @@ class Controller {
                     reward_id: 11,
                     is_used: 0,
                 },
-                useMaster: userId % 2 === 0 ? true : false
             });
 
             let data = {

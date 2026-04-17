@@ -39,6 +39,7 @@ const replication = {
 }
 const opitons = {
     dialect: 'mysql',
+    // benchmark: true,
     timezone: '+08:00', 
     dialectOptions: {
         connectTimeout: 60000,
@@ -50,20 +51,24 @@ const opitons = {
     //     queryLogger(str.replace('Executing (default): ', ''));
     // },
     pool: {
-        max: 15,
-        min: 2,
-        acquire: 30000,
+        max: 20,
+        min: 0,
+        acquire: 60000,
         idle: 10000,
         evict: 10000,
     },
     retry: {
-        max: 3,
+        max: 2,
         match: [
             /Deadlock/i,
             /Lock wait timeout exceeded/i,
             /SequelizeConnectionError/,
-            /SequelizeConnectionTimedOutError/
-        ]
+            /SequelizeConnectionTimedOutError/,
+            /SequelizeConnectionAcquireTimeoutError/,
+            /ConnectionAcquireTimeoutError/,
+        ],
+        backoffBase: 200,
+        backoffExponent: 1.5,
     }
 }
 
