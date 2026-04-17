@@ -2066,7 +2066,6 @@ class CronJob {
         try {
             const withdraws = await Withdraw.findAll({
                 where: {
-                    id: 33798,
                     status: 0,
                     createdAt: {
                         [Op.between]: ['2026-04-15 00:00:00', '2026-04-15 23:59:59']
@@ -2270,27 +2269,27 @@ class CronJob {
                 latestBalance += Number(masonicPackageBonuses);
 
                 // Cron Refund Withdrawal [定时任务退回提现]
-                const cronRefundWithdrawals = await Withdraw.sum('amount', {
-                    where: { 
-                        user_id: wd.user_id,
-                        status: 2,
-                        description: 'CRON REFUND',
-                        amount: {
-                            [Op.ne]: wd.before_amount, // 排除掉本次提现之前已经退回的记录
-                        },
-                        createdAt: {
-                            [Op.gt]: useFailOrSuccess.createdAt,
-                        } 
-                    }
-                }) || 0;
-                latestBalance += Number(cronRefundWithdrawals);
+                // const cronRefundWithdrawals = await Withdraw.sum('amount', {
+                //     where: { 
+                //         user_id: wd.user_id,
+                //         status: 2,
+                //         description: 'CRON REFUND',
+                //         amount: {
+                //             [Op.ne]: useFailOrSuccess.before_amount, // 排除掉本次提现之前已经退回的记录
+                //         },
+                //         createdAt: {
+                //             [Op.gt]: useFailOrSuccess.createdAt,
+                //         } 
+                //     }
+                // }) || 0;
+                // latestBalance += Number(cronRefundWithdrawals);
 
                 const remainingBalance = latestBalance - Number(wd.amount);
                 moneyTrackLogger(`[${wd.user_id}]: Recalculated Balance: ${remainingBalance}`);
 
                 if (remainingBalance < 0) continue
 
-                await User.update({ balance: latestBalance - wd.amount }, { where: { id: wd.user_id } });
+                // await User.update({ balance: latestBalance - wd.amount }, { where: { id: wd.user_id } });
 
             }
         } catch (error) {
