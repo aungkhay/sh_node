@@ -2269,6 +2269,19 @@ class CronJob {
                 }) || 0;
                 latestBalance += Number(masonicPackageBonuses);
 
+                // Cron Refund Withdrawal [定时任务退回提现]
+                const cronRefundWithdrawals = await Withdraw.sum('amount', {
+                    where: { 
+                        user_id: wd.user_id,
+                        status: 2,
+                        description: 'CRON REFUND',
+                        createdAt: {
+                            [Op.gt]: useFailOrSuccess.createdAt,
+                        } 
+                    }
+                }) || 0;
+                latestBalance += Number(cronRefundWithdrawals);
+
                 const remainingBalance = latestBalance - Number(wd.amount);
                 moneyTrackLogger(`[${wd.user_id}]: Recalculated Balance: ${remainingBalance}`);
 
