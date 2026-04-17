@@ -909,7 +909,7 @@ const data = {
     password: '' // 密码至少需要8个字符
 }
 
-// [POST] 香港支付密码
+// [POST] 修改支付密码
 const url = `${baseURL}/users/${userID}/change-payment-password`;
 const data = {
     payment_password: ''

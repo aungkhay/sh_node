@@ -2635,7 +2635,7 @@ class Controller {
             // Withdrawals [提现]
             const withdrawals = await Withdraw.findAll({
                 where: { user_id: user.id },
-                attributes: ['id', 'amount', 'status', 'description', 'createdAt']
+                attributes: ['id', 'amount', 'before_amount', 'after_amount', 'status', 'description', 'createdAt']
             });
             const newWithdrawals = withdrawals.map(w => {
                 let status = '待处理';
@@ -2645,13 +2645,20 @@ class Controller {
                 if (w.status == 2) {                    
                     status = '失败';
                 }
+                let description = `(${status}) ${w.status == 2 ? '返回' : '扣除'} ${Number(w.amount)} 余额 ${w.description ? `(${w.description})` : ''}`;
+                if (w.status == 1) {
+                    description = description.concat(`，After: ${Number(w.after_amount)}`);
+                }
+                if (w.status == 2) {
+                    description = description.concat(`，Before: ${Number(w.before_amount)}`);
+                }
 
                 return {
                     id: Number(w.id),
                     amount: Number(w.amount),
                     createdAt: w.createdAt,
                     type: '提现',
-                    description: `(${status}) ${w.status == 2 ? '返回' : '扣除'} ${Number(w.amount)} 余额 ${w.description ? `(${w.description})` : ''}`
+                    description: description
                 }
             });
 
