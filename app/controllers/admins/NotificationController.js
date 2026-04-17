@@ -72,7 +72,7 @@ class Controller {
             const users = await User.findAll({
                 where: {
                     phone_number: {
-                        [Op.in]: phone_numbers
+                        [Op.in]: phone_numbers || []
                     }
                 },
                 attributes: ['id']
