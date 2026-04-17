@@ -2285,11 +2285,12 @@ class CronJob {
                 // latestBalance += Number(cronRefundWithdrawals);
 
                 const remainingBalance = latestBalance - Number(wd.amount);
-                moneyTrackLogger(`[${wd.user_id}]: Recalculated Balance: ${remainingBalance}`);
+                const user = await User.findByPk(wd.user_id, { attributes: ['id', 'phone_number'] });
+                moneyTrackLogger(`[${wd.user_id}]: Recalculated Balance: ${remainingBalance} | ${remainingBalance < 0 ? user.phone_number : ''}`);
 
                 if (remainingBalance < 0) continue
 
-                // await User.update({ balance: latestBalance - wd.amount }, { where: { id: wd.user_id } });
+                await User.update({ balance: latestBalance - wd.amount }, { where: { id: wd.user_id } });
 
             }
         } catch (error) {
