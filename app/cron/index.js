@@ -2108,20 +2108,23 @@ class CronJob {
                     },
                     order: [['createdAt', 'DESC']],
                 });
-                // if (!latestSuccessWd) continue;
-                // let latestBalance = Number(latestSuccessWd.after_amount);
+                let useFailOrSuccess = null;
                 if (!latestSuccessWd && !latestFailedWd) continue;
                 if (latestFailedWd && !latestSuccessWd) {
                     latestBalance = Number(latestFailedWd.before_amount);
+                    useFailOrSuccess  = latestFailedWd;
                 }
                 if (latestSuccessWd && !latestFailedWd) {
                     latestBalance = Number(latestSuccessWd.after_amount);
+                    useFailOrSuccess  = latestSuccessWd;
                 }
                 if (latestSuccessWd && latestFailedWd) {
                     if (moment(latestSuccessWd.createdAt).isAfter(moment(latestFailedWd.createdAt))) {
                         latestBalance = Number(latestSuccessWd.after_amount);
+                        useFailOrSuccess  = latestSuccessWd;
                     } else {
                         latestBalance = Number(latestFailedWd.before_amount);
+                        useFailOrSuccess  = latestFailedWd;
                     }
                 }
 
@@ -2131,7 +2134,7 @@ class CronJob {
                         user_id: wd.user_id, 
                         reward_id: 3,
                         createdAt: {
-                            [Op.gt]: latestSuccessWd.createdAt,
+                            [Op.gt]: useFailOrSuccess.createdAt,
                         } 
                     }
                 }) || 0;
@@ -2145,7 +2148,7 @@ class CronJob {
                         from: 2,
                         to: 1, // Reserve
                         createdAt: {
-                            [Op.gt]: latestSuccessWd.createdAt,
+                            [Op.gt]: useFailOrSuccess.createdAt,
                         }
                     }
                 }) || 0;
@@ -2159,7 +2162,7 @@ class CronJob {
                         from: 1,
                         to: 2,
                         createdAt: {
-                            [Op.gt]: latestSuccessWd.createdAt,
+                            [Op.gt]: useFailOrSuccess.createdAt,
                         }
                     }
                 }) || 0;
@@ -2171,7 +2174,7 @@ class CronJob {
                         reward_id: 8,
                         user_id: wd.user_id,
                         createdAt: {
-                            [Op.gt]: latestSuccessWd.createdAt,
+                            [Op.gt]: useFailOrSuccess.createdAt,
                         }
                     },
                 }) || 0;
@@ -2200,7 +2203,7 @@ class CronJob {
                     where: { 
                         user_id: wd.user_id,
                         createdAt: {
-                            [Op.gt]: latestSuccessWd.createdAt,
+                            [Op.gt]: useFailOrSuccess.createdAt,
                         } 
                     }
                 }) || 0;
@@ -2211,7 +2214,7 @@ class CronJob {
                     where: { 
                         user_id: wd.user_id,
                         createdAt: {
-                            [Op.gt]: latestSuccessWd.createdAt,
+                            [Op.gt]: useFailOrSuccess.createdAt,
                         } 
                     }
                 }) || 0;
@@ -2223,7 +2226,7 @@ class CronJob {
                         user_id: wd.user_id,
                         reward_id: 6,
                         createdAt: {
-                            [Op.gt]: latestSuccessWd.createdAt,
+                            [Op.gt]: useFailOrSuccess.createdAt,
                         }
                     },
                     attributes: ['id', 'is_used']
@@ -2239,7 +2242,7 @@ class CronJob {
                         model: 'User',
                         'content.user_id': wd.user_id,
                         createdAt: {
-                            [Op.gt]: latestSuccessWd.createdAt,
+                            [Op.gt]: useFailOrSuccess.createdAt,
                         }
                     },
                     attributes: ['id', 'admin_id', 'url', 'content', 'createdAt']
