@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -2257,6 +2257,17 @@ class CronJob {
                         latestBalance -= Number(content.amount);
                     }
                 }
+
+                // Masonic Package Bonuses [共济礼包奖励]
+                const masonicPackageBonuses = await MasonicPackageBonuses.sum('amount', {
+                    where: { 
+                        user_id: wd.user_id,
+                        createdAt: {
+                            [Op.gt]: useFailOrSuccess.createdAt,
+                        } 
+                    }
+                }) || 0;
+                latestBalance += Number(masonicPackageBonuses);
 
                 await User.update({ balance: latestBalance - wd.amount }, { where: { id: wd.user_id } });
 
