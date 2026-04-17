@@ -53,7 +53,7 @@ class CronJob {
         // cron.schedule('* * * * *', this.UPDATE_DEPOSIT_STATUS).start();
         cron.schedule('* * * * *', this.CHECK_GOLD_PACKAGE_REIMBURSEMENT).start(); // package_id 1 and 2 are eligible for reimbursement
         // Run at 30th minute of every hour
-        cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
+        // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
     }
 
     PAY_ALLOWANCE = async () => {
