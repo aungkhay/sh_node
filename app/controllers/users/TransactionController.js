@@ -241,19 +241,7 @@ class Controller {
                     break;
 
                 case 'fulinxinzhifu':
-                    // {
-                    //     "ifCode": "dashi",
-                    //     "createdAt": "1748506067266",
-                    //     "amount": 258000,
-                    //     "payOrderId": "P1928000302412279810",
-                    //     "mchOrderNo": "20250529160746479761",
-                    //     "clientIp": "127.0.0.1",
-                    //     "successTime": 1748506080000,
-                    //     "sign": "1152A2725FAA414BD2DF5A009F7BD611",
-                    //     "state": 2,
-                    //     "reqTime": 1748506079790,
-                    //     "mchNo": "M1746863481"
-                    // }
+                    // {"amount":"10000","clientIp":"161.248.87.252","createdAt":"1776395476756","ifCode":"dkpay2","mchNo":"M1776387795","mchOrderNo":"SH6190729800543056","payOrderId":"P2044976964454436866","state":"2","successTime":"1776395762162","reqTime":"1776395762231","sign":"003A9AE239BA1D63DB474F593012CA0C"}
                     const fulinxinReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
                     const fulinxinCleaned = Object.fromEntries(
