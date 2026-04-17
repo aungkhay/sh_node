@@ -24,3 +24,6 @@ http://vw8p8ahcf09wosds6hup.itxt002.xyz/#/publicapidoc
 
 汇聚支付
 https://merchant.hjzf.one/public/Integration-guide
+
+FuLinXin支付
+https://fulinxin-mch-api.yzdjb.com/api/anon/apiDoc

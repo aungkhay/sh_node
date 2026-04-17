@@ -280,6 +280,8 @@ class Controller {
 
             return res.send(resMsg);
         } catch (error) {
+            errLogger(`[RECHARGE_CALLBACK][${req.params.userId}]: ${JSON.stringify(req.body)}`);
+            errLogger(`[RECHARGE_CALLBACK]: ${error.stack}`);
             return res.send('OK');
         }
     }
