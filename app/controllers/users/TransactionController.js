@@ -264,7 +264,7 @@ class Controller {
                     break;
             }
 
-            if (deposit.status == 0) {
+            if (deposit.status == 0 && [1, 2].includes(status)) {
                 const t = await db.transaction();
                 try {
                     await deposit.update({ status: status, callback_data: JSON.stringify(reqBody) }, { transaction: t });
