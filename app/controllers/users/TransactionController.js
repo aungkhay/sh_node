@@ -276,6 +276,7 @@ class Controller {
                 { id: 2, name: '支付宝' },
                 { id: 3, name: '云闪付' },
                 { id: 4, name: '银联' },
+                { id: 5, name: '纷享生活' },
             ]
             await this.redisHelper.setValue('deposit_methods', JSON.stringify(methods)); // 10 min cache
 
