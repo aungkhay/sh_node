@@ -1238,6 +1238,33 @@ class Controller {
         }
     }
 
+    CHANGE_PAYMENT_PASSWORD = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const { payment_password } = req.body;
+            const userId = req.params.id;
+            const user = await User.findByPk(userId, { attributes: ['id'] });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
+            }
+
+            const encNewPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            await user.update({ payment_password: encNewPaymentPassword });
+
+            // Log
+            await this.adminLogger(req, 'User', 'update');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '修改支付密码成功', {});
+        } catch (error) {
+            errLogger(`[User][CHANGE_PAYMENT_PASSWORD]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     UPDATE_AGREEMENT_STATUS = async (req, res) => {
         try {
             const err = validationResult(req);

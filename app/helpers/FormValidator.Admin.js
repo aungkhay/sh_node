@@ -371,6 +371,14 @@ exports.change_password = () => {
     ]
 }
 
+exports.change_payment_password = () => {
+    return [
+        check('payment_password')
+            .not().isEmpty().withMessage('新支付密码不能为空')
+            .isLength({ min: 8 }).withMessage('支付密码至少需要8个字符')
+    ]
+}
+
 exports.update_agreement_status = () => {
     return [
         check('agreement_status')

@@ -155,6 +155,7 @@ class AdminRoute extends express.Router {
         this.post('/users/:id/update-status', FormValidator.update_status(), middleware.isLoggedIn('user-disable-enable'), UserCtrl.UPDATE_USER_STATUS);
         this.post('/users/:id/set-win-whitelist', FormValidator.win_whitelist(), middleware.isLoggedIn('user-set-winning-count'), UserCtrl.UPDATE_WIN_WHITELIST);
         this.post('/users/:id/change-password', FormValidator.change_password(), middleware.isLoggedIn('user-change-password'), UserCtrl.CHANGE_PASSWORD);
+        this.post('/users/:id/change-payment-password', FormValidator.change_payment_password(), middleware.isLoggedIn('user-change-payment-password'), UserCtrl.CHANGE_PAYMENT_PASSWORD);
         this.post('/users/:id/update-agreement-status', FormValidator.update_agreement_status(), middleware.isLoggedIn('user-approve-loan-agreement,user-reject-loan-agreement'), UserCtrl.UPDATE_AGREEMENT_STATUS);
         // this.post('/users/:id/update-political-vetting-status', FormValidator.update_political_vetting_status(), middleware.isLoggedIn(), UserCtrl.UPDATE_POLITICAL_VETTING_STATUS);
         this.post('/users/:id/set-to-internal-account', middleware.isLoggedIn('user-set-internal-account'), UserCtrl.SET_TO_INTERNAL_ACCOUNT);

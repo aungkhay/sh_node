@@ -909,6 +909,12 @@ const data = {
     password: '' // 密码至少需要8个字符
 }
 
+// [POST] 香港支付密码
+const url = `${baseURL}/users/${userID}/change-payment-password`;
+const data = {
+    payment_password: ''
+}
+
 // [POST] Update Agreement Status
 const url = `${baseURL}/users/${userID}/update-agreement-status`;
 const data = {
