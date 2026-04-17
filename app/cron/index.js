@@ -2275,6 +2275,9 @@ class CronJob {
                         user_id: wd.user_id,
                         status: 2,
                         description: 'CRON REFUND',
+                        amount: {
+                            [Op.ne]: wd.before_amount, // 排除掉本次提现之前已经退回的记录
+                        },
                         createdAt: {
                             [Op.gt]: useFailOrSuccess.createdAt,
                         } 
