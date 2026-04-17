@@ -2258,7 +2258,7 @@ class CronJob {
                     }
                 }
 
-                await User.update({ balance: latestBalance }, { where: { id: wd.user_id } });
+                await User.update({ balance: latestBalance - wd.amount }, { where: { id: wd.user_id } });
 
                 moneyTrackLogger(`[${wd.user_id}]: Recalculated Balance: ${latestBalance}`);
             }
