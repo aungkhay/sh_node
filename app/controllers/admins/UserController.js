@@ -2459,7 +2459,7 @@ class Controller {
                     amount: Number(r.amount),
                     createdAt: r.createdAt,
                     type: '红包雨奖励',
-                    description: `添加 ${Number(r.amount)} 余额`
+                    description: `余额 ➕ ${Number(r.amount)}`
                 }
             });
 
@@ -2489,7 +2489,7 @@ class Controller {
                     amount: Number(d.amount),
                     createdAt: d.createdAt,
                     type: '充值',
-                    description: `添加 ${Number(d.amount)} 储备金`
+                    description: `储备金 ➕ ${Number(d.amount)}`
                 }
             });
 
@@ -2515,7 +2515,7 @@ class Controller {
                     amount: Number(t.amount),
                     createdAt: t.createdAt,
                     type: `转账 ${t.reward_id === 8 ? '[推荐金提取券]' : ''}`,
-                    description: `从${walletType[t.from]}转 ${Number(t.amount)} 到${walletType[t.to]}`
+                    description: `${walletType[t.from]} ▶ ${walletType[t.to]} ${Number(t.amount)}}`
                 }
             });
 
@@ -2530,7 +2530,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '购买黄金',
-                    description: `扣除 ${Number(g.amount)} 余额，获得 ${Number(g.gold_count)} 克黄金`
+                    description: `余额 ➖ ${Number(g.amount)}，获得 ${Number(g.gold_count)} 克黄金`
                 }
             });
 
@@ -2545,7 +2545,7 @@ class Controller {
                     amount: Number(g.price),
                     createdAt: g.createdAt,
                     type: '购买黄金礼包',
-                    description: `扣除 ${Number(g.price)} 储备金`
+                    description: `储备金 ➖ ${Number(g.price)}`
                 }
             });
 
@@ -2560,7 +2560,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '购买黄金礼包奖励',
-                    description: `添加 ${Number(g.amount)} 余额`
+                    description: `余额 ➕ ${Number(g.amount)}`
                 }
             });
 
@@ -2575,7 +2575,7 @@ class Controller {
                     amount: Number(g.price),
                     createdAt: g.createdAt,
                     type: '购买共济礼包',
-                    description: `扣除 ${Number(g.price)} 储备金`
+                    description: `储备金 ➖ ${Number(g.price)}`
                 }
             });
             
@@ -2584,7 +2584,7 @@ class Controller {
                 include: {
                     model: User,
                     as: 'from_user',
-                    attributes: ['name'],
+                    attributes: ['phone_number'],
                 },
                 where: { user_id: user.id },
                 attributes: ['id', 'amount', 'createdAt']
@@ -2595,7 +2595,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '购买共济礼包奖励',
-                    description: `${g.from_user ? `来自 ${g.from_user.name} ` : ' '}添加 ${Number(g.amount)} 余额`
+                    description: `${g.from_user ? `来源 ${g.from_user.phone_number} ` : ' '} 余额 ➕ ${Number(g.amount)}`
                 }
             });
 
@@ -2610,7 +2610,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '购买共济礼包收益',
-                    description: `添加 ${Number(g.amount)} 余额`
+                    description: `余额 ➕ ${Number(g.amount)}`
                 }
             });
 
@@ -2627,7 +2627,7 @@ class Controller {
             //             amount: 100,
             //             createdAt: record7.createdAt,
             //             type: '签署协议',
-            //             description: '扣除 100 储备金'
+            //             description: '储备金 ➖ 100'
             //         });
             //     }
             // }
@@ -2640,12 +2640,12 @@ class Controller {
             const newWithdrawals = withdrawals.map(w => {
                 let status = '待处理';
                 if (w.status == 1) {
-                    status = '成功';
+                    status = '✅';
                 }
                 if (w.status == 2) {                    
-                    status = '失败';
+                    status = '❌';
                 }
-                let description = `(${status}) ${w.status == 2 ? '返回' : '扣除'} ${Number(w.amount)} 余额 ${w.description ? `(${w.description})` : ''}`;
+                let description = `(${status}) ${Number(w.amount)} 余额 ${w.status == 2 ? '➕' : '➖'} ${w.description ? `(${w.description})` : ''}`;
                 if (w.status == 1) {
                     description = description.concat(`，After: ${Number(w.after_amount)}`);
                 }
@@ -2681,7 +2681,7 @@ class Controller {
                     amount: Math.abs(Number(content.amount)),
                     createdAt: c.createdAt,
                     type: `管理员 ID:${c.admin_id} 调整钱包`,
-                    description: `${content.addOrSubstract == 1 ? '添加' : '扣除'} ${Math.abs(Number(content.amount))} 到 ${walletType[content.walletType]}`
+                    description: `${walletType[content.walletType]} ${content.addOrSubstract == 1 ? '➕' : '➖'} ${Math.abs(Number(content.amount))}`
                 }
             });
 
@@ -2703,7 +2703,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: `${packageMap[g.package_id]}`,
-                    description: `[${[1,2].includes(g.package_id) ? '报销' : '收益'}] ${Number(g.amount)} 余额`
+                    description: `[${[1,2].includes(g.package_id) ? '报销' : '收益'}] 余额 ➕ ${Number(g.amount)} `
                 }
             });
 
@@ -2718,7 +2718,7 @@ class Controller {
                     amount: Number(r.handling_fee),
                     createdAt: r.createdAt,
                     type: `礼包回购`,
-                    description: `扣除 ${Number(r.handling_fee)} 储备金`
+                    description: `储备金 ➖ ${Number(r.handling_fee)}`
                 }
             });
 
@@ -2751,8 +2751,8 @@ class Controller {
                     id: Number(b.id),
                     amount: Number(b.amount),
                     createdAt: b.createdAt,
-                    type: isSender ? `${walletType}转出 [转到 ${b.to.phone_number}]` : `${walletType}转入 [来自 ${b.from.phone_number}]`,
-                    description: `${isSender ? '扣除' : '添加'} ${Number(b.amount)} ${walletType}`
+                    type: isSender ? `${walletType}转出 [转到 ${b.to.phone_number}]` : `${walletType}转入 [来源 ${b.from.phone_number}]`,
+                    description: `${walletType} ${isSender ? '➖' : '➕'}  ${Number(b.amount)}`
                 }
             });
 
@@ -2786,7 +2786,7 @@ class Controller {
                     amount: 100,
                     createdAt: letter.updatedAt,
                     type: '使用上合组织中国区授权书',
-                    description: '扣除 100 共济基金，添加 100 余额'
+                    description: '共济基金 ➖ 100，余额 ➕ 100'
                 });
             }
 
