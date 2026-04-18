@@ -2515,7 +2515,7 @@ class Controller {
                     amount: Number(t.amount),
                     createdAt: t.createdAt,
                     type: `转账 ${t.reward_id === 8 ? '[推荐金提取券]' : ''}`,
-                    description: `${walletType[t.from]} ▶ ${walletType[t.to]} ${Number(t.amount)}}`
+                    description: `${walletType[t.from]} ▶ ${walletType[t.to]} ${Number(t.amount)}`
                 }
             });
 
