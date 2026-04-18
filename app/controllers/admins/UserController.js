@@ -2645,7 +2645,7 @@ class Controller {
                 if (w.status == 2) {                    
                     status = '❌';
                 }
-                let description = `(${status}) ${Number(w.amount)} 余额 ${w.status == 2 ? '➕' : '➖'} ${w.description ? `(${w.description})` : ''}`;
+                let description = `(${status}) 余额 ${w.status == 2 ? '➕' : '➖'} ${Number(w.amount)} ${w.description ? `(${w.description})` : ''}`;
                 if (w.status == 1) {
                     description = description.concat(`，After: ${Number(w.after_amount)}`);
                 }
