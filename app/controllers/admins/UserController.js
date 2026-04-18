@@ -2521,7 +2521,7 @@ class Controller {
 
             // Buy Gold [购买黄金]
             const buyGolds = await UserGoldPrice.findAll({
-                where: { user_id: user.id },
+                where: { user_id: user.id, type: 1 },
                 attributes: ['id', 'amount', 'gold_count', 'createdAt']
             });
             const newBuyGolds = buyGolds.map(g => {
@@ -2531,6 +2531,21 @@ class Controller {
                     createdAt: g.createdAt,
                     type: '购买黄金',
                     description: `余额 ➖ ${Number(g.amount)}，获得 ${Number(g.gold_count)} 克黄金`
+                }
+            });
+
+            // Sell Gold [出售黄金]
+            const sellGolds = await UserGoldPrice.findAll({
+                where: { user_id: user.id, type: 2 },
+                attributes: ['id', 'amount', 'gold_count', 'createdAt']
+            });
+            const newSellGolds = sellGolds.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '出售黄金',
+                    description: `余额 ➕ ${Number(g.amount)}，失去 ${Number(g.gold_count)} 克黄金`
                 }
             });
 
