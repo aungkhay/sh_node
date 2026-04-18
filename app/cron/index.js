@@ -1463,7 +1463,7 @@ class CronJob {
         // 1%
         try {
             const packages = await MasonicPackageHistory.findAll({
-                attributes: ['id', 'user_id', 'package_id', 'price', 'daily_earn']
+                attributes: ['id', 'user_id', 'package_id', 'price', 'daily_earn', 'createdAt']
             });
 
             // chunks of 100 to avoid too many transactions at once
@@ -1474,6 +1474,11 @@ class CronJob {
                 const t = await db.transaction();
                 try {
                     for (let pack of chunk) {
+                        // daily_earn is can be get on the next day after the package is bought, so only give bonus when createdAt is before today
+                        if (moment(pack.createdAt).isAfter(moment().startOf('day'))) {
+                            continue;
+                        }
+
                         const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance'], transaction: t });
                         if (!user) {
                             continue;
