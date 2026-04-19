@@ -495,7 +495,7 @@ class Controller {
             let response = null;
             try {
                 if (queryString) {
-                    response = await axios.get(`${channel.deposit_merchant.api}?${queryString}`, {
+                    response = await axios.post(`${channel.deposit_merchant.api}?${queryString}`, {
                         headers: headers
                     });
                 } else {
