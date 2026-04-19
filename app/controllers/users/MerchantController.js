@@ -300,7 +300,7 @@ class Controller {
     PAYEASYER = async (channel, amount, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
-            const body = {
+            const params = {
                 pay_memberid: channel.deposit_merchant.app_id,
                 pay_orderid: orderNo,
                 pay_applydate: moment().format('YYYY-MM-DD HH:mm:ss'),
@@ -309,10 +309,18 @@ class Controller {
                 pay_callbackurl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                 pay_amount: Number(amount).toFixed(2),
             }
-            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
-            body.pay_md5sign = sign.toUpperCase();
-            body.orderNo = orderNo;
-            return body;
+            const sign = this.CREATE_SIGN(params, `&key=${channel.deposit_merchant.app_key}`);
+            params.pay_md5sign = sign.toUpperCase();
+            params.orderNo = orderNo;
+            
+            const queryString = Object.keys(params)
+                .map(key => `${key}=${encodeURIComponent(params[key])}`)
+                .join('&');
+
+            return {
+                orderNo: orderNo,
+                queryString: queryString,
+            };
         } catch (error) {
             errLogger(`[PAYEASYER] ${error.stack}`);
             return null;

@@ -434,6 +434,7 @@ class Controller {
 
             let payload = null;
             let headers = { "Content-Type": "application/x-www-form-urlencoded" }
+            let queryString = null;
             switch (channel.deposit_merchant.app_code) {
                 case 'longlongzhifu':
                     const pay_ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -476,6 +477,7 @@ class Controller {
                 case 'payeasyer':
                     payload = await this.merchantController.PAYEASYER(channel, amount, userId);
                     headers = { "Content-Type": "text/html; charset=utf-8" }
+                    queryString = payload.queryString;
                     break;
 
                 default:
@@ -492,9 +494,15 @@ class Controller {
             // Make Payment Request
             let response = null;
             try {
-                response = await axios.post(channel.deposit_merchant.api, payload, {
-                    headers: headers
-                });
+                if (queryString) {
+                    response = await axios.get(`${channel.deposit_merchant.api}?${queryString}`, {
+                        headers: headers
+                    });
+                } else {
+                    response = await axios.post(channel.deposit_merchant.api, payload, {
+                        headers: headers
+                    });
+                }
             } catch (error) {
                 console.log(error);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
