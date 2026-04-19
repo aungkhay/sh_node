@@ -475,7 +475,7 @@ class Controller {
                     break;
                 case 'payeasyer':
                     payload = await this.merchantController.PAYEASYER(channel, amount, userId);
-                    headers = { "Content-Type": "application/json" }
+                    headers = { "Content-Type": "text/html; charset=utf-8" }
                     break;
 
                 default:
