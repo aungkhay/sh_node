@@ -286,6 +286,35 @@ class Controller {
         }
     }
 
+    REJECT_WITHDRAW = async (req, res) => {
+        try {
+            const withdraw = await Withdraw.findOne({
+                where: {
+                    id: req.params.id,
+                    status: 0,
+                },
+                attributes: ['id', 'user_id', 'amount']
+            });
+            if (!withdraw) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到信息', {});
+            }
+            const t = await db.transaction();
+            try {
+                await withdraw.update({ status: 2 }, { transaction: t });
+                const user = await User.findOne({ where: { id: withdraw.user_id }, attributes: ['id', 'balance'], transaction: t });
+                await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
+            } catch (error) {
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作失败', {});
+            }
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     EXPORT_WITHDRAW = async (req, res) => {
         try {
             const phone = req.query.phone;

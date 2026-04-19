@@ -44,6 +44,7 @@ class AdminRoute extends express.Router {
         this.post('/deposit-list/:id/reject', middleware.isLoggedIn('recharge-management-reject'), DWCtrl.REJECT_DEPOSIT);
         this.post('/deposit-list/:id/repair-failed', middleware.isLoggedIn('recharge-management-repair'), DWCtrl.REPAIR_FIALED_DEPOSIT);
         this.get('/withdraw-list', middleware.isLoggedIn('withdraw-management-list'), DWCtrl.WITHDRAW_LIST);
+        this.post('/withdraw-list/:id/reject', middleware.isLoggedIn('withdraw-management-reject'), DWCtrl.REJECT_WITHDRAW);
         this.get('/export-withdraw', middleware.isLoggedIn('withdraw-management-export'), DWCtrl.EXPORT_WITHDRAW);
         this.post('/export-withdraw-by-phone_numbers', FormValidator.export_withdraw_by_phones(), middleware.isLoggedIn('withdraw-management-export'), DWCtrl.EXPORT_WITHDRAW_BY_PHONES);
         this.post('/import-withdraw', middleware.isLoggedIn('withdraw-management-import'), DWCtrl.IMPORT_WITHDRAW);

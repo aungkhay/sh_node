@@ -211,6 +211,9 @@ const params = {
     endTime: '2025-11-06 23:59:59',
 }
 
+// [POST] 提现驳回
+const url = `${baseURL}/withdraw-list/${withdrawID}/reject`;
+
 // [GET] Export Withdraw
 const url = `${baseURL}/export-withdraw`;
 const params = {
