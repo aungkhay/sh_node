@@ -487,6 +487,7 @@ class Controller {
             const orderNo = payload.orderNo;
             delete payload.orderNo;
             console.log(payload);
+            console.log(headers);
 
             // Make Payment Request
             let response = null;
