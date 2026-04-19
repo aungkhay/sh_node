@@ -260,15 +260,15 @@ class Controller {
                     resMsg = 'success';
                     break;
                 
-                case 'korzhifu':
-                    const korzhifuReqSign = reqBody.sign.toLowerCase();
+                case 'payeasyer':
+                    const payeasyerReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
-                    const korzhifuCleaned = Object.fromEntries(
+                    const payeasyerCleaned = Object.fromEntries(
                         Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
                     );
-                    console.log("korzhifuCleaned:", korzhifuCleaned);
-                    const korzhifuSign = this.merchantController.CREATE_SIGN(korzhifuCleaned, `&key=${merchant.app_key}`);
-                    console.log("korzhifuSign:", korzhifuSign, "korzhifuReqSign:", korzhifuReqSign);
+                    console.log("payeasyerCleaned:", payeasyerCleaned);
+                    const payeasyerSign = this.merchantController.CREATE_SIGN(payeasyerCleaned, `&key=${merchant.app_key}`);
+                    console.log("payeasyerSign:", payeasyerSign, "payeasyerReqSign:", payeasyerReqSign);
 
                     // 订单状态：00=支付成功，01=支付失败
                     if (reqBody.state === '00') {
@@ -473,8 +473,8 @@ class Controller {
                     payload = await this.merchantController.FULINXINZHIFU(channel, amount, fulinxinzhifuClientIp, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
-                case 'korzhifu':
-                    payload = await this.merchantController.KORZHIFU(channel, amount, userId);
+                case 'payeasyer':
+                    payload = await this.merchantController.PAYEASYER(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
 
@@ -577,7 +577,7 @@ class Controller {
                         success = true;
                     }
                     break;
-                case 'korzhifu':
+                case 'payeasyer':
                     if (resData.returncode == '00') {
                         // redirectUrl = resData?.data?.payUrl;
                         success = true;

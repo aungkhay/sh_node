@@ -297,7 +297,7 @@ class Controller {
         }
     }
 
-    KORZHIFU = async (channel, amount, userId) => {
+    PAYEASYER = async (channel, amount, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
@@ -315,7 +315,7 @@ class Controller {
             body.orderNo = orderNo;
             return body;
         } catch (error) {
-            errLogger(`[KORZHIFU] ${error.stack}`);
+            errLogger(`[PAYEASYER] ${error.stack}`);
             return null;
         }
     }
