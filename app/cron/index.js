@@ -37,7 +37,7 @@ class CronJob {
         // Run at 23:30 every day
         cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
         cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
-        cron.schedule('30 22 * * *', this.GIVE_MASONIC_BONUS).start();
+        cron.schedule('10 0 * * *', this.GIVE_MASONIC_BONUS).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run 10th minute of every hour
@@ -1475,9 +1475,9 @@ class CronJob {
                 try {
                     for (let pack of chunk) {
                         // daily_earn is can be get on the next day after the package is bought, so only give bonus when createdAt is before today
-                        if (moment(pack.createdAt).isAfter(moment().startOf('day'))) {
-                            continue;
-                        }
+                        // if (moment(pack.createdAt).isAfter(moment().startOf('day'))) {
+                        //     continue;
+                        // }
 
                         const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance'], transaction: t });
                         if (!user) {
