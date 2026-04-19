@@ -308,7 +308,6 @@ class Controller {
                 pay_notifyurl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                 pay_callbackurl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                 pay_amount: Number(amount).toFixed(2),
-                pay_productname: `${userId}-${orderNo}`,
             }
             const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
             body.pay_md5sign = sign.toUpperCase();
