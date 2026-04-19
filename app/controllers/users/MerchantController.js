@@ -296,6 +296,29 @@ class Controller {
             return null;
         }
     }
+
+    KORZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                pay_memberid: channel.deposit_merchant.app_id,
+                pay_orderid: orderNo,
+                pay_applydate: moment().format('YYYY-MM-DD HH:mm:ss'),
+                pay_bankcode: channel.merchant_channel,
+                pay_notifyurl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                pay_callbackurl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                pay_amount: Number(amount).toFixed(2),
+                pay_productname: `${userId}-${orderNo}`,
+            }
+            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            body.pay_md5sign = sign.toUpperCase();
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[KORZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
 }
 
 module.exports = Controller

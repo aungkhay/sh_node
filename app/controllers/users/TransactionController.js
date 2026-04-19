@@ -259,6 +259,25 @@ class Controller {
                     }
                     resMsg = 'success';
                     break;
+                
+                case 'korzhifu':
+                    const korzhifuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const korzhifuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("korzhifuCleaned:", korzhifuCleaned);
+                    const korzhifuSign = this.merchantController.CREATE_SIGN(korzhifuCleaned, `&key=${merchant.app_key}`);
+                    console.log("korzhifuSign:", korzhifuSign, "korzhifuReqSign:", korzhifuReqSign);
+
+                    // 订单状态：00=支付成功，01=支付失败
+                    if (reqBody.state === '00') {
+                        status = 1;
+                    } else if (reqBody.state === '01') {
+                        status = 2;
+                    }
+                    resMsg = 'OK';
+                    break;
 
                 default:
                     break;
@@ -454,6 +473,10 @@ class Controller {
                     payload = await this.merchantController.FULINXINZHIFU(channel, amount, fulinxinzhifuClientIp, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'korzhifu':
+                    payload = await this.merchantController.KORZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
 
                 default:
                     break;
@@ -554,7 +577,12 @@ class Controller {
                         success = true;
                     }
                     break;
-
+                case 'korzhifu':
+                    if (resData.returncode == '00') {
+                        // redirectUrl = resData?.data?.payUrl;
+                        success = true;
+                    }
+                    break;
                 default:
                     break;
             }

@@ -82,6 +82,11 @@ class Controller {
                 }
             });
 
+            const normalUserReserveFund = await User.sum('reserve_fund', { where: { type: 2, is_internal_account: 0 } });
+            const internalUserReserveFund = await User.sum('reserve_fund', { where: { type: 2, is_internal_account: 1 } });
+            const normalUserBalance = await User.sum('balance', { where: { type: 2, is_internal_account: 0 } });
+            const internalUserBalance = await User.sum('balance', { where: { type: 2, is_internal_account: 1 } });
+
             const data = {
                 today_deposit_amount: todayDepositAmount ? Number(todayDepositAmount) : 0,
                 today_deposit_count: todayDepositCount ?? 0,
@@ -96,7 +101,11 @@ class Controller {
                 total_refferal_bonus: totalRefferalBonus ? Number(totalRefferalBonus) : 0,
                 total_masonic_fund_release: totalMasonicFundRelease ? Number(totalMasonicFundRelease) : 0,
                 bought_letter_count: boughtLetterCount,
-                agreement_count: agreementCount
+                agreement_count: agreementCount,
+                normal_user_reserve_fund: normalUserReserveFund ? Number(normalUserReserveFund) : 0,
+                internal_user_reserve_fund: internalUserReserveFund ? Number(internalUserReserveFund) : 0,
+                normal_user_balance: normalUserBalance ? Number(normalUserBalance) : 0,
+                internal_user_balance: internalUserBalance ? Number(internalUserBalance) : 0
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
