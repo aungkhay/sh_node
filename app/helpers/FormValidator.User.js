@@ -233,12 +233,12 @@ exports.withdraw = () => {
             .isNumeric()
             .withMessage('提现金额必须是数字')
             .bail()
-            // .custom(value => {
-            //     if (value % 50 !== 0) {
-            //         throw new Error('提现金额必须是50的整数倍');
-            //     }
-            //     return true;
-            // })
+            .custom(value => {
+                if (value % 10 !== 0) {
+                    throw new Error('提现金额必须是10的整数倍');
+                }
+                return true;
+            })
             .bail()
             .isFloat({ min: 50 })  
             .withMessage('最低提现金额为50'),
