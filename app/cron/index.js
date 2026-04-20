@@ -1479,7 +1479,7 @@ class CronJob {
                         //     continue;
                         // }
 
-                        const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance'], transaction: t });
+                        const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation'], transaction: t });
                         if (!user) {
                             continue;
                         }

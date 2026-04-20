@@ -590,10 +590,9 @@ class Controller {
                     }
                     break;
                 case 'payeasyer':
-                    if (resData.returncode == '00') {
-                        // redirectUrl = resData?.data?.payUrl;
-                        success = true;
-                    }
+                    // reponse is html string
+                    data = { html: response.data };
+                    success = true;
                     break;
                 default:
                     break;
