@@ -492,9 +492,21 @@ class Controller {
             // Make Payment Request
             let response = null;
             try {
-                response = await axios.post(channel.deposit_merchant.api, payload, {
-                    headers: headers
-                });
+                if (channel.deposit_merchant.app_code === 'payeasyer') {
+                    // use form instead of body
+                    const url = channel.deposit_merchant.api;
+                    const formData = new URLSearchParams();
+                    for (const key in payload) {
+                        formData.append(key, payload[key]);
+                    }
+                    response = await axios.post(url, formData.toString(), {
+                        headers: headers
+                    });
+                } else {
+                    response = await axios.post(channel.deposit_merchant.api, payload, {
+                        headers: headers
+                    });
+                }
             } catch (error) {
                 console.log(error);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
