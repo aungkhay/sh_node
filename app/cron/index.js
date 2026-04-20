@@ -1471,53 +1471,63 @@ class CronJob {
                 // }
             });
 
-            // chunks of 100 to avoid too many transactions at once
-            const chunkSize = 100;
-            for (let i = 0; i < packages.length; i += chunkSize) {
-                const chunk = packages.slice(i, i + chunkSize);
+            for (let pack of packages) {
+                // daily_earn is can be get on the next day after the package is bought, so only give bonus when createdAt is before today
+                // if (moment(pack.createdAt).isAfter(moment().startOf('day'))) {
+                //     continue;
+                // }
 
-                for (let pack of chunk) {
-                    // daily_earn is can be get on the next day after the package is bought, so only give bonus when createdAt is before today
-                    // if (moment(pack.createdAt).isAfter(moment().startOf('day'))) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+                    // const dailyReward = new Decimal(Number(pack.price))
+                    //     .times(0.01) // 1% daily reward
+                    //     .toNumber();
+                    // if (dailyReward > 0) {
+                    //     await user.increment({ balance: dailyReward }, { transaction: t });
+                    //     await MasonicPackageEarn.create({
+                    //         user_id: user.id,
+                    //         relation: user.relation,
+                    //         package_id: pack.package_id,
+                    //         package_history_id: pack.id,
+                    //         amount: dailyReward,
+                    //         description: '共计资金礼包每日收益',
+                    //     }, { transaction: t });
+                    // }
+
+                    // const existEarn = await MasonicPackageEarn.findOne({
+                    //     where: {
+                    //         package_history_id: pack.id,
+                    //         user_id: pack.user_id,
+                    //         createdAt: {
+                    //             [Op.between]: ['2026-04-18 00:00:00', '2026-04-18 23:59:59']
+                    //         }
+                    //     },
+                    //     transaction: t
+                    // });
+
+                    // if (existEarn) {
+                    //     await t.rollback();
                     //     continue;
                     // }
 
-                    const t = await db.transaction();
-                    try {
-                        const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation'], transaction: t });
-                        if (!user) {
-                            continue;
-                        }
-                        // const dailyReward = new Decimal(Number(pack.price))
-                        //     .times(0.01) // 1% daily reward
-                        //     .toNumber();
-                        // if (dailyReward > 0) {
-                        //     await user.increment({ balance: dailyReward }, { transaction: t });
-                        //     await MasonicPackageEarn.create({
-                        //         user_id: user.id,
-                        //         relation: user.relation,
-                        //         package_id: pack.package_id,
-                        //         package_history_id: pack.id,
-                        //         amount: dailyReward,
-                        //         description: '共计资金礼包每日收益',
-                        //     }, { transaction: t });
-                        // }
+                    await user.increment({ balance: pack.daily_earn }, { transaction: t });
+                    await MasonicPackageEarn.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: pack.package_id,
+                        package_history_id: pack.id,
+                        amount: pack.daily_earn,
+                        description: '共计资金礼包每日收益',
+                    }, { transaction: t });
 
-                        await user.increment({ balance: pack.daily_earn }, { transaction: t });
-                        await MasonicPackageEarn.create({
-                            user_id: user.id,
-                            relation: user.relation,
-                            package_id: pack.package_id,
-                            package_history_id: pack.id,
-                            amount: pack.daily_earn,
-                            description: '共计资金礼包每日收益',
-                        }, { transaction: t });
-
-                        await t.commit();
-                    } catch (error) {
-                        errLogger(`[GIVE_MASONIC_BONUS][Transaction Error]: ${error.stack}`);
-                        await t.rollback();
-                    }
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[GIVE_MASONIC_BONUS][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
                 }
             }
         } catch (error) {
