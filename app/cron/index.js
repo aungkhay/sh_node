@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -54,6 +54,7 @@ class CronJob {
         cron.schedule('* * * * *', this.CHECK_GOLD_PACKAGE_REIMBURSEMENT).start(); // package_id 1 and 2 are eligible for reimbursement
         // Run at 30th minute of every hour
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
+        cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -2315,6 +2316,81 @@ class CronJob {
             }
         } catch (error) {
             moneyTrackLogger(`[RESET_USER_BALANCE_FROM_WITHDRAWAL]: ${error.stack}`);
+        }
+    }
+
+    CHECK_FEDERAL_PACKAGE_REIMBURSEMENT = async () => {
+        try {
+            const packages = await FederalReserveGoldPackageHistory.findAll({
+                where: {
+                    return_date: {
+                        [Op.lte]: moment().toDate(),
+                    },
+                    is_returned_all: 0
+                },
+                attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn', 'personal_gold']
+            });
+
+            for (const pack of packages) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+                    const reserveEarn = Number(pack.reserve_earn);
+                    const personalGold = Number(pack.personal_gold);
+                    const originalPrice = Number(pack.price);
+
+                    const arr = [
+                        {
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: reserveEarn,
+                            type: 0, // 0-储备收益
+                        },
+                        {
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: personalGold,
+                            type: 1, // 1-个人黄金
+                        },
+                        {
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: originalPrice,
+                            type: 2, // 2-本金返还
+                        }
+                    ]
+                    await FederalReserveGoldPackageEarn.bulkCreate(arr, { transaction: t });
+
+                    await pack.update({ 
+                        is_returned_all: 1,
+                        is_returned_earn: 1,
+                        return_earn_date: new Date(),
+                        is_returned_personal_gold: 1,
+                        return_personal_gold_date: new Date(),
+                        is_returned_price: 1,
+                        return_price_date: new Date(),
+                        description: 'CRON',
+                    }, { transaction: t });
+
+                    await user.increment({ reserve_fund: reserveEarn + originalPrice }, { transaction: t });
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[CHECK_FEDERAL_PACKAGE_REIMBURSEMENT][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }                  
+            }
+        } catch (error) {
+            errLogger(`[CHECK_FEDERAL_PACKAGE_REIMBURSEMENT]: ${error.stack}`);
         }
     }
 }

@@ -102,6 +102,12 @@ FederalReserveGoldPackageHistory.init({
         allowNull: true,
         comment: '实际返还本金日期',
     },
+    is_returned_all: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '是否已返还全部',
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,

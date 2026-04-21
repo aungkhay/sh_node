@@ -239,6 +239,10 @@ class Controller {
                     releaseAmount = pkgHistory.price;
                 }
 
+                if (pkgHistory.is_returned_earn && pkgHistory.is_returned_personal_gold && pkgHistory.is_returned_price) {
+                    await pkgHistory.update({ is_returned_all: 1 }, { transaction: t });
+                }
+
                 await FederalReserveGoldPackageEarn.create({
                     user_id: pkgHistory.user_id,
                     relation: user.relation,
