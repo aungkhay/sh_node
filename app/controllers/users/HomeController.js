@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn } = require('../../models');
 const { Op, literal, Sequelize } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -4355,7 +4355,7 @@ class Controller {
 
                 const bonuses = [];
                 for (let index = 0; index < upLevelIds.length; index++) {
-                    const bonus = new Decimal(mPackage.price)
+                    const bonus = new Decimal(fPackage.price)
                         .times(Number(bonusArr[index]))
                         .times(0.01)
                         .toNumber();
@@ -4375,7 +4375,7 @@ class Controller {
                         user_id: upLevelUser.id,
                         from_user_id: user.id,
                         amount: bonus,
-                        package_history_id: pkgHistory[0].id
+                        package_history_id: fPackage.id
                     });
                 }
                 if (bonuses.length > 0) {
