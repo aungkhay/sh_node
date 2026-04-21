@@ -31,17 +31,18 @@ class Controller {
             }
 
             const todayCondition = {
-                // status: 1,
                 createdAt: {
                     [Op.between]: [startOfToday, endOfToday]
                 },
                 ...relationCondtion
             };
 
-            const todayDepositAmount = await Deposit.sum('amount', { where: todayCondition });
-            const todayDepositCount = await Deposit.count({ where: todayCondition });
-            const todayWithdrawAmount = await Withdraw.sum('amount', { where: todayCondition });
-            const todayWithdrawCount = await Withdraw.count({ where: todayCondition });
+            const todayDepositAmount = await Deposit.sum('amount', { where: { status: 1, ...todayCondition } });
+            const todayDepositCount = await Deposit.count({ where: { status: 1, ...todayCondition } });
+            const todayWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1, ...todayCondition } });
+            const todayWithdrawCount = await Withdraw.count({ where: { status: 1, ...todayCondition } });
+            const todayWithdawAllStatusAmount = await Withdraw.sum('amount', { where: { ...todayCondition } });
+            const todayWithdawAllStatusCount = await Withdraw.count({ where: { ...todayCondition } });
 
             const totalUser = await User.count({ where: { type: 2, ...relationCondtion } });
             const todayRegister = await User.count({
@@ -93,6 +94,8 @@ class Controller {
                 today_deposit_count: todayDepositCount ?? 0,
                 today_withdraw_amount: todayWithdrawAmount ? Number(todayWithdrawAmount) : 0,
                 today_withdraw_count: todayWithdrawCount ?? 0,
+                today_withdraw_all_status_amount: todayWithdawAllStatusAmount ? Number(todayWithdawAllStatusAmount) : 0,
+                today_withdraw_all_status_count: todayWithdawAllStatusCount ?? 0,
                 total_user: totalUser ?? 0,
                 today_register: todayRegister ?? 0,
                 kyc_pending_count: kycPendingCount ?? 0,
