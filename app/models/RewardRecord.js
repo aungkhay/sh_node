@@ -129,6 +129,16 @@ RewardRecord.init({
             name: 'idx_user_id_reward_id_is_used',
             fields: ['user_id', 'reward_id', 'is_used'],
             using: 'BTREE' 
+        },
+        {
+            name: 'idx_reward_id_amount',
+            fields: ['reward_id', 'amount'],
+            using: 'BTREE'
+        },
+        {
+            name: 'idx_createdAt_user_id',
+            fields: ['createdAt', 'user_id'],
+            using: 'BTREE'
         }
     ]
 });

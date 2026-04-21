@@ -65,6 +65,11 @@ MasonicPackageHistory.init({
             name: 'idx_relation',
             fields: ['relation'],
             using: 'BTREE',
+        },
+        {
+            name: 'idx_createdAt_user_id',
+            fields: ['createdAt', 'user_id'],
+            using: 'BTREE'
         }
     ]
 })

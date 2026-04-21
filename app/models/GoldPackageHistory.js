@@ -70,6 +70,11 @@ GoldPackageHistory.init({
             name: 'idx_package_id',
             fields: ['package_id'],
             using: 'BTREE',
+        },
+        {
+            name: 'idx_createdAt_user_id',
+            fields: ['createdAt', 'user_id'],
+            using: 'BTREE'
         }
     ]
 })

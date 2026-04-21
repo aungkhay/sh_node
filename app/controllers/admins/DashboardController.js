@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { Deposit, Withdraw, User, UserKYC, PaymentMethod, RewardRecord } = require('../../models');
+const { Deposit, Withdraw, User, UserKYC, PaymentMethod, RewardRecord, db } = require('../../models');
 const { Op, fn, col, literal } = require('sequelize');
 const moment = require('moment');
 
@@ -229,6 +229,38 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    TODAY_ACTIVE_USER_COUNT = async (req, res) => {
+        try {
+            const startDate = moment().startOf('day').toDate();
+            const endDate = moment().endOf('day').toDate();
+
+            const [result] = await db.query(`
+                SELECT COUNT(DISTINCT user_id) AS total_active_users
+                FROM (
+                    SELECT user_id FROM federal_reserve_gold_package_history 
+                    WHERE createdAt >= :start AND createdAt < :end
+
+                    UNION ALL
+
+                    SELECT user_id FROM gold_package_history 
+                    WHERE createdAt >= :start AND createdAt < :end
+
+                    UNION ALL
+
+                    SELECT user_id FROM masonic_package_history 
+                    WHERE createdAt >= :start AND createdAt < :end
+                ) AS combined
+                `, {
+                replacements: { start: startDate, end: endDate }
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功',  result[0].total_active_users ? Number(result[0].total_active_users) : 0);
+        } catch (error) {
+            console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
