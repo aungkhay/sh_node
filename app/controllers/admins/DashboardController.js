@@ -2,6 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const { Deposit, Withdraw, User, UserKYC, PaymentMethod, RewardRecord } = require('../../models');
 const { Op, fn, col, literal } = require('sequelize');
+const moment = require('moment');
 
 class Controller {
     constructor() {
@@ -147,6 +148,88 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { total_masonic_fund_release: totalMasonicFundRelease || 0 });
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    WITHDRAW_SUMMARY = async (req, res) => {
+        try {
+
+            const yesterdayCreatedAtCondition = {
+                [Op.between]: [
+                    moment().subtract(1, 'days').startOf('day').toDate(),
+                    moment().subtract(1, 'days').endOf('day').toDate()
+                ]
+            };
+
+            const todayCreatedAtCondition = {
+                [Op.between]: [
+                    moment().startOf('day').toDate(),
+                    moment().endOf('day').toDate()
+                ]
+            };
+
+            const yesterdayWithdrawAmount = await Withdraw.sum('amount', {
+                where: {
+                    status: {
+                        [Op.ne]: 2
+                    },
+                    createdAt: yesterdayCreatedAtCondition
+                }
+            });
+
+            const yesterdayWitdrawFee = await Withdraw.sum('handle_fee', {
+                where: {
+                    status: {
+                        [Op.ne]: 2
+                    },
+                    createdAt: yesterdayCreatedAtCondition
+                }
+            });
+
+            const yesterdayWithdrawActualAmount = await Withdraw.sum('amount', {
+                where: {
+                    status: 1,
+                    createdAt: yesterdayCreatedAtCondition
+                }
+            });
+
+            const todayWithdrawAmount = await Withdraw.sum('amount', {
+                where: {
+                    status: {
+                        [Op.ne]: 2
+                    },
+                    createdAt: todayCreatedAtCondition
+                }
+            });
+
+            const todayWitdrawFee = await Withdraw.sum('handle_fee', {
+                where: {
+                    status: {
+                        [Op.ne]: 2
+                    },
+                    createdAt: todayCreatedAtCondition
+                }
+            });
+
+            const todayWithdrawActualAmount = await Withdraw.sum('amount', {
+                where: {
+                    status: 1,
+                    createdAt: todayCreatedAtCondition
+                }
+            });
+
+            const data = {
+                yesterday_withdraw_amount: yesterdayWithdrawAmount ? Number(yesterdayWithdrawAmount) : 0,
+                yesterday_withdraw_fee: yesterdayWitdrawFee ? Number(yesterdayWitdrawFee) : 0,
+                yesterday_withdraw_actual_amount: yesterdayWithdrawActualAmount ? Number(yesterdayWithdrawActualAmount) : 0,
+                today_withdraw_amount: todayWithdrawAmount ? Number(todayWithdrawAmount) : 0,
+                today_withdraw_fee: todayWitdrawFee ? Number(todayWitdrawFee) : 0,
+                today_withdraw_actual_amount: todayWithdrawActualAmount ? Number(todayWithdrawActualAmount) : 0
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
 
