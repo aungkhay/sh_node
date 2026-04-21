@@ -290,6 +290,10 @@ User.hasMany(FederalReserveGoldPackageBonuses, { foreignKey: 'user_id', as: 'fed
 FederalReserveGoldPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 FederalReserveGoldPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
 
+// ========== FEDERAL_RESERVE_GOLD_PACKAGE_HISTORY ↔️ FEDERAL_RESERVE_GOLD_PACKAGE_BONUSES (1:N) ==========
+FederalReserveGoldPackageHistory.hasMany(FederalReserveGoldPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+FederalReserveGoldPackageBonuses.belongsTo(FederalReserveGoldPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
 // ========== USER ↔️ FEDERAL_RESERVE_GOLD_PACKAGE_EARN (1:N) ==========
 User.hasMany(FederalReserveGoldPackageEarn, { foreignKey: 'user_id', as: 'federal_reserve_gold_package_earn', onDelete: 'CASCADE' });
 FederalReserveGoldPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
