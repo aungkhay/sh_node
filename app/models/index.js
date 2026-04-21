@@ -57,6 +57,10 @@ const MasonicPackageHistory = require('./MasonicPackageHistory');
 const MasonicPackageBonuses = require('./MasonicPackageBonuses');
 const MasonicPackageEarn = require('./MasonicPackageEarn');
 const GoldCouponTemp = require('./GoldCouponTemp');
+const FederalReserveGoldPackage = require('./FederalReserveGoldPackage');
+const FederalReserveGoldPackageHistory = require('./FederalReserveGoldPackageHistory');
+const FederalReserveGoldPackageBonuses = require('./FederalReserveGoldPackageBonuses');
+const FederalReserveGoldPackageEarn = require('./FederalReserveGoldPackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -273,6 +277,31 @@ MasonicPackageEarn.belongsTo(MasonicPackage, { foreignKey: 'package_id', as: 'pa
 User.hasMany(GoldCouponTemp, { foreignKey: 'user_id', as: 'gold_coupon_temps', onDelete: 'CASCADE' });
 GoldCouponTemp.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== FEDERAL_RESERVE_GOLD_PACKAGE ↔️ FEDERAL_RESERVE_GOLD_PACKAGE_HISTORY (1:N) ==========
+FederalReserveGoldPackage.hasMany(FederalReserveGoldPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+FederalReserveGoldPackageHistory.belongsTo(FederalReserveGoldPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ FEDERAL_RESERVE_GOLD_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(FederalReserveGoldPackageHistory, { foreignKey: 'user_id', as: 'federal_reserve_gold_package_histories', onDelete: 'CASCADE' });
+FederalReserveGoldPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ FEDERAL_RESERVE_GOLD_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(FederalReserveGoldPackageBonuses, { foreignKey: 'user_id', as: 'federal_reserve_gold_package_bonuses', onDelete: 'CASCADE' });
+FederalReserveGoldPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+FederalReserveGoldPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ FEDERAL_RESERVE_GOLD_PACKAGE_EARN (1:N) ==========
+User.hasMany(FederalReserveGoldPackageEarn, { foreignKey: 'user_id', as: 'federal_reserve_gold_package_earn', onDelete: 'CASCADE' });
+FederalReserveGoldPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== FEDERAL_RESERVE_GOLD_PACKAGE_HISTORY ↔️ FEDERAL_RESERVE_GOLD_PACKAGE_EARN (1:N) ==========
+FederalReserveGoldPackageHistory.hasMany(FederalReserveGoldPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+FederalReserveGoldPackageEarn.belongsTo(FederalReserveGoldPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== FEDERAL_RESERVE_GOLD_PACKAGE ↔️ FEDERAL_RESERVE_GOLD_PACKAGE_EARN (1:N) ==========
+FederalReserveGoldPackage.hasMany(FederalReserveGoldPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+FederalReserveGoldPackageEarn.belongsTo(FederalReserveGoldPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -326,6 +355,10 @@ const models = {
     MasonicPackageBonuses,
     MasonicPackageEarn,
     GoldCouponTemp,
+    FederalReserveGoldPackage,
+    FederalReserveGoldPackageHistory,
+    FederalReserveGoldPackageBonuses,
+    FederalReserveGoldPackageEarn,
 };
 
 // Export models + db connection

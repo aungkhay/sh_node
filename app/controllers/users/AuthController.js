@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory, GoldPrice } = require('../../models');
+const { db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory, GoldPrice, FederalReserveGoldPackageEarn } = require('../../models');
 const { encrypt } = require('../../helpers/AESHelper');
 const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
 const { commonLogger, errLogger } = require('../../helpers/Logger');
@@ -322,6 +322,14 @@ class Controller {
                 },
             });
 
+            // Federal Gold
+            const federalGold = await FederalReserveGoldPackageEarn.sum('amount', {
+                where: {
+                    user_id: userId,
+                    type: 1, // 个人黄金
+                },
+            }) || 0;
+
             let data = {
                 ... user.get({ plain: true }),
                 is_already_bind_payment_password: user.payment_password ? true : false,
@@ -332,7 +340,9 @@ class Controller {
                 total_coupon_gold_price: goldCouponCount * (goldPrice ? goldPrice.price : 0),
                 letter_of_tajikistan: letterOfTajikistan,
                 gold_count_in_tajikstan: letterOfTajikistan * 1000,
-                total_tajikstan_gold_price: letterOfTajikistan * 1000 * (goldPrice ? goldPrice.price : 0)
+                total_tajikstan_gold_price: letterOfTajikistan * 1000 * (goldPrice ? goldPrice.price : 0),
+                federal_reserve_gold_count: federalGold,
+                federal_reserve_gold_price: federalGold * (goldPrice ? goldPrice.price : 0),
             }
 
             delete data.payment_password;

@@ -260,6 +260,18 @@ class AdminRoute extends express.Router {
         let BalanceTransferController = require('../controllers/admins/BalanceTransferController');
         let BalanceTransferCtrl = new BalanceTransferController(app);
         this.get('/balance-transfers', middleware.isLoggedIn('wallet-transfer-list'), BalanceTransferCtrl.INDEX);
+
+        // Federal Reserve Gold Package
+        let FederalReserveGoldPackageController = require('../controllers/admins/FederalReserveGoldPackageController');
+        let FederalReserveGoldPackageCtrl = new FederalReserveGoldPackageController(app);
+        this.get('/federal-reserve-gold-packages', middleware.isLoggedIn('federal-reserve-gold-package-list'), FederalReserveGoldPackageCtrl.INDEX);
+        this.post('/federal-reserve-gold-packages/create', FormValidator.create_federal_reserve_gold_package(), middleware.isLoggedIn('federal-reserve-gold-package-create'), FederalReserveGoldPackageCtrl.CREATE);
+        this.post('/federal-reserve-gold-packages/:id/update', FormValidator.create_federal_reserve_gold_package(), middleware.isLoggedIn('federal-reserve-gold-package-update'), FederalReserveGoldPackageCtrl.UPDATE);
+        this.post('/federal-reserve-gold-packages/:id/upload', middleware.isLoggedIn('federal-reserve-gold-package-create,federal-reserve-gold-package-update'), FederalReserveGoldPackageCtrl.UPLOAD);
+        this.get('/federal-reserve-gold-package/history', middleware.isLoggedIn('federal-reserve-gold-package-history-list'), FederalReserveGoldPackageCtrl.PACKAGE_HISTORY);
+        this.post('/federal-reserve-gold-package/history/:id/release/:type', middleware.isLoggedIn('federal-reserve-gold-package-release'), FederalReserveGoldPackageCtrl.RELEASE_PACKAGE_EARN);
+        this.get('/federal-reserve-gold-package/bonus-history', middleware.isLoggedIn('federal-reserve-gold-package-bonus-history-list'), FederalReserveGoldPackageCtrl.BONUSES_HISTORY);
+        this.get('/federal-reserve-gold-package/earn-history', middleware.isLoggedIn('federal-reserve-gold-package-earn-history-list'), FederalReserveGoldPackageCtrl.EARN_HISTORY);
     }
 }
 

@@ -461,6 +461,84 @@ const params = {
     perPage: 10,
     phone: ''
 }
+
+// 联储黄金礼包
+// [GET] Package List
+const url = `${baseURL}/federal-reserve-gold-packages`;
+
+// [POST] CREATE
+const url = `${baseURL}/federal-reserve-gold-packages/create`;
+const data = {
+    product_name: '',
+    price: 0,
+    period: 90,
+    reserve_earn: 2000,
+    personal_gold: 100,
+    purchase_limit: 0,
+    quantity_limit: 0,
+    total_quantity: 0,
+    description: '',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+}
+
+// [POST] UPDATE
+const url = `${baseURL}/federal-reserve-gold-packages/${pkgID}/update`;
+const data = {
+    product_name: '',
+    price: 0,
+    period: 90,
+    reserve_earn: 2000,
+    personal_gold: 100,
+    purchase_limit: 0,
+    quantity_limit: 0,
+    total_quantity: 0,
+    description: '',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+}
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/federal-reserve-gold-packages/${packageId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [GET] Package History
+const url = `${baseURL}/federal-reserve-gold-package/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [POST] Release Package History
+// type: 0-储备收益, 1-个人黄金, 2-本金返还
+const url = `${baseURL}/federal-reserve-gold-package/history/${historyID}/release/${type}`;
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/federal-reserve-gold-package/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/federal-reserve-gold-package/earn-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
 ```
 ### News
 ``` js

@@ -705,3 +705,45 @@ exports.update_masonic_package = () => {
             .withMessage('状态无效'),
     ]
 }
+
+exports.create_federal_reserve_gold_package = () => {
+    return [
+        check('product_name', { msg: '产品名称不能为空' }).not().isEmpty(),
+        check('price').not().isEmpty().withMessage('价格不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('价格必须是数字'),
+        check('period').not().isEmpty().withMessage('周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('周期必须是正整数'),
+        // reserve_earn 储备收益
+        check('reserve_earn').not().isEmpty().withMessage('储备收益不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('储备收益必须是数字'),
+        // personal_gold 个人黄金(g)
+        check('personal_gold').not().isEmpty().withMessage('个人黄金不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('个人黄金必须是数字'),
+        // perchase_limit 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+        check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
+            .bail()
+            .isIn(['NONE', 'DAILY', 'TOTAL'])
+            .withMessage('购买限制无效'),
+        // quantity_limit 限购数量
+        check('quantity_limit').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('限购数量必须是数字'),
+        // total_quantity
+        check('total_quantity').not().isEmpty().withMessage('总数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('总数量必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+    ]
+}
