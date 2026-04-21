@@ -389,7 +389,7 @@ class Controller {
             });
 
             const data = {
-                earn: rows,
+                packages: rows,
                 meta: {
                     page: page,
                     perPage: perPage,

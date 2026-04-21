@@ -56,18 +56,18 @@ class Controller {
             const paymentPendingCount = await PaymentMethod.count({ where: { bank_status: 'PENDING',  ...relationCondtion } });
 
             const kycApprovedCount = await UserKYC.count({ where: { status: 'APPROVED',  ...relationCondtion } });
-            const yesterdayCheckIn = await RewardRecord.count({
-                distinct: true,
-                col: 'user_id',
-                where: {
-                    createdAt: {
-                        [Op.gte]: yesterdayStart,
-                        [Op.lt]: startOfToday
-                    }
-                }
-            });
+            // const yesterdayCheckIn = await RewardRecord.count({
+            //     distinct: true,
+            //     col: 'user_id',
+            //     where: {
+            //         createdAt: {
+            //             [Op.gte]: yesterdayStart,
+            //             [Op.lt]: startOfToday
+            //         }
+            //     }
+            // });
             const totalRefferalBonus = await User.sum('referral_bonus');
-            const totalMasonicFundRelease = await RewardRecord.sum('amount', { where: { reward_id: 1 } })
+            // const totalMasonicFundRelease = await RewardRecord.sum('amount', { where: { reward_id: 1 } })
 
             const boughtLetterCount = await User.count({
                 where: {
@@ -97,9 +97,9 @@ class Controller {
                 kyc_pending_count: kycPendingCount ?? 0,
                 payment_pending_count: paymentPendingCount ?? 0,
                 kyc_approved_count: kycApprovedCount ?? 0,
-                yesterday_check_in: yesterdayCheckIn ?? 0,
+                yesterday_check_in: 0,
                 total_refferal_bonus: totalRefferalBonus ? Number(totalRefferalBonus) : 0,
-                total_masonic_fund_release: totalMasonicFundRelease ? Number(totalMasonicFundRelease) : 0,
+                total_masonic_fund_release: 0,
                 bought_letter_count: boughtLetterCount,
                 agreement_count: agreementCount,
                 normal_user_reserve_fund: normalUserReserveFund ? Number(normalUserReserveFund) : 0,
@@ -109,6 +109,42 @@ class Controller {
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    CHECKIN_SUMMARY = async (req, res) => {
+        try {
+            const today = new Date();
+            const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+            const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+            const yesterdayStart = new Date();
+            yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+            yesterdayStart.setHours(0, 0, 0, 0);
+            
+            const yesterdayCheckIn = await RewardRecord.count({
+                distinct: true,
+                col: 'user_id',
+                where: {
+                    createdAt: {
+                        [Op.gte]: yesterdayStart,
+                        [Op.lt]: startOfToday
+                    }
+                }
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { yesterday_check_in: yesterdayCheckIn || 0 });
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    MASONIC_FUND_SUMMARY = async (req, res) => {
+        try {
+            const totalMasonicFundRelease = await RewardRecord.sum('amount', { where: { reward_id: 1 } })
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { total_masonic_fund_release: totalMasonicFundRelease || 0 });
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
