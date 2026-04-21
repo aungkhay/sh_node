@@ -1,6 +1,7 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../connections/Mysql');
 const User = require('./User');
+const FederalReserveGoldPackageHistory = require('./FederalReserveGoldPackageHistory');
 
 class FederalReserveGoldPackageBonuses extends Model {
     toJSON() {
@@ -33,6 +34,14 @@ FederalReserveGoldPackageBonuses.init({
         type: DataTypes.BIGINT,
         references: {
             model: User,
+            key: 'id'
+        },
+        allowNull: false,
+    },
+    package_history_id: {
+        type: DataTypes.BIGINT,
+        references: {
+            model: FederalReserveGoldPackageHistory,
             key: 'id'
         },
         allowNull: false,

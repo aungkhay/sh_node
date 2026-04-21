@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn, BalanceTransfer } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn, BalanceTransfer, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2630,6 +2630,66 @@ class Controller {
                     createdAt: g.createdAt,
                     type: '购买共济礼包收益',
                     description: `余额 ➕ ${Number(g.amount)}`
+                }
+            });
+
+            // Buy Federal Package [购买联储黄金礼包]
+            const buyFederalPackages = await FederalReserveGoldPackageHistory.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'price', 'createdAt']
+            });
+            const newBuyFederalPackages = buyFederalPackages.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.price),
+                    createdAt: g.createdAt,
+                    type: '购买联储黄金礼包',
+                    description: `储备金 ➖ ${Number(g.price)}`
+                }
+            });
+
+            // Buy Federal Package Bonus [购买联储黄金礼包奖励]
+            const federalPackageBonuses = await FederalReserveGoldPackageBonuses.findAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['phone_number'],
+                },
+                where: { user_id: user.id },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newFederalPackageBonuses = federalPackageBonuses.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买联储黄金礼包奖励',
+                    description: `${g.from_user ? `来源 ${g.from_user.phone_number} ` : ' '} 余额 ➕ ${Number(g.amount)}`
+                }
+            });
+
+            // 联储黄金礼包收益
+            const federalPackageEarnings = await FederalReserveGoldPackageEarn.findAll({
+                where: { 
+                    user_id: user.id,
+                    // type: 0-储备收益, 1-个人黄金, 2-本金返还
+                    type: {
+                        [Op.in]: [0, 2]
+                    }
+                },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newFederalPackageEarnings = federalPackageEarnings.map(g => {
+                const typeMap = {
+                    0: '储备收益',
+                    2: '本金返还'
+                }
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: `联储黄金礼包收益 - ${typeMap[g.type]}`,
+                    description: `储备金 ➕ ${Number(g.amount)}`
                 }
             });
 
