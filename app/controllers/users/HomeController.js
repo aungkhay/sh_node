@@ -3891,6 +3891,7 @@ class Controller {
             if (mPackage.perchase_limit === 'DAILY' && mPackage.quantity_limit > 0) {
                 const history = await MasonicPackageHistory.findAll({
                     where: {
+                        user_id: req.user_id,
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         }
@@ -3904,7 +3905,8 @@ class Controller {
             if (mPackage.perchase_limit === 'TOTAL' && mPackage.quantity_limit > 0) {
                 const history = await MasonicPackageHistory.findAll({
                     where: {
-                        package_id: mPackage.id
+                        package_id: mPackage.id,
+                        user_id: req.user_id
                     }
                 });
                 if (history.length >= mPackage.quantity_limit) {
@@ -4267,9 +4269,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
             }
 
-            if (fPackage.perchase_limit === 'DAILY' && fPackage.quantity_limit > 0) {
+            if (fPackage.purchase_limit === 'DAILY' && fPackage.quantity_limit > 0) {
                 const history = await FederalReserveGoldPackageHistory.findAll({
                     where: {
+                        user_id: req.user_id,
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         }
@@ -4280,14 +4283,16 @@ class Controller {
                 }
             }
 
-            if (fPackage.perchase_limit === 'TOTAL' && fPackage.quantity_limit > 0) {
+            if (fPackage.purchase_limit === 'TOTAL' && fPackage.quantity_limit > 0) {
                 const history = await FederalReserveGoldPackageHistory.findAll({
                     where: {
+                        user_id: req.user_id,
                         package_id: fPackage.id
                     }
                 });
+                console.log(history.length, fPackage.quantity_limit);
                 if (history.length >= fPackage.quantity_limit) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包已售罄', {});
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已经购买了该礼包', {});
                 }
             }
 
