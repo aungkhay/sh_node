@@ -1710,6 +1710,7 @@ class Controller {
             const isBoughtGoldPackage = req.query.isBoughtGoldPackage; // 1 => 588 gold package, 2 => 1288 gold package
             const agreementStatus = req.query.agreementStatus;
             const haveReward6 = req.query.haveReward6; // 0 | 1
+            const withdraw_active = req.query.isWithdrawActive;
 
             const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation'] });
             if (!user) {
@@ -1779,6 +1780,9 @@ class Controller {
             }
             if (haveReward6 && haveReward6 >= 0) {
                 condition.have_reward_6 = Number(haveReward6);
+            }
+            if (withdraw_active && withdraw_active >= 0) {
+                condition.is_withdraw_active_code_used = 1;
             }
 
             const { rows, count} = await User.findAndCountAll({
