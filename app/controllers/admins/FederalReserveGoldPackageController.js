@@ -302,17 +302,7 @@ class Controller {
                         model: User,
                         as: 'from_user',
                         attributes: ['id', 'name', 'phone_number']
-                    },
-                    {
-                        model: FederalReserveGoldPackageHistory,
-                        as: 'package_history',
-                        attributes: [],
-                        include: {
-                            model: FederalReserveGoldPackage,
-                            as: 'package',
-                            attributes: ['id', 'product_name']
-                        }
-                    },
+                    }
                 ],
                 where: condition,
                 order: [['id', 'DESC']],
