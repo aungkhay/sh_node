@@ -31,7 +31,7 @@ class Controller {
             }
 
             const todayCondition = {
-                status: 1,
+                // status: 1,
                 createdAt: {
                     [Op.between]: [startOfToday, endOfToday]
                 },
