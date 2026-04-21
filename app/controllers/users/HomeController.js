@@ -4323,7 +4323,7 @@ class Controller {
             try {
                 await user.update({ reserve_fund: Number(user.reserve_fund) - fPackage.price }, { transaction: t });
 
-                await FederalReserveGoldPackageHistory.create({
+                const fPackageHistory = await FederalReserveGoldPackageHistory.create({
                     relation: user.relation,
                     user_id: user.id,
                     package_id: fPackage.id,
@@ -4375,7 +4375,7 @@ class Controller {
                         user_id: upLevelUser.id,
                         from_user_id: user.id,
                         amount: bonus,
-                        package_history_id: fPackage.id
+                        package_history_id: fPackageHistory.id
                     });
                 }
                 if (bonuses.length > 0) {
