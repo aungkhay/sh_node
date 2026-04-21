@@ -777,3 +777,25 @@ const url = `${baseURL}/gold-plan/check-in`;
 // [GET] Check In history
 const url = `${baseURL}/gold-plan/check-in-history`;
 ```
+
+### 联储黄金礼包
+```js
+// [GET] Packages
+const url = `${baseURL}/federal-reserve-gold-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/federal-reserve-gold-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/federal-reserve-gold-packages/history`;
+
+// [GET] Earn History
+// type: 0-储备收益, 1-个人黄金, 2-本金返还
+const url = `${baseURL}/federal-reserve-gold-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/federal-reserve-gold-packages/bonus-history`;
+```

@@ -340,3 +340,9 @@ exports.buy_masonic_package = () => {
         check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
     ]
 }
+
+exports.buy_federal_reserve_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}

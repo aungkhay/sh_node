@@ -85,7 +85,7 @@ class Controller {
                 }
                 await this.redisHelper.setValue('is_show_popup_1', Number(description));
             }
-            if (config.type === 'masonic_package_period') {
+            if (config.type === 'masonic_package_period' || config.type === 'federal_reserve_gold_package_period') {
                 // 2026-04-20 00:00:00-2026-05-05 23:59:59
                 if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(val)) {
                     const valError = [{ field: 'val', msg: '格式无效' }];

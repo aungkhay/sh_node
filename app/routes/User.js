@@ -89,6 +89,12 @@ class UserRoute extends express.Router {
         this.get('/masonic-gift-packages/history', middleware.isLoggedIn, HomeCtrl.MASONIC_PACKAGE_HISTORY);
         this.get('/masonic-gift-packages/earn-history', middleware.isLoggedIn, HomeCtrl.MASONIC_PACKAGE_EARN_HISTORY);
         this.get('/masonic-gift-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.MASONIC_PACKAGE_BONUS_HISTORY);
+        // Federal Reserve Gold Package Routes
+        this.get('/federal-reserve-gold-packages', HomeCtrl.FEDERAL_RESERVE_PACKAGE);
+        this.post('/federal-reserve-gold-packages/:id/buy', FormValidator.buy_federal_reserve_package(), middleware.isLoggedIn, HomeCtrl.BUY_FEDERAL_RESERVE_PACKAGE);
+        this.get('/federal-reserve-gold-packages/history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_HISTORY);
+        this.get('/federal-reserve-gold-packages/earn-history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_EARN_HISTORY);
+        this.get('/federal-reserve-gold-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_BONUS_HISTORY);
 
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);

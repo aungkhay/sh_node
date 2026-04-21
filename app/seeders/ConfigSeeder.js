@@ -198,6 +198,27 @@ module.exports = async () => {
             val: '200000',
             description: '-',
             data_type: 'integer'
+        },
+        {
+            type: 'federal_reserve_gold_package_description',
+            title: '联储黄金礼包描述',
+            val: '-',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'federal_reserve_gold_package_period',
+            title: '联储黄金礼包申报时间',
+            val: '2026-04-20 00:00:00-2026|05-05 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'federal_reserve_gold_package_daily_release_qty',
+            title: '联储黄金礼包每日发放数量',
+            val: '30000',
+            description: '-',
+            data_type: 'integer'
         }
     ];
 
