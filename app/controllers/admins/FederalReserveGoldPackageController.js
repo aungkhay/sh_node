@@ -3,7 +3,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
-const { User, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, db, FederalReserveGoldPackageEarn } = require('../../models');
+const { User, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, db, FederalReserveGoldPackageEarn, FederalReserveGoldPackageBonuses } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const AliOSS = require('../../helpers/AliOSS');
@@ -167,6 +167,7 @@ class Controller {
                     {
                         model: User,
                         where: userCondition,
+                        as: 'user',
                         attributes: ['id', 'phone_number']
                     },
                     {
@@ -289,7 +290,7 @@ class Controller {
                 condition.createdAt = { [Op.between]: [startTime, endTime] }
             }
 
-            const { rows, count } = await MasonicPackageBonuses.findAndCountAll({
+            const { rows, count } = await FederalReserveGoldPackageBonuses.findAndCountAll({
                 include: [
                     {
                         model: User,
@@ -359,7 +360,7 @@ class Controller {
                 condition.createdAt = { [Op.between]: [startTime, endTime] }
             }
 
-            const { rows, count } = await MasonicPackageEarn.findAndCountAll({
+            const { rows, count } = await FederalReserveGoldPackageBonuses.findAndCountAll({
                 include: [
                     {
                         model: User,
