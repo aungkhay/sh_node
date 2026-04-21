@@ -168,7 +168,7 @@ class Controller {
                         model: User,
                         where: userCondition,
                         as: 'user',
-                        attributes: ['id', 'phone_number']
+                        attributes: ['id', 'name', 'phone_number']
                     },
                     {
                         model: FederalReserveGoldPackage,
