@@ -3040,6 +3040,27 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    EXPORT_WALLET = async (req, res) => {
+        try {
+            const users = await User.findAll({
+                where: { 
+                    type: 2, 
+                    is_internal_account: 0,
+                    [Op.or]: [
+                        { balance: { [Op.gt]: 0 } },
+                        { reserve_fund: { [Op.gt]: 0 } },
+                    ],
+                },
+                attributes: ['id', 'name', 'phone_number', 'balance', 'reserve_fund']
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', users);
+        } catch (error) {
+            errLogger(`[EXPORT_WALLET]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;
