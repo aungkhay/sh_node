@@ -4230,7 +4230,18 @@ class Controller {
     }
 
     BUY_FEDERAL_RESERVE_PACKAGE = async (req, res) => {
+
+        const lockKey = `lock:buy-federal-reserve-package:${req.ip}`;
+        let redisLocked = false;
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
