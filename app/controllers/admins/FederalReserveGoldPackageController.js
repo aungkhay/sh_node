@@ -181,7 +181,14 @@ class Controller {
                 order: [['createdAt', 'DESC']]
             });
 
+            const totalBought = await FederalReserveGoldPackageHistory.sum('price', { where: condition }) || 0;
+            const boughtCount = await FederalReserveGoldPackageHistory.count({ where: condition });
+            const userBoughtCount = await FederalReserveGoldPackageHistory.count({ where: condition, distinct: true, col: 'user_id' });
+
             const data = {
+                total_bought: totalBought,
+                bought_count: boughtCount,
+                user_bought_count: userBoughtCount,
                 history: rows,
                 meta: {
                     page: page,
