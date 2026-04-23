@@ -202,6 +202,7 @@ class Controller {
             const userId = req.user_id;
             const isInternalAccount = req.query.isInternalAccount || 0;
             const bankCardNumber = req.query.bankCardNumber;
+            const aliAccountNumber = req.query.aliAccountNumber;
             const orderNo = req.query.orderNo;
 
             let condition = {}
@@ -242,11 +243,10 @@ class Controller {
 
             let bankCardCondition = {}
             if (bankCardNumber) {
-                // bank_card_number or ali_account_number
-                bankCardCondition[Op.or] = [
-                    { bank_card_number: bankCardNumber },
-                    { ali_account_number: bankCardNumber }
-                ]
+                bankCardCondition.bank_card_number = bankCardNumber;
+            }
+            if (aliAccountNumber) {
+                bankCardCondition.ali_account_number = aliAccountNumber;
             }
 
             const { rows, count } = await Withdraw.findAndCountAll({
@@ -340,6 +340,7 @@ class Controller {
             const userId = req.user_id;
             const isInternalAccount = req.query.isInternalAccount || 0;
             const bankCardNumber = req.query.bankCardNumber;
+            const aliAccountNumber = req.query.aliAccountNumber;
             const orderNo = req.query.orderNo;
 
             let condition = {}
@@ -375,10 +376,10 @@ class Controller {
 
             let bankCardCondition = {}
             if (bankCardNumber) {
-                bankCardCondition[Op.or] = [
-                    { bank_card_number: bankCardNumber },
-                    { ali_account_number: bankCardNumber }
-                ]
+                bankCardCondition.bank_card_number = bankCardNumber;
+            }
+            if (aliAccountNumber) {
+                bankCardCondition.ali_account_number = aliAccountNumber;
             }
 
             const rows = await Withdraw.findAll({
