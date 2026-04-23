@@ -202,6 +202,7 @@ class Controller {
             const userId = req.user_id;
             const isInternalAccount = req.query.isInternalAccount || 0;
             const bankCardNumber = req.query.bankCardNumber;
+            const orderNo = req.query.orderNo;
 
             let condition = {}
             if (userId != 1) {
@@ -215,6 +216,9 @@ class Controller {
             }
             if (Number(status) >= 0) {
                 condition.status = Number(status);
+            }
+            if (orderNo) {
+                condition.order_no = orderNo;
             }
 
             let userCondition = {}
@@ -332,6 +336,7 @@ class Controller {
             const userId = req.user_id;
             const isInternalAccount = req.query.isInternalAccount || 0;
             const bankCardNumber = req.query.bankCardNumber;
+            const orderNo = req.query.orderNo;
 
             let condition = {}
             if (userId != 1) {
@@ -345,6 +350,9 @@ class Controller {
             }
             if (Number(status) >= 0) {
                 condition.status = Number(status);
+            }
+            if (orderNo) {
+                condition.order_no = orderNo;
             }
 
             let userCondition = {}
