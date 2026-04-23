@@ -242,7 +242,7 @@ class Controller {
 
             let bankCardCondition = {}
             if (bankCardNumber) {
-                userCondition['$payment_method.bank_card_number$'] = bankCardNumber;
+                bankCardCondition.bank_card_number = bankCardNumber;
             }
 
             const { rows, count } = await Withdraw.findAndCountAll({
