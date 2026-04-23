@@ -1796,7 +1796,7 @@ class Controller {
                 // ],
                 // attributes: ['id', 'name', 'phone_number', 'invite_code', 'createdAt'],
                 attributes: [
-                    'id', 'name', 'phone_number', 'invite_code', 'createdAt', 'agreement_status', 'have_reward_6', 'reward_6_from_where',
+                    'id', 'name', 'phone_number', 'invite_code', 'createdAt', 'agreement_status', 'have_reward_6', 'reward_6_from_where', 'is_withdraw_active_code_used',
                     [
                         literal(`(
                             SELECT COALESCE(SUM(d.amount), 0)
@@ -1925,7 +1925,7 @@ class Controller {
             const users = await User.findAll({
                 include: includes,
                 where: condition,
-                attributes: ['id', 'name', 'phone_number', 'invite_code', 'createdAt'],
+                attributes: ['id', 'name', 'phone_number', 'invite_code', 'is_withdraw_active_code_used', 'createdAt'],
                 order: [['id', 'ASC']],
             });
 
