@@ -242,7 +242,11 @@ class Controller {
 
             let bankCardCondition = {}
             if (bankCardNumber) {
-                bankCardCondition.bank_card_number = bankCardNumber;
+                // bank_card_number or ali_account_number
+                bankCardCondition[Op.or] = [
+                    { bank_card_number: bankCardNumber },
+                    { ali_account_number: bankCardNumber }
+                ]
             }
 
             const { rows, count } = await Withdraw.findAndCountAll({
@@ -371,7 +375,10 @@ class Controller {
 
             let bankCardCondition = {}
             if (bankCardNumber) {
-                bankCardCondition.bank_card_number = bankCardNumber;
+                bankCardCondition[Op.or] = [
+                    { bank_card_number: bankCardNumber },
+                    { ali_account_number: bankCardNumber }
+                ]
             }
 
             const rows = await Withdraw.findAll({
