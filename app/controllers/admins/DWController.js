@@ -201,6 +201,7 @@ class Controller {
             const status = req.query.status || -1;
             const userId = req.user_id;
             const isInternalAccount = req.query.isInternalAccount || 0;
+            const bankCardNumber = req.query.bankCardNumber;
 
             let condition = {}
             if (userId != 1) {
@@ -235,6 +236,11 @@ class Controller {
                 userCondition.is_internal_account = Number(isInternalAccount);
             }
 
+            let bankCardCondition = {}
+            if (bankCardNumber) {
+                userCondition['$payment_method.bank_card_number$'] = bankCardNumber;
+            }
+
             const { rows, count } = await Withdraw.findAndCountAll({
                 include: {
                     model: User,
@@ -248,7 +254,8 @@ class Controller {
                         {
                             model: PaymentMethod,
                             as: 'payment_method',
-                            attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name']
+                            attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name'],
+                            where: bankCardCondition
                         }
                     ],
                     where: userCondition,
@@ -323,6 +330,8 @@ class Controller {
             const endTime = req.query.endTime;
             const status = req.query.status || -1;
             const userId = req.user_id;
+            const isInternalAccount = req.query.isInternalAccount || 0;
+            const bankCardNumber = req.query.bankCardNumber;
 
             let condition = {}
             if (userId != 1) {
@@ -352,6 +361,11 @@ class Controller {
                 }
             }
 
+            let bankCardCondition = {}
+            if (bankCardNumber) {
+                bankCardCondition.bank_card_number = bankCardNumber;
+            }
+
             const rows = await Withdraw.findAll({
                 include: {
                     model: User,
@@ -365,7 +379,8 @@ class Controller {
                         {
                             model: PaymentMethod,
                             as: 'payment_method',
-                            attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name']
+                            attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name'],
+                            where: bankCardCondition
                         }
                     ],
                     where: userCondition,
