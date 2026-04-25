@@ -128,6 +128,45 @@ class Helper {
         }
     }
 
+    sAddValue = async (key, value) => {
+        try {
+            var newKey = key;
+            if (prefix) {
+                newKey = `${prefix}_${key}`;
+            }
+            return await this.redis.sadd(newKey, value);
+        } catch (error) {
+            console.error('RedisHelper sAddValue error:', error);
+        }
+    }
+
+    sisMember = async (key, value) => {
+        try {
+            var newKey = key;
+            if (prefix) {
+                newKey = `${prefix}_${key}`;
+            }
+            const isMember = await this.redis.sismember(newKey, value);
+            return isMember === 1;
+        } catch (error) {
+            console.error('RedisHelper sisMember error:', error);
+            return false;
+        }
+    }
+
+    sMembers = async (key) => {
+        try {
+            var newKey = key;
+            if (prefix) {
+                newKey = `${prefix}_${key}`;
+            }
+            return await this.redis.smembers(newKey);
+        } catch (error) {
+            console.error('RedisHelper sMember error:', error);
+            return [];
+        }
+    }
+
     randomString = (length) => {
         var result = '';
         var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

@@ -1497,6 +1497,19 @@ class Controller {
         }
     }
 
+    RESERVE_RED_ENVELOP = async (req, res) => {
+        try {
+            const userId = req.user_id || 45;
+
+            await this.redisHelper.sAddValue(`RESERVED_RED_ENVELOP_USERS`, userId);
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', {});
+        } catch (error) {
+            console.log(error)
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     GENERATE_RED_ENVELOP = async (req, res) => {
         const userId = req.user_id;
         const lockKey = `lock:generate-red-envelope:${userId}`;
@@ -1515,7 +1528,8 @@ class Controller {
             * =============================== */
             const now = new Date();
             const minutes = now.getMinutes();
-            const allowed = (minutes >= 0 && minutes < 5) || (minutes >= 58 && minutes <= 59);
+            // const allowed = (minutes >= 0 && minutes < 5) || (minutes >= 58 && minutes <= 59);
+            const allowed = minutes >= 49 && minutes <= 59;
             if (!allowed) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
             }
