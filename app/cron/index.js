@@ -1528,11 +1528,15 @@ class CronJob {
                     }, { transaction: t });
 
                     await t.commit();
+
+                    console.log(`[GIVE_MASONIC_BONUS][Package ID: ${pack.id}]: Given daily earn ${pack.daily_earn} to user ID ${user.id}`);
                 } catch (error) {
                     errLogger(`[GIVE_MASONIC_BONUS][Transaction Error]: ${error.stack}`);
                     await t.rollback();
                 }
             }
+
+            console.log(`[GIVE_MASONIC_BONUS]: Completed processing all packages for daily bonus.`);
         } catch (error) {
             errLogger(`[GIVE_MASONIC_BONUS]: ${error.stack}`); 
         }
