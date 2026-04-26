@@ -37,7 +37,7 @@ class CronJob {
         // Run at 23:30 every day
         cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
         cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
-        cron.schedule('10 0 * * *', this.GIVE_MASONIC_BONUS).start();
+        cron.schedule('20 0 * * *', this.GIVE_MASONIC_BONUS).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run 10th minute of every hour
@@ -1463,13 +1463,15 @@ class CronJob {
     GIVE_MASONIC_BONUS = async () => {
         // 1%
         try {
+
+            const today = moment().format('YYYY-MM-DD');
             const packages = await MasonicPackageHistory.findAll({
                 attributes: ['id', 'user_id', 'package_id', 'price', 'daily_earn', 'createdAt'],
-                // where: {
-                //     createdAt: {
-                //         [Op.between]: ['2026-04-18 00:00:00', '2026-04-18 23:59:59']
-                //     }
-                // }
+                where: {
+                    createdAt: {
+                        [Op.lt]: `${today} 00:00:00`
+                    }
+                }
             });
 
             for (let pack of packages) {
@@ -1533,6 +1535,45 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[GIVE_MASONIC_BONUS]: ${error.stack}`); 
+        }
+    }
+
+    RECALL_MASONIC_BONUS = async () => {
+        try {
+            const today = moment().format('YYYY-MM-DD');
+            const earns = await MasonicPackageEarn.findAll({
+                attributes: ['id', 'user_id', 'package_id', 'amount', 'createdAt'],
+                where: {
+                    createdAt: {
+                        [Op.gt]: `${today} 00:00:00`
+                    }
+                }
+            });
+
+            for (let earn of earns) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(earn.user_id, { attributes: ['id', 'balance', 'relation'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+                    if (Number(user.balance) < Number(earn.amount)) {
+                        moneyTrackLogger(`[RECALL_MASONIC_BONUS][Earn ID: ${earn.id}]: User ID ${user.id} has balance ${user.balance} which is less than earn amount ${earn.amount}. Cannot recall this earn record.`);
+                        await t.rollback();
+                        continue;
+                    }
+                    await user.increment({ balance: -Number(earn.amount) }, { transaction: t });
+                    await earn.update({ description: 'CRON RECALL' }, { transaction: t });
+                    console.log(`[RECALL_MASONIC_BONUS][Earn ID: ${earn.id}]: Recalled ${earn.amount} from user ID ${user.id}`);
+                    await t.commit();
+                }
+                catch (error) {
+                    moneyTrackLogger(`[RECALL_MASONIC_BONUS][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            moneyTrackLogger(`[RECALL_MASONIC_BONUS]: ${error.stack}`);
         }
     }
 
