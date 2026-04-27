@@ -2677,7 +2677,7 @@ class Controller {
                         [Op.in]: [0, 2]
                     }
                 },
-                attributes: ['id', 'amount', 'description', 'createdAt']
+                attributes: ['id', 'type', 'amount', 'description', 'createdAt']
             });
             const newFederalPackageEarnings = federalPackageEarnings.map(g => {
                 const typeMap = {

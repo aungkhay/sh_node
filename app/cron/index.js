@@ -2468,29 +2468,32 @@ class CronJob {
 
     RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE = async () => {
         try {
-            const earns = await FederalReserveGoldPackageHistory.findAll({
+            const history = await FederalReserveGoldPackageHistory.findAll({
                 where: {
                     is_returned_earn: 0,
+                    createdAt: {
+                        [Op.lt]: '2026-04-28 00:00:00'
+                    }
                 },
-                attributes: ['id', 'user_id', 'amount']
+                attributes: ['id', 'user_id', 'reserve_earn', 'package_id']
             });
 
-            for (const earn of earns) {
+            for (const his of history) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(earn.user_id, { attributes: ['id', 'balance', 'reserve_fund'], transaction: t });
+                    const user = await User.findByPk(his.user_id, { attributes: ['id', 'balance', 'reserve_fund'], transaction: t });
                     if (!user) {
                         continue;
                     }
-                    const amount = Number(earn.amount);
+                    const amount = Number(his.reserve_earn);
                     if (amount > 0) {
                         await user.increment({ balance: amount }, { transaction: t });
-                        await earn.update({ is_returned_earn: 1, description: 'CRON', return_earn_date: new Date() }, { transaction: t });
+                        await his.update({ is_returned_earn: 1, description: 'CRON', return_earn_date: new Date() }, { transaction: t });
                         await FederalReserveGoldPackageEarn.create({
-                            user_id: earn.user_id,
+                            user_id: his.user_id,
                             relation: user.relation,
-                            package_id: earn.package_id,
-                            package_history_id: earn.package_history_id,
+                            package_id: his.package_id,
+                            package_history_id: his.id,
                             amount: amount,
                             type: 0,
                             description: `余额 ➕ ${amount} CRON RELEASE`,
@@ -2498,11 +2501,14 @@ class CronJob {
                     }
 
                     await t.commit();
+                    console.log(`[RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE][User ID: ${his.user_id}]: Released ${amount} from reserve fund to balance.`);
                 } catch (error) {
                     errLogger(`[RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE][Transaction Error]: ${error.stack}`);
                     await t.rollback();
                 }
             }
+
+            console.log(`[RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE]: Completed processing ${history.length} record(s).`);
         } catch (error) {
             errLogger(`[RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE]: ${error.stack}`);
         }
