@@ -730,6 +730,11 @@ exports.create_federal_reserve_gold_package = () => {
         check('masonic_fund').optional({ checkFalsy: true })
             .isNumeric()
             .withMessage('共济基金必须是数字'),
+        // is_release_authorize_letter (0, 1)
+        check('is_release_authorize_letter').not().isEmpty().withMessage('是否发布授权书不能为空')
+            .bail()
+            .isIn([0, 1])
+            .withMessage('是否发布授权书值无效'),
         // perchase_limit 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
         check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
             .bail()

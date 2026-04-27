@@ -80,7 +80,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { product_name, price, period, reserve_earn, personal_gold, masonic_fund, purchase_limit, quantity_limit, total_quantity, description } = req.body;
+            const { product_name, price, period, reserve_earn, personal_gold, masonic_fund, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description } = req.body;
             const newPackage = await FederalReserveGoldPackage.create({
                 product_name: product_name,
                 price: price,
@@ -88,6 +88,7 @@ class Controller {
                 reserve_earn: reserve_earn,
                 personal_gold: personal_gold,
                 masonic_fund: masonic_fund,
+                is_release_authorize_letter: is_release_authorize_letter,
                 purchase_limit: purchase_limit,
                 quantity_limit: quantity_limit,
                 total_quantity: total_quantity,
@@ -114,7 +115,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
-            const { product_name, price, period, reserve_earn, personal_gold, masonic_fund, purchase_limit, quantity_limit, total_quantity, description, status } = req.body;
+            const { product_name, price, period, reserve_earn, personal_gold, masonic_fund, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, status } = req.body;
             await pkg.update({
                 product_name: product_name,
                 price: price,
@@ -122,6 +123,7 @@ class Controller {
                 reserve_earn: reserve_earn,
                 personal_gold: personal_gold,
                 masonic_fund: masonic_fund,
+                is_release_authorize_letter: is_release_authorize_letter,
                 purchase_limit: purchase_limit,
                 quantity_limit: quantity_limit,
                 total_quantity: total_quantity,
