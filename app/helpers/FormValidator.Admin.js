@@ -726,6 +726,10 @@ exports.create_federal_reserve_gold_package = () => {
             .bail()
             .isNumeric()
             .withMessage('个人黄金必须是数字'),
+        // masonic_fund optional
+        check('masonic_fund').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('共济基金必须是数字'),
         // perchase_limit 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
         check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
             .bail()

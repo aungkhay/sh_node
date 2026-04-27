@@ -65,12 +65,45 @@ module.exports = async () => {
             amount_max: 100,
             description: '10%-100%'
         },
+        {
+            id: 10,
+            title: '新春献礼兑换券',
+            total_count: 0,
+            remain_count: 0,
+            range_min: 0,
+            range_max: 0,
+            amount_min: 0,
+            amount_max: 0,
+            description: '0%-0%'
+        },
+        {
+            id: 11,
+            title: '上合组织塔吉克斯坦区授权书',
+            total_count: 0,
+            remain_count: 0,
+            range_min: 0,
+            range_max: 0,
+            amount_min: 0,
+            amount_max: 0,
+            description: '0%-0%'
+        },
+        {
+            id: 12,
+            title: '上合组织哈萨克斯坦区授权书',
+            total_count: 0,
+            remain_count: 0,
+            range_min: 0,
+            range_max: 0,
+            amount_min: 0,
+            amount_max: 0,
+            description: '0%-0%'
+        },
     ];
 
     const count = await RewardType.count();
     if (count == 0) {
         await RewardType.bulkCreate(types);
-        console.log('\x1b[32m%s\x1b[0m', '[Seeder] RewareTypeSeeder has been seeded successfully.');
+        console.log('\x1b[32m%s\x1b[0m', '[Seeder] RewardTypeSeeder has been seeded successfully.');
     } else {
         console.log('\x1b[32m%s\x1b[0m', '[Seeder] RewaredType Data Exists.');
     }

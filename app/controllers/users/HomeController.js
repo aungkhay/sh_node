@@ -1534,7 +1534,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '时间已超时', {});
             }
 
-            const lockGen = await this.redisHelper.setLock(`LOCK_GENERATE_RED_ENVELOP_${userId}`, 1, 300); // 5 minutes lock
+            const lockGen = await this.redisHelper.setLock(`LOCK_GENERATE_RED_ENVELOP_${userId}`, 1, 600); // 10 minutes lock
             if (!lockGen) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过一次', {});
             }
@@ -1544,7 +1544,7 @@ class Controller {
             * =============================== */
             const rewardExist = await this.redisHelper.getValue(`UID_${userId}_reward`);
             if (rewardExist) {
-                await this.redisHelper.setValue(`UID_${userId}_reward`, rewardExist, 5 * 60); // refresh expiry to 5 minutes
+                await this.redisHelper.setValue(`UID_${userId}_reward`, rewardExist, 10 * 60); // refresh expiry to 10 minutes
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(rewardExist));
             }
 
@@ -4360,6 +4360,7 @@ class Controller {
                     price: fPackage.price,
                     reserve_earn: fPackage.reserve_earn,
                     personal_gold: fPackage.personal_gold,
+                    masonic_fund: fPackage.masonic_fund,
                     period: fPackage.period,
                     return_date: moment().add(fPackage.period, 'days').toDate(),
                 }, { transaction: t });
@@ -4367,6 +4368,15 @@ class Controller {
                 await fPackage.increment({ total_quantity: -1 }, { transaction: t });
                 if (fPackage.total_quantity - 1 <= 0) {
                     await fPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+                if (fPackage.is_release_authorize_letter) {
+                    await RewardRecord.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        reward_id: 12, // 上合组织哈萨克斯坦区授权书
+                        amount: 1,
+                        from_where: `PKG-${fPackageHistory.id}`
+                    }, { transaction: t });
                 }
 
                 const bonusArr = [15, 7, 3];

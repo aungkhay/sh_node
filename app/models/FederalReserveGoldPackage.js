@@ -49,6 +49,17 @@ FederalReserveGoldPackage.init({
         defaultValue: 0,
         comment: '个人黄金(g)',
     },
+    masonic_fund: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '共济基金金额',
+    },
+    is_release_authorize_letter: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: '上合组织哈萨克斯坦区授权书',
+    },
     purchase_limit: {
         type: DataTypes.ENUM('NONE', 'DAILY', 'TOTAL'),
         allowNull: false,

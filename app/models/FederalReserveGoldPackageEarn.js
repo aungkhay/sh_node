@@ -52,7 +52,7 @@ FederalReserveGoldPackageEarn.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
-        comment: '类型: 0-储备收益, 1-个人黄金, 2-本金返还',
+        comment: '类型: 0-储备收益, 1-个人黄金, 2-本金返还, 3-共济基金金额',
     },
     description: {
         type: DataTypes.STRING,

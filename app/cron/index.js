@@ -2386,45 +2386,72 @@ class CronJob {
                     const reserveEarn = Number(pack.reserve_earn);
                     const personalGold = Number(pack.personal_gold);
                     const originalPrice = Number(pack.price);
+                    const masonicFund = Number(pack.masonic_fund);
 
-                    const arr = [
-                        {
+                    const arr = []
+                    if (reserveEarn > 0) {
+                        arr.push({
                             user_id: pack.user_id,
                             relation: user.relation,
                             package_id: pack.package_id,
                             package_history_id: pack.id,
                             amount: reserveEarn,
                             type: 0, // 0-储备收益
-                        },
-                        {
+                        })
+                    }
+                    if (personalGold > 0) {
+                        arr.push({
                             user_id: pack.user_id,
                             relation: user.relation,
                             package_id: pack.package_id,
                             package_history_id: pack.id,
                             amount: personalGold,
                             type: 1, // 1-个人黄金
-                        },
-                        {
+                        })
+                    }
+                    if (originalPrice > 0) {
+                        arr.push({
                             user_id: pack.user_id,
                             relation: user.relation,
                             package_id: pack.package_id,
                             package_history_id: pack.id,
                             amount: originalPrice,
                             type: 2, // 2-本金返还
-                        }
-                    ]
+                        })
+                    }
+                    if (masonicFund > 0) {
+                        arr.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: masonicFund,
+                            type: 3, // 3-共济基金返还
+                        })
+                    }
                     await FederalReserveGoldPackageEarn.bulkCreate(arr, { transaction: t });
-
-                    await pack.update({ 
+                    const updateObj = { 
                         is_returned_all: 1,
-                        is_returned_earn: 1,
-                        return_earn_date: new Date(),
-                        is_returned_personal_gold: 1,
-                        return_personal_gold_date: new Date(),
-                        is_returned_price: 1,
-                        return_price_date: new Date(),
                         description: 'CRON',
-                    }, { transaction: t });
+                    }
+                    if (reserveEarn > 0) {
+                        updateObj.is_returned_earn = 1;
+                        updateObj.return_earn_date = new Date();
+                    }
+                    if (personalGold > 0) {
+                        updateObj.is_returned_personal_gold = 1;
+                        updateObj.return_personal_gold_date = new Date();
+                    }
+                    if (originalPrice > 0) {
+                        updateObj.is_returned_price = 1;
+                        updateObj.return_price_date = new Date();
+                    }
+                    if (masonicFund > 0) {
+                        updateObj.is_returned_masonic_fund = 1;
+                        updateObj.return_masonic_fund_date = new Date();
+                    }
+
+                    await pack.update(updateObj, { transaction: t });
 
                     await user.increment({ reserve_fund: reserveEarn + originalPrice }, { transaction: t });
 

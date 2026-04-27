@@ -58,6 +58,12 @@ FederalReserveGoldPackageHistory.init({
         allowNull: false,
         defaultValue: 0,
     },
+    masonic_fund: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '共济基金金额',
+    },
     period: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -101,6 +107,17 @@ FederalReserveGoldPackageHistory.init({
         type: DataTypes.DATE,
         allowNull: true,
         comment: '实际返还本金日期',
+    },
+    is_returned_masonic_fund: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已返还共济基金',
+    },
+    return_masonic_fund_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '实际返还共济基金日期',
     },
     is_returned_all: {
         type: DataTypes.TINYINT,
