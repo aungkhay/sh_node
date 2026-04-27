@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer } = require('../../models');
 const { Op, literal, Sequelize } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -4651,6 +4651,311 @@ class Controller {
         }
     }
 
+    BALANCE_TRACKING = async (req, res) => {
+        try {
+            const userId = req.user_id || 45322;
+
+            // Red Envelope Rain Reward [红包雨奖励]
+            const reward3 = await RewardRecord.findAll({
+                where: { user_id: userId, reward_id: 3 },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newReward3 = reward3.map(r => {
+                return {
+                    id: Number(r.id),
+                    amount: Number(r.amount),
+                    createdAt: r.createdAt,
+                    type: '红包雨奖励',
+                    description: ''
+                }
+            });
+
+            // Transfer [转账]
+            const transfers = await Transfer.findAll({
+                where: { 
+                    user_id: userId,
+                    wallet_type: 2
+                },
+                attributes: ['id', 'from', 'to', 'amount', 'reward_id', 'createdAt']
+            });
+            const walletType = {
+                1: '储备金',
+                2: '余额',
+                3: '推荐金',
+                4: '共济基金',
+                5: '军职津贴',
+                6: '预压津贴',
+                7: '余额宝',
+                8: '黄金利息',
+                9: '缴纳保证金',
+            }
+            const newTransfers = transfers.map(t => {
+                return {
+                    id: Number(t.id),
+                    amount: t.from === 2 ? -Number(t.amount) : Number(t.amount),
+                    createdAt: t.createdAt,
+                    type: `转账`,
+                    description: `${walletType[t.from]} ▶ ${walletType[t.to]}`
+                }
+            });
+
+            // Buy Gold [购买黄金]
+            const buyGolds = await UserGoldPrice.findAll({
+                where: { user_id: userId, type: 1 },
+                attributes: ['id', 'amount', 'gold_count', 'createdAt']
+            });
+            const newBuyGolds = buyGolds.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: -Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买黄金',
+                    description: ''
+                }
+            });
+
+            // Sell Gold [出售黄金]
+            const sellGolds = await UserGoldPrice.findAll({
+                where: { user_id: userId, type: 2 },
+                attributes: ['id', 'amount', 'gold_count', 'createdAt']
+            });
+            const newSellGolds = sellGolds.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '出售黄金',
+                    description: ''
+                }
+            });
+
+            // Buy Gold Package Bonus [购买黄金礼包奖励]
+            const goldPackageBonuses = await GoldPackageBonuses.findAll({
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newGoldPackageBonuses = goldPackageBonuses.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买黄金礼包奖励',
+                    description: ''
+                }
+            });
+
+            // Buy Masonic Package Bonus [购买共济礼包奖励]
+            const masonicPackageBonuses = await MasonicPackageBonuses.findAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['phone_number'],
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newMasonicPackageBonuses = masonicPackageBonuses.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买共济礼包奖励',
+                    description: `${g.from_user ? `来源 ${g.from_user.phone_number} ` : ' '}`
+                }
+            });
+
+            // 购买共济礼包收益
+            const masonicPackageEarnings = await MasonicPackageEarn.findAll({
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newMasonicPackageEarnings = masonicPackageEarnings.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买共济礼包收益',
+                    description: ''
+                }
+            });
+
+            // Buy Federal Package Bonus [购买联储黄金礼包奖励]
+            const federalPackageBonuses = await FederalReserveGoldPackageBonuses.findAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['phone_number'],
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newFederalPackageBonuses = federalPackageBonuses.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买联储黄金礼包奖励',
+                    description: `${g.from_user ? `来源 ${g.from_user.phone_number} ` : ' '}`
+                }
+            });
+
+            // 联储黄金礼包收益
+            const federalPackageEarnings = await FederalReserveGoldPackageEarn.findAll({
+                where: { 
+                    user_id: userId,
+                    // type: 0-储备收益, 1-个人黄金, 2-本金返还
+                    type: {
+                        [Op.in]: [0, 2]
+                    }
+                },
+                attributes: ['id', 'type', 'amount', 'description', 'createdAt']
+            });
+            const newFederalPackageEarnings = federalPackageEarnings.map(g => {
+                const typeMap = {
+                    0: '储备收益',
+                    2: '本金返还'
+                }
+                // if createdAt is between 2026-04-23 and 2026-04-27, description is empty
+                let desc = typeMap[g.type];
+                if (moment(g.createdAt).isBetween(moment('2026-04-23 00:00:00'), moment('2026-04-27 23:59:59')) && g.type === 0) {
+                    desc = '余额收益';
+                }
+
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: `联储黄金礼包收益`,
+                    description: desc
+                }
+            });
+
+            // Withdrawals [提现]
+            const withdrawals = await Withdraw.findAll({
+                where: { user_id: userId, status: 1 },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newWithdrawals = withdrawals.map(w => {
+                return {
+                    id: Number(w.id),
+                    amount: -Number(w.amount),
+                    createdAt: w.createdAt,
+                    type: '提现',
+                    description: ''
+                }
+            });
+
+            // Customize Wallet [管理员调整钱包]
+            const customizeWallet = await AdminLog.findAll({
+                where: { 
+                    type: 'update_wallet',
+                    model: 'User',
+                    'content.user_id': userId,
+                    'content.walletType': 2
+                },
+                attributes: ['id', 'admin_id', 'url', 'content', 'createdAt']
+            });
+            const newCustomizeWallet = customizeWallet.map(c => {
+                const content = c.content;
+                return {
+                    id: Number(c.id),
+                    amount: content.addOrSubstract == 1 ? Math.abs(Number(content.amount)) : -Math.abs(Number(content.amount)),
+                    createdAt: c.createdAt,
+                    type: `管理员调整钱包`,
+                }
+            });
+
+            // Gold Package Return
+            const goldPackageReturns = await GoldPackageReturn.findAll({
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'package_id', 'description', 'createdAt']
+            });
+            const packageMap = {
+                1: '和衷联储黄金初级礼包 588元',
+                2: '和衷联储黄金中级礼包 1288元',
+            }
+            const newGoldPackageReturns = goldPackageReturns.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: `报销`,
+                    description: `${packageMap[g.package_id]}`
+                }
+            });
+
+            // Balance Transfer
+            const balanceTransfer = await BalanceTransfer.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'to',
+                        attributes: ['id', 'phone_number']
+                    },
+                    {
+                        model: User,
+                        as: 'from',
+                        attributes: ['id', 'phone_number']
+                    }
+                ],
+                where: {
+                    [Op.or]: [
+                        { from_user: userId },
+                        { to_user: userId }
+                    ],
+                    wallet_type: 2
+                },
+                attributes: ['id', 'wallet_type', 'amount', 'createdAt', 'from_user', 'to_user']
+            });
+            const newBalanceTransfer = balanceTransfer.map(b => {
+                const isSender = b.from_user == userId;
+                return {
+                    id: Number(b.id),
+                    amount: Number(b.amount),
+                    createdAt: b.createdAt,
+                    type: `余额转账 - ${isSender ? '转出' : '转入'}`,
+                    description: `${isSender ? `转到 ${b.to.phone_number}` : `来源 ${b.from.phone_number}`}`
+                }
+            });
+
+            const mergedData = [
+                ...newReward3, 
+                ...newTransfers, 
+                ...newBuyGolds, 
+                ...newGoldPackageBonuses,
+                ...newMasonicPackageBonuses,
+                ...newMasonicPackageEarnings,
+                ...newFederalPackageBonuses,
+                ...newFederalPackageEarnings,
+                ...newWithdrawals,
+                ...newCustomizeWallet,
+                ...newGoldPackageReturns,
+                ...newBalanceTransfer,
+            ];
+
+            // Authorization Letter [授权书]
+            const letter = await RewardRecord.findOne({
+                where: { user_id: userId, reward_id: 6 },
+                attributes: ['id', 'is_used', 'createdAt', 'updatedAt']
+            });
+            if (letter && letter.is_used) {
+                mergedData.push({
+                    id: Number(letter.id),
+                    amount: 100,
+                    createdAt: letter.updatedAt,
+                    type: '使用上合组织中国区授权书',
+                    description: ''
+                });
+            }
+
+            mergedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', mergedData);
+        } catch (error) {
+            errLogger(`[BALANCE_TRACKING][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
 }
 
 module.exports = Controller;

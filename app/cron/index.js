@@ -2481,7 +2481,7 @@ class CronJob {
             for (const his of history) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(his.user_id, { attributes: ['id', 'balance', 'reserve_fund'], transaction: t });
+                    const user = await User.findByPk(his.user_id, { attributes: ['id', 'relation'], transaction: t });
                     if (!user) {
                         continue;
                     }
