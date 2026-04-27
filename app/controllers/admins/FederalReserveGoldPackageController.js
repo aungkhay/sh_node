@@ -211,7 +211,7 @@ class Controller {
     RELEASE_PACKAGE_EARN = async (req, res) => {
         try {
             const id = req.params.id;
-            const type = req.params.type; // 类型: 0-储备收益, 1-个人黄金, 2-本金返还
+            const type = req.params.type; // 类型: 0-储备收益, 1-个人黄金, 2-本金返还, 3-共济基金金额
 
             const pkgHistory = await FederalReserveGoldPackageHistory.findByPk(id);
             if (!pkgHistory) {
@@ -225,6 +225,9 @@ class Controller {
             }
             if (type == 2 && pkgHistory.is_returned_price) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该本金已返还', {});
+            }
+            if (type == 3 && pkgHistory.is_returned_masonic_fund) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该共济基金金额已返还', {});
             }
 
             const t = await db.transaction();
@@ -246,9 +249,14 @@ class Controller {
                     await pkgHistory.update({ is_returned_price: true, return_price_date: new Date() }, { transaction: t });
                     await user.increment({ reserve_fund: Number(pkgHistory.price) }, { transaction: t });
                     releaseAmount = pkgHistory.price;
+                } else if (type == 3) {
+                    // 共济基金金额
+                    await pkgHistory.update({ is_returned_masonic_fund: true, return_masonic_fund_date: new Date() }, { transaction: t });
+                    await user.increment({ masonic_fund: Number(pkgHistory.masonic_fund) }, { transaction: t });
+                    releaseAmount = pkgHistory.masonic_fund;
                 }
 
-                if (pkgHistory.is_returned_earn && pkgHistory.is_returned_personal_gold && pkgHistory.is_returned_price) {
+                if (pkgHistory.is_returned_earn && pkgHistory.is_returned_personal_gold && pkgHistory.is_returned_price && pkgHistory.is_returned_masonic_fund) {
                     await pkgHistory.update({ is_returned_all: 1 }, { transaction: t });
                 }
 
