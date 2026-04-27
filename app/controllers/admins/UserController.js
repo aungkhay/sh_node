@@ -2677,7 +2677,7 @@ class Controller {
                         [Op.in]: [0, 2]
                     }
                 },
-                attributes: ['id', 'amount', 'createdAt']
+                attributes: ['id', 'amount', 'description', 'createdAt']
             });
             const newFederalPackageEarnings = federalPackageEarnings.map(g => {
                 const typeMap = {
@@ -2689,7 +2689,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: `联储黄金礼包收益 - ${typeMap[g.type]}`,
-                    description: `储备金 ➕ ${Number(g.amount)}`
+                    description: g.description ? g.description : `储备金 ➕ ${Number(g.amount)}`
                 }
             });
 

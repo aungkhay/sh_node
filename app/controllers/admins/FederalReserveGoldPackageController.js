@@ -256,6 +256,11 @@ class Controller {
                     releaseAmount = pkgHistory.masonic_fund;
                 }
 
+                if (releaseAmount <= 0) {
+                    await t.rollback();
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '返还数量必须大于0', {});
+                }
+
                 if (pkgHistory.is_returned_earn && pkgHistory.is_returned_personal_gold && pkgHistory.is_returned_price && pkgHistory.is_returned_masonic_fund) {
                     await pkgHistory.update({ is_returned_all: 1 }, { transaction: t });
                 }

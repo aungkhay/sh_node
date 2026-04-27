@@ -337,9 +337,9 @@ class Controller {
                     payment_method: method_id 
                 },
                 attributes: ['id', 'payment_method', 'channel_name', 'min_amount', 'max_amount'],
-                order: [['sort', 'ASC']],
-                // order: Sequelize.literal('RAND()'),
-                // limit: 1
+                // order: [['sort', 'ASC']],
+                order: Sequelize.literal('RAND()'),
+                limit: 1
             });
             return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, channels);
         } catch (error) {
