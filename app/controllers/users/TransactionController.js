@@ -1473,6 +1473,7 @@ class Controller {
         let redisLocked = false;
 
         try {
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂时不可转账', {});
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
