@@ -374,18 +374,17 @@ class Controller {
     GET_PAYMENT_CHANNELS = async (req, res) => {
         try {
             const { method_id } = req.params;
-            const channels = await MerchantChannel.findAll({
+            const channel = await MerchantChannel.findOne({
                 where: { 
                     status: 1, 
                     payment_method: method_id
                 },
                 attributes: ['id', 'payment_method', 'channel_name', 'min_amount', 'max_amount'],
                 // order: [['sort', 'ASC']],
-                order: Sequelize.literal('RAND()'),
-                limit: 1
+                order: [Sequelize.literal('RAND()')],
             });
             
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, channels);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, [channel]);
         } catch (error) {
             errLogger(`[GET_PAYMENT_CHANNELS]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
