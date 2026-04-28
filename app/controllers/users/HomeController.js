@@ -5258,8 +5258,8 @@ class Controller {
                 id: Number(g.id),
                 amount: Number(g.amount),
                 createdAt: g.createdAt,
-                type: '报销',
-                description: packageMap[g.package_id] ?? '',
+                type: '和衷联储礼包报销',
+                description: packageMap[g.package_id] ? packageMap[g.package_id] : '',
             }));
 
             const newBalanceTransfer = balanceTransfer.map(b => {
