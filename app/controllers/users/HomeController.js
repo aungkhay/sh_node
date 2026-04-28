@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer } = require('../../models');
-const { Op, literal, Sequelize } = require('sequelize');
+const { Op, literal, Sequelize, QueryTypes } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const Impeachment = require('../../models/Impeachment');
@@ -4954,6 +4954,362 @@ class Controller {
         } catch (error) {
             errLogger(`[BALANCE_TRACKING][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    BALANCE_TRACKING_QUERY = async (req, res) => {
+        try {
+            const userId = req.user_id || 80;
+
+            // pagination params
+            const page = Math.max(parseInt(req.query.page ?? '1', 10), 1);
+            const pageSize = Math.min(Math.max(parseInt(req.query.pageSize ?? '20', 10), 1), 100);
+            const offset = (page - 1) * pageSize;
+
+            // For "multi-table feed" pagination, we over-fetch from each table then merge+slice.
+            // Tune this multiplier depending on typical distribution of records.
+            const PER_TABLE_LIMIT = Math.min(pageSize * 3, 200);
+
+            const walletType = {
+                1: '储备金',
+                2: '余额',
+                3: '推荐金',
+                4: '共济基金',
+                5: '军职津贴',
+                6: '预压津贴',
+                7: '余额宝',
+                8: '黄金利息',
+                9: '缴纳保证金',
+            };
+
+            const packageMap = {
+                1: '和衷联储黄金初级礼包 588元',
+                2: '和衷联储黄金中级礼包 1288元',
+            };
+
+            // Fetch in parallel (much faster than sequential awaits)
+            const [
+                reward3,
+                transfers,
+                buyGolds,
+                sellGolds,
+                goldPackageBonuses,
+                masonicPackageBonuses,
+                masonicPackageEarnings,
+                federalPackageBonuses,
+                federalPackageEarnings,
+                withdrawals,
+                customizeWallet,
+                goldPackageReturns,
+                balanceTransfer,
+                letter,
+            ] = await Promise.all([
+                RewardRecord.findAll({
+                    where: { user_id: userId, reward_id: 3 },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                Transfer.findAll({
+                    where: { user_id: userId, wallet_type: 2 },
+                    attributes: ['id', 'from', 'to', 'amount', 'reward_id', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                UserGoldPrice.findAll({
+                    where: { user_id: userId, type: 1 },
+                    attributes: ['id', 'amount', 'gold_count', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                UserGoldPrice.findAll({
+                    where: { user_id: userId, type: 2 },
+                    attributes: ['id', 'amount', 'gold_count', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                GoldPackageBonuses.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                MasonicPackageBonuses.findAll({
+                    include: {
+                        model: User,
+                        as: 'from_user',
+                        attributes: ['phone_number'],
+                    },
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                MasonicPackageEarn.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                FederalReserveGoldPackageBonuses.findAll({
+                    include: {
+                        model: User,
+                        as: 'from_user',
+                        attributes: ['phone_number'],
+                    },
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                FederalReserveGoldPackageEarn.findAll({
+                    where: {
+                        user_id: userId,
+                        type: { [Op.in]: [0, 2] },
+                    },
+                    attributes: ['id', 'type', 'amount', 'description', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                Withdraw.findAll({
+                    where: { user_id: userId, status: 1 },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                AdminLog.findAll({
+                    where: {
+                        type: 'update_wallet',
+                        model: 'User',
+                        'content.user_id': userId,
+                        'content.walletType': 2,
+                    },
+                    attributes: ['id', 'admin_id', 'url', 'content', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                GoldPackageReturn.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'package_id', 'description', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                BalanceTransfer.findAll({
+                    include: [
+                        { model: User, as: 'to', attributes: ['id', 'phone_number'] },
+                        { model: User, as: 'from', attributes: ['id', 'phone_number'] },
+                    ],
+                    where: {
+                        [Op.or]: [{ from_user: userId }, { to_user: userId }],
+                        wallet_type: 2,
+                    },
+                    attributes: ['id', 'wallet_type', 'amount', 'createdAt', 'from_user', 'to_user'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                RewardRecord.findOne({
+                    where: { user_id: userId, reward_id: 6 },
+                    attributes: ['id', 'is_used', 'createdAt', 'updatedAt'],
+                }),
+            ]);
+
+            const newReward3 = reward3.map(r => ({
+                id: Number(r.id),
+                amount: Number(r.amount),
+                createdAt: r.createdAt,
+                type: '红包雨奖励',
+                description: '',
+            }));
+
+            const newTransfers = transfers.map(t => ({
+                id: Number(t.id),
+                amount: t.from === 2 ? -Number(t.amount) : Number(t.amount),
+                createdAt: t.createdAt,
+                type: '转账',
+                description: `${walletType[t.from]} ▶ ${walletType[t.to]}`,
+            }));
+
+            const newBuyGolds = buyGolds.map(g => ({
+                id: Number(g.id),
+                amount: -Number(g.amount),
+                createdAt: g.createdAt,
+                type: '购买黄金',
+                description: '',
+            }));
+
+            const newSellGolds = sellGolds.map(g => ({
+                id: Number(g.id),
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                type: '出售黄金',
+                description: '',
+            }));
+
+            const newGoldPackageBonuses = goldPackageBonuses.map(g => ({
+                id: Number(g.id),
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                type: '购买黄金礼包奖励',
+                description: '',
+            }));
+
+            const newMasonicPackageBonuses = masonicPackageBonuses.map(g => ({
+                id: Number(g.id),
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                type: '购买共济礼包奖励',
+                description: g.from_user ? `来源 ${g.from_user.phone_number}` : '',
+            }));
+
+            const newMasonicPackageEarnings = masonicPackageEarnings.map(g => ({
+                id: Number(g.id),
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                type: '购买共济礼包收益',
+                description: '',
+            }));
+
+            const newFederalPackageBonuses = federalPackageBonuses.map(g => ({
+                id: Number(g.id),
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                type: '购买联储黄金礼包奖励',
+                description: g.from_user ? `来源 ${g.from_user.phone_number}` : '',
+            }));
+
+            const newFederalPackageEarnings = federalPackageEarnings.map(g => {
+                const typeMap = { 0: '储备收益', 2: '本金返还' };
+                let desc = typeMap[g.type] ?? '';
+
+                if (
+                    g.type === 0 &&
+                    moment(g.createdAt).isBetween(
+                        moment('2026-04-23 00:00:00'),
+                        moment('2026-04-27 23:59:59'),
+                        undefined,
+                        '[]' // inclusive
+                    )
+                ) {
+                    desc = '余额收益';
+                }
+
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '联储黄金礼包收益',
+                    description: desc,
+                };
+            });
+
+            const newWithdrawals = withdrawals.map(w => ({
+                id: Number(w.id),
+                amount: -Number(w.amount),
+                createdAt: w.createdAt,
+                type: '提现',
+                description: '',
+            }));
+
+            const newCustomizeWallet = customizeWallet.map(c => {
+                const content = c.content ?? {};
+                const amt = Math.abs(Number(content.amount ?? 0));
+                return {
+                    id: Number(c.id),
+                    amount: content.addOrSubstract == 1 ? amt : -amt,
+                    createdAt: c.createdAt,
+                    type: '管理员调整钱包',
+                    description: '',
+                };
+            });
+
+            const newGoldPackageReturns = goldPackageReturns.map(g => ({
+                id: Number(g.id),
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                type: '报销',
+                description: packageMap[g.package_id] ?? '',
+            }));
+
+            const newBalanceTransfer = balanceTransfer.map(b => {
+                const isSender = b.from_user == userId;
+                return {
+                    id: Number(b.id),
+                    amount: isSender ? -Number(b.amount) : Number(b.amount), // IMPORTANT: direction fix
+                    createdAt: b.createdAt,
+                    type: `余额转账 - ${isSender ? '转出' : '转入'}`,
+                    description: isSender ? `转到 ${b.to?.phone_number ?? ''}` : `来源 ${b.from?.phone_number ?? ''}`,
+                };
+            });
+
+            let mergedData = [
+                ...newReward3,
+                ...newTransfers,
+                ...newBuyGolds,
+                ...newSellGolds,              // <-- you forgot to merge sellGolds in your original code
+                ...newGoldPackageBonuses,
+                ...newMasonicPackageBonuses,
+                ...newMasonicPackageEarnings,
+                ...newFederalPackageBonuses,
+                ...newFederalPackageEarnings,
+                ...newWithdrawals,
+                ...newCustomizeWallet,
+                ...newGoldPackageReturns,
+                ...newBalanceTransfer,
+            ];
+
+            // Authorization Letter [授权书]
+            if (letter && letter.is_used) {
+                mergedData.push({
+                    id: Number(letter.id),
+                    amount: 100,
+                    createdAt: letter.updatedAt,
+                    type: '使用上合组织中国区授权书',
+                    description: '',
+                });
+            }
+
+            // Sort global feed
+            mergedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            // Paginate merged feed
+            const paged = mergedData.slice(offset, offset + pageSize);
+
+            // Best-effort hasMore (not exact total)
+            const hasMore = mergedData.length > offset + pageSize;
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
+                data: paged,
+                meta: { page, pageSize, hasMore },
+            });
+        } catch (error) {
+            errLogger(`[BALANCE_TRACKING_QUERY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
 }
