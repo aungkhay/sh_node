@@ -5117,7 +5117,7 @@ class Controller {
                 }),
 
                 GoldPackageReturn.findAll({
-                    where: { user_id: userId },
+                    where: { user_id: userId, package_id: { [Op.in]: [1, 2] } },
                     attributes: ['id', 'amount', 'package_id', 'description', 'createdAt'],
                     order: [['createdAt', 'DESC']],
                     limit: PER_TABLE_LIMIT,
