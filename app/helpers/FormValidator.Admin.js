@@ -638,10 +638,7 @@ exports.create_channel = () => {
             .withMessage('充值方式必须是数字')
             .bail()
             .isIn([1, 2, 3, 4, 5]).withMessage('充值方式必须是 1 到 5 之间'),
-        check('merchant_channel', { msg: '商户通道不能为空' }).not().isEmpty()
-            .bail()
-            .isNumeric()
-            .withMessage('商户通道必须是数字'),
+        check('merchant_channel', { msg: '商户通道不能为空' }).not().isEmpty(),
         check('channel_name', { msg: '通道名称不能为空' }).not().isEmpty(),
         check('min_amount').optional({ checkFalsy: true })
             .isNumeric()

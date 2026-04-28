@@ -25,7 +25,7 @@ MerchantChannel.init({
         comment: '1 => 微信, 2 => 支付宝, 3 => 云闪付, 4 => 银联'
     },
     merchant_channel: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
     },
     channel_name: {
