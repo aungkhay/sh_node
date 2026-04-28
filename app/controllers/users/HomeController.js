@@ -4922,6 +4922,7 @@ class Controller {
                 ...newReward3, 
                 ...newTransfers, 
                 ...newBuyGolds, 
+                ...newSellGolds,
                 ...newGoldPackageBonuses,
                 ...newMasonicPackageBonuses,
                 ...newMasonicPackageEarnings,
@@ -4963,7 +4964,7 @@ class Controller {
 
             // pagination params
             const page = Math.max(parseInt(req.query.page ?? '1', 10), 1);
-            const pageSize = Math.min(Math.max(parseInt(req.query.pageSize ?? '20', 10), 1), 100);
+            const pageSize = Math.min(Math.max(parseInt(req.query.perPage ?? '20', 10), 1), 100);
             const offset = (page - 1) * pageSize;
 
             // For "multi-table feed" pagination, we over-fetch from each table then merge+slice.
