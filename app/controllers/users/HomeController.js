@@ -1536,7 +1536,7 @@ class Controller {
 
             const lockGen = await this.redisHelper.setLock(`LOCK_GENERATE_RED_ENVELOP_${userId}`, 1, 600); // 10 minutes lock
             if (!lockGen) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过一次', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已预约成功本轮红包雨，无需重复预约', {});
             }
 
             /* ===============================
