@@ -5059,6 +5059,11 @@ class Controller {
                 }),
 
                 MasonicPackageEarn.findAll({
+                    include: {
+                        model: MasonicPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
                     where: { user_id: userId },
                     attributes: ['id', 'amount', 'createdAt'],
                     order: [['createdAt', 'DESC']],
@@ -5193,7 +5198,7 @@ class Controller {
                 amount: Number(g.amount),
                 createdAt: g.createdAt,
                 type: '购买共济礼包收益',
-                description: '',
+                description: g.package ? g.package.product_name : '',
             }));
 
             const newFederalPackageBonuses = federalPackageBonuses.map(g => ({
