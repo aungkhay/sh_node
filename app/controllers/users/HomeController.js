@@ -5244,7 +5244,7 @@ class Controller {
                     id: Number(c.id),
                     amount: content.addOrSubstract == 1 ? amt : -amt,
                     createdAt: c.createdAt,
-                    type: '管理员调整钱包',
+                    type: '系统操作',
                     description: '',
                 };
             });
