@@ -374,31 +374,10 @@ class Controller {
     GET_PAYMENT_CHANNELS = async (req, res) => {
         try {
             const { method_id } = req.params;
-
-            let merchantIds = await this.redisHelper.getValue('deposit_merchant_ids');
-            if (!merchantIds) {
-                const depositMerchants = await DepositMerchant.findAll({
-                    where: { status: 1 },
-                    attributes: ['id'],
-                    order: [['id', 'ASC']]
-                });
-                const merchantArr = depositMerchants.map(m => m.id);
-                await this.redisHelper.setValue('deposit_merchant_ids', JSON.stringify(merchantArr));
-                merchantIds = JSON.stringify(merchantArr);
-            }
-            merchantIds = JSON.parse(merchantIds);
-            let currentMerchant = await this.redisHelper.getValue(`current_deposit_merchant_${method_id}_${merchantIds[0]}`);
-            if (!currentMerchant) {
-                await this.redisHelper.setValue(`current_deposit_merchant_${method_id}_${merchantIds[0]}`, JSON.stringify({ merchantId: merchantIds[0], remain: 20 }));
-                currentMerchant = JSON.stringify({ merchantId: merchantIds[0], remain: 20 });
-            }
-            currentMerchant = JSON.parse(currentMerchant);
-            
             const channels = await MerchantChannel.findAll({
                 where: { 
                     status: 1, 
-                    payment_method: method_id,
-                    deposit_merchant_id: currentMerchant.merchantId
+                    payment_method: method_id
                 },
                 attributes: ['id', 'payment_method', 'channel_name', 'min_amount', 'max_amount'],
                 // order: [['sort', 'ASC']],
@@ -695,27 +674,6 @@ class Controller {
                     before_amount: Number(user.reserve_fund),
                     after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
                 });
-                
-                const currentMerchantKey = `current_deposit_merchant_${channel.payment_method}_${channel.deposit_merchant_id}`;
-                let currentMerchant = await this.redisHelper.getValue(currentMerchantKey);
-                if (currentMerchant) {
-                    currentMerchant = JSON.parse(currentMerchant);
-                    if (currentMerchant.remain - 1 <= 0) {
-                        let merchantIds = await this.redisHelper.getValue('deposit_merchant_ids');
-                        if (merchantIds) {
-                            merchantIds = JSON.parse(merchantIds);
-                            // remove first item
-                            merchantIds.shift();
-                            // push to end of array
-                            merchantIds.push(channel.deposit_merchant_id);
-                            await this.redisHelper.setValue('deposit_merchant_ids', JSON.stringify(merchantIds));
-                        }
-                    } else {
-                        // decrement remain count
-                        currentMerchant.remain = currentMerchant.remain - 1;
-                        await this.redisHelper.setValue(currentMerchantKey, JSON.stringify(currentMerchant));
-                    }
-                }
             }
 
             if (success) {
