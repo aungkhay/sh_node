@@ -373,6 +373,8 @@ class Controller {
 
     GET_PAYMENT_CHANNELS = async (req, res) => {
         try {
+            const { method_id } = req.params;
+
             let merchantIds = await this.redisHelper.getValue('deposit_merchant_ids');
             if (!merchantIds) {
                 const depositMerchants = await DepositMerchant.findAll({
@@ -385,14 +387,13 @@ class Controller {
                 merchantIds = JSON.stringify(merchantArr);
             }
             merchantIds = JSON.parse(merchantIds);
-            let currentMerchant = await this.redisHelper.getValue(`current_deposit_merchant_${merchantIds[0]}`);
+            let currentMerchant = await this.redisHelper.getValue(`current_deposit_merchant_${method_id}_${merchantIds[0]}`);
             if (!currentMerchant) {
-                await this.redisHelper.setValue(`current_deposit_merchant_${merchantIds[0]}`, JSON.stringify({ merchantId: merchantIds[0], remain: 20 }));
+                await this.redisHelper.setValue(`current_deposit_merchant_${method_id}_${merchantIds[0]}`, JSON.stringify({ merchantId: merchantIds[0], remain: 20 }));
                 currentMerchant = JSON.stringify({ merchantId: merchantIds[0], remain: 20 });
             }
             currentMerchant = JSON.parse(currentMerchant);
-
-            const { method_id } = req.params;
+            
             const channels = await MerchantChannel.findAll({
                 where: { 
                     status: 1, 
@@ -695,7 +696,7 @@ class Controller {
                     after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
                 });
                 
-                const currentMerchantKey = `current_deposit_merchant_${channel.deposit_merchant_id}`;
+                const currentMerchantKey = `current_deposit_merchant_${channel.payment_method}_${channel.deposit_merchant_id}`;
                 let currentMerchant = await this.redisHelper.getValue(currentMerchantKey);
                 if (currentMerchant) {
                     currentMerchant = JSON.parse(currentMerchant);
