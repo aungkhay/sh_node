@@ -279,6 +279,25 @@ class Controller {
                     resMsg = 'OK';
                     break;
 
+                case 'jinkezhifu':
+                    const jinkeReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const jinkeCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("jinkeCleaned:", jinkeCleaned);
+                    const jinkeSign = this.merchantController.CREATE_SIGN(jinkeCleaned, `&key=${merchant.app_key}`);
+                    console.log("jinkeSign:", jinkeSign, "jinkeReqSign:", jinkeReqSign);
+
+                    // 订单状态：0-待支付，1-成功
+                    if (Number(reqBody.state) === 1) {
+                        status = 1;
+                    } else if (Number(reqBody.state) === 0) {
+                        status = 0;
+                    } else {
+                        status = 2;
+                    }
+                    resMsg = 'SUCCESS';
                 default:
                     break;
             }
@@ -478,6 +497,10 @@ class Controller {
                 case 'payeasyer':
                     payload = await this.merchantController.PAYEASYER(channel, amount, userId);
                     break;
+                case 'jinkezhifu':
+                    payload = await this.merchantController.JINKEZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
 
                 default:
                     break;
@@ -596,6 +619,11 @@ class Controller {
                     data = { html: response.data };
                     success = true;
                     break;
+                case 'jinkezhifu':
+                    if (resData.code == 0) {
+                        redirectUrl = resData?.data?.payUrl;
+                        success = true;
+                    }
                 default:
                     break;
             }
