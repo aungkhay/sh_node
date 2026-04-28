@@ -298,6 +298,30 @@ class Controller {
                         status = 2;
                     }
                     resMsg = 'SUCCESS';
+                    break;
+
+                case 'huiruzhifu':
+                    // {"merOrderTid":"1723162461080784896","tid":"XM4812952343470771467","money":"499.00","status":1,"clientUserPayRemark":"付款人备注","sign":"24A78993821969CE5FA8C148F21A8CC4"}
+                    const huiruzhifuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const huiruzhifuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("huiruzhifuCleaned:", huiruzhifuCleaned);
+                    const huiruzhifuSign = this.merchantController.CREATE_SIGN(huiruzhifuCleaned, `&key=${merchant.app_key}`);
+                    console.log("huiruzhifuSign:", huiruzhifuSign, "huiruzhifuReqSign:", huiruzhifuReqSign);
+
+                    // 状态 0=待处理 1=成功 2=失败 3=异常 4=超时关闭
+                    if (Number(reqBody.status) === 1) {
+                        status = 1;
+                    } else if (Number(reqBody.status) === 2) {
+                        status = 2;
+                    } else {
+                        status = 0;
+                    }
+                    resMsg = 'success';
+                    break;
+                    
                 default:
                     break;
             }
@@ -501,6 +525,10 @@ class Controller {
                     payload = await this.merchantController.JINKEZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'huiruzhifu':
+                    const huiruzhifuClientIp = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                    payload = await this.merchantController.HUIRUZHIFU(channel, amount, huiruzhifuClientIp, userId);
+                    break;
 
                 default:
                     break;
@@ -622,6 +650,12 @@ class Controller {
                 case 'jinkezhifu':
                     if (resData.code == 0) {
                         redirectUrl = resData?.data?.payUrl;
+                        success = true;
+                    }
+                    break;
+                case 'huiruzhifu':
+                    if (resData.status == 0) {
+                        redirectUrl = resData?.result?.payUrl;
                         success = true;
                     }
                 default:

@@ -27,3 +27,9 @@ https://merchant.hjzf.one/public/Integration-guide
 
 FuLinXin支付
 https://fulinxin-mch-api.yzdjb.com/api/anon/apiDoc
+
+金科支付
+https://jkmch-huixin.deepding.com/document?checkedKey=101
+
+汇入支付
+http://jwm4tpa6nh6qqh8acv.itxt003.net/#/publicapidoc
