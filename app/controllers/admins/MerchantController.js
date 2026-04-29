@@ -56,6 +56,8 @@ class Controller {
                 { where: { deposit_merchant_id: id } }
             );
 
+            await this.redisHelper.deleteKey(`all_merchants`);
+
             // Log
             await this.adminLogger(req, 'DepositMerchant', 'update');
 
@@ -148,6 +150,8 @@ class Controller {
             }
 
             await channel.update({ status: status });
+
+            await this.redisHelper.deleteKey(`all_merchants`);
 
             // Log
             await this.adminLogger(req, 'MerchantChannel', 'update');

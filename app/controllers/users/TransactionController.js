@@ -385,18 +385,58 @@ class Controller {
     GET_PAYMENT_CHANNELS = async (req, res) => {
         try {
             const { method_id } = req.params;
+
+            let allMerchants = await this.redisHelper.getValue('all_merchants');
+            if (!allMerchants) {
+                const methods = await MerchantChannel.findAll({
+                    where: { status: 1 },
+                    attributes: ['id', 'payment_method', 'deposit_merchant_id'],
+                });
+                // make group by payment_method
+                const merchantIds = {};
+                methods.forEach(m => {
+                    if (!merchantIds[m.payment_method]) {
+                        merchantIds[m.payment_method] = [];
+                    }
+                    if (!merchantIds[m.payment_method].includes(m.deposit_merchant_id)) {
+                        merchantIds[m.payment_method].push(m.deposit_merchant_id);
+                    }
+                });
+                for (const method in merchantIds) {
+                    await this.redisHelper.setValue(`method_${method}_merchants`, JSON.stringify(merchantIds[method]));
+                    for (let i = 0; i < merchantIds[method].length; i++) {
+                        await this.redisHelper.setValue(`method_${method}_merchants_${merchantIds[method][i]}`, 20);
+                    }
+                }
+
+                const uniqueMerchantIds = [...new Set(methods.map(m => m.deposit_merchant_id))];
+                await this.redisHelper.setValue('all_merchants', JSON.stringify(uniqueMerchantIds));
+                allMerchants = JSON.stringify(uniqueMerchantIds);
+            }
+            allMerchants = JSON.parse(allMerchants);
+            // console.log("allMerchants:", allMerchants);
+            const currentMethodMerchants = await this.redisHelper.getValue(`method_${method_id}_merchants`);
+            const currentMerchantId = currentMethodMerchants ? JSON.parse(currentMethodMerchants)[0] : null;
+            // console.log(currentMerchantId);
+
             const channel = await MerchantChannel.findOne({
                 where: { 
                     status: 1, 
-                    payment_method: method_id
+                    payment_method: method_id,
+                    deposit_merchant_id: currentMerchantId
                 },
                 attributes: ['id', 'payment_method', 'channel_name', 'min_amount', 'max_amount'],
                 // order: [['sort', 'ASC']],
-                order: [Sequelize.literal('RAND()')],
+                // order: [Sequelize.literal('RAND()')],
             });
+            const data = [];
+            if (channel) {
+                data.push(channel);
+            }
             
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, [channel]);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, data);
         } catch (error) {
+            console.log(error);
             errLogger(`[GET_PAYMENT_CHANNELS]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
@@ -684,6 +724,21 @@ class Controller {
                     before_amount: Number(user.reserve_fund),
                     after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
                 });
+
+                const redisKey = `method_${channel.payment_method}_merchants_${channel.deposit_merchant_id}`;
+                await this.redisHelper.decrementValue(redisKey);
+                const merchantCount = await this.redisHelper.getValue(redisKey);
+                if (merchantCount <= 0) {
+                    const currentMethodMerchants = await this.redisHelper.getValue(`method_${channel.payment_method}_merchants`);
+                    if (currentMethodMerchants) {
+                        let merchantIds = JSON.parse(currentMethodMerchants);
+                        // remove first item and push to end of array
+                        merchantIds.shift();
+                        merchantIds.push(channel.deposit_merchant_id);
+                        await this.redisHelper.setValue(redisKey, 20);
+                        await this.redisHelper.setValue(`method_${channel.payment_method}_merchants`, JSON.stringify(merchantIds));
+                    }
+                }
             }
 
             if (success) {
