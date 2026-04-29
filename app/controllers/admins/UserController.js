@@ -2689,7 +2689,7 @@ class Controller {
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: `联储黄金礼包收益 - ${typeMap[g.type]}`,
-                    description: g.description ? g.description : `储备金 ➕ ${Number(g.amount)}`
+                    description: g.description ? g.description : `余额 ➕ ${Number(g.amount)}`
                 }
             });
 

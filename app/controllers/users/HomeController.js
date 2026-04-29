@@ -5213,24 +5213,12 @@ class Controller {
                 const typeMap = { 0: '储备收益', 2: '本金返还' };
                 let desc = typeMap[g.type] ?? '';
 
-                if (
-                    g.type === 0 &&
-                    moment(g.createdAt).isBetween(
-                        moment('2026-04-23 00:00:00'),
-                        moment('2026-04-27 23:59:59'),
-                        undefined,
-                        '[]' // inclusive
-                    )
-                ) {
-                    desc = '余额收益';
-                }
-
                 return {
                     id: Number(g.id),
                     amount: Number(g.amount),
                     createdAt: g.createdAt,
                     type: '联储黄金礼包收益',
-                    description: desc,
+                    description: desc.concat('-余额'),
                 };
             });
 

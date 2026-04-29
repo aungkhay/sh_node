@@ -2453,7 +2453,7 @@ class CronJob {
 
                     await pack.update(updateObj, { transaction: t });
 
-                    await user.increment({ reserve_fund: reserveEarn + originalPrice }, { transaction: t });
+                    await user.increment({ balance: reserveEarn + originalPrice }, { transaction: t });
 
                     await t.commit();
                 } catch (error) {

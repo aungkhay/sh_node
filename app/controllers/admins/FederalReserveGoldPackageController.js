@@ -240,7 +240,7 @@ class Controller {
                 if (type == 0) {
                     // 储备收益
                     await pkgHistory.update({ is_returned_earn: true, return_earn_date: new Date() }, { transaction: t });
-                    await user.increment({ reserve_fund: Number(pkgHistory.reserve_earn) }, { transaction: t });
+                    await user.increment({ balance: Number(pkgHistory.reserve_earn) }, { transaction: t });
                     releaseAmount = pkgHistory.reserve_earn;
                 } else if (type == 1) {
                     // 个人黄金
@@ -249,7 +249,7 @@ class Controller {
                 } else if (type == 2) {
                     // 本金返还
                     await pkgHistory.update({ is_returned_price: true, return_price_date: new Date() }, { transaction: t });
-                    await user.increment({ reserve_fund: Number(pkgHistory.price) }, { transaction: t });
+                    await user.increment({ balance: Number(pkgHistory.price) }, { transaction: t });
                     releaseAmount = pkgHistory.price;
                 } else if (type == 3) {
                     // 共济基金金额
