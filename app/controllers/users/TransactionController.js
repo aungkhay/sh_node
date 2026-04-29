@@ -26,7 +26,18 @@ class Controller {
     }
 
     RECHARGE_CALLBACK = async (req, res) => {
+        const lockKey = `lock:recharge_callback_${req.params.orderNo}:${req.params.userId}`;
+        let redisLocked = false;
+
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 3);
+            if (redisLocked !== 'OK') {
+                return res.send('');
+            }
+
             const { orderNo, merchantId, userId } = req.params;
             callbackLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
             const deposit = await Deposit.findOne({ 
