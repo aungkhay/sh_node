@@ -340,8 +340,13 @@ class Controller {
             if (deposit.status == 0 && [1, 2].includes(status)) {
                 const t = await db.transaction();
                 try {
-                    await deposit.update({ status: status, callback_data: JSON.stringify(reqBody) }, { transaction: t });
-                    if (status === 1) {
+                    const result = await Deposit.update(
+                        {  status: status, callback_data: JSON.stringify(reqBody) }, 
+                        { where: { id: deposit.id, status: 0 }, 
+                        transaction: t
+                    });
+
+                    if (status === 1 && result[0] === 1) {
                         await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
                     }
                     await t.commit();
