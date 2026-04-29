@@ -188,7 +188,7 @@ module.exports = async () => {
         {
             type: 'masonic_package_period',
             title: '授权计划申报时间',
-            val: '2026-04-20 00:00:00-2026|05-05 23:59:59',
+            val: '2026-04-20 00:00:00|2026-05-05 23:59:59',
             description: '-',
             data_type: 'string'
         },
@@ -209,7 +209,7 @@ module.exports = async () => {
         {
             type: 'federal_reserve_gold_package_period',
             title: '联储黄金礼包申报时间',
-            val: '2026-04-20 00:00:00-2026|05-05 23:59:59',
+            val: '2026-04-20 00:00:00|2026-05-05 23:59:59',
             description: '-',
             data_type: 'string'
         },
@@ -219,7 +219,28 @@ module.exports = async () => {
             val: '30000',
             description: '-',
             data_type: 'integer'
-        }
+        },
+        {
+            type: 'policy_package_description',
+            title: '上合贡献政策描述',
+            val: '-',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'policy_package_period',
+            title: '上合贡献政策申报时间',
+            val: '2026-05-01 00:00:00|2026-05-10 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'policy_package_daily_release_qty',
+            title: '上合贡献政策每日发放数量',
+            val: '100000',
+            description: '-',
+            data_type: 'integer'
+        },
     ];
 
     const count = await Config.count();

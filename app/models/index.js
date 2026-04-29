@@ -61,6 +61,10 @@ const FederalReserveGoldPackage = require('./FederalReserveGoldPackage');
 const FederalReserveGoldPackageHistory = require('./FederalReserveGoldPackageHistory');
 const FederalReserveGoldPackageBonuses = require('./FederalReserveGoldPackageBonuses');
 const FederalReserveGoldPackageEarn = require('./FederalReserveGoldPackageEarn');
+const PolicyPackage = require('./PolicyPackage');
+const PolicyPackageHistory = require('./PolicyPackageHistory');
+const PolicyPackageBonuses = require('./PolicyPackageBonuses');
+const PolicyPackageEarn = require('./PolicyPackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -306,6 +310,26 @@ FederalReserveGoldPackageEarn.belongsTo(FederalReserveGoldPackageHistory, { fore
 FederalReserveGoldPackage.hasMany(FederalReserveGoldPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
 FederalReserveGoldPackageEarn.belongsTo(FederalReserveGoldPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ POLICY_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(PolicyPackageHistory, { foreignKey: 'user_id', as: 'policy_package_histories', onDelete: 'CASCADE' });
+PolicyPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== POLICY_PACKAGE_HISTORY ↔️ POLICY_PACKAGE_BONUSES (1:N) ==========
+PolicyPackageHistory.hasMany(PolicyPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+PolicyPackageBonuses.belongsTo(PolicyPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== POLICY_PACKAGE_HISTORY ↔️ POLICY_PACKAGE_EARN (1:N) ==========
+PolicyPackageHistory.hasMany(PolicyPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+PolicyPackageEarn.belongsTo(PolicyPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== POLICY_PACKAGE ↔️ POLICY_PACKAGE_EARN (1:N) ==========
+PolicyPackage.hasMany(PolicyPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+PolicyPackageEarn.belongsTo(PolicyPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== POLICY_PACKAGE ↔️ POLICY_PACKAGE_HISTORY (1:N) ==========
+PolicyPackage.hasMany(PolicyPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+PolicyPackageHistory.belongsTo(PolicyPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -363,6 +387,10 @@ const models = {
     FederalReserveGoldPackageHistory,
     FederalReserveGoldPackageBonuses,
     FederalReserveGoldPackageEarn,
+    PolicyPackage,
+    PolicyPackageHistory,
+    PolicyPackageBonuses,
+    PolicyPackageEarn,
 };
 
 // Export models + db connection

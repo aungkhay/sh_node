@@ -5197,7 +5197,7 @@ class Controller {
                 id: Number(g.id),
                 amount: Number(g.amount),
                 createdAt: g.createdAt,
-                type: '购买共济礼包收益',
+                type: '上合终身授权计划收益',
                 description: g.package ? g.package.product_name : '',
             }));
 

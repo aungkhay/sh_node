@@ -113,6 +113,12 @@
     { "model": "联储黄金礼包", "title": "收益记录", "name": "federal-reserve-gold-package-earn-history-list" },
     { "model": "联储黄金礼包", "title": "发放收益", "name": "federal-reserve-gold-package-release" },
 
+    { "model": "上合贡献政策", "title": "产品列表", "name": "policy-package-list" },
+    { "model": "上合贡献政策", "title": "编辑产品", "name": "policy-package-update" },
+    { "model": "上合贡献政策", "title": "购买记录", "name": "policy-package-history-list" },
+    { "model": "上合贡献政策", "title": "推荐奖励记录", "name": "policy-package-bonus-history-list" },
+    { "model": "上合贡献政策", "title": "收益记录", "name": "policy-package-earn-history-list" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 

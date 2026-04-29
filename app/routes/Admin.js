@@ -277,6 +277,16 @@ class AdminRoute extends express.Router {
         this.post('/federal-reserve-gold-package/history/:id/release/:type', middleware.isLoggedIn('federal-reserve-gold-package-release'), FederalReserveGoldPackageCtrl.RELEASE_PACKAGE_EARN);
         this.get('/federal-reserve-gold-package/bonus-history', middleware.isLoggedIn('federal-reserve-gold-package-bonus-history-list'), FederalReserveGoldPackageCtrl.BONUSES_HISTORY);
         this.get('/federal-reserve-gold-package/earn-history', middleware.isLoggedIn('federal-reserve-gold-package-earn-history-list'), FederalReserveGoldPackageCtrl.EARN_HISTORY);
+
+        // Policy Package
+        let PolicyPackageController = require('../controllers/admins/PolicyPackageController');
+        let PolicyPackageCtrl = new PolicyPackageController(app);
+        this.get('/policy-packages', middleware.isLoggedIn('policy-package-list'), PolicyPackageCtrl.INDEX);
+        this.post('/policy-packages/:id/upload', PolicyPackageCtrl.UPLOAD);
+        this.post('/policy-packages/:id/update', FormValidator.update_policy_package(), middleware.isLoggedIn('policy-package-update'), PolicyPackageCtrl.UPDATE);
+        this.get('/policy-package/history', middleware.isLoggedIn('policy-package-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_HISTORY);
+        this.get('/policy-package/bonus-history', middleware.isLoggedIn('policy-package-bonus-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_BONUS_HISTORY);
+        this.get('/policy-package/earn-history', middleware.isLoggedIn('policy-package-earn-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_EARN_HISTORY);
     }
 }
 

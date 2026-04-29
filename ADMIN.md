@@ -1480,3 +1480,63 @@ const params = {
     to_phone: ''
 }
 ```
+
+### 上合贡献政策
+``` js
+// [GET] Product List
+const url = `${baseURL}/policy-packages`;
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/policy-packages/${packageId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [POST] Update Product
+const url = `${baseURL}/policy-packages/${packageId}/update`;
+const data = {
+    product_name: '',
+    price: 100,
+    daily_earn: 10,
+    masonic_fund: 100, // optional
+    is_release_authorize_letter: 0, // 1 是 0 否
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    status: 1, // 1-在售, 2-下架, 3-售罄
+}
+
+// [GET] 购买记录
+const url = `${baseURL}/policy-package/history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: ''
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/policy-package/bonus-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/policy-package/earn-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: ''
+}
+```
