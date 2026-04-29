@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -2511,6 +2511,78 @@ class CronJob {
             console.log(`[RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE]: Completed processing ${history.length} record(s).`);
         } catch (error) {
             errLogger(`[RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE]: ${error.stack}`);
+        }
+    }
+
+    GIVE_POLICY_PACKAGE_EARN = async () => {
+        try {
+            const today = moment().format('YYYY-MM-DD');
+            const packages = await PolicyPackageHistory.findAll({
+                attributes: ['id', 'user_id', 'package_id', 'price', 'daily_earn', 'end_date', 'createdAt'],
+                where: {
+                    is_finished: 0,
+                    createdAt: {
+                        [Op.lt]: `${today} 00:00:00`,
+                    }
+                }
+            });
+
+            for (const pack of packages) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+                    
+                    const dailyEarn = Number(pack.daily_earn);
+                    if (dailyEarn > 0) {
+
+                        // 日返最后一天同时返还本金
+                        if (moment().isSame(moment(pack.end_date), 'day')) {
+
+                            await user.increment({ balance: dailyEarn + Number(pack.price), masonic_fund: Number(pack.masonic_fund) }, { transaction: t });
+                            await PolicyPackageEarn.create({
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                package_id: pack.package_id,
+                                package_history_id: pack.id,
+                                amount: dailyEarn,
+                            }, { transaction: t });
+                            await PolicyPackageEarn.create({
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                package_id: pack.package_id,
+                                package_history_id: pack.id,
+                                amount: Number(pack.price),
+                            }, { transaction: t });
+                            await MasonicFundHistory.create({
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                amount: Number(pack.masonic_fund),
+                                description: '上合贡献政策 - 定时任务发共济基金',
+                            }, { transaction: t });
+                            await pack.update({ is_finished: 1 }, { transaction: t });
+
+                        } else {
+                            await user.increment({ balance: dailyEarn }, { transaction: t });
+                            await PolicyPackageEarn.create({
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                amount: dailyEarn,
+                            }, { transaction: t });
+                        }
+                    }
+
+                    await t.commit();
+                    console.log(`[GIVE_POLICY_PACKAGE_EARN][User ID: ${pack.user_id}]: Released ${dailyEarn} from policy package to balance.`);
+                } catch (error) {
+                    errLogger(`[GIVE_POLICY_PACKAGE_EARN][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[GIVE_POLICY_PACKAGE_EARN]: ${error.stack}`);
         }
     }
 }

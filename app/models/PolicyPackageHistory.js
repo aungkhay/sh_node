@@ -51,6 +51,16 @@ PolicyPackageHistory.init({
         allowNull: false,
         defaultValue: 0,
     },
+    end_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '到期时间'
+    },
+    is_finished: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: 0,
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,

@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -4706,6 +4706,7 @@ class Controller {
                             package_id: policyPackage.id,
                             price: index == 0 ? policyPackage.price : 0,
                             daily_earn: policyPackage.daily_earn,
+                            end_date: moment().add(policyPackage.period, 'days').toDate(),
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
 
@@ -4719,6 +4720,7 @@ class Controller {
                         package_id: policyPackage.id,
                         price: policyPackage.price,
                         daily_earn: policyPackage.daily_earn,
+                        end_date: moment().add(policyPackage.period, 'days').toDate(),
                     }
                     const pkgHistoryItem = await PolicyPackageHistory.create(obj, { transaction: t });
                     pkgHistory.push(pkgHistoryItem);
@@ -5385,6 +5387,8 @@ class Controller {
                 goldPackageReturns,
                 balanceTransfer,
                 letter,
+                policyPackageBonuses,
+                policyPackageEarnings
             ] = await Promise.all([
                 RewardRecord.findAll({
                     where: { user_id: userId, reward_id: 3 },
@@ -5524,6 +5528,32 @@ class Controller {
                     where: { user_id: userId, reward_id: 6 },
                     attributes: ['id', 'is_used', 'createdAt', 'updatedAt'],
                 }),
+
+                PolicyPackageBonuses.findAll({
+                    include: {
+                        model: User,
+                        as: 'from_user',
+                        attributes: ['phone_number'],
+                    },
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+
+                PolicyPackageEarn.findAll({
+                    include: {
+                        model: PolicyPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
             ]);
 
             const newReward3 = reward3.map(r => ({
@@ -5642,6 +5672,22 @@ class Controller {
                 };
             });
 
+            const newPolicyPackageBonuses = policyPackageBonuses.map(g => ({
+                id: Number(g.id),
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                type: '上合贡献政策奖励',
+                description: g.from_user ? `来源 ${g.from_user.phone_number}` : '',
+            }));
+
+            const newPolicyPackageEarnings = policyPackageEarnings.map(g => ({
+                id: Number(g.id),
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                type: '上合贡献政策收益',
+                description: g.package ? g.package.product_name : '',
+            }));
+
             let mergedData = [
                 ...newReward3,
                 ...newTransfers,
@@ -5656,6 +5702,8 @@ class Controller {
                 ...newCustomizeWallet,
                 ...newGoldPackageReturns,
                 ...newBalanceTransfer,
+                ...newPolicyPackageBonuses,
+                ...newPolicyPackageEarnings,
             ];
 
             // Authorization Letter [授权书]

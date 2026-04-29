@@ -331,6 +331,15 @@ class Controller {
                 },
             });
 
+            // 上合组织乌兹别克斯坦区授权书
+            const letterOfUzbekistan = await RewardRecord.count({
+                where: {
+                    user_id: userId,
+                    reward_id: 13,
+                    is_used: 0,
+                },
+            });
+
             // Federal Gold
             const federalGold = await FederalReserveGoldPackageEarn.sum('amount', {
                 where: {
@@ -347,9 +356,9 @@ class Controller {
                 next_rank_point: 0,
                 gold_count_in_coupon: goldCouponCount,
                 total_coupon_gold_price: goldCouponCount * (goldPrice ? goldPrice.price : 0),
-                letter_of_tajikistan: letterOfTajikistan + letterOfKazakhstan,
-                gold_count_in_tajikstan: (letterOfTajikistan * 1000) + (letterOfKazakhstan * 1000),
-                total_tajikstan_gold_price: (letterOfTajikistan * 1000 + letterOfKazakhstan * 1000) * (goldPrice ? goldPrice.price : 0),
+                letter_of_tajikistan: letterOfTajikistan + letterOfKazakhstan + letterOfUzbekistan,
+                gold_count_in_tajikstan: (letterOfTajikistan * 1000) + (letterOfKazakhstan * 1000) + (letterOfUzbekistan * 1000),
+                total_tajikstan_gold_price: (letterOfTajikistan * 1000 + letterOfKazakhstan * 1000 + letterOfUzbekistan * 1000) * (goldPrice ? goldPrice.price : 0),
                 federal_reserve_gold_count: federalGold,
                 federal_reserve_gold_price: federalGold * (goldPrice ? goldPrice.price : 0),
             }
