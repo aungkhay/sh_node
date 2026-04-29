@@ -96,6 +96,12 @@ class UserRoute extends express.Router {
         this.get('/federal-reserve-gold-packages/history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_HISTORY);
         this.get('/federal-reserve-gold-packages/earn-history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_EARN_HISTORY);
         this.get('/federal-reserve-gold-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_BONUS_HISTORY);
+        // Policy Package Routes
+        this.get('/policy-packages', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE);
+        this.post('/policy-gift-packages/:id/buy', FormValidator.buy_policy_package(), middleware.isLoggedIn, HomeCtrl.BUY_POLICY_PACKAGE);
+        this.get('/policy-gift-packages/history', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE_HISTORY);
+        this.get('/policy-gift-packages/earn-history', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE_EARN_HISTORY);
+        this.get('/policy-gift-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE_BONUS_HISTORY);
 
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);

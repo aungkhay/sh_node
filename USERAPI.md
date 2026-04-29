@@ -799,3 +799,34 @@ const url = `${baseURL}/federal-reserve-gold-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/federal-reserve-gold-packages/bonus-history`;
 ```
+
+### 上合贡献政策
+``` js
+// [GET] Masonic Gift Package
+const url = `${baseURL}/policy-packages`;
+
+// [POST] Buy Policy Package
+const url = `${baseURL}/policy-packages/${packageId}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Policy Package History
+const url = `${baseURL}/policy-packages/history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+// [GET] Policy Package Earn History
+const url = `${baseURL}/policy-packages/earn-history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+// [GET] Policy Package Bonus History
+const url = `${baseURL}/policy-packages/bonus-history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+```

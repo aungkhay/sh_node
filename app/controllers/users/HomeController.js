@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -4554,6 +4554,387 @@ class Controller {
         }
     }
 
+    POLICY_PACKAGE = async (req, res) => {
+        try {
+            const packages = await PolicyPackage.findAll({
+                where: {
+                    status: {
+                        [Op.ne]: 2
+                    }
+                },
+            });
+
+            let package_description = await this.redisHelper.getValue('policy_package_description');
+            if (!package_description) {
+                const conf = await Config.findOne({ where: { type: 'policy_package_description' } });
+                package_description = conf ? conf.val : '';
+                await this.redisHelper.setValue('policy_package_description', package_description);
+            }
+            let package_period = await this.redisHelper.getValue('policy_package_period');
+            if (!package_period) {
+                const conf = await Config.findOne({ where: { type: 'policy_package_period' } });
+                package_period = conf ? conf.val : '';
+                await this.redisHelper.setValue('policy_package_period', package_period);
+            }
+            let release_qty = await this.redisHelper.getValue('policy_package_daily_release_qty');
+            if (!release_qty) {
+                const conf = await Config.findOne({ where: { type: 'policy_package_daily_release_qty' } });
+                release_qty = conf ? conf.val : '';
+                await this.redisHelper.setValue('policy_package_daily_release_qty', release_qty);
+            }
+
+            const data = {
+                package_description: package_description,
+                package_period: package_period,
+                release_qty: release_qty,
+                packages: packages
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[POLICY_GIFT_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BUY_POLICY_PACKAGE = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            let openPeriod = await this.redisHelper.getValue('policy_package_period');
+            if (!openPeriod) {
+                const conf = await Config.findOne({ where: { type: 'policy_package_period' } });
+                if (conf) {
+                    openPeriod = conf.val;
+                    await this.redisHelper.setValue('policy_package_period', openPeriod);
+                }
+            }
+            if (openPeriod) {
+                const [start, end] = openPeriod.split('|');
+                const now = moment();
+                if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合贡献政策购买时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
+                }                 
+                if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合贡献政策购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
+                }
+            }
+            
+            const policyPackage = await PolicyPackage.findByPk(req.params.id);
+            if (!policyPackage) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
+            }
+
+            if (policyPackage.status === 2) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已下架', {});
+            }
+
+            if (policyPackage.status === 3) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
+            }
+
+            if (policyPackage.perchase_limit === 'DAILY' && policyPackage.quantity_limit > 0) {
+                const history = await PolicyPackageHistory.findAll({
+                    where: {
+                        user_id: req.user_id,
+                        createdAt: {
+                            [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
+                        }
+                    }
+                });
+                if (history.length >= policyPackage.quantity_limit) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
+                }
+            }
+
+            if (policyPackage.perchase_limit === 'TOTAL' && policyPackage.quantity_limit > 0) {
+                const history = await PolicyPackageHistory.findAll({
+                    where: {
+                        package_id: policyPackage.id,
+                        user_id: req.user_id
+                    }
+                });
+                if (history.length >= policyPackage.quantity_limit) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包已售罄', {});
+                }
+            }
+
+            const userId = req.user_id;
+            const payment_password = req.body.payment_password;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password']
+            });
+            if (!user.kyc) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+
+            if (Number(user.reserve_fund) < policyPackage.price) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await user.update({ reserve_fund: Number(user.reserve_fund) - policyPackage.price }, { transaction: t });
+                
+                const pkgHistory = [];
+                if (policyPackage.buy_one_get_quantity > 0) {
+                    const randomNumber = this.commonHelper.randomNumber(6);
+
+                    for (let index = 0; index <= policyPackage.buy_one_get_quantity; index++) {
+                        const obj = {
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: policyPackage.id,
+                            price: index == 0 ? policyPackage.price : 0,
+                            daily_earn: policyPackage.daily_earn,
+                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                        }
+
+                        const pkgHistoryItem = await PolicyPackageHistory.create(obj, { transaction: t });
+                        pkgHistory.push(pkgHistoryItem);
+                    }
+                } else {
+                    const obj = {
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: policyPackage.id,
+                        price: policyPackage.price,
+                        daily_earn: policyPackage.daily_earn,
+                    }
+                    const pkgHistoryItem = await PolicyPackageHistory.create(obj, { transaction: t });
+                    pkgHistory.push(pkgHistoryItem);
+                }
+
+                if (policyPackage.masonic_fund > 0) {
+                    let totalMasonicFund = 0;
+                    for (let index = 0; index < pkgHistory.length; index++) {
+                        const pkg = pkgHistory[index];
+                        totalMasonicFund += Number(policyPackage.masonic_fund);
+                            
+                        await MasonicFundHistory.create({
+                            relation: user.relation,
+                            user_id: user.id,
+                            amount: policyPackage.masonic_fund,
+                            description: `PKG-${pkg.id}`,
+                            status: 'APPROVED'
+                        }, { transaction: t });
+                    }
+                    await user.increment({ masonic_fund: totalMasonicFund }, { transaction: t });
+                }
+
+                if (policyPackage.is_release_authorize_letter) {
+                    for (let index = 0; index < pkgHistory.length; index++) {
+                        const pkg = pkgHistory[index];
+                        await RewardRecord.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            reward_id: 13, // 上合组织乌兹别克斯坦区授权书
+                            amount: 1,
+                            from_where: `PKG-${pkg.id}`
+                        }, { transaction: t });
+                    }
+                }
+
+                await policyPackage.increment({ total_quantity: -pkgHistory.length }, { transaction: t });
+                if (policyPackage.total_quantity - pkgHistory.length <= 0) {
+                    await policyPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+
+                const bonusArr = [15, 7, 3];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
+                commonLogger(`[BUY_MASONIC_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_MASONIC_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(policyPackage.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[BUY_POLICY_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: pkgHistory[0].id
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await PolicyPackageBonuses.bulkCreate(bonuses, { transaction: t });
+                }
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买礼包失败', {}); 
+            }
+
+        } catch (error) {
+            errLogger(`[BUY_POLICY_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    POLICY_PACKAGE_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+
+            const { rows, count } = await PolicyPackageHistory.findAndCountAll({
+                include: {
+                    model: PolicyPackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'price', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[MASONIC_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    POLICY_PACKAGE_EARN_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await PolicyPackageEarn.findAndCountAll({
+                include: [
+                    {
+                        model: PolicyPackageHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'price'],
+                    },
+                    {
+                        model: PolicyPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    }
+                ],
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+        } catch (error) {
+            errLogger(`[MASONIC_PACKAGE_EARN_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    POLICY_PACKAGE_BONUS_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await PolicyPackageBonuses.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                bonuses: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[MASONIC_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     BUY_AUTHORIZATION_LETTER = async (req, res) => {
         try {
             const userId = req.user_id || 156;
@@ -4567,7 +4948,7 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await user.update({ reserve_fund: Number(user.reserve_fund) - 120, have_reward_6: 1, reward_6_from_where: 2 });
+                await user.update({ reserve_fund: Number(user.reserve_fund) - 120, have_reward_6: 1, reward_6_from_where: 2 }, { transaction: t });
                 const obj = {
                     user_id: user.id,
                     relation: user.relation,
@@ -4581,7 +4962,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
             } catch (error) {
                 errLogger(`[BUY_AUTHORIZATION_LETTER][${req.user_id}]: ${error.stack}`);
-                await db.rollback();
+                await t.rollback();
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '购买失败', {});
             }
         } catch (error) {
