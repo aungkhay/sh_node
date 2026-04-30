@@ -4039,60 +4039,29 @@ class Controller {
                 });
 
                 const bonuses = [];
-                if (mPackage.buy_one_get_quantity > 0) {
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(mPackage.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
 
-                    for (let i = 0; i <= mPackage.buy_one_get_quantity; i++) {
-
-                        for (let index = 0; index < upLevelIds.length; index++) {
-                            const bonus = new Decimal(mPackage.price)
-                                .times(Number(bonusArr[index]))
-                                .times(0.01)
-                                .toNumber();
-
-                            if (bonus <= 0) {
-                                continue;
-                            }
-
-                            const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
-                            if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
-                                continue;
-                            }
-                            commonLogger(`[BUY_MASONIC_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
-                            await upLevelUser.increment({ balance: bonus }, { transaction: t });
-                            bonuses.push({
-                                relation: upLevelUser.relation,
-                                user_id: upLevelUser.id,
-                                from_user_id: user.id,
-                                amount: bonus,
-                                package_history_id: pkgHistory[0].id
-                            });
-                        }
+                    if (bonus <= 0) {
+                        continue;
                     }
-                } else {
-                    for (let index = 0; index < upLevelIds.length; index++) {
-                        const bonus = new Decimal(mPackage.price)
-                            .times(Number(bonusArr[index]))
-                            .times(0.01)
-                            .toNumber();
 
-                        if (bonus <= 0) {
-                            continue;
-                        }
-
-                        const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
-                        if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
-                            continue;
-                        }
-                        commonLogger(`[BUY_MASONIC_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
-                        await upLevelUser.increment({ balance: bonus }, { transaction: t });
-                        bonuses.push({
-                            relation: upLevelUser.relation,
-                            user_id: upLevelUser.id,
-                            from_user_id: user.id,
-                            amount: bonus,
-                            package_history_id: pkgHistory[0].id
-                        });
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
                     }
+                    commonLogger(`[BUY_MASONIC_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: pkgHistory[0].id
+                    });
                 }
                 if (bonuses.length > 0) {
                     await MasonicPackageBonuses.bulkCreate(bonuses, { transaction: t });
@@ -4807,63 +4776,29 @@ class Controller {
                 });
 
                 const bonuses = [];
-                if (policyPackage.buy_one_get_quantity > 0) {
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(policyPackage.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
 
-                    for (let i = 0; i <= policyPackage.buy_one_get_quantity; i++) {
-
-                        for (let index = 0; index < upLevelIds.length; index++) {
-                            const bonus = new Decimal(policyPackage.price)
-                                .times(Number(bonusArr[index]))
-                                .times(0.01)
-                                .toNumber();
-
-                            if (bonus <= 0) {
-                                continue;
-                            }
-
-                            const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
-                            if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
-                                continue;
-                            }
-                            commonLogger(`[BUY_POLICY_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
-                            await upLevelUser.increment({ balance: bonus }, { transaction: t });
-                            bonuses.push({
-                                relation: upLevelUser.relation,
-                                user_id: upLevelUser.id,
-                                from_user_id: user.id,
-                                amount: bonus,
-                                package_history_id: pkgHistory[0].id
-                            });
-                        }
-
+                    if (bonus <= 0) {
+                        continue;
                     }
 
-                } else {
-
-                    for (let index = 0; index < upLevelIds.length; index++) {
-                        const bonus = new Decimal(policyPackage.price)
-                            .times(Number(bonusArr[index]))
-                            .times(0.01)
-                            .toNumber();
-
-                        if (bonus <= 0) {
-                            continue;
-                        }
-
-                        const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
-                        if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
-                            continue;
-                        }
-                        commonLogger(`[BUY_POLICY_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
-                        await upLevelUser.increment({ balance: bonus }, { transaction: t });
-                        bonuses.push({
-                            relation: upLevelUser.relation,
-                            user_id: upLevelUser.id,
-                            from_user_id: user.id,
-                            amount: bonus,
-                            package_history_id: pkgHistory[0].id
-                        });
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
                     }
+                    commonLogger(`[BUY_POLICY_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: pkgHistory[0].id
+                    });
                 }
                 if (bonuses.length > 0) {
                     await PolicyPackageBonuses.bulkCreate(bonuses, { transaction: t });
