@@ -1967,7 +1967,7 @@ class Controller {
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: user.id,
-                    type: 1,
+                    wallet_type: 1,
                     model: 'User',
                     type: '调整储备金',
                     amount: updateAmount,
@@ -1984,7 +1984,7 @@ class Controller {
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: user.id,
-                    type: 2,
+                    wallet_type: 2,
                     model: 'User',
                     type: '调整余额',
                     amount: updateAmount,

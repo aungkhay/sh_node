@@ -353,6 +353,7 @@ class Controller {
                             relation: user.relation,
                             wallet_type: 1,
                             type: `充值`,
+                            model: 'Deposit',
                             amount: deposit.amount,
                             before_amount: user.reserve_fund,
                             after_amount: Number(user.reserve_fund) + Number(deposit.amount),
