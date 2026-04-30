@@ -4,7 +4,14 @@ const User = require('./User');
 const MasonicPackageHistory = require('./MasonicPackageHistory');
 const MasonicPackage = require('./MasonicPackage');
 
-class MasonicPackageEarn extends Model {}
+class MasonicPackageEarn extends Model {
+    toJSON() {
+        let attributes = Object.assign({}, this.get())
+        if (attributes.amount)
+            attributes.amount = Number(attributes.amount);
+        return attributes
+    }
+}
 
 MasonicPackageEarn.init({
     id: {

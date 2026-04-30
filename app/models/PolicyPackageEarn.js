@@ -4,7 +4,14 @@ const User = require('./User');
 const PolicyPackageHistory = require('./PolicyPackageHistory');
 const PolicyPackage = require('./PolicyPackage');
 
-class PolicyPackageEarn extends Model {}
+class PolicyPackageEarn extends Model {
+    toJSON() {
+        let attributes = Object.assign({}, this.get())
+        if (attributes.amount)
+            attributes.amount = Number(attributes.amount);
+        return attributes
+    }
+}
 
 PolicyPackageEarn.init({
     id: {
