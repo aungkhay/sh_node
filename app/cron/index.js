@@ -2549,6 +2549,7 @@ class CronJob {
                                 package_id: pack.package_id,
                                 package_history_id: pack.id,
                                 amount: dailyEarn,
+                                description: '上合贡献政策收益'
                             }, { transaction: t });
                             await PolicyPackageEarn.create({
                                 user_id: pack.user_id,
@@ -2556,6 +2557,7 @@ class CronJob {
                                 package_id: pack.package_id,
                                 package_history_id: pack.id,
                                 amount: Number(pack.price),
+                                description: '上合贡献政策收益'
                             }, { transaction: t });
                             await MasonicFundHistory.create({
                                 user_id: pack.user_id,
@@ -2573,6 +2575,7 @@ class CronJob {
                                 amount: dailyEarn,
                                 package_id: pack.package_id,
                                 package_history_id: pack.id,
+                                description: '上合贡献政策收益'
                             }, { transaction: t });
                         }
                     }

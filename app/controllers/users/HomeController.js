@@ -3416,6 +3416,8 @@ class Controller {
 
     BUY_GOLD_PACKAGE = async (req, res) => {
         try {
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '产品已售罄', {});
+
             const id = req.params.id;
             let pack = await this.GET_GOLD_PACKAGES();
             const selectedPack = pack.find(p => p.id === parseInt(id));
