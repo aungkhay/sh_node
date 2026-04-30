@@ -1878,7 +1878,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status'],
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password'],
+                attributes: ['id', 'relation', 'phone_number', 'reserve_fund', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password'],
             });
 
             if (!sender.kyc || sender.kyc.status !== 'APPROVED') {
