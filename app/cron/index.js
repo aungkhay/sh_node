@@ -38,6 +38,7 @@ class CronJob {
         cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
         cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
         cron.schedule('20 0 * * *', this.GIVE_MASONIC_BONUS).start();
+        cron.schedule('30 0 * * *', this.GIVE_POLICY_PACKAGE_EARN).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run 10th minute of every hour
