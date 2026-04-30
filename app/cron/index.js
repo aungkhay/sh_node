@@ -2571,6 +2571,8 @@ class CronJob {
                                 user_id: pack.user_id,
                                 relation: user.relation,
                                 amount: dailyEarn,
+                                package_id: pack.package_id,
+                                package_history_id: pack.id,
                             }, { transaction: t });
                         }
                     }
