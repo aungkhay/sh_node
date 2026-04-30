@@ -335,6 +335,10 @@ User.hasMany(PolicyPackageBonuses, { foreignKey: 'user_id', as: 'policy_package_
 PolicyPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 PolicyPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ POLICY_PACKAGE_EARN (1:N) ==========
+User.hasMany(PolicyPackageEarn, { foreignKey: 'user_id', as: 'policy_package_earn', onDelete: 'CASCADE' });
+PolicyPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,

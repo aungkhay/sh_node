@@ -181,8 +181,8 @@ class Controller {
 
             let condition = {}
             if (userId != 1) {
-                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
-                condition.relation = { [Op.like]: `${me.relation}/%` }
+                // const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                // condition.relation = { [Op.like]: `${me.relation}/%` }
             }
 
             let userCondition = {}
@@ -230,6 +230,7 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            console.log(error)
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
@@ -295,7 +296,6 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
-            console.log(error)
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
