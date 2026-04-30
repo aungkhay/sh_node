@@ -3,7 +3,7 @@ let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { errLogger } = require('../../helpers/Logger');
-const { RewardType, RewardRecord, User, db } = require('../../models');
+const { RewardType, RewardRecord, User, db, CashFlow } = require('../../models');
 const { Op } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
 const { fn, literal } = require('sequelize');
@@ -332,6 +332,19 @@ class Controller {
                         obj.from_where = '后台发放账户余额';
                         await RewardRecord.create(obj, { transaction: t });
                         await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
+
+                        await CashFlow.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'RewardRecord',
+                            type: `后台发放奖励`,
+                            amount: amount,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(amount),
+                            flow_status: 'IN',
+                        }, { transaction: t });
+
                     }
                     if ([4,6,8,9].includes(obj.reward_id)) {
                         if (obj.reward_id == 6) {

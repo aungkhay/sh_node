@@ -3,7 +3,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { errLogger, commonLogger, callbackLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
-const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer, GoldPackageHistory } = require('../../models');
+const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer, GoldPackageHistory, CashFlow } = require('../../models');
 const { Op, Sequelize } = require('sequelize');
 const Decimal = require('decimal.js');
 const axios = require('axios');
@@ -58,7 +58,7 @@ class Controller {
                 return res.send('');
             }
 
-            const user = await User.findByPk(userId, { attributes: ['id', 'reserve_fund'] });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund'] });
 
             let status = 0;
             let resMsg = '';
@@ -348,11 +348,23 @@ class Controller {
 
                     if (status === 1 && result[0] === 1) {
                         await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
+                        await CashFlow.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 1,
+                            type: `充值`,
+                            amount: deposit.amount,
+                            before_amount: user.reserve_fund,
+                            after_amount: Number(user.reserve_fund) + Number(deposit.amount),
+                            flow_status: 'IN',
+                            description: `充值订单${deposit.order_no}成功`
+                        }, { transaction: t });
                     }
                     await t.commit();
                 } catch (error) {
                     await t.rollback();
                     errLogger(`[RECHARGE_CALLBACK][${userId}]: ${error.stack}`);
+                    return res.send('');
                 }
             }
 
@@ -886,6 +898,18 @@ class Controller {
                 }, { transaction: t });
                 await user.increment({ balance: -Number(amount) }, { transaction: t });
 
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2, // balance
+                    model: 'Withdraw',
+                    type: '提现',
+                    amount: Number(amount),
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) - Number(amount),
+                    flow_status: 'OUT'
+                }, { transaction: t });
+
                 await t.commit();
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '提现成功', {});
@@ -977,6 +1001,32 @@ class Controller {
                     status: 'APPROVED'
                 }, { transaction: t });
                 await user.increment({ reserve_fund: amount, balance: -amount }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2, // balance
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) - Number(amount),
+                    flow_status: 'OUT',
+                    description: '余额转到储备金'
+                }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 1, // reserve_fund
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.reserve_fund),
+                    after_amount: Number(user.reserve_fund) + Number(amount),
+                    flow_status: 'IN',
+                    description: '余额转到储备金'
+                }, { transaction: t });
 
                 await t.commit();
 
@@ -1094,6 +1144,20 @@ class Controller {
                     status: 'APPROVED'
                 }, { transaction: t });
                 await user.increment({ referral_bonus: -amount, balance: amount }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2,
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) + Number(amount),
+                    flow_status: 'IN',
+                    description: '推荐金转到余额'
+                }, { transaction: t });
+
                 if (record) {
                     await record.update({ is_used: 1 }, { transaction: t });
                 }
@@ -1200,6 +1264,20 @@ class Controller {
                     status: 'APPROVED'
                 }, { transaction: t });
                 await user.increment({ reserve_fund: amount, referral_bonus: -amount }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 1, // reserve_fund
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.reserve_fund),
+                    after_amount: Number(user.reserve_fund) + Number(amount),
+                    flow_status: 'IN',
+                    description: '推荐金转到储备金'
+                }, { transaction: t });
+
                 if (record) {
                     await record.update({ is_used: 1 }, { transaction: t });
                 }
@@ -1313,6 +1391,19 @@ class Controller {
                 await rewardRecord.update({ is_used: 1 }, { transaction: t });
                 await user.increment({ referral_bonus: -amount, balance: amount }, { transaction: t });
 
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2,
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) + Number(amount),
+                    flow_status: 'IN',
+                    description: '使用推荐金提取券转账到余额'
+                }, { transaction: t });
+
                 await t.commit();
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '提交成功！请等待审核', {});
@@ -1401,6 +1492,19 @@ class Controller {
                 await rewardRecord.update({ is_used: 1 }, { transaction: t });
                 await user.increment({ referral_bonus: -amount, reserve_fund: amount }, { transaction: t });
 
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 1, // reserve_fund
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.reserve_fund),
+                    after_amount: Number(user.reserve_fund) + Number(amount),
+                    flow_status: 'IN',
+                    description: '使用推荐金提取券转账到储备金'
+                }, { transaction: t });
+
                 await t.commit();
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '提交成功！请等待审核', {});
@@ -1462,6 +1566,19 @@ class Controller {
                     status: 'APPROVED'
                 }, { transaction: t });
                 await user.increment({ balance: amount, rank_allowance: -amount }, { transaction: t });
+    
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2,
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) + Number(amount),
+                    flow_status: 'IN',
+                    description: '津贴转到余额'
+                }, { transaction: t });
 
                 await t.commit();
 
@@ -1523,6 +1640,19 @@ class Controller {
                     status: 'APPROVED'
                 }, { transaction: t });
                 await user.increment({ balance: -amount, earn: amount, earn_out_limit: amount }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2,
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) - Number(amount),
+                    flow_status: 'OUT',
+                    description: '余额转到余额宝'
+                }, { transaction: t });
 
                 await t.commit();
 
@@ -1587,6 +1717,19 @@ class Controller {
                 }, { transaction: t });
                 await user.increment({ balance: amount, earn: -amount, earn_out_limit: -amount }, { transaction: t });
 
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2,
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) + Number(amount),
+                    flow_status: 'IN',
+                    description: '余额宝转到余额'
+                }, { transaction: t });
+
                 await t.commit();
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
@@ -1631,7 +1774,7 @@ class Controller {
                     transaction: t 
                 });
                 if (parseFloat(amount) > parseFloat(user.gold_interest)) {
-                    throw new Error('黄金息不足');
+                    throw new Error('黄金利息不足');
                 }
                 
                 await Transfer.create({
@@ -1648,6 +1791,19 @@ class Controller {
                     status: 'APPROVED'
                 }, { transaction: t });
                 await user.increment({ balance: parseFloat(amount), gold_interest: -parseFloat(amount) }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2,
+                    model: 'Transfer',
+                    type: '转账',
+                    amount: amount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) + Number(amount),
+                    flow_status: 'IN',
+                    description: '黄金利息转到余额'
+                }, { transaction: t });
 
                 await t.commit();
 
@@ -1769,7 +1925,7 @@ class Controller {
                     attributes: ['id', 'status'],
                 },
                 where: { phone_number: receiver_phone },
-                attributes: ['id', 'name', 'phone_number', 'reserve_fund']
+                attributes: ['id', 'relation', 'name', 'phone_number', 'reserve_fund']
             });
 
             if (!receiver) {
@@ -1797,6 +1953,32 @@ class Controller {
                 }, { transaction: t });
                 await sender.increment({ reserve_fund: -amount }, { transaction: t });
                 await receiver.increment({ reserve_fund: amount }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: sender.id,
+                    relation: sender.relation,
+                    wallet_type: 1,
+                    model: 'BalanceTransfer',
+                    type: '账户转账',
+                    amount: amount,
+                    before_amount: Number(sender.reserve_fund),
+                    after_amount: Number(sender.reserve_fund) - Number(amount),
+                    flow_status: 'OUT',
+                    description: `转账给 ${receiver.phone_number}`
+                }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: receiver.id,
+                    relation: receiver.relation,
+                    wallet_type: 1,
+                    model: 'BalanceTransfer',
+                    type: '账户转账',
+                    amount: amount,
+                    before_amount: Number(receiver.reserve_fund),
+                    after_amount: Number(receiver.reserve_fund) + Number(amount),
+                    flow_status: 'IN',
+                    description: `来源 ${sender.phone_number}`
+                }, { transaction: t });
 
                 await t.commit();
 

@@ -65,6 +65,7 @@ const PolicyPackage = require('./PolicyPackage');
 const PolicyPackageHistory = require('./PolicyPackageHistory');
 const PolicyPackageBonuses = require('./PolicyPackageBonuses');
 const PolicyPackageEarn = require('./PolicyPackageEarn');
+const CashFlow = require('./CashFlow');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -339,6 +340,10 @@ PolicyPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_use
 User.hasMany(PolicyPackageEarn, { foreignKey: 'user_id', as: 'policy_package_earn', onDelete: 'CASCADE' });
 PolicyPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== CASH_FLOW ↔️ USER (1:N) ==========
+User.hasMany(CashFlow, { foreignKey: 'user_id', as: 'cash_flows', onDelete: 'CASCADE' });
+CashFlow.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -400,6 +405,7 @@ const models = {
     PolicyPackageHistory,
     PolicyPackageBonuses,
     PolicyPackageEarn,
+    CashFlow,
 };
 
 // Export models + db connection

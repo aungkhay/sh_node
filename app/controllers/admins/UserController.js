@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn, BalanceTransfer, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn, BalanceTransfer, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, CashFlow } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -1954,7 +1954,7 @@ class Controller {
             const { walletType, addOrSubstract, amount } = req.body;
             // addOrSubstract => 1 (add) | 2 (substract)
             
-            const user = await User.findByPk(req.params.id, { attributes: ['id', 'reserve_fund', 'balance', 'referral_bonus'] });
+            const user = await User.findByPk(req.params.id, { attributes: ['id', 'relation', 'reserve_fund', 'balance', 'referral_bonus'] });
 
             const updateAmount = addOrSubstract == 1 ? parseFloat(amount) : -parseFloat(amount);
             let updateObj = {};
@@ -1963,10 +1963,37 @@ class Controller {
                 // 储备金
                 updateObj.reserve_fund = updateAmount;
                 walletAmount = user.reserve_fund;
+
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: user.id,
+                    type: 1,
+                    model: 'User',
+                    type: '调整储备金',
+                    amount: updateAmount,
+                    before_amount: user.reserve_fund,
+                    after_amount: addOrSubstract == 1 ? Number(user.reserve_fund) + Number(updateAmount) : Number(user.reserve_fund) - Number(updateAmount),
+                    flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
+                    description: addOrSubstract == 1 ? '系统增加储备金' : '系统扣除储备金'
+                });
             } else if (walletType == 2) {
                 // 余额
                 updateObj.balance = updateAmount;
                 walletAmount = user.balance;
+
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: user.id,
+                    type: 2,
+                    model: 'User',
+                    type: '调整余额',
+                    amount: updateAmount,
+                    before_amount: user.balance,
+                    after_amount: addOrSubstract == 1 ? Number(user.balance) + Number(updateAmount) : Number(user.balance) - Number(updateAmount),
+                    flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
+                    description: addOrSubstract == 1 ? '系统增加余额' : '系统扣除余额'
+                });
+
             } else if (walletType == 3) {
                 // 推荐金
                 updateObj.referral_bonus = updateAmount;

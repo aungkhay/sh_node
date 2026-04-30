@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { MasonicFundHistory, User, TempMasonicFundHistory, RewardRecord } = require('../../models');
+const { MasonicFundHistory, User, TempMasonicFundHistory, RewardRecord, CashFlow } = require('../../models');
 const { Op } = require('sequelize');
 const XLSX = require("xlsx");
 const multer = require('multer');
@@ -251,6 +251,18 @@ class Controller {
                     });
                     const user = await User.findByPk(fundHistory.user_id, { attributes: ['id'], transaction: t });
                     await user.increment({ balance: fundHistory.amount, masonic_fund: -fundHistory.amount }, { transaction: t });
+                    await CashFlow.create({
+                        user_id: fundHistory.user_id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'MasonicFundHistory',
+                        type: '使用上合组织中国区授权书',
+                        amount: fundHistory.amount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) + Number(fundHistory.amount),
+                        flow_status: 'IN'
+                    }, { transaction: t });
+
                     if (reward) {
                         await reward.update({ is_used: 1 }, { transaction: t });
                     }
@@ -335,6 +347,18 @@ class Controller {
                         });
                         await user.increment({ balance: Number(fund.amount), masonic_fund: -Number(fund.amount) }, { transaction: t });
                         await fund.update({ status: 'APPROVED' }, { transaction: t });
+
+                        await CashFlow.create({
+                            user_id: fund.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'MasonicFundHistory',
+                            type: '使用上合组织中国区授权书',
+                            amount: fund.amount,
+                            before_amount: Number(user.balance),
+                            after_amount: Number(user.balance) + Number(fund.amount),
+                            flow_status: 'IN'
+                        }, { transaction: t });
                     }
 
                     await t.commit();

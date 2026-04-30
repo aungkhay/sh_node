@@ -80,6 +80,8 @@ class Controller {
 
     UPDATE_STATUS = async (req, res) => {
         try {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, '接口维护中', {});
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {

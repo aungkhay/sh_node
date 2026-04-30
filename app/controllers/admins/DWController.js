@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { Deposit, Withdraw, User, DepositMerchant, db, PaymentMethod } = require('../../models');
+const { Deposit, Withdraw, User, DepositMerchant, db, PaymentMethod, CashFlow } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
 const XLSX = require("xlsx");
@@ -149,13 +149,24 @@ class Controller {
             }
             const user = await User.findOne({
                 where: { id: deposit.user_id },
-                attributes: ['id', 'reserve_fund']
+                attributes: ['id', 'relation', 'reserve_fund']
             });
 
             const t = await db.transaction();
             try {
                 await deposit.update({ status: 1 }, { transaction: t });
                 await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
+                await CashFlow.create({
+                    user_id: user.id,
+                    relation: user.relation,
+                    wallet_type: 1,
+                    model: 'Deposit',
+                    type: '充值',
+                    amount: Number(deposit.amount),
+                    before_amount: user.reserve_fund,
+                    after_amount: Number(user.reserve_fund) + Number(deposit.amount),
+                    flow_status: 'IN'
+                }, { transaction: t });
                 await t.commit();
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
@@ -316,8 +327,21 @@ class Controller {
             const t = await db.transaction();
             try {
                 await withdraw.update({ status: 2 }, { transaction: t });
-                const user = await User.findOne({ where: { id: withdraw.user_id }, attributes: ['id', 'balance'], transaction: t });
+                const user = await User.findOne({ where: { id: withdraw.user_id }, attributes: ['id', 'relation', 'balance'], transaction: t });
                 await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
+                await CashFlow.create({
+                    user_id: user.id,
+                    relation: user.relation,
+                    wallet_type: 2,
+                    model: 'Withdraw',
+                    type: '提现',
+                    amount: Number(withdraw.amount),
+                    before_amount: user.balance,
+                    after_amount: Number(user.balance) + Number(withdraw.amount),
+                    flow_status: 'IN',
+                    description: '退款提现金额'
+                }, { transaction: t });
+
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
             } catch (error) {
@@ -470,10 +494,23 @@ class Controller {
                                 // Do refund
                                 const user = await User.findOne({
                                     where: { id: withdraw.user_id },
-                                    attributes: ['id', 'balance'],
+                                    attributes: ['id', 'relation', 'balance'],
                                     transaction: t,
                                 });
                                 await user.increment({ balance: withdraw.amount }, { transaction: t });
+
+                                await CashFlow.create({
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    wallet_type: 2,
+                                    model: 'Withdraw',
+                                    type: '提现',
+                                    amount: Number(withdraw.amount),
+                                    before_amount: user.balance,
+                                    after_amount: Number(user.balance) + Number(withdraw.amount),
+                                    flow_status: 'IN',
+                                    description: '退款提现金额'
+                                }, { transaction: t });
                             }
                             await withdraw.update(obj, { transaction: t });
                         }

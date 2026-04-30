@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -908,6 +908,17 @@ class CronJob {
                             obj.after_amount = Number(user.balance) + Number(amount);
                             rewards.push(obj);
                             await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
+                            await CashFlow.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'RewardRecord',
+                                type: '红包雨奖励',
+                                amount: amount,
+                                before_amount: user.balance,
+                                after_amount: Number(user.balance) + Number(amount),
+                                flow_status: 'IN'
+                            }, { transaction: t });
                         }
                         if ([4,6,8,9].includes(obj.reward_id)) {
                             // 上合组织各国授权书
@@ -1027,6 +1038,17 @@ class CronJob {
                     await user.increment({ masonic_fund: masonic_fund }, { transaction: t });
                 } else if (balance_fund > 0) {
                     await user.increment({ balance: balance_fund, masonic_fund: -balance_fund }, { transaction: t });
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'RewardRecord',
+                        type: '红包雨奖励',
+                        amount: balance_fund,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + Number(balance_fund),
+                        flow_status: 'IN'
+                    }, { transaction: t });
                 }
                 if (reward.total_reward == reward.limit) {
                     await user.update({ can_get_red_envelop: 0 }, { transaction: t });
@@ -1196,7 +1218,7 @@ class CronJob {
             const t = await db.transaction();
             try {
                 for (let pack of packages) {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -1214,6 +1236,18 @@ class CronJob {
                             package_history_id: pack.id,
                             amount: reimbursementAmount,
                             description: '礼包报销返还',
+                        }, { transaction: t });
+                        await CashFlow.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldPackageReturn',
+                            type: '和衷联储礼包报销返还',
+                            amount: reimbursementAmount,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(reimbursementAmount),
+                            flow_status: 'IN',
+                            description: `${pack.package_id == 1 ? '和衷联储黄金初级礼包' : pack.package_id == 2 ? '和衷联储黄金中级礼包' : ''}`
                         }, { transaction: t });
                     }
                 }
@@ -1246,7 +1280,7 @@ class CronJob {
             const t = await db.transaction();
             try {
                 for (let pack of packages) {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -1262,6 +1296,18 @@ class CronJob {
                             package_history_id: pack.id,
                             amount: dailyReward,
                             description: '礼包每日储备收益',
+                        }, { transaction: t });
+                        await CashFlow.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldPackageReturn',
+                            type: '和衷联储礼包每日储备收益',
+                            amount: dailyReward,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(dailyReward),
+                            flow_status: 'IN',
+                            description: `${pack.package_id == 3 ? '和衷联储黄金初级礼包（第二批）' : pack.package_id == 4 ? '和衷联储黄金中级礼包（第二批）' : pack.package_id == 5 ? '和衷联储黄金高级礼包（第二批）' : ''}`
                         }, { transaction: t });
                     }
                 }
@@ -1417,9 +1463,22 @@ class CronJob {
             const t = await db.transaction();
             try {
                 for (let withdraw of withdraws) {
-                    const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
                     if (!user) continue;
                     await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'Withdraw',
+                        type: '提现',
+                        amount: withdraw.amount,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + Number(withdraw.amount),
+                        flow_status: 'IN',
+                        description: '退款提现金额'
+                    }, { transaction: t });
+
                     await withdraw.update({ status: 2, description: 'CRON REFUND' }, { transaction: t });
                     console.log(`[REFUND_WITHDRAW_AFTER_3_DAYS][Withdraw ID: ${withdraw.id}]: Refunded ${withdraw.amount} to user ID ${user.id}`);
                 }
@@ -1445,9 +1504,21 @@ class CronJob {
             const t = await db.transaction();
             try {
                 for (let withdraw of withdraws) {
-                    const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
                     if (!user) continue;
                     await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'Withdraw',
+                        type: '提现',
+                        amount: withdraw.amount,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + Number(withdraw.amount),
+                        flow_status: 'IN',
+                        description: '退款提现金额'
+                    }, { transaction: t });
                     await withdraw.update({ status: 2, description: 'CRON REFUND' }, { transaction: t });
                     console.log(`[REJECT_ALL_PENDING_WITHDRAW][Withdraw ID: ${withdraw.id}]: Refunded ${withdraw.amount} to user ID ${user.id}`);
                 }
@@ -1526,6 +1597,17 @@ class CronJob {
                         package_history_id: pack.id,
                         amount: pack.daily_earn,
                         description: '共计资金礼包每日收益',
+                    }, { transaction: t });
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'MasonicPackageEarn',
+                        type: '上合终身授权计划收益',
+                        amount: pack.daily_earn,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + Number(pack.daily_earn),
+                        flow_status: 'IN'
                     }, { transaction: t });
 
                     await t.commit();
@@ -2380,7 +2462,7 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2456,6 +2538,19 @@ class CronJob {
 
                     await user.increment({ balance: reserveEarn + originalPrice }, { transaction: t });
 
+                    await CashFlow.create({
+                        user_id: pack.user_id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'FederalReserveGoldPackageEarn',
+                        type: '联储备黄金礼包返还',
+                        amount: reserveEarn + originalPrice,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + reserveEarn + originalPrice,
+                        flow_status: 'IN',
+                        description: `储备收益${reserveEarn}和本金返还${originalPrice}`,
+                    }, { transaction: t });
+
                     await t.commit();
                 } catch (error) {
                     errLogger(`[CHECK_FEDERAL_PACKAGE_REIMBURSEMENT][Transaction Error]: ${error.stack}`);
@@ -2467,6 +2562,7 @@ class CronJob {
         }
     }
 
+    // Not Cron
     RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE = async () => {
         try {
             const history = await FederalReserveGoldPackageHistory.findAll({
@@ -2566,6 +2662,17 @@ class CronJob {
                                 description: '上合贡献政策 - 定时任务发共济基金',
                             }, { transaction: t });
                             await pack.update({ is_finished: 1 }, { transaction: t });
+                            await CashFlow.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'PolicyPackageEarn',
+                                type: '上合贡献政策收益',
+                                amount: dailyEarn + Number(pack.price),
+                                before_amount: user.balance,
+                                after_amount: Number(user.balance) + dailyEarn + Number(pack.price),
+                                flow_status: 'IN'
+                            }, { transaction: t });
 
                         } else {
                             await user.increment({ balance: dailyEarn }, { transaction: t });
@@ -2576,6 +2683,17 @@ class CronJob {
                                 package_id: pack.package_id,
                                 package_history_id: pack.id,
                                 description: '上合贡献政策收益'
+                            }, { transaction: t });
+                            await CashFlow.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'PolicyPackageEarn',
+                                type: '上合贡献政策收益',
+                                amount: dailyEarn,
+                                before_amount: user.balance,
+                                after_amount: Number(user.balance) + dailyEarn,
+                                flow_status: 'IN'
                             }, { transaction: t });
                         }
                     }
