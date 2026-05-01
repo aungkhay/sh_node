@@ -347,7 +347,6 @@ class Controller {
                     });
 
                     if (status === 1 && result[0] === 1) {
-                        await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
                         await CashFlow.create({
                             user_id: user.id,
                             relation: user.relation,
@@ -360,6 +359,7 @@ class Controller {
                             flow_status: 'IN',
                             description: `充值订单${deposit.order_no}成功`
                         }, { transaction: t });
+                        await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
                     }
                     await t.commit();
                 } catch (error) {
@@ -897,7 +897,6 @@ class Controller {
                     before_amount: Number(user.balance),
                     after_amount: Number(user.balance) - Number(amount),
                 }, { transaction: t });
-                await user.increment({ balance: -Number(amount) }, { transaction: t });
 
                 await CashFlow.create({
                     user_id: userId,
@@ -910,6 +909,8 @@ class Controller {
                     after_amount: Number(user.balance) - Number(amount),
                     flow_status: 'OUT'
                 }, { transaction: t });
+
+                await user.increment({ balance: -Number(amount) }, { transaction: t });
 
                 await t.commit();
 
@@ -1001,8 +1002,7 @@ class Controller {
                     after_to_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
                     status: 'APPROVED'
                 }, { transaction: t });
-                await user.increment({ reserve_fund: amount, balance: -amount }, { transaction: t });
-
+                
                 await CashFlow.create({
                     user_id: userId,
                     relation: user.relation,
@@ -1028,6 +1028,8 @@ class Controller {
                     flow_status: 'IN',
                     description: '余额转到储备金'
                 }, { transaction: t });
+
+                await user.increment({ reserve_fund: amount, balance: -amount }, { transaction: t });
 
                 await t.commit();
 
@@ -1144,7 +1146,6 @@ class Controller {
                     after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
                     status: 'APPROVED'
                 }, { transaction: t });
-                await user.increment({ referral_bonus: -amount, balance: amount }, { transaction: t });
 
                 await CashFlow.create({
                     user_id: userId,
@@ -1158,6 +1159,8 @@ class Controller {
                     flow_status: 'IN',
                     description: '推荐金转到余额'
                 }, { transaction: t });
+
+                await user.increment({ referral_bonus: -amount, balance: amount }, { transaction: t });
 
                 if (record) {
                     await record.update({ is_used: 1 }, { transaction: t });
@@ -1264,8 +1267,7 @@ class Controller {
                     after_to_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
                     status: 'APPROVED'
                 }, { transaction: t });
-                await user.increment({ reserve_fund: amount, referral_bonus: -amount }, { transaction: t });
-
+                
                 await CashFlow.create({
                     user_id: userId,
                     relation: user.relation,
@@ -1278,6 +1280,8 @@ class Controller {
                     flow_status: 'IN',
                     description: '推荐金转到储备金'
                 }, { transaction: t });
+
+                await user.increment({ reserve_fund: amount, referral_bonus: -amount }, { transaction: t });
 
                 if (record) {
                     await record.update({ is_used: 1 }, { transaction: t });
@@ -1390,7 +1394,6 @@ class Controller {
                 }, { transaction: t });
 
                 await rewardRecord.update({ is_used: 1 }, { transaction: t });
-                await user.increment({ referral_bonus: -amount, balance: amount }, { transaction: t });
 
                 await CashFlow.create({
                     user_id: userId,
@@ -1404,6 +1407,8 @@ class Controller {
                     flow_status: 'IN',
                     description: '使用推荐金提取券转账到余额'
                 }, { transaction: t });
+
+                await user.increment({ referral_bonus: -amount, balance: amount }, { transaction: t });
 
                 await t.commit();
 
@@ -1491,7 +1496,6 @@ class Controller {
                 }, { transaction: t });
 
                 await rewardRecord.update({ is_used: 1 }, { transaction: t });
-                await user.increment({ referral_bonus: -amount, reserve_fund: amount }, { transaction: t });
 
                 await CashFlow.create({
                     user_id: userId,
@@ -1505,6 +1509,8 @@ class Controller {
                     flow_status: 'IN',
                     description: '使用推荐金提取券转账到储备金'
                 }, { transaction: t });
+
+                await user.increment({ referral_bonus: -amount, reserve_fund: amount }, { transaction: t });
 
                 await t.commit();
 
@@ -1566,7 +1572,6 @@ class Controller {
                     after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
                     status: 'APPROVED'
                 }, { transaction: t });
-                await user.increment({ balance: amount, rank_allowance: -amount }, { transaction: t });
     
                 await CashFlow.create({
                     user_id: userId,
@@ -1580,6 +1585,8 @@ class Controller {
                     flow_status: 'IN',
                     description: '津贴转到余额'
                 }, { transaction: t });
+
+                await user.increment({ balance: amount, rank_allowance: -amount }, { transaction: t });
 
                 await t.commit();
 
@@ -1640,7 +1647,6 @@ class Controller {
                     after_to_amount: Number(parseFloat(user.earn) + parseFloat(amount)),
                     status: 'APPROVED'
                 }, { transaction: t });
-                await user.increment({ balance: -amount, earn: amount, earn_out_limit: amount }, { transaction: t });
 
                 await CashFlow.create({
                     user_id: userId,
@@ -1654,6 +1660,8 @@ class Controller {
                     flow_status: 'OUT',
                     description: '余额转到余额宝'
                 }, { transaction: t });
+
+                await user.increment({ balance: -amount, earn: amount, earn_out_limit: amount }, { transaction: t });
 
                 await t.commit();
 
@@ -1716,7 +1724,6 @@ class Controller {
                     after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
                     status: 'APPROVED'
                 }, { transaction: t });
-                await user.increment({ balance: amount, earn: -amount, earn_out_limit: -amount }, { transaction: t });
 
                 await CashFlow.create({
                     user_id: userId,
@@ -1730,6 +1737,8 @@ class Controller {
                     flow_status: 'IN',
                     description: '余额宝转到余额'
                 }, { transaction: t });
+
+                await user.increment({ balance: amount, earn: -amount, earn_out_limit: -amount }, { transaction: t });
 
                 await t.commit();
 
@@ -1791,8 +1800,7 @@ class Controller {
                     after_to_amount: Number(parseFloat(user.balance) + parseFloat(amount)),
                     status: 'APPROVED'
                 }, { transaction: t });
-                await user.increment({ balance: parseFloat(amount), gold_interest: -parseFloat(amount) }, { transaction: t });
-
+                
                 await CashFlow.create({
                     user_id: userId,
                     relation: user.relation,
@@ -1805,6 +1813,8 @@ class Controller {
                     flow_status: 'IN',
                     description: '黄金利息转到余额'
                 }, { transaction: t });
+
+                await user.increment({ balance: parseFloat(amount), gold_interest: -parseFloat(amount) }, { transaction: t });
 
                 await t.commit();
 
@@ -1952,8 +1962,6 @@ class Controller {
                     before_to_amount: Number(receiver.reserve_fund),
                     after_to_amount: Number(parseFloat(receiver.reserve_fund) + parseFloat(amount)),
                 }, { transaction: t });
-                await sender.increment({ reserve_fund: -amount }, { transaction: t });
-                await receiver.increment({ reserve_fund: amount }, { transaction: t });
 
                 await CashFlow.create({
                     user_id: sender.id,
@@ -1980,6 +1988,9 @@ class Controller {
                     flow_status: 'IN',
                     description: `来源 ${sender.phone_number}`
                 }, { transaction: t });
+
+                await sender.increment({ reserve_fund: -amount }, { transaction: t });
+                await receiver.increment({ reserve_fund: amount }, { transaction: t });
 
                 await t.commit();
 

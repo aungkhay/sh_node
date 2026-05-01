@@ -907,7 +907,6 @@ class CronJob {
                             obj.before_amount = user.balance;   
                             obj.after_amount = Number(user.balance) + Number(amount);
                             rewards.push(obj);
-                            await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
                             await CashFlow.create({
                                 user_id: user.id,
                                 relation: user.relation,
@@ -919,6 +918,7 @@ class CronJob {
                                 after_amount: Number(user.balance) + Number(amount),
                                 flow_status: 'IN'
                             }, { transaction: t });
+                            await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
                         }
                         if ([4,6,8,9].includes(obj.reward_id)) {
                             // 上合组织各国授权书
@@ -1037,7 +1037,6 @@ class CronJob {
                 if (masonic_fund > 0) {
                     await user.increment({ masonic_fund: masonic_fund }, { transaction: t });
                 } else if (balance_fund > 0) {
-                    await user.increment({ balance: balance_fund, masonic_fund: -balance_fund }, { transaction: t });
                     await CashFlow.create({
                         user_id: user.id,
                         relation: user.relation,
@@ -1049,6 +1048,7 @@ class CronJob {
                         after_amount: Number(user.balance) + Number(balance_fund),
                         flow_status: 'IN'
                     }, { transaction: t });
+                    await user.increment({ balance: balance_fund, masonic_fund: -balance_fund }, { transaction: t });
                 }
                 if (reward.total_reward == reward.limit) {
                     await user.update({ can_get_red_envelop: 0 }, { transaction: t });
@@ -1227,16 +1227,6 @@ class CronJob {
                         .times(0.01)
                         .toNumber();
                     if (reimbursementAmount > 0) {
-                        await user.increment({ balance: reimbursementAmount }, { transaction: t });
-                        await pack.update({ is_reimbursed: 1 }, { transaction: t });
-                        await GoldPackageReturn.create({
-                            user_id: user.id,
-                            relation: user.relation,
-                            package_id: pack.package_id,
-                            package_history_id: pack.id,
-                            amount: reimbursementAmount,
-                            description: '礼包报销返还',
-                        }, { transaction: t });
                         await CashFlow.create({
                             user_id: user.id,
                             relation: user.relation,
@@ -1248,6 +1238,17 @@ class CronJob {
                             after_amount: Number(user.balance) + Number(reimbursementAmount),
                             flow_status: 'IN',
                             description: `${pack.package_id == 1 ? '和衷联储黄金初级礼包' : pack.package_id == 2 ? '和衷联储黄金中级礼包' : ''}`
+                        }, { transaction: t });
+
+                        await user.increment({ balance: reimbursementAmount }, { transaction: t });
+                        await pack.update({ is_reimbursed: 1 }, { transaction: t });
+                        await GoldPackageReturn.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: reimbursementAmount,
+                            description: '礼包报销返还',
                         }, { transaction: t });
                     }
                 }
@@ -1288,7 +1289,7 @@ class CronJob {
                         .times(0.01) // 1% daily reward
                         .toNumber();
                     if (dailyReward > 0) {
-                        await user.increment({ balance: dailyReward }, { transaction: t });
+                        
                         await GoldPackageReturn.create({
                             user_id: user.id,
                             relation: user.relation,
@@ -1309,6 +1310,7 @@ class CronJob {
                             flow_status: 'IN',
                             description: `${pack.package_id == 3 ? '和衷联储黄金初级礼包（第二批）' : pack.package_id == 4 ? '和衷联储黄金中级礼包（第二批）' : pack.package_id == 5 ? '和衷联储黄金高级礼包（第二批）' : ''}`
                         }, { transaction: t });
+                        await user.increment({ balance: dailyReward }, { transaction: t });
                     }
                 }
 
@@ -1465,7 +1467,7 @@ class CronJob {
                 for (let withdraw of withdraws) {
                     const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
                     if (!user) continue;
-                    await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
+                    
                     await CashFlow.create({
                         user_id: user.id,
                         relation: user.relation,
@@ -1478,6 +1480,7 @@ class CronJob {
                         flow_status: 'IN',
                         description: '退款提现金额'
                     }, { transaction: t });
+                    await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
 
                     await withdraw.update({ status: 2, description: 'CRON REFUND' }, { transaction: t });
                     console.log(`[REFUND_WITHDRAW_AFTER_3_DAYS][Withdraw ID: ${withdraw.id}]: Refunded ${withdraw.amount} to user ID ${user.id}`);
@@ -1506,7 +1509,7 @@ class CronJob {
                 for (let withdraw of withdraws) {
                     const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
                     if (!user) continue;
-                    await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
+                    
                     await CashFlow.create({
                         user_id: user.id,
                         relation: user.relation,
@@ -1519,6 +1522,7 @@ class CronJob {
                         flow_status: 'IN',
                         description: '退款提现金额'
                     }, { transaction: t });
+                    await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
                     await withdraw.update({ status: 2, description: 'CRON REFUND' }, { transaction: t });
                     console.log(`[REJECT_ALL_PENDING_WITHDRAW][Withdraw ID: ${withdraw.id}]: Refunded ${withdraw.amount} to user ID ${user.id}`);
                 }
@@ -1589,7 +1593,7 @@ class CronJob {
                     //     continue;
                     // }
 
-                    await user.increment({ balance: pack.daily_earn }, { transaction: t });
+                    
                     await MasonicPackageEarn.create({
                         user_id: user.id,
                         relation: user.relation,
@@ -1609,6 +1613,7 @@ class CronJob {
                         after_amount: Number(user.balance) + Number(pack.daily_earn),
                         flow_status: 'IN'
                     }, { transaction: t });
+                    await user.increment({ balance: pack.daily_earn }, { transaction: t });
 
                     await t.commit();
 
@@ -2536,8 +2541,6 @@ class CronJob {
 
                     await pack.update(updateObj, { transaction: t });
 
-                    await user.increment({ balance: reserveEarn + originalPrice }, { transaction: t });
-
                     await CashFlow.create({
                         user_id: pack.user_id,
                         relation: user.relation,
@@ -2550,6 +2553,8 @@ class CronJob {
                         flow_status: 'IN',
                         description: `储备收益${reserveEarn}和本金返还${originalPrice}`,
                     }, { transaction: t });
+
+                    await user.increment({ balance: reserveEarn + originalPrice }, { transaction: t });
 
                     await t.commit();
                 } catch (error) {
@@ -2638,7 +2643,20 @@ class CronJob {
                         // 日返最后一天同时返还本金
                         if (moment().isSame(moment(pack.end_date), 'day')) {
 
+                            await CashFlow.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'PolicyPackageEarn',
+                                type: '上合贡献政策收益',
+                                amount: dailyEarn + Number(pack.price),
+                                before_amount: user.balance,
+                                after_amount: Number(user.balance) + dailyEarn + Number(pack.price),
+                                flow_status: 'IN'
+                            }, { transaction: t });
+
                             await user.increment({ balance: dailyEarn + Number(pack.price), masonic_fund: Number(pack.masonic_fund) }, { transaction: t });
+
                             await PolicyPackageEarn.create({
                                 user_id: pack.user_id,
                                 relation: user.relation,
@@ -2662,28 +2680,9 @@ class CronJob {
                                 description: '上合贡献政策 - 定时任务发共济基金',
                             }, { transaction: t });
                             await pack.update({ is_finished: 1 }, { transaction: t });
-                            await CashFlow.create({
-                                user_id: user.id,
-                                relation: user.relation,
-                                wallet_type: 2,
-                                model: 'PolicyPackageEarn',
-                                type: '上合贡献政策收益',
-                                amount: dailyEarn + Number(pack.price),
-                                before_amount: user.balance,
-                                after_amount: Number(user.balance) + dailyEarn + Number(pack.price),
-                                flow_status: 'IN'
-                            }, { transaction: t });
+                            
 
                         } else {
-                            await user.increment({ balance: dailyEarn }, { transaction: t });
-                            await PolicyPackageEarn.create({
-                                user_id: pack.user_id,
-                                relation: user.relation,
-                                amount: dailyEarn,
-                                package_id: pack.package_id,
-                                package_history_id: pack.id,
-                                description: '上合贡献政策收益'
-                            }, { transaction: t });
                             await CashFlow.create({
                                 user_id: user.id,
                                 relation: user.relation,
@@ -2694,6 +2693,16 @@ class CronJob {
                                 before_amount: user.balance,
                                 after_amount: Number(user.balance) + dailyEarn,
                                 flow_status: 'IN'
+                            }, { transaction: t });
+
+                            await user.increment({ balance: dailyEarn }, { transaction: t });
+                            await PolicyPackageEarn.create({
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                amount: dailyEarn,
+                                package_id: pack.package_id,
+                                package_history_id: pack.id,
+                                description: '上合贡献政策收益'
                             }, { transaction: t });
                         }
                     }

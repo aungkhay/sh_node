@@ -240,7 +240,7 @@ class Controller {
                 if (type == 0) {
                     // 储备收益
                     await pkgHistory.update({ is_returned_earn: true, return_earn_date: new Date() }, { transaction: t });
-                    await user.increment({ balance: Number(pkgHistory.reserve_earn) }, { transaction: t });
+                    
                     releaseAmount = pkgHistory.reserve_earn;
 
                     await CashFlow.create({
@@ -255,6 +255,7 @@ class Controller {
                         flow_status: 'IN',
                         description: '储备收益返还'
                     }, { transaction: t });
+                    await user.increment({ balance: Number(pkgHistory.reserve_earn) }, { transaction: t });
                 } else if (type == 1) {
                     // 个人黄金
                     await pkgHistory.update({ is_returned_personal_gold: true, return_personal_gold_date: new Date() }, { transaction: t });
@@ -262,7 +263,7 @@ class Controller {
                 } else if (type == 2) {
                     // 本金返还
                     await pkgHistory.update({ is_returned_price: true, return_price_date: new Date() }, { transaction: t });
-                    await user.increment({ balance: Number(pkgHistory.price) }, { transaction: t });
+                    
                     releaseAmount = pkgHistory.price;
 
                     await CashFlow.create({
@@ -277,6 +278,7 @@ class Controller {
                         flow_status: 'IN',
                         description: '本金返还'
                     }, { transaction: t });
+                    await user.increment({ balance: Number(pkgHistory.price) }, { transaction: t });
                 } else if (type == 3) {
                     // 共济基金金额
                     await pkgHistory.update({ is_returned_masonic_fund: true, return_masonic_fund_date: new Date() }, { transaction: t });

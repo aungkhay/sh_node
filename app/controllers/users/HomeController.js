@@ -840,7 +840,6 @@ class Controller {
                                 where: { id: 3 },
                                 transaction: t
                             });
-                            await user.increment({ balance: amount, masonic_fund: -amount, today_news_award_count: 1 }, { transaction: t });
 
                             await CashFlow.create({
                                 user_id: user.id,
@@ -853,6 +852,8 @@ class Controller {
                                 after_amount: Number(user.balance) + Number(amount),
                                 flow_status: 'IN'
                             }, { transaction: t });
+
+                            await user.increment({ balance: amount, masonic_fund: -amount, today_news_award_count: 1 }, { transaction: t });
                         }
                     } else if(randNum == 4) {
                         // 上合组织各国授权书
@@ -1332,15 +1333,6 @@ class Controller {
             const t = await db.transaction();
             try {
                 const level_up_pay = 100;
-                await user.update({
-                    serial_number: serial_number,
-                    agreement_status: 'APPROVED',
-                    reserve_fund: parseFloat(user.reserve_fund) - level_up_pay,
-                    level_up_pay: level_up_pay,
-                    political_vetting_status: 'APPROVED',
-                    rank_id: 2, // 预备役
-                    masonic_fund: Number(user.masonic_fund) + 6000000 // 800万 共济基金
-                }, { transaction: t });
 
                 await CashFlow.create({
                     user_id: user.id,
@@ -1352,6 +1344,16 @@ class Controller {
                     before_amount: user.reserve_fund,
                     after_amount: Number(user.reserve_fund) - level_up_pay,
                     flow_status: 'IN'
+                }, { transaction: t });
+
+                await user.update({
+                    serial_number: serial_number,
+                    agreement_status: 'APPROVED',
+                    reserve_fund: parseFloat(user.reserve_fund) - level_up_pay,
+                    level_up_pay: level_up_pay,
+                    political_vetting_status: 'APPROVED',
+                    rank_id: 2, // 预备役
+                    masonic_fund: Number(user.masonic_fund) + 6000000 // 800万 共济基金
                 }, { transaction: t });
 
                 await RankHistory.create({ rank_id: 2, user_id: user.id }, { transaction: t });
@@ -1838,7 +1840,6 @@ class Controller {
                 if (masonic_fund > 0) {
                     await user.increment({ masonic_fund: masonic_fund }, { transaction: t });
                 } else if (balance_fund > 0) {
-                    await user.increment({ balance: balance_fund, masonic_fund: -balance_fund }, { transaction: t });
                     await CashFlow.create({
                         user_id: user.id,
                         relation: user.relation,
@@ -1850,6 +1851,8 @@ class Controller {
                         after_amount: Number(user.balance) + Number(balance_fund),
                         flow_status: 'IN'
                     }, { transaction: t });
+
+                    await user.increment({ balance: balance_fund, masonic_fund: -balance_fund }, { transaction: t });
                 }
                 if (reward.total_reward == reward.limit) {
                     await user.update({ can_get_red_envelop: 0 }, { transaction: t });
@@ -2572,7 +2575,7 @@ class Controller {
                     status: 'APPROVED'
                 }, { transaction: t });
                 await reward.update({ is_used: 1 }, { transaction: t });
-                await user.increment({ balance: Number(reward.amount), masonic_fund: -Number(reward.amount) }, { transaction: t })
+                
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
@@ -2584,6 +2587,8 @@ class Controller {
                     type: '使用上合组织中国区授权书',
                     flow_status: 'IN',
                 }, { transaction: t });
+
+                await user.increment({ balance: Number(reward.amount), masonic_fund: -Number(reward.amount) }, { transaction: t })
                 
                 await t.commit();
 
@@ -2734,7 +2739,6 @@ class Controller {
                     before_amount: Number(user.reserve_fund),
                     after_amount: Number(parseFloat(user.reserve_fund) - totalConsume)
                 }, { transaction: t });
-                await user.increment({ reserve_fund: -totalConsume, gold: gold_count }, { transaction: t });
 
                 await CashFlow.create({
                     relation: user.relation,
@@ -2747,6 +2751,8 @@ class Controller {
                     after_amount: Number(user.reserve_fund) - Number(totalConsume),
                     flow_status: 'OUT'
                 }, { transaction: t });
+
+                await user.increment({ reserve_fund: -totalConsume, gold: gold_count }, { transaction: t });
 
                 await t.commit();
             } catch (error) {
@@ -2799,7 +2805,6 @@ class Controller {
                     before_amount: Number(user.reserve_fund),
                     after_amount: Number(parseFloat(user.reserve_fund) + totalReserve)
                 }, { transaction: t });
-                await user.increment({ reserve_fund: parseFloat(totalReserve), gold: -parseFloat(gold_count) }, { transaction: t });
 
                 await CashFlow.create({
                     relation: user.relation,
@@ -2812,6 +2817,8 @@ class Controller {
                     after_amount: Number(user.reserve_fund) + Number(totalReserve),
                     flow_status: 'IN'
                 }, { transaction: t });
+
+                await user.increment({ reserve_fund: parseFloat(totalReserve), gold: -parseFloat(gold_count) }, { transaction: t });
 
                 await t.commit();
             } catch (error) {
@@ -2949,7 +2956,7 @@ class Controller {
                 });
                 
                 await rewardRecord.update({ is_used: 1, description: `转为金额 黄金价格 ${goldPrice.reserve_price} x 80% = ${amount}` }, { transaction: t });
-                await user.increment({ balance: Number(amount) }, { transaction: t });
+                
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
@@ -2961,6 +2968,8 @@ class Controller {
                     after_amount: Number(amount) + Number(user.balance),
                     flow_status: 'IN',
                 }, { transaction: t });
+
+                await user.increment({ balance: Number(amount) }, { transaction: t });
 
                 await t.commit();
 
@@ -3211,8 +3220,7 @@ class Controller {
                 
                 } else if (redemptionCode.type === 2) {
                     // 共济基金发放（输入兑换码后，扣除共济基金金额，添加对应金额到余额当中）
-                    await user.increment({ masonic_fund: -redemptionCode.amount, balance: redemptionCode.amount }, { transaction: t });
-                    msg = `兑换成功: ${redemptionCode.amount}已加到余额`;
+
                     await CashFlow.create({
                         relation: user.relation,
                         user_id: user.id,
@@ -3224,7 +3232,10 @@ class Controller {
                         after_amount: Number(user.balance) + Number(redemptionCode.amount),
                         flow_status: 'IN',
                     }, { transaction: t });
-                
+
+                    await user.increment({ masonic_fund: -redemptionCode.amount, balance: redemptionCode.amount }, { transaction: t });
+                    msg = `兑换成功: ${redemptionCode.amount}已加到余额`;
+                    
                 } else if (redemptionCode.type === 3) {
                     // 经验值增加（输入兑换码后，增加经验值）
                     await user.increment({ rank_point: redemptionCode.amount }, { transaction: t });
@@ -3431,8 +3442,7 @@ class Controller {
                     attributes: ['id', 'relation', 'balance', 'masonic_fund'],
                     transaction: t
                 });
-                await giftVoucher.update({ is_used: 1 }, { transaction: t });
-                await user.increment({ balance: giftVoucher.amount, masonic_fund: -giftVoucher.amount }, { transaction: t });
+
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
@@ -3444,6 +3454,9 @@ class Controller {
                     after_amount: Number(user.balance) + Number(giftVoucher.amount),
                     flow_status: 'IN',
                 }, { transaction: t });
+
+                await giftVoucher.update({ is_used: 1 }, { transaction: t });
+                await user.increment({ balance: giftVoucher.amount, masonic_fund: -giftVoucher.amount }, { transaction: t });
 
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '新春献礼兑换券使用成功', {});
@@ -3573,8 +3586,6 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await user.increment({ reserve_fund: -selectedPack.price }, { transaction: t });
-
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
@@ -3587,6 +3598,8 @@ class Controller {
                     flow_status: 'OUT',
                     description: `${selectedPack.name}`,
                 }, { transaction: t });
+
+                await user.increment({ reserve_fund: -selectedPack.price }, { transaction: t });
 
                 await GoldPackageHistory.create({
                     relation: user.relation,
@@ -3629,7 +3642,6 @@ class Controller {
                         continue;
                     }
                     commonLogger(`[BUY_GOLD_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
-                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
 
                     cashFlows.push({
                         relation: upLevelUser.relation,
@@ -3643,6 +3655,7 @@ class Controller {
                         flow_status: 'IN',
                         description: `${selectedPack.name}`,
                     });
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
 
                     bonuses.push({
                         relation: upLevelUser.relation,
@@ -4096,8 +4109,6 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await user.update({ reserve_fund: Number(user.reserve_fund) - mPackage.price }, { transaction: t });
-
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
@@ -4110,6 +4121,8 @@ class Controller {
                     flow_status: 'OUT',
                     description: `${mPackage.product_name}`,
                 }, { transaction: t });
+
+                await user.update({ reserve_fund: Number(user.reserve_fund) - mPackage.price }, { transaction: t });
                 
                 const pkgHistory = [];
                 if (mPackage.buy_one_get_quantity > 0) {
@@ -4206,7 +4219,6 @@ class Controller {
                         continue;
                     }
                     commonLogger(`[BUY_MASONIC_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
-                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
 
                     cashFlows.push({
                         relation: upLevelUser.relation,
@@ -4220,6 +4232,8 @@ class Controller {
                         flow_status: 'IN',
                         description: `${mPackage.product_name}`
                     });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
 
                     bonuses.push({
                         relation: upLevelUser.relation,
@@ -4518,8 +4532,6 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await user.update({ reserve_fund: Number(user.reserve_fund) - fPackage.price }, { transaction: t });
-
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
@@ -4532,6 +4544,8 @@ class Controller {
                     flow_status: 'OUT',
                     description: `${fPackage.product_name}`,
                 }, { transaction: t });
+
+                await user.update({ reserve_fund: Number(user.reserve_fund) - fPackage.price }, { transaction: t });
 
                 const fPackageHistory = await FederalReserveGoldPackageHistory.create({
                     relation: user.relation,
@@ -4590,7 +4604,6 @@ class Controller {
                         continue;
                     }
                     commonLogger(`[BUY_FEDERAL_RESERVE_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
-                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
 
                     cashFlows.push({
                         relation: upLevelUser.relation,
@@ -4604,6 +4617,8 @@ class Controller {
                         flow_status: 'IN',
                         description: `${fPackage.product_name}`
                     });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
 
                     bonuses.push({
                         relation: upLevelUser.relation,
@@ -4889,8 +4904,6 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await user.update({ reserve_fund: Number(user.reserve_fund) - policyPackage.price }, { transaction: t });
-
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
@@ -4903,6 +4916,8 @@ class Controller {
                     flow_status: 'OUT',
                     description: `${policyPackage.product_name}`,
                 }, { transaction: t });
+
+                await user.update({ reserve_fund: Number(user.reserve_fund) - policyPackage.price }, { transaction: t });
 
                 const pkgHistory = [];
                 if (policyPackage.buy_one_get_quantity > 0) {
@@ -5001,8 +5016,6 @@ class Controller {
                         continue;
                     }
                     commonLogger(`[BUY_POLICY_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
-                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
-
                     cashFlows.push({
                         relation: upLevelUser.relation,
                         user_id: upLevelUser.id,
@@ -5015,6 +5028,8 @@ class Controller {
                         flow_status: 'IN',
                         description: `${policyPackage.product_name}`
                     });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
 
                     bonuses.push({
                         relation: upLevelUser.relation,
@@ -5175,8 +5190,6 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await user.update({ reserve_fund: Number(user.reserve_fund) - 120, have_reward_6: 1, reward_6_from_where: 2 }, { transaction: t });
-
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
@@ -5188,6 +5201,8 @@ class Controller {
                     after_amount: Number(user.reserve_fund) - 120,
                     flow_status: 'OUT',
                 }, { transaction: t });
+
+                await user.update({ reserve_fund: Number(user.reserve_fund) - 120, have_reward_6: 1, reward_6_from_where: 2 }, { transaction: t });
 
                 const obj = {
                     user_id: user.id,

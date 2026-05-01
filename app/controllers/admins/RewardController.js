@@ -331,7 +331,6 @@ class Controller {
                         obj.after_amount = Number(user.balance) + Number(amount);
                         obj.from_where = '后台发放账户余额';
                         await RewardRecord.create(obj, { transaction: t });
-                        await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
 
                         await CashFlow.create({
                             user_id: user.id,
@@ -344,6 +343,8 @@ class Controller {
                             after_amount: Number(user.balance) + Number(amount),
                             flow_status: 'IN',
                         }, { transaction: t });
+
+                        await user.increment({ balance: amount, masonic_fund: -amount }, { transaction: t });
 
                     }
                     if ([4,6,8,9].includes(obj.reward_id)) {

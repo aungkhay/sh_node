@@ -155,7 +155,6 @@ class Controller {
             const t = await db.transaction();
             try {
                 await deposit.update({ status: 1 }, { transaction: t });
-                await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
                 await CashFlow.create({
                     user_id: user.id,
                     relation: user.relation,
@@ -168,6 +167,7 @@ class Controller {
                     flow_status: 'IN'
                 }, { transaction: t });
                 await t.commit();
+                await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
             } catch (error) {
@@ -328,7 +328,6 @@ class Controller {
             try {
                 await withdraw.update({ status: 2 }, { transaction: t });
                 const user = await User.findOne({ where: { id: withdraw.user_id }, attributes: ['id', 'relation', 'balance'], transaction: t });
-                await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
                 await CashFlow.create({
                     user_id: user.id,
                     relation: user.relation,
@@ -341,6 +340,7 @@ class Controller {
                     flow_status: 'IN',
                     description: '退款提现金额'
                 }, { transaction: t });
+                await user.increment({ balance: Number(withdraw.amount) }, { transaction: t });
 
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
@@ -497,8 +497,7 @@ class Controller {
                                     attributes: ['id', 'relation', 'balance'],
                                     transaction: t,
                                 });
-                                await user.increment({ balance: withdraw.amount }, { transaction: t });
-
+                                
                                 await CashFlow.create({
                                     user_id: user.id,
                                     relation: user.relation,
@@ -511,6 +510,7 @@ class Controller {
                                     flow_status: 'IN',
                                     description: '退款提现金额'
                                 }, { transaction: t });
+                                await user.increment({ balance: withdraw.amount }, { transaction: t });
                             }
                             await withdraw.update(obj, { transaction: t });
                         }

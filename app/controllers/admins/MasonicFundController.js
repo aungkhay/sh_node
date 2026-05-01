@@ -250,7 +250,7 @@ class Controller {
                         transaction: t
                     });
                     const user = await User.findByPk(fundHistory.user_id, { attributes: ['id'], transaction: t });
-                    await user.increment({ balance: fundHistory.amount, masonic_fund: -fundHistory.amount }, { transaction: t });
+                    
                     await CashFlow.create({
                         user_id: fundHistory.user_id,
                         relation: user.relation,
@@ -262,6 +262,7 @@ class Controller {
                         after_amount: Number(user.balance) + Number(fundHistory.amount),
                         flow_status: 'IN'
                     }, { transaction: t });
+                    await user.increment({ balance: fundHistory.amount, masonic_fund: -fundHistory.amount }, { transaction: t });
 
                     if (reward) {
                         await reward.update({ is_used: 1 }, { transaction: t });
@@ -345,7 +346,7 @@ class Controller {
                             where: { user_id: user.id, reward_id: 6, is_used: 0 },
                             transaction: t
                         });
-                        await user.increment({ balance: Number(fund.amount), masonic_fund: -Number(fund.amount) }, { transaction: t });
+                        
                         await fund.update({ status: 'APPROVED' }, { transaction: t });
 
                         await CashFlow.create({
@@ -359,6 +360,8 @@ class Controller {
                             after_amount: Number(user.balance) + Number(fund.amount),
                             flow_status: 'IN'
                         }, { transaction: t });
+
+                        await user.increment({ balance: Number(fund.amount), masonic_fund: -Number(fund.amount) }, { transaction: t });
                     }
 
                     await t.commit();
