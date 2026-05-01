@@ -5013,7 +5013,7 @@ class Controller {
                         before_amount: Number(upLevelUser.balance),
                         after_amount: Number(upLevelUser.balance) + Number(bonus),
                         flow_status: 'IN',
-                        description: `${policyPackage.name}`
+                        description: `${policyPackage.product_name}`
                     });
 
                     bonuses.push({
