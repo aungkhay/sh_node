@@ -30,38 +30,55 @@ class Controller {
         let redisLocked = false;
 
         try {
+
+            const { orderNo, merchantId, userId } = req.params;
+
+            const resMessages = {
+                '1': 'OK', // longlongzhifu
+                '2': 'success', // mingrizhifu
+                '3': 'success', // bestzhifu
+                '4': 'success', // unifiedzhifu
+                '5': 'SUCCESS', // hongtuzhifu
+                '6': 'success', // mzhifu
+                '7': 'success', // alizhifu
+                '8': 'success', // dongfanghuitongzhifu
+                '9': 'OK', // huijuzhifu
+                '10': 'success', // fulinxinzhifu
+                '11': 'OK', // payeasyer
+                '12': 'SUCCESS', // jinkezhifu
+                '13': 'success', // huiruzhifu
+            }
+
+            let resMsg = resMessages[String(merchantId)] || 'success';
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
             redisLocked = await this.redisHelper.setLock(lockKey, 1, 3);
             if (redisLocked !== 'OK') {
-                return res.send('');
+                return res.send(resMsg);
             }
 
-            const { orderNo, merchantId, userId } = req.params;
             callbackLogger(`[RECHARGE_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
             const deposit = await Deposit.findOne({ 
                 where: { 
                     order_no: orderNo, 
                     deposit_merchant_id: merchantId, 
                     user_id: userId,
-                    status: {
-                        [Op.ne]: 1
-                    }  
+                    status: 0
                 } 
             });
             if (!deposit) {
-                return res.send('');
+                return res.send(resMsg);
             }
             const merchant = await DepositMerchant.findByPk(merchantId);
             if (!merchant) {
-                return res.send('');
+                return res.send(resMsg);
             }
 
             const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund'] });
 
             let status = 0;
-            let resMsg = '';
             let reqBody = req.body;
 
             switch (merchant.app_code) {
@@ -365,7 +382,7 @@ class Controller {
                 } catch (error) {
                     await t.rollback();
                     errLogger(`[RECHARGE_CALLBACK][${userId}]: ${error.stack}`);
-                    return res.send('');
+                    return res.send(resMsg);
                 }
             }
 
