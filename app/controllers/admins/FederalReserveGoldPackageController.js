@@ -235,7 +235,7 @@ class Controller {
             const t = await db.transaction();
             try {
 
-                const user = await User.findByPk(pkgHistory.user_id, { attributes: ['id', 'relation', 'reserve_fund', 'gold'], transaction: t });
+                const user = await User.findByPk(pkgHistory.user_id, { attributes: ['id', 'relation', 'reserve_fund', 'gold', 'balance'], transaction: t });
                 let releaseAmount = 0;
                 if (type == 0) {
                     // 储备收益
