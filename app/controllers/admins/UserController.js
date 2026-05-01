@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn, BalanceTransfer, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, CashFlow } = require('../../models');
+const { User, UserKYC, PaymentMethod, UserCertificate, db, UserBonus, UserRankPoint, RewardRecord, UserLog, Rank, Allowance, Deposit, Withdraw, Config, Role, Transfer, GoldPackageBonuses, UserGoldPrice, AdminLog, GoldPackageHistory, GoldPackageReturn, GoldPackageRepurchase, SpecificUserNotification, Notification, MasonicFundHistory, MasonicPackageBonuses, MasonicPackageEarn, BalanceTransfer, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, CashFlow, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn } = require('../../models');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 const { encrypt } = require('../../helpers/AESHelper');
 const { Op, fn, col, Sequelize, literal } = require('sequelize');
@@ -2720,6 +2720,56 @@ class Controller {
                 }
             });
 
+            // Buy Policy Package [购买政策礼包]
+            const buyPolicyPackages = await PolicyPackageHistory.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'price', 'createdAt']
+            });
+            const newBuyPolicyPackages = buyPolicyPackages.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.price),
+                    createdAt: g.createdAt,
+                    type: '购买政策礼包',
+                    description: `储备金 ➖ ${Number(g.price)}`
+                }
+            });
+
+            // Buy Policy Package Bonus [购买政策礼包奖励]
+            const policyPackageBonuses = await PolicyPackageBonuses.findAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['phone_number'],
+                },
+                where: { user_id: user.id },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newPolicyPackageBonuses = policyPackageBonuses.map(g => {
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '购买政策礼包奖励',
+                    description: `${g.from_user ? `来源 ${g.from_user.phone_number} ` : ' '} 余额 ➕ ${Number(g.amount)}`
+                }
+            });
+
+            // 政策礼包收益
+            const policyPackageEarnings = await PolicyPackageEarn.findAll({
+                where: { user_id: user.id },
+                attributes: ['id', 'amount', 'createdAt']
+            });
+            const newPolicyPackageEarnings = policyPackageEarnings.map(g => {   
+                return {
+                    id: Number(g.id),
+                    amount: Number(g.amount),
+                    createdAt: g.createdAt,
+                    type: '政策礼包收益',
+                    description: `余额 ➕ ${Number(g.amount)}`
+                }
+            });
+
             // Sign Agreement [签署协议]
             // const signAgreement = [];
             // if (user.agreement_status === 'APPROVED') {
@@ -2868,6 +2918,7 @@ class Controller {
                 ...newDeposits, 
                 ...newTransfers, 
                 ...newBuyGolds, 
+                ...newSellGolds,
                 ...newGoldPackageBonuses,
                 ...newBuyMasonicPackages,
                 ...newMasonicPackageBonuses,
@@ -2875,6 +2926,9 @@ class Controller {
                 ...newBuyFederalPackages,
                 ...newFederalPackageBonuses,
                 ...newFederalPackageEarnings,
+                ...newBuyPolicyPackages,
+                ...newPolicyPackageBonuses,
+                ...newPolicyPackageEarnings,
                 // ...signAgreement,
                 ...newWithdrawals,
                 ...newCustomizeWallet,
