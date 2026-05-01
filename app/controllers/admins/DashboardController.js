@@ -261,7 +261,28 @@ class Controller {
                 replacements: { start: startDate, end: endDate }
             });
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功',  result[0].total_active_users ? Number(result[0].total_active_users) : 0);
+            const todayActiveUserCount = result[0].total_active_users ? Number(result[0].total_active_users) : 0;
+
+            // total
+            const [totalResult] = await db.query(`
+                SELECT COUNT(DISTINCT user_id) AS total_active_users
+                FROM (
+                    SELECT user_id FROM federal_reserve_gold_package_history
+                    UNION ALL
+                    SELECT user_id FROM gold_package_history
+                    UNION ALL
+                    SELECT user_id FROM masonic_package_history
+                ) AS combined
+                `);
+
+            const totalActiveUserCount = totalResult[0].total_active_users ? Number(totalResult[0].total_active_users) : 0;
+
+            const data = {
+                today_active_user_count: todayActiveUserCount,
+                total_active_user_count: totalActiveUserCount
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功',  data);
         } catch (error) {
             console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
