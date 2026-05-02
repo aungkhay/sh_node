@@ -166,8 +166,8 @@ class Controller {
                     after_amount: Number(user.reserve_fund) + Number(deposit.amount),
                     flow_status: 'IN'
                 }, { transaction: t });
-                await t.commit();
                 await user.increment({ reserve_fund: Number(deposit.amount) }, { transaction: t });
+                await t.commit();
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
             } catch (error) {
