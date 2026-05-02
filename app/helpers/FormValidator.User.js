@@ -304,7 +304,7 @@ exports.post_news = () => {
             .withMessage('类型无效'),
         // check('title', { msg: '标题不能为空' }).not().isEmpty(),
         check('content', { msg: '内容不能为空' }).not().isEmpty(),
-        check('file_url', { msg: '请上传图片' }).not().isEmpty(),
+        // check('file_url', { msg: '请上传图片' }).not().isEmpty(),
     ]
 }
 
