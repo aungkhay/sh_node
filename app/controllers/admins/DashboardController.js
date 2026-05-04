@@ -238,56 +238,51 @@ class Controller {
 
     TODAY_ACTIVE_USER_COUNT = async (req, res) => {
         try {
-            const startDate = moment().startOf('day').toDate();
-            const endDate = moment().endOf('day').toDate();
+            const startDate = moment.utc().startOf('day').toDate();
+            const endDate = moment.utc().add(1, 'day').startOf('day').toDate();
 
-            const [result] = await db.query(`
-                SELECT COUNT(DISTINCT user_id) AS total_active_users
+            const [todayRows] = await db.query(`
+                SELECT COUNT(DISTINCT combined.userId) AS total_active_users
                 FROM (
-                    SELECT user_id FROM federal_reserve_gold_package_history 
-                    WHERE createdAt >= :start AND createdAt < :end
-
+                    SELECT userId, createdAt FROM federal_reserve_gold_package_history
                     UNION ALL
-
-                    SELECT user_id FROM gold_package_history 
-                    WHERE createdAt >= :start AND createdAt < :end
-
+                    SELECT userId, createdAt FROM gold_package_history
                     UNION ALL
-
-                    SELECT user_id FROM masonic_package_history 
-                    WHERE createdAt >= :start AND createdAt < :end
+                    SELECT userId, createdAt FROM masonic_package_history
                 ) AS combined
-                `, {
-                replacements: { start: startDate, end: endDate }
+                WHERE combined.createdAt >= :start
+                    AND combined.createdAt < :end
+                    AND combined.userId IS NOT NULL
+                    AND combined.userId <> 0
+                `, { replacements: { start: startDate, end: endDate } 
             });
 
-            const todayActiveUserCount = result[0].total_active_users ? Number(result[0].total_active_users) : 0;
+            const todayActiveUserCount = Number(todayRows?.[0]?.total_active_users || 0);
 
-            // total
-            const [totalResult] = await db.query(`
-                SELECT COUNT(DISTINCT user_id) AS total_active_users
+            const [totalRows] = await db.query(`
+                SELECT COUNT(DISTINCT combined.userId) AS total_active_users
                 FROM (
-                    SELECT user_id FROM federal_reserve_gold_package_history
+                    SELECT userId FROM federal_reserve_gold_package_history
                     UNION ALL
-                    SELECT user_id FROM gold_package_history
+                    SELECT userId FROM gold_package_history
                     UNION ALL
-                    SELECT user_id FROM masonic_package_history
+                    SELECT userId FROM masonic_package_history
                 ) AS combined
+                WHERE combined.userId IS NOT NULL
+                    AND combined.userId <> 0
                 `);
 
-            const totalActiveUserCount = totalResult[0].total_active_users ? Number(totalResult[0].total_active_users) : 0;
+            const totalActiveUserCount = Number(totalRows?.[0]?.total_active_users || 0);
 
-            const data = {
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', {
                 today_active_user_count: todayActiveUserCount,
                 total_active_user_count: totalActiveUserCount
-            }
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功',  data);
+            });
         } catch (error) {
             console.log(error);
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
-    }
+    };
 
     DW_CHART = async (req, res) => {
         try {
