@@ -236,7 +236,7 @@ class Controller {
         }
     }
 
-    TODAY_ACTIVE_USER_COUNT = async (req, res) => {
+    TODAY_ACTIVE_USER_COUNT_ = async (req, res) => {
         try {
             const startDate = moment.utc().startOf("day").toDate();
             const endDate = moment.utc().add(1, "day").startOf("day").toDate();
@@ -322,6 +322,80 @@ class Controller {
             const data = {
                 today_active_user_count: todayActiveUserCount,
                 total_active_user_count: sumDailyUniqueUsers,
+            };
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, "成功", data);
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TODAY_ACTIVE_USER_COUNT = async (req, res) => {
+        try {
+            const startDate = moment.utc().startOf("day").toDate();
+            const endDate = moment.utc().add(1, "day").startOf("day").toDate();
+
+            // 1) Today active (today)
+            const [todayActiveFederal, todayActiveGold, todayActiveMasonic] = await Promise.all([
+                FederalReserveGoldPackageHistory.findAll({
+                    where: { createdAt: { [Op.gte]: startDate, [Op.lt]: endDate } },
+                    attributes: ["user_id"],
+                    raw: true,
+                }),
+                GoldPackageHistory.findAll({
+                    where: { createdAt: { [Op.gte]: startDate, [Op.lt]: endDate } },
+                    attributes: ["user_id"],
+                    raw: true,
+                }),
+                MasonicPackageHistory.findAll({
+                    where: { createdAt: { [Op.gte]: startDate, [Op.lt]: endDate } },
+                    attributes: ["user_id"],
+                    raw: true,
+                }),
+            ]);
+
+            // Unique today active users across 3 tables
+            const todayActiveUserSet = new Set();
+            todayActiveFederal.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
+            todayActiveGold.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
+            todayActiveMasonic.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
+
+            // 2) Active before today (yesterday or any earlier time)
+            const [beforeActiveFederal, beforeActiveGold, beforeActiveMasonic] = await Promise.all([
+                FederalReserveGoldPackageHistory.findAll({
+                    where: { createdAt: { [Op.lt]: startDate } },
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+                GoldPackageHistory.findAll({
+                    where: { createdAt: { [Op.lt]: startDate } },
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+                MasonicPackageHistory.findAll({
+                    where: { createdAt: { [Op.lt]: startDate } },
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+            ]);
+
+            const beforeTodayActiveUserSet = new Set();
+            beforeActiveFederal.forEach(r => r.user_id != null && beforeTodayActiveUserSet.add(r.user_id));
+            beforeActiveGold.forEach(r => r.user_id != null && beforeTodayActiveUserSet.add(r.user_id));
+            beforeActiveMasonic.forEach(r => r.user_id != null && beforeTodayActiveUserSet.add(r.user_id));
+
+            // 3) Count only users active today BUT not active before today
+            const todayNewActiveUserCount = [...todayActiveUserSet]
+                .filter(user_id => !beforeTodayActiveUserSet.has(user_id))
+                .length;
+
+            const data = {
+                today_active_user_count: todayNewActiveUserCount,
+                total_active_user_count: todayActiveUserSet.size + beforeTodayActiveUserSet.size,
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, "成功", data);
