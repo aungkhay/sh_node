@@ -52,6 +52,7 @@ APP.use((req, res, next) => {
         }
     });
      /* ---------- skip heavy logic ---------- */
+     console.log(`\x1b[33m[Public Route]\x1b[0m ${req.method} ${req.path}`);
     if (PUBLIC_ROUTES.includes(req.path)) {
         return next();
     }
@@ -74,7 +75,7 @@ APP.use((req, res, next) => {
         }
 
         /* ---------- route permission ---------- */
-        if (!req.path.startsWith('/admin') && !RouteDetector(req)) {
+        if (!req.path.startsWith('/admin') && !req.path.startsWith('/api/recharge-callback') && !RouteDetector(req)) {
             return MyResponse(res, 400, false, 'Action Denied!', {});
         }
 
