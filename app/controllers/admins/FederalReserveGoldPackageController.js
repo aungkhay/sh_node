@@ -265,20 +265,22 @@ class Controller {
                     await pkgHistory.update({ is_returned_price: true, return_price_date: new Date() }, { transaction: t });
                     
                     releaseAmount = pkgHistory.price;
-
-                    await CashFlow.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 2,
-                        model: 'FederalReserveGoldPackageEarn',
-                        type: '联储备黄金礼包返还',
-                        amount: pkgHistory.price,
-                        before_amount: user.balance,
-                        after_amount: Number(user.balance) + Number(pkgHistory.price),
-                        flow_status: 'IN',
-                        description: '本金返还'
-                    }, { transaction: t });
-                    await user.increment({ balance: Number(pkgHistory.price) }, { transaction: t });
+                    
+                    if (releaseAmount > 0) {
+                        await CashFlow.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'FederalReserveGoldPackageEarn',
+                            type: '联储备黄金礼包返还',
+                            amount: pkgHistory.price,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(pkgHistory.price),
+                            flow_status: 'IN',
+                            description: '本金返还'
+                        }, { transaction: t });
+                        await user.increment({ balance: Number(pkgHistory.price) }, { transaction: t });
+                    }
                 } else if (type == 3) {
                     // 共济基金金额
                     await pkgHistory.update({ is_returned_masonic_fund: true, return_masonic_fund_date: new Date() }, { transaction: t });

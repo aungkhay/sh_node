@@ -4547,30 +4547,57 @@ class Controller {
 
                 await user.update({ reserve_fund: Number(user.reserve_fund) - fPackage.price }, { transaction: t });
 
-                const fPackageHistory = await FederalReserveGoldPackageHistory.create({
-                    relation: user.relation,
-                    user_id: user.id,
-                    package_id: fPackage.id,
-                    price: fPackage.price,
-                    reserve_earn: fPackage.reserve_earn,
-                    personal_gold: fPackage.personal_gold,
-                    masonic_fund: fPackage.masonic_fund,
-                    period: fPackage.period,
-                    return_date: moment().add(fPackage.period, 'days').toDate(),
-                }, { transaction: t });
+                const pkgHistory = [];
+                if (fPackage.buy_one_get_quantity > 0) {
+                    const randomNumber = this.commonHelper.randomNumber(6);
+
+                    for (let index = 0; index <= fPackage.buy_one_get_quantity; index++) {
+                        const obj = {
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: fPackage.id,
+                            price: index == 0 ? fPackage.price : 0,
+                            reserve_earn: fPackage.reserve_earn,
+                            personal_gold: fPackage.personal_gold,
+                            masonic_fund: fPackage.masonic_fund,
+                            period: fPackage.period,
+                            return_date: moment().add(fPackage.period, 'days').toDate(),
+                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                        }
+                        const fPackageHistoryItem = await FederalReserveGoldPackageHistory.create(obj, { transaction: t });
+                        pkgHistory.push(fPackageHistoryItem);
+                    }
+                } else {
+                    const obj = {
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: fPackage.id,
+                        price: fPackage.price,
+                        reserve_earn: fPackage.reserve_earn,
+                        personal_gold: fPackage.personal_gold,
+                        masonic_fund: fPackage.masonic_fund,
+                        period: fPackage.period,
+                        return_date: moment().add(fPackage.period, 'days').toDate(),
+                    }
+                    const fPackageHistoryItem = await FederalReserveGoldPackageHistory.create(obj, { transaction: t });
+                    pkgHistory.push(fPackageHistoryItem);
+                }
 
                 await fPackage.increment({ total_quantity: -1 }, { transaction: t });
                 if (fPackage.total_quantity - 1 <= 0) {
                     await fPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
                 }
+
                 if (fPackage.is_release_authorize_letter) {
-                    await RewardRecord.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        reward_id: 12, // 上合组织哈萨克斯坦区授权书
-                        amount: 1,
-                        from_where: `PKG-${fPackageHistory.id}`
-                    }, { transaction: t });
+                    for (const pkg of pkgHistory) {
+                        await RewardRecord.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            reward_id: 12, // 上合组织哈萨克斯坦区授权书
+                            amount: 1,
+                            from_where: `PKG-${pkg.id}`
+                        }, { transaction: t });
+                    }
                 }
 
                 const bonusArr = [15, 7, 3];
@@ -4625,7 +4652,7 @@ class Controller {
                         user_id: upLevelUser.id,
                         from_user_id: user.id,
                         amount: bonus,
-                        package_history_id: fPackageHistory.id
+                        package_history_id: pkgHistory[0].id
                     });
                 }
                 if (bonuses.length > 0) {

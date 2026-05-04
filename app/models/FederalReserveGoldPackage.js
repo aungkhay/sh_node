@@ -78,6 +78,12 @@ FederalReserveGoldPackage.init({
         defaultValue: 0,
         comment: '总发行数量',
     },
+    buy_one_get_quantity: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '买一赠一数量, 0表示不赠送',
+    },
     status: {
         type: DataTypes.INTEGER,
         allowNull: false,
