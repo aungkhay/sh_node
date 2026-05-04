@@ -238,55 +238,67 @@ class Controller {
 
     TODAY_ACTIVE_USER_COUNT = async (req, res) => {
         try {
-            const startDate = moment.utc().startOf('day').toDate();
-            const endDate = moment.utc().add(1, 'day').startOf('day').toDate();
+            const startDate = moment.utc().startOf("day").toDate();
+            const endDate = moment.utc().add(1, "day").startOf("day").toDate();
 
             const todayActiveFederal = await FederalReserveGoldPackageHistory.findAll({
                 where: { createdAt: { [Op.between]: [startDate, endDate] } },
-                attributes: ['id']
+                attributes: ["user_id"],
+                raw: true,
             });
+
             const todayActiveGold = await GoldPackageHistory.findAll({
                 where: { createdAt: { [Op.between]: [startDate, endDate] } },
-                attributes: ['id']
+                attributes: ["user_id"],
+                raw: true,
             });
+
             const todayActiveMasonic = await MasonicPackageHistory.findAll({
                 where: { createdAt: { [Op.between]: [startDate, endDate] } },
-                attributes: ['id']
+                attributes: ["user_id"],
+                raw: true,
             });
-            // use Set to get unique user count
+
+            // Unique today active users across 3 tables
             const todayActiveUserSet = new Set();
-            todayActiveFederal.forEach(record => todayActiveUserSet.add(record.user_id));
-            todayActiveGold.forEach(record => todayActiveUserSet.add(record.user_id));
-            todayActiveMasonic.forEach(record => todayActiveUserSet.add(record.user_id));
+            todayActiveFederal.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
+            todayActiveGold.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
+            todayActiveMasonic.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
 
             const todayActiveUserCount = todayActiveUserSet.size;
 
+            // Total unique active users across all time (group by user_id)
             const totalActiveFederal = await FederalReserveGoldPackageHistory.findAll({
-                attributes: ['user_id'],
-                group: ['user_id']
+                attributes: ["user_id"],
+                group: ["user_id"],
+                raw: true,
             });
+
             const totalActiveGold = await GoldPackageHistory.findAll({
-                attributes: ['user_id'],
-                group: ['user_id']
+                attributes: ["user_id"],
+                group: ["user_id"],
+                raw: true,
             });
+
             const totalActiveMasonic = await MasonicPackageHistory.findAll({
-                attributes: ['user_id'],
-                group: ['user_id']
+                attributes: ["user_id"],
+                group: ["user_id"],
+                raw: true,
             });
-            // use Set to get unique user count
+
             const totalActiveUserSet = new Set();
-            totalActiveFederal.forEach(record => totalActiveUserSet.add(record.user_id));
-            totalActiveGold.forEach(record => totalActiveUserSet.add(record.user_id));
-            totalActiveMasonic.forEach(record => totalActiveUserSet.add(record.user_id));
+            totalActiveFederal.forEach((r) => r.user_id != null && totalActiveUserSet.add(r.user_id));
+            totalActiveGold.forEach((r) => r.user_id != null && totalActiveUserSet.add(r.user_id));
+            totalActiveMasonic.forEach((r) => r.user_id != null && totalActiveUserSet.add(r.user_id));
 
             const totalActiveUserCount = totalActiveUserSet.size;
 
             const data = {
                 today_active_user_count: todayActiveUserCount,
-                total_active_user_count: totalActiveUserCount
-            }
+                total_active_user_count: totalActiveUserCount,
+            };
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, "成功", data);
         } catch (error) {
             console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
