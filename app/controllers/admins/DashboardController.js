@@ -295,16 +295,33 @@ class Controller {
                 raw: true,
             });
 
+            // 1) All-time unique users
             const totalActiveUserSet = new Set();
-            totalActiveFederal.forEach((r) => r.user_id != null && totalActiveUserSet.add(r.user_id));
-            totalActiveGold.forEach((r) => r.user_id != null && totalActiveUserSet.add(r.user_id));
-            totalActiveMasonic.forEach((r) => r.user_id != null && totalActiveUserSet.add(r.user_id));
 
-            const totalActiveUserCount = totalActiveUserSet.size;
+            // 2) Per-day unique users
+            const dailyMap = new Map(); // day -> Set(user_id)
+
+            const addRow = (r) => {
+                if (r.user_id == null || r.day == null) return;
+
+                // all-time unique
+                totalActiveUserSet.add(r.user_id);
+
+                // per-day unique
+                const dayKey = String(r.day); // e.g. "2026-05-04"
+                if (!dailyMap.has(dayKey)) dailyMap.set(dayKey, new Set());
+                dailyMap.get(dayKey).add(r.user_id);
+            };
+
+            [...totalActiveFederal, ...totalActiveGold, ...totalActiveMasonic].forEach(addRow);
+
+            // const totalActiveUserCount = totalActiveUserSet.size;
+            const sumDailyUniqueUsers = [...dailyMap.values()]
+                  .reduce((sum, userSet) => sum + userSet.size, 0);
 
             const data = {
                 today_active_user_count: todayActiveUserCount,
-                total_active_user_count: totalActiveUserCount,
+                total_active_user_count: sumDailyUniqueUsers,
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, "成功", data);
@@ -312,7 +329,7 @@ class Controller {
             console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
-    };
+    }
 
     DW_CHART = async (req, res) => {
         try {
