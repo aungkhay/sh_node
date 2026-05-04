@@ -80,7 +80,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { product_name, price, period, reserve_earn, personal_gold, masonic_fund, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description } = req.body;
+            const { product_name, price, period, reserve_earn, personal_gold, masonic_fund, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity } = req.body;
             const newPackage = await FederalReserveGoldPackage.create({
                 product_name: product_name,
                 price: price,
@@ -93,6 +93,7 @@ class Controller {
                 quantity_limit: quantity_limit,
                 total_quantity: total_quantity,
                 description: description,
+                buy_one_get_quantity: buy_one_get_quantity,
             });
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', newPackage);
 
@@ -115,7 +116,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
-            const { product_name, price, period, reserve_earn, personal_gold, masonic_fund, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, status } = req.body;
+            const { product_name, price, period, reserve_earn, personal_gold, masonic_fund, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, status } = req.body;
             await pkg.update({
                 product_name: product_name,
                 price: price,
@@ -128,6 +129,7 @@ class Controller {
                 quantity_limit: quantity_limit,
                 total_quantity: total_quantity,
                 description: description,
+                buy_one_get_quantity: buy_one_get_quantity,
                 status: status,
             });
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', pkg);
@@ -265,7 +267,7 @@ class Controller {
                     await pkgHistory.update({ is_returned_price: true, return_price_date: new Date() }, { transaction: t });
                     
                     releaseAmount = pkgHistory.price;
-                    
+
                     if (releaseAmount > 0) {
                         await CashFlow.create({
                             user_id: user.id,
