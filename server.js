@@ -52,7 +52,6 @@ APP.use((req, res, next) => {
         }
     });
      /* ---------- skip heavy logic ---------- */
-     console.log(`\x1b[33m[Public Route]\x1b[0m ${req.method} ${req.path}`);
     if (PUBLIC_ROUTES.includes(req.path)) {
         return next();
     }
