@@ -261,23 +261,23 @@ class Controller {
 
             const todayActiveUserCount = todayActiveUserSet.size;
 
-            const todayActiveFederal = await FederalReserveGoldPackageHistory.findAll({
+            const totalActiveFederal = await FederalReserveGoldPackageHistory.findAll({
                 attributes: ['user_id'],
                 group: ['user_id']
             });
-            const todayActiveGold = await GoldPackageHistory.findAll({
+            const totalActiveGold = await GoldPackageHistory.findAll({
                 attributes: ['user_id'],
                 group: ['user_id']
             });
-            const todayActiveMasonic = await MasonicPackageHistory.findAll({
+            const totalActiveMasonic = await MasonicPackageHistory.findAll({
                 attributes: ['user_id'],
                 group: ['user_id']
             });
             // use Set to get unique user count
             const totalActiveUserSet = new Set();
-            todayActiveFederal.forEach(record => totalActiveUserSet.add(record.user_id));
-            todayActiveGold.forEach(record => totalActiveUserSet.add(record.user_id));
-            todayActiveMasonic.forEach(record => totalActiveUserSet.add(record.user_id));
+            totalActiveFederal.forEach(record => totalActiveUserSet.add(record.user_id));
+            totalActiveGold.forEach(record => totalActiveUserSet.add(record.user_id));
+            totalActiveMasonic.forEach(record => totalActiveUserSet.add(record.user_id));
 
             const totalActiveUserCount = totalActiveUserSet.size;
 
