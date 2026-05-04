@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { Deposit, Withdraw, User, UserKYC, PaymentMethod, RewardRecord, db } = require('../../models');
+const { Deposit, Withdraw, User, UserKYC, PaymentMethod, RewardRecord, db, FederalReserveGoldPackageHistory, GoldPackageHistory, MasonicPackageHistory } = require('../../models');
 const { Op, fn, col, literal } = require('sequelize');
 const moment = require('moment');
 
@@ -241,43 +241,52 @@ class Controller {
             const startDate = moment.utc().startOf('day').toDate();
             const endDate = moment.utc().add(1, 'day').startOf('day').toDate();
 
-            const [todayRows] = await db.query(`
-                SELECT COUNT(DISTINCT combined.user_id) AS total_active_users
-                FROM (
-                    SELECT user_id, createdAt FROM federal_reserve_gold_package_history
-                    UNION ALL
-                    SELECT user_id, createdAt FROM gold_package_history
-                    UNION ALL
-                    SELECT user_id, createdAt FROM masonic_package_history
-                ) AS combined
-                WHERE combined.createdAt >= :start
-                    AND combined.createdAt < :end
-                    AND combined.user_id IS NOT NULL
-                    AND combined.user_id <> 0
-                `, { replacements: { start: startDate, end: endDate } 
+            const todayActiveFederal = await FederalReserveGoldPackageHistory.findAll({
+                where: { createdAt: { [Op.between]: [startDate, endDate] } },
+                attributes: ['id']
             });
+            const todayActiveGold = await GoldPackageHistory.findAll({
+                where: { createdAt: { [Op.between]: [startDate, endDate] } },
+                attributes: ['id']
+            });
+            const todayActiveMasonic = await MasonicPackageHistory.findAll({
+                where: { createdAt: { [Op.between]: [startDate, endDate] } },
+                attributes: ['id']
+            });
+            // use Set to get unique user count
+            const todayActiveUserSet = new Set();
+            todayActiveFederal.forEach(record => todayActiveUserSet.add(record.user_id));
+            todayActiveGold.forEach(record => todayActiveUserSet.add(record.user_id));
+            todayActiveMasonic.forEach(record => todayActiveUserSet.add(record.user_id));
 
-            const todayActiveUserCount = Number(todayRows?.[0]?.total_active_users || 0);
+            const todayActiveUserCount = todayActiveUserSet.size;
 
-            const [totalRows] = await db.query(`
-                SELECT COUNT(DISTINCT combined.user_id) AS total_active_users
-                FROM (
-                    SELECT user_id FROM federal_reserve_gold_package_history
-                    UNION ALL
-                    SELECT user_id FROM gold_package_history
-                    UNION ALL
-                    SELECT user_id FROM masonic_package_history
-                ) AS combined
-                WHERE combined.user_id IS NOT NULL
-                    AND combined.user_id <> 0
-                `);
+            const todayActiveFederal = await FederalReserveGoldPackageHistory.findAll({
+                attributes: ['user_id'],
+                group: ['user_id']
+            });
+            const todayActiveGold = await GoldPackageHistory.findAll({
+                attributes: ['user_id'],
+                group: ['user_id']
+            });
+            const todayActiveMasonic = await MasonicPackageHistory.findAll({
+                attributes: ['user_id'],
+                group: ['user_id']
+            });
+            // use Set to get unique user count
+            const totalActiveUserSet = new Set();
+            todayActiveFederal.forEach(record => totalActiveUserSet.add(record.user_id));
+            todayActiveGold.forEach(record => totalActiveUserSet.add(record.user_id));
+            todayActiveMasonic.forEach(record => totalActiveUserSet.add(record.user_id));
 
-            const totalActiveUserCount = Number(totalRows?.[0]?.total_active_users || 0);
+            const totalActiveUserCount = totalActiveUserSet.size;
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', {
+            const data = {
                 today_active_user_count: todayActiveUserCount,
                 total_active_user_count: totalActiveUserCount
-            });
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
