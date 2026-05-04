@@ -269,20 +269,29 @@ class Controller {
 
             // Total unique active users across all time (group by user_id)
             const totalActiveFederal = await FederalReserveGoldPackageHistory.findAll({
-                attributes: ["user_id"],
-                group: ["user_id"],
+                attributes: [
+                    "user_id",
+                    [fn("DATE", col("createdAt")), "day"]
+                ],
+                group: ["user_id", "day"],
                 raw: true,
             });
 
             const totalActiveGold = await GoldPackageHistory.findAll({
-                attributes: ["user_id"],
-                group: ["user_id"],
+                attributes: [
+                    "user_id",
+                    [fn("DATE", col("createdAt")), "day"]
+                ],
+                group: ["user_id", "day"],
                 raw: true,
             });
 
             const totalActiveMasonic = await MasonicPackageHistory.findAll({
-                attributes: ["user_id"],
-                group: ["user_id"],
+                attributes: [
+                    "user_id",
+                    [fn("DATE", col("createdAt")), "day"]
+                ],
+                group: ["user_id", "day"],
                 raw: true,
             });
 

@@ -21,7 +21,7 @@ class AdminRoute extends express.Router {
         this.get('/dashboard/summary', middleware.isLoggedIn(), DashboardCtrl.DASHBOARD_SUMMARY);
         this.get('/dashboard/masonic-fund-summary', middleware.isLoggedIn(), DashboardCtrl.MASONIC_FUND_SUMMARY);
         this.get('/dashboard/check-in-summary', middleware.isLoggedIn(), DashboardCtrl.CHECKIN_SUMMARY);
-        this.get('/dashboard/today-user-active-count', middleware.isLoggedIn(), DashboardCtrl.TODAY_ACTIVE_USER_COUNT);
+        this.get('/dashboard/today-user-active-count', DashboardCtrl.TODAY_ACTIVE_USER_COUNT);
         this.get('/dashboard/withdraw-summary', middleware.isLoggedIn(), DashboardCtrl.WITHDRAW_SUMMARY);
         this.get('/dashboard/dw-chart', middleware.isLoggedIn(), DashboardCtrl.DW_CHART);
         this.get('/dashboard/recent-dw-list', middleware.isLoggedIn(), DashboardCtrl.RECENT_DW_LIST);
