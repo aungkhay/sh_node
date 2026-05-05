@@ -299,9 +299,9 @@ class Controller {
                     console.log("payeasyerSign:", payeasyerSign, "payeasyerReqSign:", payeasyerReqSign);
 
                     // 订单状态：00=支付成功，01=支付失败
-                    if (reqBody.state === '00') {
+                    if (reqBody.returncode === '00') {
                         status = 1;
-                    } else if (reqBody.state === '01') {
+                    } else if (reqBody.returncode === '01') {
                         status = 2;
                     }
                     resMsg = 'OK';
