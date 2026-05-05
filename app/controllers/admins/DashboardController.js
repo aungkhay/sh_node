@@ -139,7 +139,23 @@ class Controller {
                 }
             });
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { yesterday_check_in: yesterdayCheckIn || 0 });
+            const todayCheckIn = await RewardRecord.count({
+                distinct: true,
+                col: 'user_id',
+                where: {
+                    createdAt: {
+                        [Op.gte]: startOfToday,
+                        [Op.lt]: endOfToday
+                    }
+                }
+            });
+
+            const data = {
+                yesterday_check_in: yesterdayCheckIn || 0,
+                today_check_in: todayCheckIn || 0
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
