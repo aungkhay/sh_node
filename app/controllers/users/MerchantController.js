@@ -29,6 +29,22 @@ class Controller {
             .digest("hex");
     }
 
+    CREATE_SHA256_SIGN = (params, secret) => {
+        // 1. Sort keys alphabetically
+        const sortedKeys = Object.keys(params).sort();
+        // 2. Build query string
+        const query = sortedKeys
+            .map(key => `${key}=${params[key]}`)
+            .join("&");
+        // 3. Append secret key
+        const stringToSign = query + secret;
+        console.log("Sign:", stringToSign);
+        // 4. SHA256 hash
+        return crypto.createHash("sha256")
+            .update(stringToSign)
+            .digest("hex");
+    }
+
     /**
      * 
      * @param {Model} channel 
@@ -374,7 +390,7 @@ class Controller {
                 callback_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                 result_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
             }
-            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            const sign = this.CREATE_SHA256_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
             body.sign = sign.toLowerCase();
             body.orderNo = orderNo;
             return body;
