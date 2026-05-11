@@ -409,9 +409,33 @@ class Controller {
                 .filter(user_id => !beforeTodayActiveUserSet.has(user_id))
                 .length;
 
+            // 4) Total active users = all unique users in todayActive + all unique users in beforeTodayActive
+            const [totalActiveFederal, totalActiveGold, totalActiveMasonic] = await Promise.all([
+                FederalReserveGoldPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+                GoldPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+                MasonicPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+            ]);
+
+            const totalActiveUserSet = new Set();
+            totalActiveFederal.forEach(r => r.user_id != null && totalActiveUserSet.add(r.user_id));
+            totalActiveGold.forEach(r => r.user_id != null && totalActiveUserSet.add(r.user_id));
+            totalActiveMasonic.forEach(r => r.user_id != null && totalActiveUserSet.add(r.user_id));
+
             const data = {
                 today_active_user_count: todayNewActiveUserCount,
-                total_active_user_count: todayActiveUserSet.size + beforeTodayActiveUserSet.size,
+                total_active_user_count: totalActiveUserSet.size,
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, "成功", data);
