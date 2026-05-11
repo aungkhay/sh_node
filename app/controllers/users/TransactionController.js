@@ -784,7 +784,8 @@ class Controller {
                     break;
                 case 'xpayzhifu':
                     if (resData.errcode >= 0) {
-                        redirectUrl = resData?.data?.url;
+                        const decoded = Buffer.from(resData?.data, 'base64').toString('utf8');
+                        redirectUrl = JSON.parse(decoded)?.url;
                         success = true;
                     }
                     break;

@@ -390,7 +390,11 @@ class Controller {
                 callback_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                 result_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
             }
-            const sign = this.CREATE_SHA256_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            
+            // sign: SHA256(KEY)+ {data}
+            const sign = crypto.createHash("sha256")
+                .update(channel.deposit_merchant.app_key + JSON.stringify(body))
+                .digest("hex");
             body.sign = sign.toLowerCase();
             body.orderNo = orderNo;
             return body;
