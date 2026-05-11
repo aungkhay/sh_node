@@ -366,9 +366,9 @@ class Controller {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
             const body = {
-                mid: channel.deposit_merchant.app_id,
+                mid: channel.merchant_channel,
                 orderid: orderNo,
-                product_name: `${userId}_${orderNo}`,
+                product_name: channel.channel_name,
                 timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
                 amount: Number(amount).toFixed(2),
                 callback_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,

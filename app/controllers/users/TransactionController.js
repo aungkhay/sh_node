@@ -674,6 +674,7 @@ class Controller {
                     });
                 } else if (channel.deposit_merchant.app_code === 'xpayzhifu') { 
                     const url = channel.deposit_merchant.api + '?sign=' + payload.sign;
+                    delete payload.sign;
                     response = await axios.post(url, payload, {
                         headers: headers
                     });
