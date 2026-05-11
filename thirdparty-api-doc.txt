@@ -33,3 +33,6 @@ https://jkmch-huixin.deepding.com/document?checkedKey=101
 
 汇入支付
 http://jwm4tpa6nh6qqh8acv.itxt003.net/#/publicapidoc
+
+Xpay
+https://admin.xpay360.com/system_views_devdoc

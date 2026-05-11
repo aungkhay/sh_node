@@ -47,6 +47,7 @@ class Controller {
                 '11': 'OK', // payeasyer
                 '12': 'SUCCESS', // jinkezhifu
                 '13': 'success', // huiruzhifu
+                '14': 'success', // xpayzhifu
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -350,6 +351,32 @@ class Controller {
                     resMsg = 'success';
                     break;
 
+                case 'xpayzhifu':
+                    // 回调通知参数表格
+                    // 参数名	字段名	是否必填	类型	示例值	描述
+                    // 商户号	mid	是	string	"1234"	商户号
+                    // 订单号	orderid	是	string	"ORDER20240226120101"	订单号
+                    // 支付金额	pay_amount	是	float	10.01	用户支付的总金额
+                    // 支付时间	pay_timestamp	是	string	"2024-02-26 12:01:01"	用户支付的时间
+                    // 实收金额	receipt_amount	是	float	10.01	商户收到可结算的金额
+                    // 上下文	context	否	string	""	创建订单时传入的context
+
+                    const xpayReqSign = reqBody.query.toLowerCase();
+                    const xpayCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    const xpaySign = this.merchantController.CREATE_SIGN(xpayCleaned, `&key=${merchant.app_key}`);
+                    console.log("xpaySign:", xpaySign, "xpayReqSign:", xpayReqSign);
+                                        
+                    // >=0 成功; < 0 失败
+                    if (Number(reqBody.errcode) >= 0) {
+                        status = 1;
+                    } else {
+                        status = 2;
+                    }
+                    resMsg = 'success';
+                    break;
+
                 default:
                     break;
             }
@@ -615,6 +642,10 @@ class Controller {
                     const huiruzhifuClientIp = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                     payload = await this.merchantController.HUIRUZHIFU(channel, amount, huiruzhifuClientIp, userId);
                     break;
+                case 'xpayzhifu':
+                    payload = await this.merchantController.XPAYZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
 
                 default:
                     break;
@@ -641,7 +672,12 @@ class Controller {
                     response = await axios.post(url, formData.toString(), {
                         headers: headers
                     });
-                } else {
+                } else if (channel.deposit_merchant.app_code === 'xpayzhifu') { 
+                    const url = channel.deposit_merchant.api + '?sign=' + payload.sign;
+                    response = await axios.post(url, payload, {
+                        headers: headers
+                    });
+                 } else {
                     response = await axios.post(channel.deposit_merchant.api, payload, {
                         headers: headers
                     });
@@ -744,6 +780,13 @@ class Controller {
                         redirectUrl = resData?.result?.payUrl;
                         success = true;
                     }
+                    break;
+                case 'xpayzhifu':
+                    if (resData.errcode >= 0) {
+                        redirectUrl = JSON.parse(Buffer.from(resData.data, 'base64').toString('utf-8'))?.payUrl;
+                        success = true;
+                    }
+                    break;
                 default:
                     break;
             }

@@ -361,6 +361,28 @@ class Controller {
             return null;
         }
     }
+
+    XPAYZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                mid: channel.deposit_merchant.app_id,
+                orderid: orderNo,
+                product_name: `${userId}_${orderNo}`,
+                timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
+                amount: Number(amount).toFixed(2),
+                callback_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                result_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+            }
+            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            body.sign = sign.toLowerCase();
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[XPAYZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
 }
 
 module.exports = Controller
