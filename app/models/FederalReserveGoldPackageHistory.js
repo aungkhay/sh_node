@@ -148,6 +148,11 @@ FederalReserveGoldPackageHistory.init({
             name: 'idx_createdAt_user_id',
             fields: ['createdAt', 'user_id'],
             using: 'BTREE'
+        },
+        {
+            name: 'idx_description',
+            fields: ['description'],
+            using: 'BTREE'
         }
     ]
 })

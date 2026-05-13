@@ -4812,7 +4812,12 @@ class Controller {
                     as: 'package',
                     attributes: ['id', 'product_name']
                 },
-                where: { user_id: userId },
+                where: { 
+                    user_id: userId,
+                    description: {
+                        [Op.ne]: '新注册用户福利' // exclude free package history
+                    }
+                },
                 attributes: ['id', 'price', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
