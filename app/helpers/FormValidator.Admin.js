@@ -804,3 +804,22 @@ exports.update_policy_package = () => {
             .withMessage('状态无效'),
     ]
 }
+
+exports.create_meeting = () => {
+    return [
+        check('title', { msg: '标题不能为空' }).not().isEmpty(),
+        check('cover', { msg: '请上传封面' }).not().isEmpty(),
+        check('speaker', { msg: '宣讲员不能为空' }).not().isEmpty(),
+        check('start_time', { msg: '开始时间不能为空' }).not().isEmpty(),
+        check('location', { msg: '地点不能为空' }).not().isEmpty(),
+        check('link', { msg: '链接不能为空' }).not().isEmpty(),
+        check('is_active').not().isEmpty().withMessage('激活状态不能为空')
+            .bail()
+            .isIn([0, 1])
+            .withMessage('激活状态值无效'),
+        check('meeting_code', { msg: '福利码不能为空' }).not().isEmpty()
+            .bail()
+            .isNumeric()
+            .withMessage('福利码必须是数字'),
+    ]
+}

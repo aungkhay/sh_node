@@ -66,6 +66,8 @@ const PolicyPackageHistory = require('./PolicyPackageHistory');
 const PolicyPackageBonuses = require('./PolicyPackageBonuses');
 const PolicyPackageEarn = require('./PolicyPackageEarn');
 const CashFlow = require('./CashFlow');
+const Meeting = require('./Meeting');
+const AttendedMeeting = require('./AttendedMeeting');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -344,6 +346,14 @@ PolicyPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete:
 User.hasMany(CashFlow, { foreignKey: 'user_id', as: 'cash_flows', onDelete: 'CASCADE' });
 CashFlow.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== ATTENDED_MEETING ↔️ USER (1:N) ==========
+User.hasMany(AttendedMeeting, { foreignKey: 'user_id', as: 'attended_meetings', onDelete: 'CASCADE' });
+AttendedMeeting.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== ATTENDED_MEETING ↔️ MEETING (1:N) ==========
+Meeting.hasMany(AttendedMeeting, { foreignKey: 'meeting_id', as: 'attendees', onDelete: 'CASCADE' });
+AttendedMeeting.belongsTo(Meeting, { foreignKey: 'meeting_id', as: 'meeting', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -406,6 +416,8 @@ const models = {
     PolicyPackageBonuses,
     PolicyPackageEarn,
     CashFlow,
+    Meeting,
+    AttendedMeeting,
 };
 
 // Export models + db connection

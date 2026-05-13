@@ -830,3 +830,26 @@ const params = {
     perPage: 10
 }
 ```
+
+### Meeting
+``` js
+// [GET] Active Meeting
+const url = `${baseURL}/meetins/active`;
+
+// [POST] Join Meeting
+const url = `${baseURL}/meetings/${meetingID}/join`;
+
+// [GET] Attended History
+const url = `${baseURL}/meetings/attended`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+
+// [GET] Letter List
+const url = `${baseURL}/authorization-letters`;
+// 6. 上合组织中国区授权书 
+// 11. 上合组织塔吉克斯坦区授权书 
+// 12. 上合组织哈萨克斯坦区授权书 
+// 13. 上合组织乌兹别克斯坦区授权书
+```

@@ -1,8 +1,8 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow } = require('../../models');
-const { Op, literal, Sequelize, QueryTypes } = require('sequelize');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting } = require('../../models');
+const { Op, literal, Sequelize, QueryTypes, where } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const Impeachment = require('../../models/Impeachment');
@@ -6012,6 +6012,164 @@ class Controller {
             });
         } catch (error) {
             errLogger(`[BALANCE_TRACKING_QUERY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ACTIVE_MEETING = async (req, res) => {
+        try {
+            const meeting = await Meeting.findOne({
+                where: {
+                    is_active: 1,
+                }
+            });
+
+            if (!meeting) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无活动会议', {});
+            }
+            delete meeting.dataValues.meeting_code; // 不返回福利码
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { meeting });
+        } catch (error) {
+            errLogger(`[ACTIVE_MEETING][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    JOIN_MEETING = async (req, res) => {
+        try {
+            const meeting = await Meeting.findByPk(req.query.id);
+            if (!meeting) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议不存在', {});
+            }
+            const userId = req.user_id;
+            const meetingCode = req.params.code;
+
+            if (meeting.meeting_code !== meetingCode) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
+            }
+            
+            const existingRecord = await AttendedMeeting.findOne({
+                where: {
+                    user_id: userId,
+                    meeting_id: meeting.id,
+                    meeting_code: meetingCode
+                }
+            });
+            if (existingRecord) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已参加过本次会议', {});
+            }
+
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'balance'] });
+
+            const t = await db.transaction();
+            try {
+
+                const rewardAmount = this.getRandomInt(1, 10); // 随机奖励1-10元
+                await AttendedMeeting.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    meeting_id: meeting.id,
+                    meeting_code: meetingCode,
+                    reward_amount: rewardAmount
+                }, { transaction: t });
+
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 2,
+                    model: 'Meeting',
+                    type: `参加会议获得奖励`,
+                    amount: rewardAmount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) + rewardAmount,
+                    flow_status: 'IN',
+                }, { transaction: t });
+
+                await user.increment({ balance: rewardAmount }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, `参加会议成功，获得奖励${rewardAmount}元`, { reward_amount: rewardAmount });
+            } catch (error) {
+                await t.rollback();
+                errLogger(`[JOIN_MEETING][Transaction][${req.user_id}]: ${error.stack}`);
+                return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[JOIN_MEETING][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ATTENDED_MEETINGS = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            
+            const { count, rows } = await AttendedMeeting.findAndCountAll({
+                where: { user_id: userId },
+                include: {
+                    model: Meeting,
+                    as: 'meeting',
+                    attributes: ['id', 'title', 'cover', 'speaker', 'start_time', 'location', 'link', 'is_active', 'createdAt']
+                },
+                order: [['createdAt', 'DESC']],
+                limit: perPage,
+                offset: offset
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', data);
+        } catch (error) {
+            errLogger(`[ATTENDED_MEETINGS][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    AUTHORIZE_LETTERS = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const letters = await RewardRecord.findAll({
+                where: { 
+                    user_id: userId, 
+                    reward_id: {
+                        [Op.in]: [6, 11, 12, 13]
+                    }
+                },
+                attributes: ['id', 'is_used', 'createdAt'],
+                order: [['createdAt', 'DESC']]
+            });
+
+            // group the letters by reward_id
+            // format = [{reward_id: 6, count: 2, is_used: 0, createdAt: '2024-01-01'}, {reward_id: 11, count: 1, is_used: 1, createdAt: '2024-02-01'}]
+            const grouped = {};
+            letters.forEach(letter => {
+                const rewardId = letter.reward_id;
+                if (!grouped[rewardId]) {
+                    grouped[rewardId] = {
+                        count: 1,
+                        is_used: letter.is_used,
+                        createdAt: letter.createdAt
+                    };
+                } else {
+                    grouped[rewardId].count += 1;
+                }
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { letters: grouped });
+        } catch (error) {
+            errLogger(`[AUTHORIZE_LETTERS][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

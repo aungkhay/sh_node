@@ -186,5 +186,11 @@
 
     { "model": "签到赢黄金计划", "title": "签到记录", "name": "gold-plan-check-in-history" },
 
+    { "model": "会议", "title": "列表", "name": "meeting-list" },
+    { "model": "会议", "title": "创建", "name": "meeting-create" },
+    { "model": "会议", "title": "更新", "name": "meeting-update" },
+    { "model": "会议", "title": "删除", "name": "meeting-delete" },
+    { "model": "会议", "title": "已参加列表", "name": "meeting-attended-history-list" },
+
     { "model": "余额转账记录", "title": "列表", "name": "balance-transfer-list" }
 ]

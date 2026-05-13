@@ -1540,3 +1540,63 @@ const params = {
     phone: ''
 }
 ```
+
+### 会议
+``` js
+// [GET] 列表
+const url = `${baseURL}/meetings`;
+
+// [POST] 上传
+const url = `${baseURL}/meetings/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [POST] 创建
+const url = `${baseURL}/meetings/create`;
+const data = {
+    title: '',
+    cover: '',
+    speaker: '',
+    start_time: '',
+    location: '',
+    link: '',
+    meeting_code: '',
+    is_active: 0, // 0 or 1
+}
+
+// [POST] 更新
+const url = `${baseURL}/meetings/${meetingID}/update`;
+const data = {
+    title: '',
+    cover: '',
+    speaker: '',
+    start_time: '',
+    location: '',
+    link: '',
+    meeting_code: '',
+    is_active: 0, // 0 or 1
+}
+
+// [POST] 删除
+const url = `${baseURL}/meetings/${meetingID}/delete`;
+
+// [GET] 会议记录
+const url = `${baseURL}/meetings/attended-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    startTime: '',
+    endTime: '',
+    phone: ''
+}
+```

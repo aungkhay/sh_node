@@ -287,6 +287,16 @@ class AdminRoute extends express.Router {
         this.get('/policy-package/history', middleware.isLoggedIn('policy-package-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_HISTORY);
         this.get('/policy-package/bonus-history', middleware.isLoggedIn('policy-package-bonus-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_BONUS_HISTORY);
         this.get('/policy-package/earn-history', middleware.isLoggedIn('policy-package-earn-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_EARN_HISTORY);
+
+        // Meeting
+        let MeetingController = require('../controllers/admins/MeetingController');
+        let MeetingCtrl = new MeetingController(app);
+        this.get('/meetings', middleware.isLoggedIn('meeting-list'), MeetingCtrl.INDEX);
+        this.post('/meetings/:id/upload', middleware.isLoggedIn('meeting-create,meeting-update'), MeetingCtrl.UPLOAD);
+        this.post('/meetings/create', FormValidator.create_meeting(), middleware.isLoggedIn('meeting-create'), MeetingCtrl.CREATE);
+        this.post('/meetings/:id/update', FormValidator.create_meeting(), middleware.isLoggedIn('meeting-update'), MeetingCtrl.UPDATE);
+        this.post('/meetings/:id/delete', middleware.isLoggedIn('meeting-delete'), MeetingCtrl.DELETE);
+        this.get('/meetings/attended-history', middleware.isLoggedIn('meeting-attended-history-list'), MeetingCtrl.ATTENDED_MEETINGS);
     }
 }
 
