@@ -2976,6 +2976,42 @@ class Controller {
         }
     }
 
+    CASH_FLOW = async (req, res) => {
+        try {
+            const userId = req.params.id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const walletType = req.query.walletType; // 1-储备金, 2-余额
+
+            const condition = { user_id: userId };
+            if (walletType) {
+                condition.wallet_type = walletType;
+            }
+
+            const { rows, count } = await CashFlow.findAndCountAll({
+                where: condition,
+                order: [['createdAt', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', data);
+        } catch (error) {
+            errLogger(`[User][CASH_FLOW]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     GOLD_COUPON_USER_COUNT = async (req, res) => {
         try {
             const reward_id = 7;

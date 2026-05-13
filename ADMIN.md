@@ -1065,6 +1065,14 @@ const data = {
     contact_info: ''
 }
 
+// [GET] Cash Flow
+const url = `${baseURL}/users/${userID}/cash-flow`;
+const params = {
+    page: 1, 
+    perPage: 20,
+    walletType: null, // 1 => 储备金 | 2 => 金额
+}
+
 // [POST] 更新是否可以参加春节活动
 const url = `${baseURL}/users/update-can-join-spring-event`;
 const data = {
