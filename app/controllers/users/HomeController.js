@@ -6173,7 +6173,7 @@ class Controller {
             }
 
             const meetingCode = req.params.code;
-            if (meeting.meeting_code !== meetingCode) {
+            if (Number(meeting.meeting_code) !== Number(meetingCode)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
             }
 
