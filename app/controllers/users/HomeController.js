@@ -6160,6 +6160,25 @@ class Controller {
         }
     }
 
+    CHECK_MEETING_CODE = async (req, res) => {
+        try {
+            const meeting = await Meeting.findByPk(req.query.id);
+            if (!meeting) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议不存在', {});
+            }
+
+            const meetingCode = req.params.code;
+            if (meeting.meeting_code !== meetingCode) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '福利码正确', { code_match: true });
+        } catch (error) {
+            errLogger(`[CHECK_MEETING_CODE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     JOIN_MEETING = async (req, res) => {
         try {
             const meeting = await Meeting.findByPk(req.query.id);

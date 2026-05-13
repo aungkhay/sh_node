@@ -105,6 +105,7 @@ class UserRoute extends express.Router {
         this.get('/policy-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', HomeCtrl.ACTIVE_MEETING);
+        this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);
         this.post('/meetings/:id/join/:code', middleware.isLoggedIn, HomeCtrl.JOIN_MEETING);
         this.get('/meetings/attended', middleware.isLoggedIn, HomeCtrl.ATTENDED_MEETINGS);
         this.get('/authorization-letters', middleware.isLoggedIn, HomeCtrl.AUTHORIZE_LETTERS);

@@ -842,8 +842,11 @@ const params = {
 // [GET] Active Meeting
 const url = `${baseURL}/meetins/active`;
 
+// [POST] Check Meeting Code
+const url = `${baseULR}/meetings/${meetingID}/check-code/${code}`;
+
 // [POST] Join Meeting
-const url = `${baseURL}/meetings/${meetingID}/join`;
+const url = `${baseURL}/meetings/${meetingID}/join/${code}`;
 
 // [GET] Attended History
 const url = `${baseURL}/meetings/attended`;
