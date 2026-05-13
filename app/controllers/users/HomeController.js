@@ -6167,7 +6167,7 @@ class Controller {
 
     CHECK_MEETING_CODE = async (req, res) => {
         try {
-            const meeting = await Meeting.findByPk(req.query.id);
+            const meeting = await Meeting.findByPk(req.params.id);
             if (!meeting) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议不存在', {});
             }
