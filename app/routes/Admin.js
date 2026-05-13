@@ -292,7 +292,7 @@ class AdminRoute extends express.Router {
         let MeetingController = require('../controllers/admins/MeetingController');
         let MeetingCtrl = new MeetingController(app);
         this.get('/meetings', middleware.isLoggedIn('meeting-list'), MeetingCtrl.INDEX);
-        this.post('/meetings/:id/upload', middleware.isLoggedIn('meeting-create,meeting-update'), MeetingCtrl.UPLOAD);
+        this.post('/meetings/upload', middleware.isLoggedIn('meeting-create,meeting-update'), MeetingCtrl.UPLOAD);
         this.post('/meetings/create', FormValidator.create_meeting(), middleware.isLoggedIn('meeting-create'), MeetingCtrl.CREATE);
         this.post('/meetings/:id/update', FormValidator.create_meeting(), middleware.isLoggedIn('meeting-update'), MeetingCtrl.UPDATE);
         this.post('/meetings/:id/delete', middleware.isLoggedIn('meeting-delete'), MeetingCtrl.DELETE);
