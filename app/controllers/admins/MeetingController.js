@@ -3,7 +3,7 @@ let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const { errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
-const { Meeting, AttendedMeeting } = require('../../models');
+const { Meeting, AttendedMeeting, User } = require('../../models');
 const multer = require('multer');
 const path = require('path');
 const AliOSS = require('../../helpers/AliOSS');
@@ -155,11 +155,18 @@ class Controller {
             const offset = this.getOffset(page, perPage);
 
             const { rows, count } = await AttendedMeeting.findAndCountAll({
-                include: {
-                    model: Meeting,
-                    as: 'meeting',
-                    attributes: ['id', 'title', 'start_time', 'is_active']
-                },
+                include: [
+                    {
+                        model: Meeting,
+                        as: 'meeting',
+                        attributes: ['id', 'title', 'start_time', 'is_active']
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number']
+                    }
+                ],
                 order: [['createdAt', 'DESC']],
                 limit: perPage,
                 offset: offset
