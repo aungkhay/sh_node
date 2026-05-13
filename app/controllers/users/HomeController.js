@@ -6158,7 +6158,18 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无活动会议', {});
             }
             delete meeting.dataValues.meeting_code; // 不返回福利码
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { meeting });
+
+            const userId = req.user_id;
+            const meetingCode = meeting.meeting_code;
+            const existingRecord = await AttendedMeeting.findOne({
+                where: {
+                    user_id: userId,
+                    meeting_id: meeting.id,
+                    meeting_code: meetingCode
+                }
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { meeting, already_joined: !!existingRecord });
         } catch (error) {
             errLogger(`[ACTIVE_MEETING][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
