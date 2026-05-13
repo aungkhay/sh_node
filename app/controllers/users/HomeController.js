@@ -6157,7 +6157,6 @@ class Controller {
             if (!meeting) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无活动会议', {});
             }
-            delete meeting.dataValues.meeting_code; // 不返回福利码
 
             const userId = req.user_id;
             const meetingCode = meeting.meeting_code;
@@ -6168,6 +6167,8 @@ class Controller {
                     meeting_code: meetingCode
                 }
             });
+
+            delete meeting.dataValues.meeting_code; // 不返回福利码
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { meeting, already_joined: !!existingRecord });
         } catch (error) {
