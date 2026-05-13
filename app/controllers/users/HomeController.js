@@ -6296,7 +6296,7 @@ class Controller {
                         [Op.in]: [6, 11, 12, 13]
                     }
                 },
-                attributes: ['id', 'is_used', 'createdAt'],
+                attributes: ['id', 'reward_id', 'is_used', 'createdAt'],
                 order: [['createdAt', 'DESC']]
             });
 
