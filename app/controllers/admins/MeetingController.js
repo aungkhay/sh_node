@@ -4,6 +4,8 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const { errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
 const { Meeting, AttendedMeeting } = require('../../models');
+const multer = require('multer');
+const path = require('path');
 
 class Controller {
     constructor() {
