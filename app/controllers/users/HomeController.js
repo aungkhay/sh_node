@@ -6186,14 +6186,14 @@ class Controller {
 
     JOIN_MEETING = async (req, res) => {
         try {
-            const meeting = await Meeting.findByPk(req.query.id);
+            const meeting = await Meeting.findByPk(req.params.id);
             if (!meeting) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议不存在', {});
             }
             const userId = req.user_id;
             const meetingCode = req.params.code;
 
-            if (meeting.meeting_code !== meetingCode) {
+            if (Number(meeting.meeting_code) !== Number(meetingCode)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
             }
             
