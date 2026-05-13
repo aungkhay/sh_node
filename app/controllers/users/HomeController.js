@@ -6322,6 +6322,38 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    CASH_FLOW = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 20);
+            const offset = this.getOffset(page, perPage);
+
+            const { count, rows } = await CashFlow.findAndCountAll({
+                attributes: ['id', 'wallet_type', 'type', 'amount', 'flow_status', 'description', 'createdAt'],
+                where: { user_id: userId },
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', data);
+        } catch (error) {
+            errLogger(`[CASH_FLOW][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;
