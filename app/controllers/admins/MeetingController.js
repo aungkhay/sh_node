@@ -6,6 +6,7 @@ const { Op } = require('sequelize');
 const { Meeting, AttendedMeeting } = require('../../models');
 const multer = require('multer');
 const path = require('path');
+const AliOSS = require('../../helpers/AliOSS');
 
 class Controller {
     constructor() {
@@ -13,6 +14,7 @@ class Controller {
         this.ResCode = this.commonHelper.ResCode;
         this.adminLogger = this.commonHelper.adminLogger;
         this.getOffset = this.commonHelper.getOffset;
+        this.OSS = new AliOSS();
     }
 
     INDEX = async (req, res) => {
