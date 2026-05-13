@@ -789,6 +789,12 @@ const data = {
     payment_password: ''
 }
 
+// [POST] Get Free
+const url = `${baseURL}/federal-reserve-gold-packages/${pkgID}/get-free`;
+const data = {
+    payment_password: ''
+}
+
 // [GET] Package History
 const url = `${baseURL}/federal-reserve-gold-packages/history`;
 

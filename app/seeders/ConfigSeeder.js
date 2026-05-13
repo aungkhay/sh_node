@@ -241,6 +241,13 @@ module.exports = async () => {
             description: '-',
             data_type: 'integer'
         },
+        {
+            type: 'federal_reserve_gold_package_get_free_time',
+            title: '联储黄金礼包免费领取时间',
+            val: '2026-05-20 00:00:00|2026-06-15 00:00:00',
+            description: '-',
+            data_type: 'string'
+        }
     ];
 
     const count = await Config.count();

@@ -90,6 +90,11 @@ FederalReserveGoldPackage.init({
         defaultValue: 1,
         comment: '状态: 1-在售, 2-下架, 3-售罄',
     },
+    can_new_registered_user_get_free: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: '新注册用户是否可以免费领取',
+    },
     cover_image: {
         type: DataTypes.STRING,
         allowNull: true,

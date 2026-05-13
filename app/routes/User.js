@@ -93,6 +93,7 @@ class UserRoute extends express.Router {
         // Federal Reserve Gold Package Routes
         this.get('/federal-reserve-gold-packages', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE);
         this.post('/federal-reserve-gold-packages/:id/buy', FormValidator.buy_federal_reserve_package(), middleware.isLoggedIn, HomeCtrl.BUY_FEDERAL_RESERVE_PACKAGE);
+        this.post('/federal-reserve-gold-packages/:id/get-free', FormValidator.buy_federal_reserve_package(), middleware.isLoggedIn, HomeCtrl.GET_FREE_FEDERAL_RESERVE_PACKAGE);
         this.get('/federal-reserve-gold-packages/history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_HISTORY);
         this.get('/federal-reserve-gold-packages/earn-history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_EARN_HISTORY);
         this.get('/federal-reserve-gold-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.FEDERAL_RESERVE_PACKAGE_BONUS_HISTORY);

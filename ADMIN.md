@@ -479,6 +479,7 @@ const data = {
     total_quantity: 0,
     description: '',
     status: 1, // 1-在售, 2-下架, 3-售罄
+    can_new_registered_user_get_free: 1, // 新注册用户是否可以免费领取 default 0
 }
 
 // [POST] UPDATE

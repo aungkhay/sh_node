@@ -4674,6 +4674,131 @@ class Controller {
         }
     }
 
+    GET_FREE_FEDERAL_RESERVE_PACKAGE = async (req, res) => {
+        const lockKey = `lock:federal-reserve-package-get-free:${req.ip}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const existingFreePackage = await FederalReserveGoldPackageHistory.findOne({
+                where: {
+                    user_id: userId,
+                    price: 0,
+                    description: '新注册用户福利'
+                }
+            });
+            if (existingFreePackage) {
+                return MyResponse(res, this.ResCode.ALREADY_CLAIMED.code, false, '您已领取过免费礼包', {});
+            }
+
+            const fPackage = await FederalReserveGoldPackage.findByPk(req.params.id);
+            if (fPackage.can_new_registered_user_get_free < 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包不支持新注册用户免费领取', {});
+            }
+
+            const payment_password = req.body.payment_password;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'createdAt']
+            });
+
+            let getTime = await this.redisHelper.getValue('federal_reserve_gold_package_get_free_time');
+            if (!getTime) {
+                const conf = await Config.findOne({ where: { type: 'federal_reserve_gold_package_get_free_time' } });
+                if (conf) {
+                    getTime = conf.val;
+                    await this.redisHelper.setValue('federal_reserve_gold_package_get_free_time', getTime);
+                }
+            }
+            if (getTime) {
+                const [start, end] = getTime.split('|');
+
+                // check user's registration time is between start and end time
+                if (moment(user.createdAt).isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss')) || moment(user.createdAt).isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您的注册时间不符合免费领取条件', {});
+                }
+
+                const now = moment();
+
+                if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `联储备金礼包免费领取时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
+                }                 
+                if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `联储备金礼包免费领取时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
+                }
+            }
+
+            if (!user.kyc) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                const pkgHistory = await FederalReserveGoldPackageHistory.create({
+                    relation: user.relation,
+                    user_id: user.id,
+                    package_id: fPackage.id,
+                    price: 0,
+                    reserve_earn: fPackage.reserve_earn,
+                    personal_gold: fPackage.personal_gold,
+                    masonic_fund: fPackage.masonic_fund,
+                    period: fPackage.period,
+                    return_date: moment().add(fPackage.period, 'days').toDate(),
+                    description: '新注册用户福利'
+                }, { transaction: t });
+
+                if (fPackage.is_release_authorize_letter) {
+                    await RewardRecord.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        reward_id: 12, // 上合组织哈萨克斯坦区授权书
+                        amount: 1,
+                        from_where: `PKG-${pkgHistory.id}`
+                    }, { transaction: t });
+                }
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '免费领取成功', {});
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '免费领取礼包失败', {}); 
+            }
+            
+        } catch (error) {
+            errLogger(`[GET_FREE_FEDERAL_RESERVE_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     FEDERAL_RESERVE_PACKAGE_HISTORY = async (req, res) => {
         try {
             const userId = req.user_id;
