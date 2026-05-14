@@ -1051,7 +1051,7 @@ class CronJob {
                     }, { transaction: t });
                     await user.increment({ balance: balance_fund, masonic_fund: -balance_fund }, { transaction: t });
                 }
-                if (reward.total_reward == reward.limit) {
+                if (reward.total_reward >= reward.limit) {
                     await user.update({ can_get_red_envelop: 0 }, { transaction: t });
                     await this.redisHelper.sAddValue('CANNOT_GET_RED_ENVELOP_USERS', userId);
                 }
