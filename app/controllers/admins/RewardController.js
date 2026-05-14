@@ -7,6 +7,7 @@ const { RewardType, RewardRecord, User, db, CashFlow } = require('../../models')
 const { Op } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
 const { fn, literal } = require('sequelize');
+const moment = require('moment');
 
 class Controller {
     constructor(app) {
