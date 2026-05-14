@@ -824,5 +824,9 @@ exports.create_meeting = () => {
             .bail()
             .isNumeric()
             .withMessage('福利码必须是数字'),
+        check('total_release_code', { msg: '总发布数量不能为空' }).not().isEmpty()
+            .bail()
+            .isNumeric()
+            .withMessage('总发布数量必须是数字')
     ]
 }
