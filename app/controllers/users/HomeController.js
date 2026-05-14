@@ -6413,6 +6413,7 @@ class Controller {
                 }, { transaction: t });
 
                 await user.increment({ balance: rewardAmount }, { transaction: t });
+                await meeting.increment({ used_code: 1 }, { transaction: t });
 
                 await t.commit();
 
