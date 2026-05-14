@@ -6314,8 +6314,11 @@ class Controller {
         try {
             const meeting = await Meeting.findOne({
                 where: {
-                    is_active: 1,
-                }
+                    is_active: {
+                        [Op.ne]: 0
+                    },
+                },
+                order: [['createdAt', 'DESC']]
             });
 
             if (!meeting) {
@@ -6342,33 +6345,31 @@ class Controller {
     }
 
     CHECK_MEETING_CODE = async (req, res) => {
+        const lockKey = `check_meeting_code_${req.user_id}`;
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            const locked = await this.redisHelper.setLock(lockKey, 1, 1);
+            if (locked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const meeting = await Meeting.findByPk(req.params.id);
             if (!meeting) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议不存在', {});
             }
 
-            const meetingCode = req.params.code;
-            if (Number(meeting.meeting_code) !== Number(meetingCode)) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
+            if (meeting.is_active !== 2) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议未结束', {});
             }
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '福利码正确', { code_match: true });
-        } catch (error) {
-            errLogger(`[CHECK_MEETING_CODE][${req.user_id}]: ${error.stack}`);
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-        }
-    }
-
-    JOIN_MEETING = async (req, res) => {
-        try {
-            const meeting = await Meeting.findByPk(req.params.id);
-            if (!meeting) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议不存在', {});
+            if (meeting.used_code >= meeting.total_release_code) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您来迟了，今日福利码已发完。', {});
             }
+
             const userId = req.user_id;
             const meetingCode = req.params.code;
-
             if (Number(meeting.meeting_code) !== Number(meetingCode)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
             }
@@ -6389,7 +6390,8 @@ class Controller {
             const t = await db.transaction();
             try {
 
-                const rewardAmount = this.getRandomInt(1, 10); // 随机奖励1-10元
+                // const rewardAmount = this.getRandomInt(1, 10); // 随机奖励1-10元
+                const rewardAmount = 1;
                 await AttendedMeeting.create({
                     relation: user.relation,
                     user_id: userId,
@@ -6417,11 +6419,11 @@ class Controller {
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, `参加会议成功，获得奖励${rewardAmount}元`, { reward_amount: rewardAmount });
             } catch (error) {
                 await t.rollback();
-                errLogger(`[JOIN_MEETING][Transaction][${req.user_id}]: ${error.stack}`);
+                errLogger(`[CHECK_MEETING_CODE][Transaction][${req.user_id}]: ${error.stack}`);
                 return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
             }
         } catch (error) {
-            errLogger(`[JOIN_MEETING][${req.user_id}]: ${error.stack}`);
+            errLogger(`[CHECK_MEETING_CODE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

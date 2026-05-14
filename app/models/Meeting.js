@@ -48,10 +48,19 @@ Meeting.init({
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+    total_release_code: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    used_code: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
     is_active: {
-        type: DataTypes.TINYINT,
+        type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 1,
+        defaultValue: 0,
+        comment: '0 => Inactive | 1 => Active | 2 => Ended'
     },
 }, {
     sequelize,

@@ -818,7 +818,7 @@ exports.create_meeting = () => {
         check('link', { msg: '链接不能为空' }).not().isEmpty(),
         check('is_active').not().isEmpty().withMessage('激活状态不能为空')
             .bail()
-            .isIn([0, 1])
+            .isIn([0, 1, 2])
             .withMessage('激活状态值无效'),
         check('meeting_code', { msg: '福利码不能为空' }).not().isEmpty()
             .bail()

@@ -1580,7 +1580,8 @@ const data = {
     location: '',
     link: '',
     meeting_code: '',
-    is_active: 0, // 0 or 1
+    is_active: 0, // 0 => Inactive | 1 => Active | 2 => Ended
+    total_release_code: 0,
 }
 
 // [POST] 更新
@@ -1593,7 +1594,8 @@ const data = {
     location: '',
     link: '',
     meeting_code: '',
-    is_active: 0, // 0 or 1
+    is_active: 0, // 0 => Inactive | 1 => Active | 2 => Ended
+    total_release_code: 0
 }
 
 // [POST] 删除
