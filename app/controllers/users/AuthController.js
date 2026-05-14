@@ -282,7 +282,7 @@ class Controller {
                     'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
                     'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop'
                 ],
-                useMaster: userId % 2 === 0 ? true : false
+                useMaster: true
             });
 
             // Calculate Rank Percentage
@@ -305,7 +305,7 @@ class Controller {
                     is_used: 0,
                     validedAt: { [Op.lte]: new Date() }
                 },
-                useMaster: userId % 2 === 0 ? true : false
+                useMaster: true
             }) || 0;
 
             const goldPrice = await GoldPrice.findOne({
@@ -320,6 +320,7 @@ class Controller {
                     reward_id: 11,
                     is_used: 0,
                 },
+                useMaster: true
             });
 
             // 上合组织哈萨克斯坦区授权书
@@ -329,6 +330,7 @@ class Controller {
                     reward_id: 12,
                     is_used: 0,
                 },
+                useMaster: true
             });
 
             // 上合组织乌兹别克斯坦区授权书
@@ -338,6 +340,7 @@ class Controller {
                     reward_id: 13,
                     is_used: 0,
                 },
+                useMaster: true
             });
 
             // Federal Gold
@@ -346,6 +349,7 @@ class Controller {
                     user_id: userId,
                     type: 1, // 个人黄金
                 },
+                useMaster: true
             }) || 0;
 
             let data = {
@@ -391,7 +395,8 @@ class Controller {
                 where: { 
                     user_id: userId,
                 }, 
-                attributes: ['package_id'] 
+                attributes: ['package_id'],
+                useMaster: true
             });
             const boughtPackageIds = goldGiftPackHistory.map(g => g.package_id);
             data.bought_gold_gift_package_ids = boughtPackageIds;
