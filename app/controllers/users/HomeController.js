@@ -286,7 +286,6 @@ class Controller {
                     order: [['id', 'DESC']],
                     limit: perPage,
                     offset,
-                    useMaster: true
                 });
 
                 const total = await Notification.count({
@@ -307,7 +306,6 @@ class Controller {
                             AND rn.user_id = ${userId}
                         )`)
                     },
-                    useMaster: true
                 });
 
                 const data = {
@@ -349,7 +347,6 @@ class Controller {
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset,
-                useMaster: true
             });
 
             const total = await Notification.count({
@@ -370,7 +367,6 @@ class Controller {
                         AND rn.user_id = ${userId}
                     )`)
                 },
-                useMaster: true
             });
 
             const data = {
