@@ -430,8 +430,9 @@ class Controller {
                     order: [['id', 'DESC']],
                     limit: perPage,
                     offset,
+                    useMaster: userId % 2 === 0 ? true : false
                 }),
-                Notification.count({ where: baseWhere })
+                Notification.count({ where: baseWhere, useMaster: userId % 2 === 0 ? true : false })
             ]);
 
             const data = {
