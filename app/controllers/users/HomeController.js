@@ -4588,6 +4588,21 @@ class Controller {
         }
     }
 
+    FREE_FEDERAL_RESERVE_PACKAGE = async (req, res) => {
+        try {
+            const packages = await FederalReserveGoldPackage.findAll({
+                where: {
+                    can_new_registered_user_get_free: 1
+                }
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { packages });
+        } catch (error) {
+            errLogger(`[FREE_FEDERAL_RESERVE_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     BUY_FEDERAL_RESERVE_PACKAGE = async (req, res) => {
 
         const lockKey = `lock:buy-federal-reserve-package:${req.ip}`;
