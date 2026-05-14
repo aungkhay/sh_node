@@ -285,7 +285,8 @@ class Controller {
                     },
                     order: [['id', 'DESC']],
                     limit: perPage,
-                    offset
+                    offset,
+                    useMaster: true
                 });
 
                 const total = await Notification.count({
@@ -305,7 +306,8 @@ class Controller {
                             WHERE rn.notification_id = Notification.id
                             AND rn.user_id = ${userId}
                         )`)
-                    }
+                    },
+                    useMaster: true
                 });
 
                 const data = {
@@ -346,7 +348,8 @@ class Controller {
                 },
                 order: [['id', 'DESC']],
                 limit: perPage,
-                offset
+                offset,
+                useMaster: true
             });
 
             const total = await Notification.count({
@@ -366,7 +369,8 @@ class Controller {
                         WHERE rn.notification_id = Notification.id
                         AND rn.user_id = ${userId}
                     )`)
-                }
+                },
+                useMaster: true
             });
 
             const data = {
@@ -565,13 +569,14 @@ class Controller {
                 },
                 order: [['id', 'DESC']],
                 limit: perPage,
-                offset
+                offset,
+                useMaster: true
             });
 
             /* ===============================
             * COUNT QUERY (NO SUBQUERY)
             * =============================== */
-            const total = await News.count({ where });
+            const total = await News.count({ where, useMaster: true });
 
             const data = {
                 news: rows,
