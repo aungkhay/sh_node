@@ -514,7 +514,7 @@ class Controller {
         }
     }
 
-    GET_NEWS = async (req, res) => {
+    GET_NEWS_OLD_ONE = async (req, res) => {
         try {
             /* ===============================
             * PARAMS
@@ -595,6 +595,95 @@ class Controller {
             await this.redisHelper.setValue(cacheKey, JSON.stringify(data), ttl);
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+        } catch (error) {
+            console.error('[GET_NEWS]', error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GET_NEWS = async (req, res) => {
+        try {
+            const page = Math.max(Number(req.query.page) || 1, 1);
+            const perPage = Math.min(Math.max(Number(req.query.perPage) || 30, 1), 50);
+            const offset = this.getOffset(page, perPage);
+            const type = Number(req.query.type || 0);
+
+            const where = {
+                status: 'APPROVED',
+                contain_sensitive_word: 0,
+                type: type ? type : { [Op.in]: [2, 3] }
+            };
+
+            // cache only public data, not user-specific liked state
+            const cacheKey = `news:${page}:${perPage}:${type}`;
+
+            let data = null;
+            const cached = await this.redisHelper.getValue(cacheKey);
+
+            if (cached) {
+                data = JSON.parse(cached);
+            } else {
+                const [rows, total] = await Promise.all([
+                    News.findAll({
+                        where,
+                        attributes: [
+                            'id',
+                            'title',
+                            'subtitle',
+                            'file_url',
+                            'liked_count',
+                            'createdAt'
+                        ],
+                        order: [['id', 'DESC']],
+                        limit: perPage,
+                        offset,
+                        useMaster: true
+                    }),
+                    News.count({ where, useMaster: true })
+                ]);
+
+                data = {
+                    news: rows,
+                    meta: {
+                        page,
+                        perPage,
+                        total,
+                        totalPage: Math.ceil(total / perPage)
+                    }
+                };
+
+                const ttl = type === 1 ? 60 : 300;
+                await this.redisHelper.setValue(cacheKey, JSON.stringify(data), ttl);
+            }
+
+            // fetch likes in one query for current user
+            const newsIds = data.news.map(item => item.id);
+            let likedNewsIds = new Set();
+
+            if (req.user_id && newsIds.length > 0) {
+                const likes = await NewsLikes.findAll({
+                    where: {
+                        user_id: req.user_id,
+                        news_id: { [Op.in]: newsIds }
+                    },
+                    attributes: ['news_id'],
+                    raw: true,
+                    useMaster: true
+                });
+
+                likedNewsIds = new Set(likes.map(item => item.news_id));
+            }
+
+            const news = data.news.map(item => ({
+                ...item.toJSON ? item.toJSON() : item,
+                is_liked: likedNewsIds.has(item.id)
+            }));
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', {
+                news,
+                meta: data.meta
+            });
 
         } catch (error) {
             console.error('[GET_NEWS]', error);
