@@ -121,8 +121,8 @@ class Controller {
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
             const phone = req.query.phone;
-            const startTime = req.query.startTime;
-            const endTime = req.query.endTime;
+            const startTime = req.query.startTime || moment().startOf('day').toDate();
+            const endTime = req.query.endTime || moment().endOf('day').toDate();
             const userId = req.user_id;
             const rewardId = req.query.rewardId;
             const isUsed = req.query.isUsed || -1;
