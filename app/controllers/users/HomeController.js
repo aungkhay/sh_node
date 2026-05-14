@@ -1576,6 +1576,14 @@ class Controller {
             }
 
             /* ===============================
+            * CHECK IF USER IS IN CANNOT_GET_RED_ENVELOP_USERS (REDIS SET)
+            * =============================== */
+            const exists = await this.redisHelper.sMembers('CANNOT_GET_RED_ENVELOP_USERS', userId);
+            if (!exists) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
+            }
+
+            /* ===============================
             * LOAD USER + KYC (READ SLAVE OK)
             * =============================== */
             const user = await User.findOne({
@@ -1586,7 +1594,8 @@ class Controller {
                     as: 'kyc',
                     attributes: ['status'],
                     required: false
-                }
+                },
+                useMaster: true
             });
 
             // check kyc status is approved
@@ -1596,6 +1605,7 @@ class Controller {
 
             if (user.can_get_red_envelop == 0) {
                 // 已达上限
+                await this.redisHelper.sAddValue('CANNOT_GET_RED_ENVELOP_USERS', userId);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未中奖', {});
             }
 

@@ -489,6 +489,7 @@ class CronJob {
             await User.update({ can_get_red_envelop: 1 }, {
                 where: {}
             });
+            await this.redisHelper.deleteKey('CANNOT_GET_RED_ENVELOP_USERS');
         } catch (error) {
             errLogger(`[RESET_CAN_GET_RED_ENVELOPE]: ${error.stack}`);
         }
@@ -1052,6 +1053,7 @@ class CronJob {
                 }
                 if (reward.total_reward == reward.limit) {
                     await user.update({ can_get_red_envelop: 0 }, { transaction: t });
+                    await this.redisHelper.sAddValue('CANNOT_GET_RED_ENVELOP_USERS', userId);
                 }
 
                 // Set flag for reward 6 to prevent duplicate wins
