@@ -47,7 +47,21 @@ Notification.init({
     modelName: 'Notification',
     tableName: 'notifications',
     timestamps: true,
-    paranoid: true
+    paranoid: true,
+    indexes: [
+        {
+            name: 'idx_notifications_type_id',
+            fields: ['type', 'id']
+        },
+        {
+            name: 'idx_notifications_status',
+            fields: ['status']
+        },
+        {
+            name: 'idx_notifications_deleted_at',
+            fields: ['deletedAt']
+        }
+    ]
 });
 
 module.exports = Notification

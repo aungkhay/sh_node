@@ -230,7 +230,7 @@ class Controller {
         }
     }
 
-    NOTIFICATIONS = async (req, res) => {
+    NOTIFICATIONS_OLD_ONE = async (req, res) => {
         const userId = req.user_id;
         const lockKey = `lock:notifications:${userId}`;
 
@@ -382,6 +382,69 @@ class Controller {
             // await this.redisHelper.setValue(cacheKey, JSON.stringify(data), 120);
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
 
+        } catch (error) {
+            console.error('[NOTIFICATIONS]', error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    NOTIFICATIONS = async (req, res) => {
+        const userId = Number(req.user_id);
+        const page = Math.max(parseInt(req.query.page || 1, 10), 1);
+        const perPage = Math.min(Math.max(parseInt(req.query.perPage || 10, 10), 1), 50);
+        const offset = (page - 1) * perPage;
+        const isRead = Number(req.query.isRead || 0);
+
+        try {
+            const readCondition = isRead === 1
+                ? literal(`EXISTS (
+                    SELECT 1
+                    FROM read_notifications rn
+                    WHERE rn.notification_id = Notification.id
+                    AND rn.user_id = ${userId}
+                )`)
+                : literal(`NOT EXISTS (
+                    SELECT 1
+                    FROM read_notifications rn
+                    WHERE rn.notification_id = Notification.id
+                    AND rn.user_id = ${userId}
+                )`);
+
+            const baseWhere = {
+                [Op.or]: [
+                    { type: { [Op.in]: [1, 2] } },
+                    literal(`EXISTS (
+                        SELECT 1
+                        FROM specific_user_notifications sn
+                        WHERE sn.notification_id = Notification.id
+                        AND sn.user_id = ${userId}
+                    )`)
+                ],
+                [Op.and]: [readCondition]
+            };
+
+            const [rows, total] = await Promise.all([
+                Notification.findAll({
+                    attributes: ['id', 'type', 'title', 'subtitle', 'createdAt'],
+                    where: baseWhere,
+                    order: [['id', 'DESC']],
+                    limit: perPage,
+                    offset,
+                }),
+                Notification.count({ where: baseWhere })
+            ]);
+
+            const data = {
+                notifications: rows,
+                meta: {
+                    page,
+                    perPage,
+                    total,
+                    totalPage: Math.ceil(total / perPage)
+                }
+            };
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             console.error('[NOTIFICATIONS]', error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});

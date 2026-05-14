@@ -38,6 +38,10 @@ SpecificUserNotification.init({
             unique: true,
             fields: ['user_id', 'notification_id'],
         },
+        {
+            name: 'idx_sn_notification_user',
+            fields: ['notification_id', 'user_id']
+        }
     ],
 });
 
