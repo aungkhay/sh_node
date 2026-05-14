@@ -282,7 +282,7 @@ class Controller {
                     'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
                     'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop'
                 ],
-                useMaster: true
+                useMaster: userId % 2 === 0 ? true : false
             });
 
             // Calculate Rank Percentage
@@ -305,7 +305,7 @@ class Controller {
                     is_used: 0,
                     validedAt: { [Op.lte]: new Date() }
                 },
-                useMaster: true
+                useMaster: userId % 2 === 0 ? true : false
             }) || 0;
 
             const goldPrice = await GoldPrice.findOne({
@@ -320,7 +320,7 @@ class Controller {
                     reward_id: 11,
                     is_used: 0,
                 },
-                useMaster: true
+                useMaster: userId % 2 === 0 ? true : false
             });
 
             // 上合组织哈萨克斯坦区授权书
@@ -330,7 +330,7 @@ class Controller {
                     reward_id: 12,
                     is_used: 0,
                 },
-                useMaster: true
+                useMaster: userId % 2 === 0 ? true : false
             });
 
             // 上合组织乌兹别克斯坦区授权书
@@ -340,7 +340,7 @@ class Controller {
                     reward_id: 13,
                     is_used: 0,
                 },
-                useMaster: true
+                useMaster: userId % 2 === 0 ? true : false
             });
 
             // Federal Gold
@@ -349,7 +349,7 @@ class Controller {
                     user_id: userId,
                     type: 1, // 个人黄金
                 },
-                useMaster: true
+                useMaster: userId % 2 === 0 ? true : false
             }) || 0;
 
             let data = {
@@ -396,7 +396,7 @@ class Controller {
                     user_id: userId,
                 }, 
                 attributes: ['package_id'],
-                useMaster: true
+                useMaster: userId % 2 === 0 ? true : false
             });
             const boughtPackageIds = goldGiftPackHistory.map(g => g.package_id);
             data.bought_gold_gift_package_ids = boughtPackageIds;
