@@ -4897,16 +4897,7 @@ class Controller {
 
                 // check user's registration time is between start and end time
                 if (moment(user.createdAt).isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss')) || moment(user.createdAt).isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您的注册时间不符合免费领取条件', {});
-                }
-
-                const now = moment();
-
-                if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `联储备金礼包免费领取时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
-                }                 
-                if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `联储备金礼包免费领取时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '注册时间不符合领取条件', {});
                 }
             }
 
