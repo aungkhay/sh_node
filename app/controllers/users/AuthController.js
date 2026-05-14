@@ -280,7 +280,7 @@ class Controller {
                     'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
                     'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest',
                     'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
-                    'is_withdraw_active_code_used', 'createdAt', 'payment_password'
+                    'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop'
                 ],
                 useMaster: userId % 2 === 0 ? true : false
             });
