@@ -4549,6 +4549,7 @@ class Controller {
         try {
             const packages = await FederalReserveGoldPackage.findAll({
                 where: {
+                    can_new_registered_user_get_free: 0,
                     status: {
                         [Op.ne]: 2
                     }
@@ -4984,12 +4985,12 @@ class Controller {
                 },
                 where: { 
                     user_id: userId,
-                    [Op.or]: [
-                        { description: { [Op.ne]: '新注册用户福利' } },
-                        { description: null }
-                    ]
+                    // [Op.or]: [
+                    //     { description: { [Op.ne]: '新注册用户福利' } },
+                    //     { description: null }
+                    // ]
                 },
-                attributes: ['id', 'price', 'createdAt'],
+                attributes: ['id', 'price', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
