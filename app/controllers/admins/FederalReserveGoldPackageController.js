@@ -176,7 +176,7 @@ class Controller {
                         model: User,
                         where: userCondition,
                         as: 'user',
-                        attributes: ['id', 'name', 'phone_number']
+                        attributes: ['id', 'name', 'phone_number', 'is_internal_account']
                     },
                     {
                         model: FederalReserveGoldPackage,
@@ -193,10 +193,27 @@ class Controller {
             const boughtCount = await FederalReserveGoldPackageHistory.count({ where: condition });
             const userBoughtCount = await FederalReserveGoldPackageHistory.count({ where: condition, distinct: true, col: 'user_id' });
 
+            const internalUserBought = await FederalReserveGoldPackageHistory.sum('price', {
+                where: {
+                    ...condition,
+                    '$user.is_internal_account$': 1
+                },
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: []
+                    }
+                ]
+            }) || 0;
+            const externalUserBought = totalBought - internalUserBought;
+
             const data = {
                 total_bought: totalBought,
                 bought_count: boughtCount,
                 user_bought_count: userBoughtCount,
+                internal_user_bought: internalUserBought,
+                external_user_bought: externalUserBought,
                 history: rows,
                 meta: {
                     page: page,

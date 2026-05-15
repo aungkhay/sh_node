@@ -152,10 +152,27 @@ class Controller {
             const boughtCount = await MasonicPackageHistory.count({ where: condition });
             const userBoughtCount = await MasonicPackageHistory.count({ where: condition, distinct: true, col: 'user_id' });
 
+            const internalUserBought = await MasonicPackageHistory.sum('price', {
+                where: {
+                    ...condition,
+                    '$user.is_internal_account$': 1
+                },
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: []
+                    }
+                ]
+            }) || 0;
+            const externalUserBought = totalBought - internalUserBought;
+
             const data = {
                 total_bought: totalBought,
                 bought_count: boughtCount,
                 user_bought_count: userBoughtCount,
+                internal_user_bought: internalUserBought,
+                external_user_bought: externalUserBought,
                 packages: rows,
                 meta: {
                     page: page,
@@ -167,7 +184,7 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
-            console.log(error)
+            errLogger(`[MasonicPackage][PACKAGE_HISTORY]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
