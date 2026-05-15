@@ -4882,7 +4882,7 @@ class Controller {
                 }
             });
             if (existingFreePackage) {
-                return MyResponse(res, this.ResCode.ALREADY_CLAIMED.code, false, '您已领取过免费礼包', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过免费礼包', {});
             }
 
             const fPackage = await FederalReserveGoldPackage.findByPk(req.params.id);
