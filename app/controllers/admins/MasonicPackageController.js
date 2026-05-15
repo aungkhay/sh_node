@@ -110,6 +110,7 @@ class Controller {
             const packageId = req.query.packageId;
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
+            const is_internal_account = req.query.is_internal_account;
 
             let condition = {}
             if (userId != 1) {
@@ -120,6 +121,9 @@ class Controller {
             let userCondition = {}
             if (phone) {
                 userCondition.phone_number = phone;
+            }
+            if (is_internal_account >= 0) {
+                userCondition.is_internal_account = is_internal_account;
             }
             if (packageId) {
                 condition.package_id = packageId;
