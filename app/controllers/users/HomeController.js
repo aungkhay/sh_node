@@ -4549,7 +4549,6 @@ class Controller {
         try {
             const packages = await FederalReserveGoldPackage.findAll({
                 where: {
-                    can_new_registered_user_get_free: 0,
                     status: {
                         [Op.ne]: 2
                     }
