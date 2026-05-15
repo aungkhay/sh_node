@@ -4984,9 +4984,10 @@ class Controller {
                 },
                 where: { 
                     user_id: userId,
-                    description: {
-                        [Op.ne]: '新注册用户福利' // exclude free package history
-                    }
+                    [Op.or]: [
+                        { description: { [Op.ne]: '新注册用户福利' } },
+                        { description: null }
+                    ]
                 },
                 attributes: ['id', 'price', 'createdAt'],
                 order: [['id', 'DESC']],
