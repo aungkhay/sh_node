@@ -1497,7 +1497,7 @@ class Controller {
                     amount: level_up_pay,
                     before_amount: user.reserve_fund,
                     after_amount: Number(user.reserve_fund) - level_up_pay,
-                    flow_status: 'IN'
+                    flow_status: 'OUT'
                 }, { transaction: t });
 
                 await user.update({
