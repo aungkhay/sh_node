@@ -170,6 +170,7 @@ class AdminRoute extends express.Router {
         this.get('/users/child-register-list', middleware.isLoggedIn('user-view-subordinate'), UserCtrl.CHILD_REGISTER_LIST);
         this.get('/users/export-child-register-list', middleware.isLoggedIn('user-export-subordinate'), UserCtrl.EXPORT_CHILD_REGISTER_LIST);
         this.post('/users/:id/update-wallet', FormValidator.update_wallet(), middleware.isLoggedIn('user-add-substract'), UserCtrl.UPDATE_WALLET);
+        this.post('/users/release-balance-by-excel', middleware.isLoggedIn('user-add-substract'), UserCtrl.IMPORT_RELEASE_BALANCE);
         this.post('/users/:id/update-contact-info', FormValidator.update_contact_info(), middleware.isLoggedIn('user-change-contact'), UserCtrl.UPDATE_CONTACT_INFO);
         this.get('/users/:id/money-tracking', middleware.isLoggedIn('user-list'), UserCtrl.MONEY_TRACKING);
         this.get('/users/:id/cash-flow', middleware.isLoggedIn('user-list'), UserCtrl.CASH_FLOW);
