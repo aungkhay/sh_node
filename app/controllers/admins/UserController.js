@@ -3178,6 +3178,87 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    IMPORT_RELEASE_BALANCE = async (req, res) => {
+        try {
+            req.uploadDir = `./uploads/excels`;
+
+            const upload = require('../../middlewares/UploadExcel');
+            upload(req, res, async (err) => {
+                if (err instanceof multer.MulterError) {
+                    if (err.code == 'LIMIT_FILE_SIZE') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '文件过大', { allow_size: '50MB' });
+                    }
+                    if (err.code == 'ENOENT') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, 'ENOENT', {});
+                    }
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, err.message, {});
+                } else if (err) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '上传失败', {});
+                }
+
+                if (req.file == null) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请选文件', {});
+                }
+
+                const filePath = req.file.path;
+                const workbook = XLSX.readFile(filePath);
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+
+                const excelData = XLSX.utils.sheet_to_json(sheet);
+                // console.log(excelData);
+                const t = await db.transaction();
+                try {
+                    for (let i = 0; i < excelData.length; i++) {
+                        const row = excelData[i];
+                        const phoneNumber = row['手机号'];
+                        const type = row['类型']; // 类型：储备金/余额
+                        const amount = row['数量'];
+                        if (!phoneNumber) {
+                            continue;
+                        }
+                        if (![1,2].includes(type)) {
+                            continue;
+                        }
+                        if (amount === undefined || isNaN(amount) || Number(amount) <= 0) {
+                            continue;
+                        }
+
+                        const user = await User.findOne({ where: { phone_number: phoneNumber }, attributes: ['id', 'relation', 'balance'], transaction: t });
+                        if (!user) {
+                            continue;
+                        }
+
+                        await CashFlow.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'User',
+                            type: '系统发放余额',
+                            amount: Number(amount),
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(amount),
+                            flow_status: 'IN',
+                        }, { transaction: t });
+
+                        await user.increment({ balance: amount }, { transaction: t });
+                    }
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[IMPORT_RELEASE_BALANCE]: ${error.stack}`);
+                    await t.rollback();
+                    return MyResponse(res, this.ResCode.DB_ERROR.code, true, '操作失败', {});
+                }
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '操作成功', {});
+            }); 
+        } catch (error) {
+            errLogger(`[IMPORT_RELEASE_BALANCE]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;
