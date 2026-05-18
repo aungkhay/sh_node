@@ -285,6 +285,7 @@ class AdminRoute extends express.Router {
         let PolicyPackageCtrl = new PolicyPackageController(app);
         this.get('/policy-packages', middleware.isLoggedIn('policy-package-list'), PolicyPackageCtrl.INDEX);
         this.post('/policy-packages/:id/upload', PolicyPackageCtrl.UPLOAD);
+        this.post('/policy-packages/create', FormValidator.update_policy_package(), middleware.isLoggedIn('policy-package-create'), PolicyPackageCtrl.CREATE);
         this.post('/policy-packages/:id/update', FormValidator.update_policy_package(), middleware.isLoggedIn('policy-package-update'), PolicyPackageCtrl.UPDATE);
         this.get('/policy-package/history', middleware.isLoggedIn('policy-package-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_HISTORY);
         this.get('/policy-package/bonus-history', middleware.isLoggedIn('policy-package-bonus-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_BONUS_HISTORY);

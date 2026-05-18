@@ -72,6 +72,25 @@ class Controller {
         }
     }
 
+    CREATE = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            await PolicyPackage.create(req.body);
+
+            // Log
+            await this.adminLogger(req, 'PolicyPackage', 'create');
+            
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', {});
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});   
+        }
+    }
+
     UPDATE = async (req, res) => {
         try {
             const err = validationResult(req);
