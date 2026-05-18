@@ -2657,7 +2657,7 @@ class CronJob {
                                 flow_status: 'IN'
                             }, { transaction: t });
 
-                            await user.increment({ balance: dailyEarn + Number(pack.price), masonic_fund: Number(pack.masonic_fund) }, { transaction: t });
+                            await user.increment({ balance: dailyEarn + Number(pack.price)}, { transaction: t });
 
                             await PolicyPackageEarn.create({
                                 user_id: pack.user_id,
@@ -2675,12 +2675,12 @@ class CronJob {
                                 amount: Number(pack.price),
                                 description: '上合贡献政策收益'
                             }, { transaction: t });
-                            await MasonicFundHistory.create({
-                                user_id: pack.user_id,
-                                relation: user.relation,
-                                amount: Number(pack.masonic_fund),
-                                description: '上合贡献政策 - 定时任务发共济基金',
-                            }, { transaction: t });
+                            // await MasonicFundHistory.create({
+                            //     user_id: pack.user_id,
+                            //     relation: user.relation,
+                            //     amount: Number(pack.masonic_fund),
+                            //     description: '上合贡献政策 - 定时任务发共济基金',
+                            // }, { transaction: t });
                             await pack.update({ is_finished: 1 }, { transaction: t });
                             
 
