@@ -2643,7 +2643,7 @@ class CronJob {
                     if (dailyEarn > 0) {
 
                         // 日返最后一天同时返还本金
-                        if (moment().isSame(moment(pack.end_date), 'day')) {
+                        if (moment(pack.end_date).format('YYYY-MM-DD') === today) {
 
                             await CashFlow.create({
                                 user_id: user.id,
