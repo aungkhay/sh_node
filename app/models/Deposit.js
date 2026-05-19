@@ -48,7 +48,7 @@ Deposit.init({
     type: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: '1 => 微信, 2 => 支付宝, 3 => 云闪付, 4 => 银联'
+        comment: '1 => 微信, 2 => 支付宝, 3 => 云闪付, 4 => 银联, 5 => 纷享生活, 6 => 人工充值'
     },
     user_id: {
         type: DataTypes.BIGINT,
