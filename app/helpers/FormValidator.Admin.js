@@ -457,6 +457,10 @@ exports.update_wallet = () => {
             .bail()
             .isNumeric()
             .withMessage('金额必须是数字'),
+        check('isAddedDepositRecord')
+            .optional()
+            .isIn([0, 1])
+            .withMessage('是否添加充值记录值无效')
     ]
 }
 
