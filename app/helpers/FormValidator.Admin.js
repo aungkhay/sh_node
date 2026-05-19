@@ -820,10 +820,7 @@ exports.create_meeting = () => {
             .bail()
             .isIn([0, 1, 2])
             .withMessage('激活状态值无效'),
-        check('meeting_code', { msg: '福利码不能为空' }).not().isEmpty()
-            .bail()
-            .isNumeric()
-            .withMessage('福利码必须是数字'),
+        check('meeting_code', { msg: '福利码不能为空' }).not().isEmpty(),
         check('total_release_code', { msg: '总发布数量不能为空' }).not().isEmpty()
             .bail()
             .isNumeric()

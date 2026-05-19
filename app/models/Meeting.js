@@ -45,7 +45,7 @@ Meeting.init({
         allowNull: true,
     },
     meeting_code: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
     },
     total_release_code: {
