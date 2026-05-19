@@ -284,6 +284,11 @@ User.init({
         type: DataTypes.TINYINT,
         defaultValue: 0,
     },
+    initial_buy_product_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '首次购买时间'
+    },
     google_2fa_secret: {
         type: DataTypes.STRING,
         allowNull: true,

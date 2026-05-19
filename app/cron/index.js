@@ -2720,6 +2720,76 @@ class CronJob {
             errLogger(`[GIVE_POLICY_PACKAGE_EARN]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    SET_INITIAL_BUY_PRODUCT_DATE = async () => {
+        try {
+            const [activeFederal, activeGold, activeMasonic, activePolicy] = await Promise.all([
+                FederalReserveGoldPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+                GoldPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+                MasonicPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+                PolicyPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+            ]);
+
+            const activeUserSet = new Set();
+            activeFederal.forEach(r => r.user_id != null && activeUserSet.add(r.user_id));
+            activeGold.forEach(r => r.user_id != null && activeUserSet.add(r.user_id));
+            activeMasonic.forEach(r => r.user_id != null && activeUserSet.add(r.user_id));
+            activePolicy.forEach(r => r.user_id != null && activeUserSet.add(r.user_id));
+
+            const activeUserIds = Array.from(activeUserSet);
+            console.log(`Found ${activeUserIds.length} active users who have purchased products.`);
+
+            for (const userId of activeUserIds) {
+                const federalRecord = await FederalReserveGoldPackageHistory.findOne({
+                    where: { user_id: userId },
+                    attributes: ['createdAt'],
+                    order: [['createdAt', 'ASC']]
+                });
+                const goldRecord = await GoldPackageHistory.findOne({
+                    where: { user_id: userId },
+                    attributes: ['createdAt'],
+                    order: [['createdAt', 'ASC']]
+                });
+                const masonicRecord = await MasonicPackageHistory.findOne({
+                    where: { user_id: userId },
+                    attributes: ['createdAt'],
+                    order: [['createdAt', 'ASC']]
+                });
+                const policyRecord = await PolicyPackageHistory.findOne({
+                    where: { user_id: userId },
+                    attributes: ['createdAt'],
+                    order: [['createdAt', 'ASC']]
+                });
+
+                const dates = [federalRecord, goldRecord, masonicRecord, policyRecord]
+                    .filter(record => record != null)
+                    .map(record => record.createdAt);
+                const earliestDate = new Date(Math.min(...dates.map(date => new Date(date).getTime())));
+
+                await User.update({ initial_buy_product_date: earliestDate }, { where: { id: userId } });
+                console.log(`Set initial_buy_product_date for User ID ${userId} to ${earliestDate}`);
+            }
+        } catch (error) {
+            errLogger(`[SET_INITIAL_BUY_PRODUCT_DATE]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;

@@ -45,6 +45,8 @@ class Controller {
             // const viewChild = req.query.viewChild || 0; // 1 => adjacent child | 2 => all child
             const userId = req.user_id;
             const referral_bonus = req.query.referral_bonus || 0;
+            const initialBuyProductStartTime = req.query.initialBuyProductStartTime;
+            const initialBuyProductEndTime = req.query.initialBuyProductEndTime;
 
             let condition = {};
             if (userId != 1) {
@@ -79,6 +81,11 @@ class Controller {
                     [Op.gte]: referral_bonus
                 }
             }
+            if (initialBuyProductStartTime && initialBuyProductEndTime) {
+                condition.initial_buy_product_date = {
+                    [Op.between]: [initialBuyProductStartTime, initialBuyProductEndTime]
+                }
+            }
 
             const { rows, count } = await User.findAndCountAll({
                 include: [
@@ -104,7 +111,7 @@ class Controller {
                     'referral_bonus', 'masonic_fund', 'repurchase_fund', 'rank_allowance', 'freeze_allowance', 'earn', 'gold', 'gold_interest', 'address',
                     'address_status', 'agreement_status', 'rank_point', 'level_up_pay', 'win_per_day', 'status', 'political_vetting_status', 
                     'is_internal_account','profile_picture', 'isActive', 'activedAt', 'contact_info', 'can_withdraw', 'withdraw_active_code', 'is_withdraw_active_code_used', 
-                    'createdAt'
+                    'initial_buy_product_date', 'createdAt'
                 ],
                 order: [['id', 'DESC']],
                 limit: perPage,

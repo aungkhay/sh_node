@@ -193,9 +193,12 @@ class Controller {
                 order: [['createdAt', 'DESC']]
             });
 
-            const totalBought = await FederalReserveGoldPackageHistory.sum('price', { where: condition }) || 0;
-            const boughtCount = await FederalReserveGoldPackageHistory.count({ where: condition });
-            const userBoughtCount = await FederalReserveGoldPackageHistory.count({ where: condition, distinct: true, col: 'user_id' });
+            const totalBought = await FederalReserveGoldPackageHistory.sum('price', { where: { ...condition, price: { [Op.gt]: 0 } } }) || 0;
+            const boughtCount = await FederalReserveGoldPackageHistory.count({ where: { ...condition, price: { [Op.gt]: 0 } } });
+            const userBoughtCount = await FederalReserveGoldPackageHistory.count({ where: { ...condition, price: { [Op.gt]: 0 } }, distinct: true, col: 'user_id' });
+
+            const freeBoughtCount = await FederalReserveGoldPackageHistory.count({ where: { ...condition, price: 0 } });
+            const freeUserBoughtCount = await FederalReserveGoldPackageHistory.count({ where: { ...condition, price: 0 }, distinct: true, col: 'user_id' });
 
             const internalUserBought = await FederalReserveGoldPackageHistory.sum('price', {
                 where: {
@@ -216,6 +219,8 @@ class Controller {
                 total_bought: totalBought,
                 bought_count: boughtCount,
                 user_bought_count: userBoughtCount,
+                free_bought_count: freeBoughtCount,
+                free_user_bought_count: freeUserBoughtCount,
                 internal_user_bought: internalUserBought,
                 external_user_bought: externalUserBought,
                 history: rows,

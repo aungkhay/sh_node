@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { Deposit, Withdraw, User, UserKYC, PaymentMethod, RewardRecord, db, FederalReserveGoldPackageHistory, GoldPackageHistory, MasonicPackageHistory } = require('../../models');
+const { Deposit, Withdraw, User, UserKYC, PaymentMethod, RewardRecord, db, FederalReserveGoldPackageHistory, GoldPackageHistory, MasonicPackageHistory, PolicyPackageHistory } = require('../../models');
 const { Op, fn, col, literal } = require('sequelize');
 const moment = require('moment');
 
@@ -353,7 +353,7 @@ class Controller {
             const endDate = moment.utc().add(1, "day").startOf("day").toDate();
 
             // 1) Today active (today)
-            const [todayActiveFederal, todayActiveGold, todayActiveMasonic] = await Promise.all([
+            const [todayActiveFederal, todayActiveGold, todayActiveMasonic, todayActivePolicy] = await Promise.all([
                 FederalReserveGoldPackageHistory.findAll({
                     where: { createdAt: { [Op.gte]: startDate, [Op.lt]: endDate } },
                     attributes: ["user_id"],
@@ -365,20 +365,26 @@ class Controller {
                     raw: true,
                 }),
                 MasonicPackageHistory.findAll({
+                    where: { createdAt: { [Op.gte]: startDate, [Op.lt]: endDate } },
+                    attributes: ["user_id"],
+                    raw: true,
+                }),
+                PolicyPackageHistory.findAll({
                     where: { createdAt: { [Op.gte]: startDate, [Op.lt]: endDate } },
                     attributes: ["user_id"],
                     raw: true,
                 }),
             ]);
 
-            // Unique today active users across 3 tables
+            // Unique today active users across 4 tables
             const todayActiveUserSet = new Set();
             todayActiveFederal.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
             todayActiveGold.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
             todayActiveMasonic.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
+            todayActivePolicy.forEach((r) => r.user_id != null && todayActiveUserSet.add(r.user_id));
 
             // 2) Active before today (yesterday or any earlier time)
-            const [beforeActiveFederal, beforeActiveGold, beforeActiveMasonic] = await Promise.all([
+            const [beforeActiveFederal, beforeActiveGold, beforeActiveMasonic, beforeActivePolicy] = await Promise.all([
                 FederalReserveGoldPackageHistory.findAll({
                     where: { createdAt: { [Op.lt]: startDate } },
                     attributes: ["user_id"],
@@ -392,6 +398,12 @@ class Controller {
                     raw: true,
                 }),
                 MasonicPackageHistory.findAll({
+                    where: { createdAt: { [Op.lt]: startDate } },
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
+                PolicyPackageHistory.findAll({
                     where: { createdAt: { [Op.lt]: startDate } },
                     attributes: ["user_id"],
                     group: ["user_id"],
@@ -403,6 +415,7 @@ class Controller {
             beforeActiveFederal.forEach(r => r.user_id != null && beforeTodayActiveUserSet.add(r.user_id));
             beforeActiveGold.forEach(r => r.user_id != null && beforeTodayActiveUserSet.add(r.user_id));
             beforeActiveMasonic.forEach(r => r.user_id != null && beforeTodayActiveUserSet.add(r.user_id));
+            beforeActivePolicy.forEach(r => r.user_id != null && beforeTodayActiveUserSet.add(r.user_id));
 
             // 3) Count only users active today BUT not active before today
             const todayNewActiveUserCount = [...todayActiveUserSet]
@@ -410,7 +423,7 @@ class Controller {
                 .length;
 
             // 4) Total active users = all unique users in todayActive + all unique users in beforeTodayActive
-            const [totalActiveFederal, totalActiveGold, totalActiveMasonic] = await Promise.all([
+            const [totalActiveFederal, totalActiveGold, totalActiveMasonic, totalActivePolicy] = await Promise.all([
                 FederalReserveGoldPackageHistory.findAll({
                     attributes: ["user_id"],
                     group: ["user_id"],
@@ -426,12 +439,18 @@ class Controller {
                     group: ["user_id"],
                     raw: true,
                 }),
+                PolicyPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
             ]);
 
             const totalActiveUserSet = new Set();
             totalActiveFederal.forEach(r => r.user_id != null && totalActiveUserSet.add(r.user_id));
             totalActiveGold.forEach(r => r.user_id != null && totalActiveUserSet.add(r.user_id));
             totalActiveMasonic.forEach(r => r.user_id != null && totalActiveUserSet.add(r.user_id));
+            totalActivePolicy.forEach(r => r.user_id != null && totalActiveUserSet.add(r.user_id));
 
             const data = {
                 today_active_user_count: todayNewActiveUserCount,

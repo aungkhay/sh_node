@@ -3715,7 +3715,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'initial_buy_product_date']
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -3764,6 +3764,9 @@ class Controller {
                 }, { transaction: t });
 
                 await user.increment({ reserve_fund: -selectedPack.price }, { transaction: t });
+                if (!user.initial_buy_product_date) {
+                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                }
 
                 await GoldPackageHistory.create({
                     relation: user.relation,
@@ -4251,7 +4254,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -4287,6 +4290,9 @@ class Controller {
                 }, { transaction: t });
 
                 await user.update({ reserve_fund: Number(user.reserve_fund) - mPackage.price }, { transaction: t });
+                if (!user.initial_buy_product_date) {
+                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                }
                 
                 const pkgHistory = [];
                 if (mPackage.buy_one_get_quantity > 0) {
@@ -4689,7 +4695,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -4725,6 +4731,9 @@ class Controller {
                 }, { transaction: t });
 
                 await user.update({ reserve_fund: Number(user.reserve_fund) - fPackage.price }, { transaction: t });
+                if (!user.initial_buy_product_date) {
+                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                }
 
                 const pkgHistory = [];
                 if (fPackage.buy_one_get_quantity > 0) {
@@ -5210,7 +5219,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -5246,6 +5255,9 @@ class Controller {
                 }, { transaction: t });
 
                 await user.update({ reserve_fund: Number(user.reserve_fund) - policyPackage.price }, { transaction: t });
+                if (!user.initial_buy_product_date) {
+                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                }
 
                 const pkgHistory = [];
                 if (policyPackage.buy_one_get_quantity > 0) {
