@@ -6377,7 +6377,7 @@ class Controller {
 
             const userId = req.user_id;
             const meetingCode = req.params.code;
-            if (Number(meeting.meeting_code) !== Number(meetingCode)) {
+            if (meeting.meeting_code !== meetingCode) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
             }
             
