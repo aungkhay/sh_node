@@ -83,6 +83,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
+            req.body.tag = req.body.tag ? req.body.tag.join('|') : '';
             const pkg = await MasonicPackage.create(req.body);
 
             // Log
@@ -108,6 +109,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
+            req.body.tag = req.body.tag ? req.body.tag.join('|') : '';
             await pkg.update(req.body);
 
             // Log

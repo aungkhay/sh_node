@@ -10,6 +10,8 @@ class PolicyPackage extends Model {
             attributes.daily_earn = Number(attributes.daily_earn);
         if (attributes.masonic_fund)
             attributes.masonic_fund = Number(attributes.masonic_fund);
+        if (attributes.tag)
+            attributes.tag = attributes.tag.split('|');
 
         return attributes
     }
@@ -91,7 +93,12 @@ PolicyPackage.init({
     description: {
         type: DataTypes.STRING,
         allowNull: true,
-    }
+    },
+    tag: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: '标签 | 分隔',
+    },
 }, {
     sequelize,
     modelName: 'PolicyPackage',

@@ -10,6 +10,8 @@ class FederalReserveGoldPackage extends Model {
             attributes.reserve_earn = Number(attributes.reserve_earn);
         if (attributes.personal_gold)
             attributes.personal_gold = Number(attributes.personal_gold);
+        if (attributes.tag)
+            attributes.tag = attributes.tag.split('|');
 
         return attributes
     }
@@ -102,7 +104,12 @@ FederalReserveGoldPackage.init({
     description: {
         type: DataTypes.STRING,
         allowNull: true,
-    }
+    },
+    tag: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: '标签 | 分隔',
+    },
 }, {
     sequelize,
     modelName: 'FederalReserveGoldPackage',

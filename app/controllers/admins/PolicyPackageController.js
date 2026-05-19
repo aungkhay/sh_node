@@ -80,6 +80,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
+            req.body.tag = req.body.tag ? req.body.tag.join('|') : '';
             await PolicyPackage.create({
                 ...req.body,
                 perchase_limit: req.body.purchase_limit || 0
@@ -107,6 +108,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
+            req.body.tag = req.body.tag ? req.body.tag.join('|') : '';
             await pkg.update({
                 ...req.body,
                 perchase_limit: req.body.purchase_limit || 0

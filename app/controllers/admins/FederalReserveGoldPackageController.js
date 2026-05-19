@@ -95,6 +95,7 @@ class Controller {
                 description: description,
                 buy_one_get_quantity: buy_one_get_quantity,
                 can_new_registered_user_get_free: can_new_registered_user_get_free,
+                tag: req.body.tag ? req.body.tag.join('|') : '',
             });
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', newPackage);
 
@@ -133,6 +134,7 @@ class Controller {
                 buy_one_get_quantity: buy_one_get_quantity,
                 status: status,
                 can_new_registered_user_get_free: can_new_registered_user_get_free,
+                tag: req.body.tag ? req.body.tag.join('|') : '',
             });
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', pkg);
         } catch (error) {
