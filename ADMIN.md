@@ -423,6 +423,21 @@ const config = {
 }
 await axios(config);
 
+// [POST] Create Product
+const url = `${baseURL}/masonic-packages/create`;
+const data = {
+    product_name: '',
+    price: 100,
+    daily_earn: 10,
+    masonic_fund: 100, // optional
+    is_release_authorize_letter: 0, // 1 是 0 否
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    status: 1, // 1-在售, 2-下架, 3-售罄
+}
+
 // [POST] Update Product
 const url = `${baseURL}/masonic-packages/${packageId}/update`;
 const data = {
