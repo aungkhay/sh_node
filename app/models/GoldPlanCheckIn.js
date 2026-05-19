@@ -2,7 +2,13 @@ const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../connections/Mysql');
 const User = require('./User');
 
-class GoldPlanCheckIn extends Model {}
+class GoldPlanCheckIn extends Model {
+    toJSON() {
+        let attributes = Object.assign({}, this.get())
+        attributes.gold_count = Number(attributes.gold_count);
+        return attributes
+    }
+}
 
 GoldPlanCheckIn.init({
     id: {
@@ -39,6 +45,7 @@ GoldPlanCheckIn.init({
     timestamps: true,
     indexes: [
         { fields: ['relation'] },
+        { fields: ['createdAt'] }
     ]
 })
 

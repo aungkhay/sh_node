@@ -3222,6 +3222,7 @@ class Controller {
                         const phoneNumber = row['手机号'];
                         const type = row['类型']; // 类型：储备金/余额
                         const amount = row['数量'];
+                        const description = row['标题'];
                         if (!phoneNumber) {
                             continue;
                         }
@@ -3247,6 +3248,7 @@ class Controller {
                             before_amount: user.balance,
                             after_amount: Number(user.balance) + Number(amount),
                             flow_status: 'IN',
+                            description: description ? description : null                        
                         }, { transaction: t });
 
                         await user.increment({ balance: amount }, { transaction: t });
