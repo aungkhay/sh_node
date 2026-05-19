@@ -4886,6 +4886,7 @@ class Controller {
                 where: {
                     user_id: userId,
                     price: 0,
+                    package_id: req.params.id,
                     description: '新注册用户福利'
                 }
             });
@@ -4941,18 +4942,42 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                const pkgHistory = await FederalReserveGoldPackageHistory.create({
-                    relation: user.relation,
-                    user_id: user.id,
-                    package_id: fPackage.id,
-                    price: 0,
-                    reserve_earn: fPackage.reserve_earn,
-                    personal_gold: fPackage.personal_gold,
-                    masonic_fund: fPackage.masonic_fund,
-                    period: fPackage.period,
-                    return_date: moment().add(fPackage.period, 'days').toDate(),
-                    description: '新注册用户福利'
-                }, { transaction: t });
+                // const pkgHistory = await FederalReserveGoldPackageHistory.create({
+                //     relation: user.relation,
+                //     user_id: user.id,
+                //     package_id: fPackage.id,
+                //     price: 0,
+                //     reserve_earn: fPackage.reserve_earn,
+                //     personal_gold: fPackage.personal_gold,
+                //     masonic_fund: fPackage.masonic_fund,
+                //     period: fPackage.period,
+                //     return_date: moment().add(fPackage.period, 'days').toDate(),
+                //     description: '新注册用户福利'
+                // }, { transaction: t });
+
+                const [pkgHistory, created] = await FederalReserveGoldPackageHistory.findOrCreate({
+                    where: {
+                        user_id: user.id,
+                        package_id: fPackage.id,
+                    },
+                    defaults: {
+                        relation: user.relation,
+                        package_id: fPackage.id,
+                        price: 0,
+                        reserve_earn: fPackage.reserve_earn,
+                        personal_gold: fPackage.personal_gold,
+                        masonic_fund: fPackage.masonic_fund,
+                        period: fPackage.period,
+                        return_date: moment().add(fPackage.period, 'days').toDate(),
+                        description: '新注册用户福利'
+                    },
+                    transaction: t
+                });
+
+                if (!created) {
+                    await t.rollback();
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过免费礼包', {});
+                }
 
                 if (fPackage.is_release_authorize_letter) {
                     await RewardRecord.create({
