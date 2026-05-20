@@ -893,6 +893,7 @@ class Controller {
                     } else if (['failed', 'returned'].includes(reqBody.status)) {
                         status = 2;
                     }
+                    resMsg = { errcode: 0, errdesc: 'success' };
                     break;
                 default:
                     break;
@@ -902,6 +903,7 @@ class Controller {
                 await withdraw.update({ status: status, callback_data: JSON.stringify(reqBody) });
             }
 
+            console.log(resMsg);
             return res.send(resMsg);
         } catch (error) {
             errLogger(`[WITHDRAW_CALLBACK][${req.params.userId}]: ${JSON.stringify(req.body)}`);
