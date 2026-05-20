@@ -1048,6 +1048,7 @@ class Controller {
             switch (channel.withdraw_merchant.app_code) {
                 case 'xpay360':
                     payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, userId, user.payment_method, withdrawBy);
+                    headers = { "Content-Type": "application/json" }
                     break;
             
                 default:
