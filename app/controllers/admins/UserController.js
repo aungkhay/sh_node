@@ -1969,6 +1969,22 @@ class Controller {
             if (walletType == 1) {
                 // 储备金
 
+                updateObj.reserve_fund = updateAmount;
+                walletAmount = user.reserve_fund;
+
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: user.id,
+                    wallet_type: 1,
+                    model: 'User',
+                    type: isAddedDepositRecord ? '人工充值' : '调整储备金',
+                    amount: updateAmount,
+                    before_amount: user.reserve_fund,
+                    after_amount: addOrSubstract == 1 ? Number(user.reserve_fund) + Number(updateAmount) : Number(user.reserve_fund) - Number(updateAmount),
+                    flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
+                    description: addOrSubstract == 1 ? '系统增加储备金' : '系统扣除储备金'
+                });
+
                 if (addOrSubstract == 1 && isAddedDepositRecord) {
                     const orderNo = await this.commonHelper.generateDepositOrderNo();
                     await Deposit.create({
@@ -1979,22 +1995,7 @@ class Controller {
                         amount: amount,
                         before_amount: Number(user.reserve_fund),
                         after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
-                    });
-                } else {
-                    updateObj.reserve_fund = updateAmount;
-                    walletAmount = user.reserve_fund;
-
-                    await CashFlow.create({
-                        relation: user.relation,
-                        user_id: user.id,
-                        wallet_type: 1,
-                        model: 'User',
-                        type: isAddedDepositRecord ? '人工充值' : '调整储备金',
-                        amount: updateAmount,
-                        before_amount: user.reserve_fund,
-                        after_amount: addOrSubstract == 1 ? Number(user.reserve_fund) + Number(updateAmount) : Number(user.reserve_fund) - Number(updateAmount),
-                        flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
-                        description: addOrSubstract == 1 ? '系统增加储备金' : '系统扣除储备金'
+                        status: 1
                     });
                 }
 
