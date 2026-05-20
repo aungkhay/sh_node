@@ -957,13 +957,34 @@ class Controller {
 
             const userId = req.user_id;
             const amount = parseFloat(req.body.amount);
-            const withdrawBy = req.body.withdrawBy;
+            const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY
             const paymentPassword = req.body.payment_password;
             // const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
             const user = await User.findByPk(userId, {
+                include: {
+                    model: PaymentMethod,
+                    as: 'payment_method',
+                    attributes: ['id', 'bank_card_number', 'bank_card_name', 'bank_card_phone_number', 'open_bank_name', 'ali_account_name', 'ali_account_number']
+                },
                 attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password']
             });
+
+            if (!user.payment_method) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定提现方式', {});
+            }
+
+            if (withdrawBy === 'BANK') {
+                if (!user.payment_method.bank_card_number || !user.payment_method.bank_card_name || !user.payment_method.open_bank_name) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定银行卡信息', {});
+                }
+            }
+            if (withdrawBy === 'ALIPAY') {
+                if (!user.payment_method.ali_account_number || !user.payment_method.ali_account_name) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定支付宝信息', {});
+                }
+            }
+
             if (!user.can_withdraw) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
@@ -988,16 +1009,29 @@ class Controller {
             const handle_fee = new Decimal(amount).times(0.1).toNumber();
 
             // Get Channel
+            const withdrawMethod = withdrawBy === 'BANK' ? 1 : 2;
             const channel = await WithdrawMerchantChannel.findOne({
                 include: {
                     model: WithdrawMerchant,
                     as: 'withdraw_merchant',
                 },
-                where: { id: req.params.channel_id, status: 1 },
+                // where: { id: req.params.channel_id, status: 1, withdraw_method: withdrawMethod },
+                where: { id: 1, status: 1, withdraw_method: withdrawMethod },
             });
             
             if (!channel || !channel.withdraw_merchant) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现通道无效', {});
+            }
+
+            if (parseFloat(channel.min_amount) > 0) {
+                if (amount < parseFloat(channel.min_amount)) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最低提现金额为${channel.min_amount}`, {});
+                }
+            }
+            if (parseFloat(channel.max_amount) > 0) {
+                if (amount > parseFloat(channel.max_amount)) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最高提现金额为${channel.max_amount}`, {});
+                }
             }
 
             let payload = null;
@@ -1005,7 +1039,7 @@ class Controller {
             const requestAmount = Number(amount) - Number(handle_fee);
             switch (channel.withdraw_merchant.app_code) {
                 case 'xpay360':
-                    payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, userId);
+                    payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, userId, user.payment_method, withdrawBy);
                     break;
             
                 default:

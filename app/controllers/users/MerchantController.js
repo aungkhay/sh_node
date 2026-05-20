@@ -404,24 +404,7 @@ class Controller {
         }
     }
 
-    // 请求参数表格
-    // 参数名	字段名	是否必填	类型	示例值	描述
-    // 商户号	mid	是	string	"1234"	运营提供的商户号，一般是四位数字
-    // 订单号	orderid	是	string	"ORDER20240226120101"	商户自定义订单号
-    // 产品名	product_name	是	string	"XXX_XXX"	运营提供的产品名称，一般是XXX_XXX形式
-    // 时间戳	timestamp	是	string	"2024-02-26 12:01:01"	订单创建时间
-    // 金额	amount	是	float	10.01	订单金额(单位元)，可含2位小数点
-    // 回调URL	callback_url	是	string	"https://example.com/notify"	异步通知回调地址
-    // 结果URL	result_url	是	string	"https://example.com/result"	支付结果跳转地址
-    // 用户名	username	否	string	"user"	用户名，帮助风控
-    // 用户IP	userip	否	string	"192.168.1.1"	用户IP，帮助风控
-    // 上下文	context	否	string	""	将在通知内原样带回
-    // 备注	memo	否	string	""	订单备注
-    // 用户手机	userphone	否	string	""	特殊渠道需要，一般不填
-    // 用户邮件	useremail	否	string	""	特殊渠道需要，一般不填
-    // 用户名字	userfirstname	否	string	""	特殊渠道需要，一般不填
-    // 用户姓氏	userlastname	否	string	""	特殊渠道需要，一般不填
-    XPAY360DAIFU = async (channel, amount, userId) => {
+    XPAY360DAIFU = async (channel, amount, userId, paymentMethod, withdrawBy) => {
         try {
             const orderNo = await this.commonHelper.generateWithdrawOrderNo();
             const body = {
@@ -432,6 +415,11 @@ class Controller {
                 amount: Number(amount).toFixed(2),
                 callback_url: `${process.env.CALLBACK_DOMAIN}/api/withdraw-callback/${orderNo}/${channel.withdraw_merchant.id}/${userId}`,
                 result_url: `${process.env.CALLBACK_DOMAIN}/api/withdraw-callback/${orderNo}/${channel.withdraw_merchant.id}/${userId}`,
+                payout: {
+                    outtype: withdrawBy.toLowerCase(), // bank | alipay
+                    name: withdrawBy === 'BANK' ? paymentMethod.bank_card_name : paymentMethod.ali_account_name,
+                    account: withdrawBy === 'BANK' ? paymentMethod.bank_card_number : paymentMethod.ali_account_number,
+                }
             }
 
             // sign: SHA256(KEY)+ {data}
