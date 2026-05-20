@@ -1101,6 +1101,7 @@ class Controller {
             const t = await db.transaction();
             try {
                 await Withdraw.create({
+                    withdraw_merchant_id: channel.id,
                     order_no: orderNo,
                     type: withdrawBy,
                     user_id: userId,
