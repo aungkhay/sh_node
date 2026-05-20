@@ -1994,7 +1994,6 @@ class Controller {
                         amount: amount,
                         before_amount: Number(user.reserve_fund),
                         after_amount: Number(parseFloat(user.reserve_fund) + parseFloat(amount)),
-                        status: 1
                     });
                 }
 
