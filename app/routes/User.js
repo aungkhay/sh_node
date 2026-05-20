@@ -134,6 +134,8 @@ class UserRoute extends express.Router {
         this.get('/payment-channels/:method_id', middleware.isLoggedIn, TxnCtl.GET_PAYMENT_CHANNELS);
         this.post('/deposit/:channel_id', FormValidator.deposit(), middleware.isLoggedIn, TxnCtl.DEPOSIT);
         this.get('/deposit-history', middleware.isLoggedIn, TxnCtl.DEPOSIT_HISTORY);
+
+        this.post('/withdraw-callback/:orderNo/:merchantId/:userId', TxnCtl.WITHDRAW_CALLBACK);
         this.post('/withdraw', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW);
         this.get('/withdraw-history', middleware.isLoggedIn, TxnCtl.WITHDRAW_HISTORY);
         this.post('/transfer-balance-to-reserve-fund', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE_TO_RESERVE_FUND);

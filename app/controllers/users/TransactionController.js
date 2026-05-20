@@ -852,7 +852,7 @@ class Controller {
             const { orderNo, merchantId, userId } = req.params;
 
             const resMessages = {
-                '1': 'success', // xpay360
+                '1': { errcode: 0, errdesc: 'success' }, // xpay360
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -893,7 +893,6 @@ class Controller {
                     } else if (['failed', 'returned'].includes(reqBody.status)) {
                         status = 2;
                     }
-                    resMsg = { errcode: 0, errdesc: 'success' };
                     break;
                 default:
                     break;

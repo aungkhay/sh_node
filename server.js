@@ -74,7 +74,7 @@ APP.use((req, res, next) => {
         }
 
         /* ---------- route permission ---------- */
-        if (!req.path.startsWith('/admin') && !req.path.startsWith('/api/recharge-callback') && !RouteDetector(req)) {
+        if (!req.path.startsWith('/admin') && !req.path.startsWith('/api/recharge-callback') && !req.path.startsWith('/api/withdraw-callback') && !RouteDetector(req)) {
             return MyResponse(res, 400, false, 'Action Denied!', {});
         }
 
