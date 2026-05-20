@@ -5337,22 +5337,22 @@ class Controller {
                     pkgHistory.push(pkgHistoryItem);
                 }
 
-                if (policyPackage.masonic_fund > 0) {
-                    let totalMasonicFund = 0;
-                    for (let index = 0; index < pkgHistory.length; index++) {
-                        const pkg = pkgHistory[index];
-                        totalMasonicFund += Number(policyPackage.masonic_fund);
+                // if (policyPackage.masonic_fund > 0) {
+                //     let totalMasonicFund = 0;
+                //     for (let index = 0; index < pkgHistory.length; index++) {
+                //         const pkg = pkgHistory[index];
+                //         totalMasonicFund += Number(policyPackage.masonic_fund);
                             
-                        await MasonicFundHistory.create({
-                            relation: user.relation,
-                            user_id: user.id,
-                            amount: policyPackage.masonic_fund,
-                            description: `PKG-${pkg.id}`,
-                            status: 'APPROVED'
-                        }, { transaction: t });
-                    }
-                    await user.increment({ masonic_fund: totalMasonicFund }, { transaction: t });
-                }
+                //         await MasonicFundHistory.create({
+                //             relation: user.relation,
+                //             user_id: user.id,
+                //             amount: policyPackage.masonic_fund,
+                //             description: `PKG-${pkg.id}`,
+                //             status: 'APPROVED'
+                //         }, { transaction: t });
+                //     }
+                //     await user.increment({ masonic_fund: totalMasonicFund }, { transaction: t });
+                // }
 
                 if (policyPackage.is_release_authorize_letter) {
                     for (let index = 0; index < pkgHistory.length; index++) {
