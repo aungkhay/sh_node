@@ -4181,7 +4181,18 @@ class Controller {
     }
 
     BUY_MASONIC_PACKAGE = async (req, res) => {
+        const lockKey = `buy_masonic_package_${req.user_id}`;
+        let redisLocked = false;
+
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
@@ -4617,7 +4628,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -4870,7 +4881,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -5146,7 +5157,18 @@ class Controller {
     }
 
     BUY_POLICY_PACKAGE = async (req, res) => {
+        const lockKey = `lock:buy-policy-package:${req.ip}`;
+        let redisLocked = false; 
+
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
