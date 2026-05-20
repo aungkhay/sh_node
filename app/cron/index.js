@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -2622,6 +2622,11 @@ class CronJob {
         try {
             const today = moment().format('YYYY-MM-DD');
             const packages = await PolicyPackageHistory.findAll({
+                include: {
+                    model: PolicyPackage,
+                    as: 'package',
+                    attributes: ['id', 'masonic_fund']
+                },
                 attributes: ['id', 'user_id', 'package_id', 'price', 'daily_earn', 'end_date', 'createdAt'],
                 where: {
                     is_finished: 0,
@@ -2675,15 +2680,29 @@ class CronJob {
                                 amount: Number(pack.price),
                                 description: '上合贡献政策收益'
                             }, { transaction: t });
-                            // await MasonicFundHistory.create({
-                            //     user_id: pack.user_id,
-                            //     relation: user.relation,
-                            //     amount: Number(pack.masonic_fund),
-                            //     description: '上合贡献政策 - 定时任务发共济基金',
-                            // }, { transaction: t });
+                            
                             await pack.update({ is_finished: 1 }, { transaction: t });
                             
+                            if (Number(pack.masonic_fund) > 0) {
+                                const exist = await MasonicFundHistory.findOne({
+                                    where: {
+                                        user_id: user.id,
+                                        description: `PKG-${pack.id}`,
+                                    },
+                                    transaction: t
+                                });
+                                if (!exist) {
+                                    await MasonicFundHistory.create({
+                                        relation: user.relation,
+                                        user_id: user.id,
+                                        amount: Number(pack.masonic_fund),
+                                        description: `PKG-${pack.id} 上合贡献政策 - 定时任务发共济基金`,
+                                        status: 'APPROVED'
+                                    }, { transaction: t });
 
+                                    await user.increment({ masonic_fund: Number(pack.masonic_fund) }, { transaction: t });
+                                }
+                            }
                         } else {
                             await CashFlow.create({
                                 user_id: user.id,
