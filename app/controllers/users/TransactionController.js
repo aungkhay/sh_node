@@ -886,13 +886,20 @@ class Controller {
             let reqBody = req.body;
             switch (merchant.app_code) {
                 case 'xpay360':
+                    // {"errdesc":"","orderid":"SH4395336983234417","status":"succeed","mid":1300,"receipt_amount":181,"context":"","pay_timestamp":"2026-05-20 21:06:05.503179","pay_amount":180}
+                    // status => processing/failed/succeed/returned
+                    if (reqBody.status === 'succeed') {
+                        status = 1;
+                    } else if (['failed', 'returned'].includes(reqBody.status)) {
+                        status = 2;
+                    }
                     break;
                 default:
                     break;
             }
 
-            if (status === 1) {
-                await withdraw.update({ status: 1, callback_data: JSON.stringify(reqBody) });
+            if (status !== 0) {
+                await withdraw.update({ status: status, callback_data: JSON.stringify(reqBody) });
             }
 
             return res.send(resMsg);
@@ -1051,14 +1058,15 @@ class Controller {
 
             const orderNo = payload.orderNo;
             delete payload.orderNo;
-            console.log(payload);
             console.log(headers);
 
             let response = null;
             try {
                 if (channel.withdraw_merchant.app_code === 'xpay360') {
-                    const url = channel.deposit_merchant.api + '?sign=' + payload.sign;
+                    const url = channel.withdraw_merchant.api + '?sign=' + payload.sign;
+                    console.log(payload.sign);
                     delete payload.sign;
+                    console.log(payload);
                     response = await axios.post(url, payload, {
                         headers: headers
                     });
@@ -1068,6 +1076,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {}); 
             }
 
+            console.log(response?.data);
             if (!response || response.status !== 200) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});
             }
