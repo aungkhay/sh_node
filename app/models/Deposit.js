@@ -34,7 +34,7 @@ Deposit.init({
             model: DepositMerchant,
             key: 'id'
         },
-        allowNull: null,
+        allowNull: true,
     },
     order_no: {
         type: DataTypes.STRING,

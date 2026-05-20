@@ -1,6 +1,7 @@
 const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../connections/Mysql');
 const User = require('./User');
+const WithdrawMerchant = require('./WithdrawMerchant');
 
 const PROTECTED_ATTRIBUTES = ['deletedAt'];
 class Withdraw extends Model {
@@ -28,6 +29,14 @@ Withdraw.init({
         allowNull: false,
         primaryKey: true,
         autoIncrement: true,
+    },
+    withdraw_merchant_id: {
+        type: DataTypes.BIGINT,
+        references: {
+            model: WithdrawMerchant,
+            key: 'id'
+        },
+        allowNull: true,
     },
     order_no: {
         type: DataTypes.STRING,
@@ -71,12 +80,16 @@ Withdraw.init({
     status: {
         type: DataTypes.TINYINT,
         defaultValue: '0',
-        comment: '0 => PENDIGN | 1 => SUCCESS | 2 => FAILED'
+        comment: '0 => PENDING | 1 => SUCCESS | 2 => FAILED'
     },
     description: {
         type: DataTypes.STRING,
         allowNull: true
-    }
+    },
+    callback_data: {
+        type: DataTypes.TEXT('long'),
+        allowNull: true,
+    },
 }, {
     sequelize,
     modelName: 'Withdraw',

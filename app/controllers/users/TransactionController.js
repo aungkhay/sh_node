@@ -1,15 +1,16 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { errLogger, commonLogger, callbackLogger } = require('../../helpers/Logger');
+const { errLogger, commonLogger, callbackLogger, withdrawCallbackLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
-const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer, GoldPackageHistory, CashFlow } = require('../../models');
+const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer, GoldPackageHistory, CashFlow, WithdrawMerchant } = require('../../models');
 const { Op, Sequelize } = require('sequelize');
 const Decimal = require('decimal.js');
 const axios = require('axios');
 const MerchantController = require('./MerchantController');
 const MerchantChannel = require('../../models/MerchantChannel');
 const { encrypt } = require('../../helpers/AESHelper');
+const WithdrawMerchantChannel = require('../../models/WithdrawMerchantChannel');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -843,6 +844,65 @@ class Controller {
         }
     }
 
+    WITHDRAW_CALLBACK = async (req, res) => {
+        const lockKey = `lock:withdraw_callback:${req.params.userId}`;
+        let redisLocked = false;
+
+        try {
+            const { orderNo, merchantId, userId } = req.params;
+
+            const resMessages = {
+                '1': 'success', // xpay360
+            }
+
+            let resMsg = resMessages[String(merchantId)] || 'success';
+
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 3);
+            if (redisLocked !== 'OK') {
+                return res.send(resMsg);
+            }
+
+            withdrawCallbackLogger(`[WITHDRAW_CALLBACK] Received callback for orderNo: ${orderNo}, merchantId: ${merchantId}, userId: ${userId} | Body: ${JSON.stringify(req.body)}`);
+            const withdraw = await Withdraw.findOne({ 
+                where: { 
+                    order_no: orderNo,
+                    withdraw_merchant_id: merchantId,
+                    user_id: userId,
+                    status: 0
+                } 
+            });
+            if (!withdraw) {
+                return res.send(resMsg);
+            }
+            const merchant = await WithdrawMerchant.findByPk(merchantId);
+            if (!merchant) {
+                return res.send(resMsg);
+            }
+
+            let status = 0;
+            let reqBody = req.body;
+            switch (merchant.app_code) {
+                case 'xpay360':
+                    break;
+                default:
+                    break;
+            }
+
+            if (status === 1) {
+                await withdraw.update({ status: 1, callback_data: JSON.stringify(reqBody) });
+            }
+
+            return res.send(resMsg);
+        } catch (error) {
+            errLogger(`[WITHDRAW_CALLBACK][${req.params.userId}]: ${JSON.stringify(req.body)}`);
+            errLogger(`[WITHDRAW_CALLBACK]: ${error.stack}`);
+            return res.send('OK');
+        }
+    }
+
     WITHDRAW = async (req, res) => {
         const lockKey = `lock:withdraw:${req.user_id}`;
         let redisLocked = false;
@@ -899,7 +959,7 @@ class Controller {
             const amount = parseFloat(req.body.amount);
             const withdrawBy = req.body.withdrawBy;
             const paymentPassword = req.body.payment_password;
-            const order_no = await this.commonHelper.generateWithdrawOrderNo();
+            // const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
             const user = await User.findByPk(userId, {
                 attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password']
@@ -927,10 +987,76 @@ class Controller {
             // 10% handle_fee
             const handle_fee = new Decimal(amount).times(0.1).toNumber();
 
+            // Get Channel
+            const channel = await WithdrawMerchantChannel.findOne({
+                include: {
+                    model: WithdrawMerchant,
+                    as: 'withdraw_merchant',
+                },
+                where: { id: req.params.channel_id, status: 1 },
+            });
+            
+            if (!channel || !channel.withdraw_merchant) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现通道无效', {});
+            }
+
+            let payload = null;
+            let headers = { "Content-Type": "application/x-www-form-urlencoded" }
+            const requestAmount = Number(amount) - Number(handle_fee);
+            switch (channel.withdraw_merchant.app_code) {
+                case 'xpay360':
+                    payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, userId);
+                    break;
+            
+                default:
+                    break;
+            }
+            if (!payload) {
+                return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, '生成提现订单失败，请稍后再试', {});
+            }
+
+            const orderNo = payload.orderNo;
+            delete payload.orderNo;
+            console.log(payload);
+            console.log(headers);
+
+            let response = null;
+            try {
+                if (channel.withdraw_merchant.app_code === 'xpay360') {
+                    const url = channel.deposit_merchant.api + '?sign=' + payload.sign;
+                    delete payload.sign;
+                    response = await axios.post(url, payload, {
+                        headers: headers
+                    });
+                }
+            } catch (error) {
+                console.log(error);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {}); 
+            }
+
+            if (!response || response.status !== 200) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});
+            }
+
+            let success = false;
+            switch (channel.withdraw_merchant.app_code) {
+                case 'xpay360':
+                    if (response.data.errcode >= 0) {
+                        success = true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            if (!success) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});    
+            }
+
             const t = await db.transaction();
             try {
                 await Withdraw.create({
-                    order_no: order_no,
+                    order_no: orderNo,
                     type: withdrawBy,
                     user_id: userId,
                     relation: user.relation,
@@ -956,7 +1082,7 @@ class Controller {
 
                 await t.commit();
 
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '提现成功', {});
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '生成提现订单成功', {});
             } catch (error) {
                 errLogger(`[WITHDRAW][${req.user_id}]: ${error.stack}`);
                 await t.rollback();

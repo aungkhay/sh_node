@@ -109,6 +109,26 @@ function createCallbackLogger() {
     }
 }
 
+function createWithdrawCallbackLogger() {
+    const logger = winston.createLogger({
+        level: 'info',
+        format: combine(
+            timestamp({format: 'YYYY-MM-DD HH:mm:ss'}),
+            align(), 
+            printf(info => `${info.level}: [${[info.timestamp]}]: ${info.message}`)
+        ),
+        transports: [
+            consoleLog,
+            new winston.transports.File({ filename: `app/logs/withdraw_callback/${fileName}.log`, level: 'info' }),
+        ],
+        exitOnError: false
+    });
+
+    return function logInfo(message) {
+        logger.info(message);
+    }
+}
+
 function createMoneyTrackLogger() {
     const logger = winston.createLogger({
         level: 'info',
@@ -135,5 +155,6 @@ module.exports = {
     queryLogger: createQueryLogger(),
     commonLogger: createCommonLogger(),
     callbackLogger: createCallbackLogger(),
+    withdrawCallbackLogger: createWithdrawCallbackLogger(),
     moneyTrackLogger: createMoneyTrackLogger()
 };

@@ -26,6 +26,8 @@ const DepositMerchant = require('./DepositMerchant');
 const MerchantChannel = require('./MerchantChannel');
 const Deposit = require('./Deposit');
 const Withdraw = require('./Withdraw');
+const WithdrawMerchant = require('./WithdrawMerchant');
+const WithdrawMerchantChannel = require('./WithdrawMerchantChannel');
 const Transfer = require('./Transfer');
 const Interest = require('./Interest');
 const MasonicFund = require('./MasonicFund');
@@ -146,6 +148,12 @@ DepositMerchant.hasMany(Deposit, { foreignKey: 'deposit_merchant_id', as: 'depos
 Deposit.belongsTo(DepositMerchant, { foreignKey: 'deposit_merchant_id', as: 'deposit_merchant', onDelete: 'CASCADE' });
 MerchantChannel.belongsTo(DepositMerchant, { foreignKey: 'deposit_merchant_id', as: 'deposit_merchant', onDelete: 'CASCADE' });
 DepositMerchant.hasMany(MerchantChannel, { foreignKey: 'deposit_merchant_id', as: 'channels', onDelete: 'CASCADE' });
+
+// ======== WITHDRAW_MERCHANT ↔️ WITHDRAW (1:N) ==========
+WithdrawMerchant.hasMany(Withdraw, { foreignKey: 'withdraw_merchant_id', as: 'withdraws', onDelete: 'CASCADE' });
+Withdraw.belongsTo(WithdrawMerchant, { foreignKey: 'withdraw_merchant_id', as: 'withdraw_merchant', onDelete: 'CASCADE' });
+WithdrawMerchant.hasMany(WithdrawMerchantChannel, { foreignKey: 'withdraw_merchant_id', as: 'channels', onDelete: 'CASCADE' });
+WithdrawMerchantChannel.belongsTo(WithdrawMerchant, { foreignKey: 'withdraw_merchant_id', as: 'withdraw_merchant', onDelete: 'CASCADE' });
 
 // ========== USER ↔️ WITHDRAW (1:N) ==========
 User.hasMany(Withdraw, { foreignKey: 'user_id', as: 'withdraws', onDelete: 'CASCADE' });
@@ -379,6 +387,7 @@ const models = {
     DepositMerchant,
     Deposit,
     Withdraw,
+    WithdrawMerchant,
     Transfer,
     Interest,
     MasonicFund,
