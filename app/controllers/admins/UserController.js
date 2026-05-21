@@ -3249,27 +3249,38 @@ class Controller {
                             continue;
                         }
 
-                        const user = await User.findOne({ where: { phone_number: phoneNumber }, attributes: ['id', 'relation', 'balance'], transaction: t });
+                        const user = await User.findOne({ where: { phone_number: phoneNumber }, attributes: ['id', 'relation', 'balance', 'reserve_fund'], transaction: t });
                         if (!user) {
                             continue;
                         }
 
-                        await CashFlow.create({
-                            user_id: user.id,
-                            relation: user.relation,
-                            wallet_type: 2,
-                            model: 'User',
-                            type: '系统发放余额',
-                            amount: Number(amount),
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + Number(amount),
-                            flow_status: 'IN',
-                            description: description ? description : null                        
-                        }, { transaction: t });
-
                         if (type === 1) {
+                            await CashFlow.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'User',
+                                type: '系统发放储备金',
+                                amount: Number(amount),
+                                before_amount: user.reserve_fund,
+                                after_amount: Number(user.reserve_fund) + Number(amount),
+                                flow_status: 'IN',
+                                description: description ? description : null                        
+                            }, { transaction: t });
                             await user.increment({ reserve_fund: amount }, { transaction: t });
                         } else {
+                            await CashFlow.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'User',
+                                type: '系统发放余额',
+                                amount: Number(amount),
+                                before_amount: user.balance,
+                                after_amount: Number(user.balance) + Number(amount),
+                                flow_status: 'IN',
+                                description: description ? description : null                        
+                            }, { transaction: t });
                             await user.increment({ balance: amount }, { transaction: t });
                         }
                     }
