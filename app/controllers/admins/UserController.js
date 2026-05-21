@@ -3267,7 +3267,11 @@ class Controller {
                             description: description ? description : null                        
                         }, { transaction: t });
 
-                        await user.increment({ balance: amount }, { transaction: t });
+                        if (type === 1) {
+                            await user.increment({ reserve_fund: amount }, { transaction: t });
+                        } else {
+                            await user.increment({ balance: amount }, { transaction: t });
+                        }
                     }
 
                     await t.commit();
