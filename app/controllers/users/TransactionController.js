@@ -911,6 +911,152 @@ class Controller {
         }
     }
 
+    WITHDRAW_OLD = async (req, res) => {
+        const lockKey = `lock:withdraw:${req.user_id}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            // const today = new Date();
+            // const day = today.getDay();
+            // if (day === 0 || day === 6) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在工作日进行提现提交', {});
+            // }
+
+            const can_withdraw = await this.redisHelper.getValue('can_withdraw');
+            if (!can_withdraw || Number(can_withdraw) != 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在工作日进行提现提交', {});
+            }
+
+            const withdraw_time = await this.redisHelper.getValue('withdraw_time'); // 10:00:00-17:00:00
+            if (withdraw_time) {
+                const [startTime, endTime] = withdraw_time.split('-'); // ['10:00:00', '17:00:00']
+                const currentTime = new Date().toTimeString().split(' ')[0];
+                if (currentTime < startTime || currentTime >= endTime) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `提现时段：每日${startTime}-${endTime}`, {});
+                }
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const todayWithdrawCount = await Withdraw.count({
+                where: {
+                    user_id: req.user_id,
+                    createdAt: {
+                        [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)),
+                        [Op.lt]: new Date(new Date().setHours(23, 59, 59, 999))
+                    }
+                }
+            });
+            if (todayWithdrawCount == 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '每天可以申请提现一次，预计一个工作日内到账', {}); 
+            }
+
+            const userId = req.user_id;
+            const amount = parseFloat(req.body.amount);
+            const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY
+            const paymentPassword = req.body.payment_password;
+            const order_no = await this.commonHelper.generateWithdrawOrderNo();
+
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: PaymentMethod,
+                    as: 'payment_method',
+                    attributes: ['id', 'bank_card_number', 'bank_card_name', 'bank_card_phone_number', 'open_bank_name', 'ali_account_name', 'ali_account_number']
+                },
+                attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password']
+            });
+
+            if (!user.payment_method) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定提现方式', {});
+            }
+
+            if (withdrawBy === 'BANK') {
+                if (!user.payment_method.bank_card_number || !user.payment_method.bank_card_name || !user.payment_method.open_bank_name) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定银行卡信息', {});
+                }
+            }
+            if (withdrawBy === 'ALIPAY') {
+                if (!user.payment_method.ali_account_number || !user.payment_method.ali_account_name) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定支付宝信息', {});
+                }
+            }
+
+            if (!user.can_withdraw) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + paymentPassword + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+            // check createdAt is before 2026-04-10
+            if (!user.is_withdraw_active_code_used && new Date(user.createdAt) < new Date('2026-04-10')) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请您在个人中心-我的军职-当前军职中，查看上级联系方式，按提示添加联系人并登记后使用激活码恢复账户', {});
+            }
+
+            if (Number(amount) < 50) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '最低提现金额为50', {});
+            }
+
+            if (Number(amount) > Number(user.balance)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '余额不足', {});
+            }
+
+            // 10% handle_fee
+            const handle_fee = new Decimal(amount).times(0.1).toNumber();
+
+            const t = await db.transaction();
+            try {
+                await Withdraw.create({
+                    order_no: order_no,
+                    type: withdrawBy,
+                    user_id: userId,
+                    relation: user.relation,
+                    amount: Number(amount),
+                    handle_fee: Number(handle_fee),
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) - Number(amount),
+                }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: userId,
+                    relation: user.relation,
+                    wallet_type: 2, // balance
+                    model: 'Withdraw',
+                    type: '提现',
+                    amount: Number(amount),
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) - Number(amount),
+                    flow_status: 'OUT'
+                }, { transaction: t });
+
+                await user.increment({ balance: -Number(amount) }, { transaction: t });
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '生成提现订单成功', {});
+            } catch (error) {
+                errLogger(`[WITHDRAW][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
+            }
+        } catch (error) {
+            errLogger(`[WITHDRAW][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     WITHDRAW = async (req, res) => {
         const lockKey = `lock:withdraw:${req.user_id}`;
         let redisLocked = false;
@@ -1016,92 +1162,101 @@ class Controller {
             // 10% handle_fee
             const handle_fee = new Decimal(amount).times(0.1).toNumber();
 
-            // Get Channel
+            let orderNo = null;
+            let merchantId = null;
             const withdrawMethod = withdrawBy === 'BANK' ? 1 : 2;
-            const channel = await WithdrawMerchantChannel.findOne({
-                include: {
-                    model: WithdrawMerchant,
-                    as: 'withdraw_merchant',
-                },
-                // where: { id: req.params.channel_id, status: 1, withdraw_method: withdrawMethod },
-                where: { id: 1, status: 1, withdraw_method: withdrawMethod },
-            });
-            
-            if (!channel || !channel.withdraw_merchant) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现通道无效', {});
-            }
 
-            if (parseFloat(channel.min_amount) > 0) {
-                if (amount < parseFloat(channel.min_amount)) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最低提现金额为${channel.min_amount}`, {});
+            if (withdrawMethod === 1) {
+                // Get Channel
+                const channel = await WithdrawMerchantChannel.findOne({
+                    include: {
+                        model: WithdrawMerchant,
+                        as: 'withdraw_merchant',
+                    },
+                    // where: { id: req.params.channel_id, status: 1, withdraw_method: withdrawMethod },
+                    where: { id: 1, status: 1, withdraw_method: withdrawMethod },
+                });
+                
+                if (!channel || !channel.withdraw_merchant) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现通道无效', {});
                 }
-            }
-            if (parseFloat(channel.max_amount) > 0) {
-                if (amount > parseFloat(channel.max_amount)) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最高提现金额为${channel.max_amount}`, {});
-                }
-            }
+                channelId = channel.id;
 
-            let payload = null;
-            let headers = { "Content-Type": "application/x-www-form-urlencoded" }
-            const requestAmount = Number(amount) - Number(handle_fee);
-            switch (channel.withdraw_merchant.app_code) {
-                case 'xpay360':
-                    payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, userId, user.payment_method, withdrawBy);
-                    headers = { "Content-Type": "application/json" }
-                    break;
-            
-                default:
-                    break;
-            }
-            if (!payload) {
-                return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, '生成提现订单失败，请稍后再试', {});
-            }
-
-            const orderNo = payload.orderNo;
-            delete payload.orderNo;
-            console.log(headers);
-
-            let response = null;
-            try {
-                if (channel.withdraw_merchant.app_code === 'xpay360') {
-                    const url = channel.withdraw_merchant.api + '?sign=' + payload.sign;
-                    console.log(payload.sign);
-                    delete payload.sign;
-                    console.log(payload);
-                    response = await axios.post(url, payload, {
-                        headers: headers
-                    });
-                }
-            } catch (error) {
-                console.log(error);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {}); 
-            }
-
-            console.log(response?.data);
-            if (!response || response.status !== 200) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});
-            }
-
-            let success = false;
-            switch (channel.withdraw_merchant.app_code) {
-                case 'xpay360':
-                    if (response.data.errcode >= 0) {
-                        success = true;
+                if (parseFloat(channel.min_amount) > 0) {
+                    if (amount < parseFloat(channel.min_amount)) {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最低提现金额为${channel.min_amount}`, {});
                     }
-                    break;
-                default:
-                    break;
-            }
+                }
+                if (parseFloat(channel.max_amount) > 0) {
+                    if (amount > parseFloat(channel.max_amount)) {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最高提现金额为${channel.max_amount}`, {});
+                    }
+                }
 
-            if (!success) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});    
+                let payload = null;
+                let headers = { "Content-Type": "application/x-www-form-urlencoded" }
+                const requestAmount = Number(amount) - Number(handle_fee);
+                switch (channel.withdraw_merchant.app_code) {
+                    case 'xpay360':
+                        payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, userId, user.payment_method, withdrawBy);
+                        headers = { "Content-Type": "application/json" }
+                        break;
+                
+                    default:
+                        break;
+                }
+                if (!payload) {
+                    return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, '生成提现订单失败，请稍后再试', {});
+                }
+
+                orderNo = payload.orderNo;
+                delete payload.orderNo;
+                console.log(headers);
+
+                let response = null;
+                try {
+                    if (channel.withdraw_merchant.app_code === 'xpay360') {
+                        const url = channel.withdraw_merchant.api + '?sign=' + payload.sign;
+                        console.log(payload.sign);
+                        delete payload.sign;
+                        console.log(payload);
+                        response = await axios.post(url, payload, {
+                            headers: headers
+                        });
+                    }
+                } catch (error) {
+                    console.log(error);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {}); 
+                }
+
+                console.log(response?.data);
+                if (!response || response.status !== 200) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});
+                }
+
+                let success = false;
+                switch (channel.withdraw_merchant.app_code) {
+                    case 'xpay360':
+                        if (response.data.errcode >= 0) {
+                            success = true;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                if (!success) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});    
+                }
+            } else {
+                orderNo = await this.commonHelper.generateWithdrawOrderNo();
+                channelId = null;
             }
 
             const t = await db.transaction();
             try {
                 await Withdraw.create({
-                    withdraw_merchant_id: channel.id,
+                    withdraw_merchant_id: channelId,
                     order_no: orderNo,
                     type: withdrawBy,
                     user_id: userId,

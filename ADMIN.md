@@ -1651,7 +1651,7 @@ const params = {
 const url = `${baseURL}/withdraw-channels/create`;
 const data = {
     merchant_id: '',
-    withdraw_method: '', // BANK | ALIPAY
+    withdraw_method: 1, // 1 => BANK | 2 => ALIPAY
     merchant_channel: '123', // code (STRING)
     channel_name: '',
     min_amount: 0, // optional
@@ -1662,7 +1662,7 @@ const data = {
 const url = `${baseURL}/withdraw-channels/${channelID}/update`;
 const data = {
     merchant_id: '',
-    withdraw_method: '', // BANK | ALIPAY
+    withdraw_method: 1, // 1 => BANK | 2 => ALIPAY
     merchant_channel: '123', // code (STRING)
     channel_name: '',
     min_amount: 0, // optional
