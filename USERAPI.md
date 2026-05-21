@@ -605,12 +605,17 @@ const data = {
     amount: 100
 }
 
+// [GET] Withdraw Channel
+// methodID (1 => 银行卡 | 2 => 支付宝)
+const url = `${baseURL}/withdraw-channels/${methodID}$`;
+
 // [POST] Withdraw
 const url = `${baseURL}/withdraw`;
 const data = {
     amount: 100,
     withdrawBy: '', // 'BANK', 'ALIPAY'
-    payment_password: ''
+    payment_password: '',
+    channelId: 1
 }
 
 // [GET] Deposit History

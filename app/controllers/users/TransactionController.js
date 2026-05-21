@@ -461,7 +461,7 @@ class Controller {
             const currentMerchantId = currentMethodMerchants ? JSON.parse(currentMethodMerchants)[0] : null;
             // console.log(currentMerchantId);
 
-            const channel = await MerchantChannel.findOne({
+            const channel = await MerchantChannel.findAll({
                 where: { 
                     status: 1, 
                     payment_method: method_id,
@@ -476,7 +476,7 @@ class Controller {
                 data.push(channel);
             }
             
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, data);
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, channel);
         } catch (error) {
             console.log(error);
             errLogger(`[GET_PAYMENT_CHANNELS]: ${error.stack}`);
@@ -1057,6 +1057,60 @@ class Controller {
         }
     }
 
+    GET_WITHDRAW_CHANNELS = async (req, res) => {
+        try {
+            const { method_id } = req.params;
+
+            let allMerchants = await this.redisHelper.getValue('all_withdraw_merchants');
+            if (!allMerchants) {
+                const methods = await WithdrawMerchantChannel.findAll({
+                    where: { status: 1 },
+                    attributes: ['id', 'withdraw_method', 'withdraw_merchant_id'],
+                });
+                // make group by withdraw_method
+                const merchantIds = {};
+                methods.forEach(m => {
+                    if (!merchantIds[m.withdraw_method]) {
+                        merchantIds[m.withdraw_method] = [];
+                    }
+                    if (!merchantIds[m.withdraw_method].includes(m.withdraw_merchant_id)) {
+                        merchantIds[m.withdraw_method].push(m.withdraw_merchant_id);
+                    }
+                });
+                for (const method in merchantIds) {
+                    await this.redisHelper.setValue(`method_${method}_withdraw_merchants`, JSON.stringify(merchantIds[method]));
+                    for (let i = 0; i < merchantIds[method].length; i++) {
+                        await this.redisHelper.setValue(`method_${method}_withdraw_merchants_${merchantIds[method][i]}`, 20);
+                    }
+                }
+
+                const uniqueMerchantIds = [...new Set(methods.map(m => m.withdraw_merchant_id))];
+                await this.redisHelper.setValue('all_withdraw_merchants', JSON.stringify(uniqueMerchantIds));
+                allMerchants = JSON.stringify(uniqueMerchantIds);
+            }
+            allMerchants = JSON.parse(allMerchants);
+            // console.log("allMerchants:", allMerchants);
+            const currentMethodMerchants = await this.redisHelper.getValue(`method_${method_id}_withdraw_merchants`);
+            const currentMerchantId = currentMethodMerchants ? JSON.parse(currentMethodMerchants)[0] : null;
+            // console.log(currentMerchantId);
+
+            const channel = await WithdrawMerchantChannel.findAll({
+                where: { 
+                    status: 1, 
+                    withdraw_method: method_id,
+                    withdraw_merchant_id: currentMerchantId
+                },
+                attributes: ['id', 'withdraw_method', 'channel_name', 'min_amount', 'max_amount'],
+            });
+            
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, channel);
+        } catch (error) {
+            console.log(error);
+            errLogger(`[GET_WITHDRAW_CHANNELS]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     WITHDRAW = async (req, res) => {
         const lockKey = `lock:withdraw:${req.user_id}`;
         let redisLocked = false;
@@ -1112,6 +1166,7 @@ class Controller {
             const userId = req.user_id;
             const amount = parseFloat(req.body.amount);
             const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY
+            const channelId = req.body.channel_id;
             const paymentPassword = req.body.payment_password;
             // const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
@@ -1174,7 +1229,7 @@ class Controller {
                         as: 'withdraw_merchant',
                     },
                     // where: { id: req.params.channel_id, status: 1, withdraw_method: withdrawMethod },
-                    where: { id: 1, status: 1, withdraw_method: withdrawMethod },
+                    where: { id: channelId || 1, status: 1, withdraw_method: withdrawMethod },
                 });
                 
                 if (!channel || !channel.withdraw_merchant) {
@@ -1247,6 +1302,21 @@ class Controller {
 
                 if (!success) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});    
+                }
+
+                const redisKey = `method_${channel.withdraw_method}_withdraw_merchants_${channel.deposit_merchant_id}`;
+                await this.redisHelper.decrementValue(redisKey);
+                const merchantCount = await this.redisHelper.getValue(redisKey);
+                if (merchantCount <= 0) {
+                    const currentMethodMerchants = await this.redisHelper.getValue(`method_${channel.withdraw_method}_withdraw_merchants`);
+                    if (currentMethodMerchants) {
+                        let merchantIds = JSON.parse(currentMethodMerchants);
+                        // remove first item and push to end of array
+                        merchantIds.shift();
+                        merchantIds.push(channel.deposit_merchant_id);
+                        await this.redisHelper.setValue(redisKey, 20);
+                        await this.redisHelper.setValue(`method_${channel.withdraw_method}_withdraw_merchants`, JSON.stringify(merchantIds));
+                    }
                 }
             } else {
                 orderNo = await this.commonHelper.generateWithdrawOrderNo();
