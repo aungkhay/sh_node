@@ -653,6 +653,23 @@ exports.create_channel = () => {
     ]
 }
 
+exports.create_withdraw_channel = () => {
+    return [
+        check('merchant_id', { msg: '商户ID不能为空' }).not().isEmpty(),
+        check('withdraw_method').not().isEmpty().withMessage('提现方式不能为空')
+            .bail()
+            .isIn(['BANK','ALIPAY']).withMessage('提现方式必须是 BANK 或 ALIPAY'),
+        check('merchant_channel', { msg: '商户通道不能为空' }).not().isEmpty(),
+        check('channel_name', { msg: '通道名称不能为空' }).not().isEmpty(),
+        check('min_amount').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('最小金额必须是数字'),
+        check('max_amount').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('最大金额必须是数字'),
+    ]
+}
+
 exports.sort_channel = () => {
     return [
         check('sort').not().isEmpty().withMessage('排序顺序不能为空')

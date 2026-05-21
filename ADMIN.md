@@ -1626,3 +1626,52 @@ const params = {
     phone: ''
 }
 ```
+
+### Withdraw Merchant
+``` js
+// [GET] List
+const url = `${baseURL}/withdraw-merchants`;
+
+// [POST] Update status
+const url = `${baseURL}/withdraw-merchants/${merchantId}/change-status`;
+const data = {
+    status: 1 // 0 => Disabled | 1 => Enabled
+}
+
+// [GET] Channel List
+const url = `${baseURL}/withdraw-channels`;
+const params = {
+    page: 1,
+    perPage: 10,
+    merchantId: 1,
+    withdrawMethod: '' // BANK | ALIPAY
+}
+
+// [POST] Create Channel
+const url = `${baseURL}/withdraw-channels/create`;
+const data = {
+    merchant_id: '',
+    withdraw_method: '', // BANK | ALIPAY
+    merchant_channel: '123', // code (STRING)
+    channel_name: '',
+    min_amount: 0, // optional
+    max_amount: 0, // optional
+}
+
+// [POST] Update Channel
+const url = `${baseURL}/withdraw-channels/${channelID}/update`;
+const data = {
+    merchant_id: '',
+    withdraw_method: '', // BANK | ALIPAY
+    merchant_channel: '123', // code (STRING)
+    channel_name: '',
+    min_amount: 0, // optional
+    max_amount: 0, // optional
+}
+
+// [POST] Change Channel Status
+const url = `${baseURL}/withdraw-channels/${channelID}/change-status`;
+const data = {
+    status: 1
+}
+```

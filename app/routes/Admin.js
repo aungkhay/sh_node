@@ -244,6 +244,15 @@ class AdminRoute extends express.Router {
         this.post('/channels/:id/change-status', FormValidator.update_status(), middleware.isLoggedIn('update-channel-status'), MerchantCtrl.CHANGE_CHANNEL_STATUS);
         this.post('/channels/:id/sort', FormValidator.sort_channel(), middleware.isLoggedIn('update-channel'), MerchantCtrl.CHANNEL_SORT);
 
+        let WithdrawMerchantController = require('../controllers/admins/WithdrawMerchantController');
+        let WithdrawMerchantCtrl = new WithdrawMerchantController(app);
+        this.get('/withdraw-merchants', middleware.isLoggedIn('merchant-list'), WithdrawMerchantCtrl.INDEX);
+        this.post('/withdraw-merchants/:id/change-status', FormValidator.update_status(), middleware.isLoggedIn('update-merchant-status'), WithdrawMerchantCtrl.CHANGE_STATUS);
+        this.get('/withdraw-channels', middleware.isLoggedIn('channel-list'), WithdrawMerchantCtrl.CHANNEL_LIST);
+        this.post('/withdraw-channels/create', FormValidator.create_withdraw_channel(), middleware.isLoggedIn('create-channel'), WithdrawMerchantCtrl.CHANNEL_CREATE);
+        this.post('/withdraw-channels/:id/update', FormValidator.create_withdraw_channel(), middleware.isLoggedIn('update-channel'), WithdrawMerchantCtrl.CHANNEL_UPDATE);
+        this.post('/withdraw-channels/:id/change-status', FormValidator.update_status(), middleware.isLoggedIn('update-channel-status'), WithdrawMerchantCtrl.CHANGE_CHANNEL_STATUS);
+
         let RoleController = require('../controllers/admins/RoleController');
         let RoleCtrl = new RoleController();
         this.get('/roles/list', middleware.isLoggedIn('role-list'), RoleCtrl.ROLES);
