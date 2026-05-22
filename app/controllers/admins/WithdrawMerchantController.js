@@ -67,6 +67,31 @@ class Controller {
         }
     }
 
+    UPDATE_MERCHANT = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const id = req.params.id;
+            const { withdraw_count, remain_count } = req.body;
+            const merchant = await WithdrawMerchant.findOne({ where: { id: id } });
+            if (!merchant) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '商户不存在', {});
+            }
+            await merchant.update({ withdraw_count, remain_count });
+
+            // Log
+            await this.adminLogger(req, 'WithdrawMerchant', 'update');
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     WITHDRAW_METHOD = async (req, res) => {
         try {
             const withdrawMethods = await this.redisHelper.getValue('withdraw_methods');

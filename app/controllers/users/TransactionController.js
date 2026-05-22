@@ -1235,6 +1235,18 @@ class Controller {
                 if (!channel || !channel.withdraw_merchant) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现通道无效', {});
                 }
+                if (channel.withdraw_merchant.remain_count <= 0) {
+                    // move channel to last of the list in redis
+                    const currentMethodMerchants = await this.redisHelper.getValue(`method_${withdrawMethod}_withdraw_merchants`);
+                    if (currentMethodMerchants) {
+                        let merchantIds = JSON.parse(currentMethodMerchants);
+                        // remove first item and push to end of array
+                        merchantIds.shift();
+                        merchantIds.push(channel.withdraw_merchant_id);
+                        await this.redisHelper.setValue(`method_${withdrawMethod}_withdraw_merchants`, JSON.stringify(merchantIds));
+                    }
+                }
+
                 channelId = channel.id;
 
                 if (parseFloat(channel.min_amount) > 0) {

@@ -30,6 +30,16 @@ WithdrawMerchant.init({
         type: DataTypes.STRING,
         allowNull: false
     },
+    withdraw_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    remain_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
     status: {
         type: DataTypes.TINYINT,
         allowNull: false,

@@ -673,6 +673,19 @@ exports.create_withdraw_channel = () => {
     ]
 }
 
+exports.update_withdraw_merchant = () => {
+    return [
+        check('withdraw_count').not().isEmpty().withMessage('提现次数不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('提现次数必须是数字'),
+        check('remain_count').not().isEmpty().withMessage('剩余次数不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('剩余次数必须是数字'),
+    ]
+}
+
 exports.sort_channel = () => {
     return [
         check('sort').not().isEmpty().withMessage('排序顺序不能为空')
