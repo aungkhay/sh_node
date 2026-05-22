@@ -1245,6 +1245,7 @@ class Controller {
                         merchantIds.push(channel.withdraw_merchant_id);
                         await this.redisHelper.setValue(`method_${withdrawMethod}_withdraw_merchants`, JSON.stringify(merchantIds));
                     }
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '当前提现通道繁忙，请稍后再试', {});
                 }
 
                 channelId = channel.id;
