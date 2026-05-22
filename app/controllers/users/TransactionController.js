@@ -1243,6 +1243,7 @@ class Controller {
                         // remove first item and push to end of array
                         merchantIds.shift();
                         merchantIds.push(channel.withdraw_merchant_id);
+                        await this.redisHelper.setValue(`method_${withdrawMethod}_withdraw_merchants_${channel.withdraw_merchant_id}`, 20);
                         await this.redisHelper.setValue(`method_${withdrawMethod}_withdraw_merchants`, JSON.stringify(merchantIds));
                     }
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '当前提现通道繁忙，请稍后再试', {});
@@ -1317,7 +1318,7 @@ class Controller {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});    
                 }
 
-                const redisKey = `method_${channel.withdraw_method}_withdraw_merchants_${channel.deposit_merchant_id}`;
+                const redisKey = `method_${channel.withdraw_method}_withdraw_merchants_${channel.withdraw_merchant_id}`;
                 await this.redisHelper.decrementValue(redisKey);
                 const merchantCount = await this.redisHelper.getValue(redisKey);
                 if (merchantCount <= 0) {
@@ -1326,7 +1327,7 @@ class Controller {
                         let merchantIds = JSON.parse(currentMethodMerchants);
                         // remove first item and push to end of array
                         merchantIds.shift();
-                        merchantIds.push(channel.deposit_merchant_id);
+                        merchantIds.push(channel.withdraw_merchant_id);
                         await this.redisHelper.setValue(redisKey, 20);
                         await this.redisHelper.setValue(`method_${channel.withdraw_method}_withdraw_merchants`, JSON.stringify(merchantIds));
                     }
