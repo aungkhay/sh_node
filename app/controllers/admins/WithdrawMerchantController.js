@@ -25,7 +25,7 @@ class Controller {
 
             const merchants = await WithdrawMerchant.findAll({
                 where: condition,
-                attributes: ['id', 'name', 'api', 'app_id', 'app_code', 'status', 'createdAt', 'updatedAt'],
+                attributes: ['id', 'name', 'api', 'app_id', 'app_code', 'withdraw_count', 'remain_count', 'status', 'createdAt', 'updatedAt'],
             });
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', merchants);
