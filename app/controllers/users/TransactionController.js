@@ -795,7 +795,7 @@ class Controller {
                     }
                     break;
                 case 'duocaizhifu':
-                    if (resData.code == 0) {
+                    if (resData.status == 0) {
                         redirectUrl = resData?.result?.payUrl;
                         success = true;
                     }
