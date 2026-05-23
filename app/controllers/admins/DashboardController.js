@@ -283,6 +283,35 @@ class Controller {
 
             const todayActiveUserCount = todayActiveUserSet.size;
 
+            // Yesterday active users (only yesterday)
+            const yesterdayStart = moment.utc().subtract(1, "day").startOf("day").toDate();
+            const yesterdayEnd = moment.utc().startOf("day").toDate();
+
+            const yesterdayActiveFederal = await FederalReserveGoldPackageHistory.findAll({
+                where: { createdAt: { [Op.between]: [yesterdayStart, yesterdayEnd] } },
+                attributes: ["user_id"],
+                raw: true,
+            });
+
+            const yesterdayActiveGold = await GoldPackageHistory.findAll({
+                where: { createdAt: { [Op.between]: [yesterdayStart, yesterdayEnd] } },
+                attributes: ["user_id"],
+                raw: true,
+            });
+
+            const yesterdayActiveMasonic = await MasonicPackageHistory.findAll({
+                where: { createdAt: { [Op.between]: [yesterdayStart, yesterdayEnd] } },
+                attributes: ["user_id"],
+                raw: true,
+            });
+
+            const yesterdayActiveUserSet = new Set();
+            yesterdayActiveFederal.forEach((r) => r.user_id != null && yesterdayActiveUserSet.add(r.user_id));
+            yesterdayActiveGold.forEach((r) => r.user_id != null && yesterdayActiveUserSet.add(r.user_id));
+            yesterdayActiveMasonic.forEach((r) => r.user_id != null && yesterdayActiveUserSet.add(r.user_id));
+
+            const yesterdayActiveUserCount = yesterdayActiveUserSet.size;
+
             // Total unique active users across all time (group by user_id)
             const totalActiveFederal = await FederalReserveGoldPackageHistory.findAll({
                 attributes: [
@@ -337,6 +366,7 @@ class Controller {
 
             const data = {
                 today_active_user_count: todayActiveUserCount,
+                yesterday_active_user_count: yesterdayActiveUserCount,
                 total_active_user_count: sumDailyUniqueUsers,
             };
 
