@@ -248,7 +248,6 @@ class AdminRoute extends express.Router {
         let WithdrawMerchantCtrl = new WithdrawMerchantController(app);
         this.get('/withdraw-merchants', middleware.isLoggedIn('merchant-list'), WithdrawMerchantCtrl.INDEX);
         this.post('/withdraw-merchants/:id/change-status', FormValidator.update_status(), middleware.isLoggedIn('update-merchant-status'), WithdrawMerchantCtrl.CHANGE_STATUS);
-        this.post('/withdraw-merchants/:id/update', FormValidator.update_withdraw_merchant(), middleware.isLoggedIn('update-merchant-status'), WithdrawMerchantCtrl.UPDATE_MERCHANT);
         this.get('/withdraw-channels', middleware.isLoggedIn('channel-list'), WithdrawMerchantCtrl.CHANNEL_LIST);
         this.post('/withdraw-channels/create', FormValidator.create_withdraw_channel(), middleware.isLoggedIn('create-channel'), WithdrawMerchantCtrl.CHANNEL_CREATE);
         this.post('/withdraw-channels/:id/update', FormValidator.create_withdraw_channel(), middleware.isLoggedIn('update-channel'), WithdrawMerchantCtrl.CHANNEL_UPDATE);

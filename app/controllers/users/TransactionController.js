@@ -919,7 +919,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 3);
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -959,7 +959,7 @@ class Controller {
                     }
                 }
             });
-            if (todayWithdrawCount == 1) {
+            if (todayWithdrawCount > 0) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '每天可以申请提现一次，预计一个工作日内到账', {}); 
             }
 

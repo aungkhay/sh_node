@@ -67,31 +67,6 @@ class Controller {
         }
     }
 
-    UPDATE_MERCHANT = async (req, res) => {
-        try {
-            const err = validationResult(req);
-            const errors = this.commonHelper.validateForm(err);
-            if (!err.isEmpty()) {
-                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
-            }
-
-            const id = req.params.id;
-            const { withdraw_count, remain_count } = req.body;
-            const merchant = await WithdrawMerchant.findOne({ where: { id: id } });
-            if (!merchant) {
-                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '商户不存在', {});
-            }
-            await merchant.update({ withdraw_count, remain_count });
-
-            // Log
-            await this.adminLogger(req, 'WithdrawMerchant', 'update');
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
-        } catch (error) {
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-        }
-    }
-
     WITHDRAW_METHOD = async (req, res) => {
         try {
             const withdrawMethods = await this.redisHelper.getValue('withdraw_methods');
@@ -192,7 +167,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { merchant_id, withdraw_method, merchant_channel, channel_name, min_amount, max_amount } = req.body;
+            const { merchant_id, withdraw_method, merchant_channel, channel_name, min_amount, max_amount, withdraw_count, remain_count } = req.body;
             await WithdrawMerchantChannel.create({
                 withdraw_merchant_id: merchant_id,
                 withdraw_method: withdraw_method,
@@ -200,6 +175,8 @@ class Controller {
                 channel_name: channel_name,
                 min_amount: min_amount,
                 max_amount: max_amount,
+                withdraw_count: withdraw_count ?? 0,
+                remain_count: remain_count ?? 0,
                 status: 1
             });
 
@@ -220,7 +197,7 @@ class Controller {
             }
 
             const id = req.params.id;
-            const { withdraw_method, merchant_channel, channel_name, min_amount, max_amount } = req.body;
+            const { withdraw_method, merchant_channel, channel_name, min_amount, max_amount, withdraw_count, remain_count } = req.body;
 
             const merchantChannel = await WithdrawMerchantChannel.findOne({ where: { id: id } });
             if (!merchantChannel) {
@@ -233,6 +210,8 @@ class Controller {
                     channel_name: channel_name,
                     min_amount: min_amount,
                     max_amount: max_amount,
+                    withdraw_count: withdraw_count ?? 0,
+                    remain_count: remain_count ?? 0
                 },
             );
 

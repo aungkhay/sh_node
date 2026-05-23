@@ -21,7 +21,7 @@ class UserRoute extends express.Router {
 
         let HomeController = require('../controllers/users/HomeController');
         const HomeCtrl = new HomeController(app);
-        this.get('/get-server-time', middleware.isLoggedIn, HomeCtrl.GET_SERVER_TIME);
+        // this.get('/get-server-time', middleware.isLoggedIn, HomeCtrl.GET_SERVER_TIME);
         this.get('/get-file-path', middleware.isLoggedIn, HomeCtrl.GET_FILE_PATH);
         // this.get('/get-popup-announcement', HomeCtrl.GET_POPUP_ANNOUNCEMENT);
         this.get('/customer-service/:type', HomeCtrl.GET_CUSTOMER_SERVICE);
@@ -43,8 +43,8 @@ class UserRoute extends express.Router {
         this.get('/get-digital-aggrement', middleware.isLoggedIn, HomeCtrl.GET_DIGITAL_AGREEMENT);
         this.post('/sign-agreement', middleware.isLoggedIn, HomeCtrl.SIGN_AGREEMENT);
         this.get('/get-welcome-message', middleware.isLoggedIn, HomeCtrl.GET_WELCOME_MESSAGE);
-        this.get('/generate-red-envelop', middleware.isLoggedIn, HomeCtrl.GENERATE_RED_ENVELOP);
-        this.get('/get-red-envelop', middleware.isLoggedIn, HomeCtrl.GET_RED_ENVELOP);
+        // this.get('/generate-red-envelop', middleware.isLoggedIn, HomeCtrl.GENERATE_RED_ENVELOP);
+        // this.get('/get-red-envelop', middleware.isLoggedIn, HomeCtrl.GET_RED_ENVELOP);
         this.get('/ranks', middleware.isLoggedIn, HomeCtrl.RANKS);
         this.post('/request-next-rank', middleware.isLoggedIn, HomeCtrl.REQUEST_NEXT_RANK);
         this.get('/downline-child-3-level', middleware.isLoggedIn, HomeCtrl.DOWNLINE_CHILD_3_LEVEL);
@@ -137,7 +137,7 @@ class UserRoute extends express.Router {
 
         this.post('/withdraw-callback/:orderNo/:merchantId/:userId', TxnCtl.WITHDRAW_CALLBACK);
         this.get('/withdraw-channels/:method_id', middleware.isLoggedIn, TxnCtl.GET_WITHDRAW_CHANNELS);
-        this.post('/withdraw', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW);
+        this.post('/withdraw', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW_OLD);
         this.get('/withdraw-history', middleware.isLoggedIn, TxnCtl.WITHDRAW_HISTORY);
         this.post('/transfer-balance-to-reserve-fund', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE_TO_RESERVE_FUND);
         // this.post('/transfer-referral-bonus-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_REFERRAL_BONUS_TO_BALANCE);

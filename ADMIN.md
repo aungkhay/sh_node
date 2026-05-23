@@ -1638,13 +1638,6 @@ const data = {
     status: 1 // 0 => Disabled | 1 => Enabled
 }
 
-// [POST] Update Merchant
-const url = `${baseURL}/withdraw-merchants/${merchantId}/update`;
-const data = {
-    withdraw_count: 0,
-    remain_count: 0
-}
-
 // [GET] Channel List
 const url = `${baseURL}/withdraw-channels`;
 const params = {
@@ -1663,6 +1656,8 @@ const data = {
     channel_name: '',
     min_amount: 0, // optional
     max_amount: 0, // optional
+    withdraw_count: 0,
+    remain_count: 0
 }
 
 // [POST] Update Channel
@@ -1674,6 +1669,8 @@ const data = {
     channel_name: '',
     min_amount: 0, // optional
     max_amount: 0, // optional
+    withdraw_count: 0,
+    remain_count: 0
 }
 
 // [POST] Change Channel Status

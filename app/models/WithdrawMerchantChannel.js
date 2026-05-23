@@ -43,6 +43,16 @@ WithdrawMerchantChannel.init({
         allowNull: false,
         defaultValue: 0.00
     },
+    withdraw_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    remain_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
     status: {
         type: DataTypes.TINYINT,
         allowNull: false,
