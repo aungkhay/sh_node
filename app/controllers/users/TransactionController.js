@@ -1166,7 +1166,7 @@ class Controller {
             const userId = req.user_id;
             const amount = parseFloat(req.body.amount);
             const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY
-            const channelId = req.body.channel_id;
+            let channelId = req.body.channel_id;
             const paymentPassword = req.body.payment_password;
             // const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
