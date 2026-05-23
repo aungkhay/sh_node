@@ -404,6 +404,26 @@ class Controller {
         }
     }
 
+    DUOCAIZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                mid: channel.deposit_merchant.app_id,
+                merOrderTid: orderNo,
+                money: Number(amount).toFixed(2),
+                channelCode: channel.merchant_channel,
+                notifyUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+            }
+            const sign = this.CREATE_SIGN(body, `&${channel.deposit_merchant.app_key}`);
+            body.sign = sign.toUpperCase();
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[DUOCAIZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
+
     XPAY360DAIFU = async (channel, amount, userId, paymentMethod, withdrawBy) => {
         try {
             const orderNo = await this.commonHelper.generateWithdrawOrderNo();

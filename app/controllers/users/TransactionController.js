@@ -357,6 +357,28 @@ class Controller {
                     resMsg = 'success';
                     break;
 
+                case 'duocaizhifu':
+                    //  {"merOrderTid":"1723162461080784896","tid":"XM4812952343470771467","money":"499.00","status":1,"clientUserPayRemark":"付款人备注","sign":"24A78993821969CE5FA8C148F21A8CC4"}
+                    const duocaizhifuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const duocaizhifuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("duocaizhifuCleaned:", duocaizhifuCleaned);
+                    const duocaizhifuSign = this.merchantController.CREATE_SIGN(duocaizhifuCleaned, `&key=${merchant.app_key}`);
+                    console.log("duocaizhifuSign:", duocaizhifuSign, "duocaizhifuReqSign:", duocaizhifuReqSign);
+
+                    // status 0=待处理 1=成功 2=失败 3=异常 4=超时关闭
+                    if (Number(reqBody.status) === 1) {
+                        status = 1;
+                    } else if (Number(reqBody.status) === 2) {
+                        status = 2;
+                    } else {
+                        status = 0;
+                    }
+                    resMsg = 'success';
+                    break;
+
                 default:
                     break;
             }
@@ -626,7 +648,9 @@ class Controller {
                     payload = await this.merchantController.XPAYZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
-
+                case 'duocaizhifu':
+                    payload = await this.merchantController.DUOCAIZHIFU(channel, amount, userId);
+                    break;
                 default:
                     break;
             }
@@ -770,6 +794,11 @@ class Controller {
                         success = true;
                     }
                     break;
+                case 'duocaizhifu':
+                    if (resData.code == 0) {
+                        redirectUrl = resData?.result?.payUrl;
+                        success = true;
+                    }
                 default:
                     break;
             }
