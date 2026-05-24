@@ -2831,6 +2831,7 @@ class CronJob {
             const data = users.map(async user => {
                 const userLog = await UserLog.findOne({
                     where: { user_id: user.id },
+                    attributes: ['createdAt'],
                     order: [['createdAt', 'DESC']],
                 });
                 const lastLogin = userLog ? moment(userLog.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-';
@@ -2841,7 +2842,7 @@ class CronJob {
                     "余额": Number(user.balance),
                     "激活码": user.withdraw_active_code || '-',
                     "激活码状态": user.is_withdraw_active_code_used ? '已使用' : '未使用',
-                    "注册时间": moment(user.createdAt).format('YYYY-MM-DD HH:mm:ss'),
+                    "注册时间": user.createdAt ? moment(user.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
                     "最后登录时间": lastLogin,
                 };
             });
