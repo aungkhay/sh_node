@@ -2463,7 +2463,7 @@ class CronJob {
                     },
                     is_returned_all: 0
                 },
-                attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn', 'personal_gold']
+                attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn', 'personal_gold', 'is_returned_earn', 'is_returned_personal_gold', 'is_returned_price', 'is_returned_masonic_fund']
             });
 
             for (const pack of packages) {
@@ -2479,7 +2479,7 @@ class CronJob {
                     const masonicFund = Number(pack.masonic_fund);
 
                     const arr = []
-                    if (reserveEarn > 0) {
+                    if (reserveEarn > 0 && Number(pack.is_returned_earn) === 0) {
                         arr.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -2489,7 +2489,7 @@ class CronJob {
                             type: 0, // 0-储备收益
                         })
                     }
-                    if (personalGold > 0) {
+                    if (personalGold > 0 && Number(pack.is_returned_personal_gold) === 0) {
                         arr.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -2499,7 +2499,7 @@ class CronJob {
                             type: 1, // 1-个人黄金
                         })
                     }
-                    if (originalPrice > 0) {
+                    if (originalPrice > 0 && Number(pack.is_returned_price) === 0) {
                         arr.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -2509,7 +2509,7 @@ class CronJob {
                             type: 2, // 2-本金返还
                         })
                     }
-                    if (masonicFund > 0) {
+                    if (masonicFund > 0 && Number(pack.is_returned_masonic_fund) === 0) {
                         arr.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -2524,19 +2524,19 @@ class CronJob {
                         is_returned_all: 1,
                         description: 'CRON',
                     }
-                    if (reserveEarn > 0) {
+                    if (reserveEarn > 0 && Number(pack.is_returned_earn) === 0) {
                         updateObj.is_returned_earn = 1;
                         updateObj.return_earn_date = new Date();
                     }
-                    if (personalGold > 0) {
+                    if (personalGold > 0 && Number(pack.is_returned_personal_gold) === 0) {
                         updateObj.is_returned_personal_gold = 1;
                         updateObj.return_personal_gold_date = new Date();
                     }
-                    if (originalPrice > 0) {
+                    if (originalPrice > 0 && Number(pack.is_returned_price) === 0) {
                         updateObj.is_returned_price = 1;
                         updateObj.return_price_date = new Date();
                     }
-                    if (masonicFund > 0) {
+                    if (masonicFund > 0 && Number(pack.is_returned_masonic_fund) === 0) {
                         updateObj.is_returned_masonic_fund = 1;
                         updateObj.return_masonic_fund_date = new Date();
                     }
@@ -2807,6 +2807,45 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[SET_INITIAL_BUY_PRODUCT_DATE]: ${error.stack}`);
+        }
+    }
+
+    EXPORT_USER = async () => {
+        try {
+            // get all users with createdAt < '2026-04-10'
+            // column: id, phone_number, balance, withdraw_active_code, is_withdraw_active_code_used, createdAt
+            // write to xlsx file
+            const users = await User.findAll({
+                where: {
+                    createdAt: {
+                        [Op.lt]: '2026-04-10 00:00:00'
+                    },
+                },
+                attributes: ['id', 'phone_number', 'balance', 'withdraw_active_code', 'is_withdraw_active_code_used', 'createdAt'],
+                order: [['createdAt', 'ASC']]
+            });
+
+            const xlsx = require('xlsx');
+            // phone_number as 手机号
+            // balance as 余额
+            // withdraw_active_code as 激活码
+            // is_withdraw_active_code_used as 激活码是否使用
+            // createdAt as 注册时间
+            const data = users.map(user => ({
+                id: user.id,
+                "手机号": user.phone_number,
+                "余额": Number(user.balance),
+                "激活码": user.withdraw_active_code || '-',
+                "激活码状态": user.is_withdraw_active_code_used ? '已使用' : '未使用',
+                "注册时间": moment(user.createdAt).format('YYYY-MM-DD HH:mm:ss'),
+            }));
+
+            const worksheet = xlsx.utils.json_to_sheet(data);
+            const workbook = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook, worksheet, 'Users');
+            xlsx.writeFile(workbook, 'users.xlsx');
+        } catch (error) {
+            errLogger(`[EXPORT_USER]: ${error.stack}`);
         }
     }
 }
