@@ -2821,8 +2821,9 @@ class CronJob {
                     createdAt: {
                         [Op.lt]: '2026-04-10 00:00:00'
                     },
+                    type: 2, // regular users only
                 },
-                attributes: ['id', 'phone_number', 'balance', 'withdraw_active_code', 'is_withdraw_active_code_used', 'createdAt'],
+                attributes: ['id', 'phone_number', 'balance', 'withdraw_active_code', 'is_withdraw_active_code_used', 'is_internal_account', 'createdAt'],
                 order: [['createdAt', 'ASC']]
             });
 
@@ -2843,6 +2844,7 @@ class CronJob {
                     "激活码": user.withdraw_active_code || '-',
                     "激活码状态": user.is_withdraw_active_code_used ? '已使用' : '未使用',
                     "注册时间": user.createdAt ? moment(user.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
+                    "是否内部号": user.is_internal_account ? '是' : '否',
                     "最后登录时间": lastLogin,
                 };
             });
