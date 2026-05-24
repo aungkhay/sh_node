@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -2815,6 +2815,7 @@ class CronJob {
             // get all users with createdAt < '2026-04-10'
             // column: id, phone_number, balance, withdraw_active_code, is_withdraw_active_code_used, createdAt
             // write to xlsx file
+            console.log(`Exporting users created before 2026-04-10...`);
             const users = await User.findAll({
                 where: {
                     createdAt: {
@@ -2826,24 +2827,31 @@ class CronJob {
             });
 
             const xlsx = require('xlsx');
-            // phone_number as 手机号
-            // balance as 余额
-            // withdraw_active_code as 激活码
-            // is_withdraw_active_code_used as 激活码是否使用
-            // createdAt as 注册时间
-            const data = users.map(user => ({
-                id: user.id,
-                "手机号": user.phone_number,
-                "余额": Number(user.balance),
-                "激活码": user.withdraw_active_code || '-',
-                "激活码状态": user.is_withdraw_active_code_used ? '已使用' : '未使用',
-                "注册时间": moment(user.createdAt).format('YYYY-MM-DD HH:mm:ss'),
-            }));
+            console.log(`Exporting ${users.length} users to Excel...`);
+            const data = users.map(async user => {
+                const userLog = await UserLog.findOne({
+                    where: { user_id: user.id },
+                    order: [['createdAt', 'DESC']],
+                });
+                const lastLogin = userLog ? moment(userLog.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-';
+                console.log(`Processing User ID ${user.id}: Last Login - ${lastLogin}`);
+                return {
+                    id: user.id,
+                    "手机号": user.phone_number,
+                    "余额": Number(user.balance),
+                    "激活码": user.withdraw_active_code || '-',
+                    "激活码状态": user.is_withdraw_active_code_used ? '已使用' : '未使用',
+                    "注册时间": moment(user.createdAt).format('YYYY-MM-DD HH:mm:ss'),
+                    "最后登录时间": lastLogin,
+                };
+            });
 
-            const worksheet = xlsx.utils.json_to_sheet(data);
+            const worksheet = xlsx.utils.json_to_sheet(await Promise.all(data));
             const workbook = xlsx.utils.book_new();
             xlsx.utils.book_append_sheet(workbook, worksheet, 'Users');
             xlsx.writeFile(workbook, 'users.xlsx');
+
+            console.log(`Export completed. File saved as users.xlsx`);
         } catch (error) {
             errLogger(`[EXPORT_USER]: ${error.stack}`);
         }
