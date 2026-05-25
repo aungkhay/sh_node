@@ -4281,8 +4281,15 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
+            let reserveAmount = mPackage.price;
+            let balanceAmount = 0;
             if (Number(user.reserve_fund) < mPackage.price) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+                reserveAmount = user.reserve_fund;
+                balanceAmount = mPackage.price - user.reserve_fund;
+                // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+            if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             }
 
             const t = await db.transaction();
@@ -4293,14 +4300,29 @@ class Controller {
                     wallet_type: 1,
                     model: 'MasonicPackageHistory',
                     type: `购买上合终身授权`,
-                    amount: mPackage.price,
+                    amount: reserveAmount,
                     before_amount: Number(user.reserve_fund),
-                    after_amount: Number(user.reserve_fund) - Number(mPackage.price),
+                    after_amount: Number(user.reserve_fund) - reserveAmount,
                     flow_status: 'OUT',
-                    description: `${mPackage.product_name}`,
+                    description: `${mPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
                 }, { transaction: t });
+                
+                if (balanceAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'MasonicPackageHistory',
+                        type: `购买上合终身授权`,
+                        amount: balanceAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) - balanceAmount,
+                        flow_status: 'OUT',
+                        description: `${mPackage.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - mPackage.price }, { transaction: t });
+                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
                 if (!user.initial_buy_product_date) {
                     await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
                 }
@@ -4722,8 +4744,15 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
+            let reserveAmount = fPackage.price;
+            let balanceAmount = 0;
             if (Number(user.reserve_fund) < fPackage.price) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+                balanceAmount = fPackage.price - Number(user.reserve_fund);
+                reserveAmount = Number(user.reserve_fund);
+                // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+            if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             }
 
             const t = await db.transaction();
@@ -4734,14 +4763,29 @@ class Controller {
                     wallet_type: 1,
                     model: 'FederalReserveGoldPackageHistory',
                     type: `购买联储黄金礼包`,
-                    amount: fPackage.price,
+                    amount: reserveAmount,
                     before_amount: Number(user.reserve_fund),
-                    after_amount: Number(user.reserve_fund) - Number(fPackage.price),
+                    after_amount: Number(user.reserve_fund) - reserveAmount,
                     flow_status: 'OUT',
-                    description: `${fPackage.product_name}`,
+                    description: `${fPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
                 }, { transaction: t });
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - fPackage.price }, { transaction: t });
+                if (balanceAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'FederalReserveGoldPackageHistory',
+                        type: `购买联储黄金礼包`,
+                        amount: balanceAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) - balanceAmount,
+                        flow_status: 'OUT',
+                        description: `${fPackage.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
+
+                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
                 if (!user.initial_buy_product_date) {
                     await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
                 }
@@ -5282,8 +5326,12 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
+            let reserveAmount = policyPackage.price;
+            let balanceAmount = 0;
             if (Number(user.reserve_fund) < policyPackage.price) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+                balanceAmount = policyPackage.price - Number(user.reserve_fund);
+                reserveAmount = Number(user.reserve_fund);
+                // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
 
             const t = await db.transaction();
@@ -5294,14 +5342,29 @@ class Controller {
                     wallet_type: 1,
                     model: 'PolicyPackageHistory',
                     type: `购买上合贡献政策礼包`,
-                    amount: policyPackage.price,
+                    amount: reserveAmount,
                     before_amount: Number(user.reserve_fund),
-                    after_amount: Number(user.reserve_fund) - Number(policyPackage.price),
+                    after_amount: Number(user.reserve_fund) - Number(reserveAmount),
                     flow_status: 'OUT',
-                    description: `${policyPackage.product_name}`,
+                    description: `${policyPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
                 }, { transaction: t });
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - policyPackage.price }, { transaction: t });
+                if (balanceAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'PolicyPackageHistory',
+                        type: `购买上合贡献政策礼包`,
+                        amount: balanceAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) - balanceAmount,
+                        flow_status: 'OUT',
+                        description: `${policyPackage.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
+
+                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
                 if (!user.initial_buy_product_date) {
                     await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
                 }
