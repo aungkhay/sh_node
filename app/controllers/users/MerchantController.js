@@ -404,6 +404,32 @@ class Controller {
         }
     }
 
+    XPAYZHIFU1 = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                mid: channel.deposit_merchant.app_id,
+                orderid: orderNo,
+                product_name: channel.merchant_channel,
+                timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
+                amount: Number(amount).toFixed(2),
+                callback_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                result_url: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+            }
+
+            // sign: SHA256(KEY)+ {data}
+            const sign = crypto.createHash("sha256")
+                .update(channel.deposit_merchant.app_key + JSON.stringify(body))
+                .digest("hex");
+            body.sign = sign.toLowerCase();
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[XPAYZHIFU1] ${error.stack}`);
+            return null;
+        }
+    }
+
     DUOCAIZHIFU = async (channel, amount, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();

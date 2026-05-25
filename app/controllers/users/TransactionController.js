@@ -49,6 +49,8 @@ class Controller {
                 '12': 'SUCCESS', // jinkezhifu
                 '13': 'success', // huiruzhifu
                 '14': 'success', // xpayzhifu
+                '15': 'success', // duocaizhifu
+                '16': 'success', // xpayzhifu1
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -353,6 +355,13 @@ class Controller {
                     break;
 
                 case 'xpayzhifu':
+                    // doc say: 收到通知本身已经代表支付成功，没有成功不会有回调
+                    status = 1;
+                    resMsg = 'success';
+                    break;
+
+                case 'xpayzhifu1':
+                    // doc say: 收到通知本身已经代表支付成功，没有成功不会有回调
                     status = 1;
                     resMsg = 'success';
                     break;
@@ -648,6 +657,10 @@ class Controller {
                     payload = await this.merchantController.XPAYZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'xpayzhifu1':
+                    payload = await this.merchantController.XPAYZHIFU1(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
                 case 'duocaizhifu':
                     payload = await this.merchantController.DUOCAIZHIFU(channel, amount, userId);
                     break;
@@ -676,7 +689,7 @@ class Controller {
                     response = await axios.post(url, formData.toString(), {
                         headers: headers
                     });
-                } else if (channel.deposit_merchant.app_code === 'xpayzhifu') { 
+                } else if (channel.deposit_merchant.app_code === 'xpayzhifu' || channel.deposit_merchant.app_code === 'xpayzhifu1') { 
                     const url = channel.deposit_merchant.api + '?sign=' + payload.sign;
                     delete payload.sign;
                     response = await axios.post(url, payload, {
@@ -787,6 +800,14 @@ class Controller {
                     }
                     break;
                 case 'xpayzhifu':
+                    if (resData.errcode >= 0) {
+                        const decoded = Buffer.from(resData?.data, 'base64').toString('utf8');
+                        console.log(decoded);
+                        redirectUrl = JSON.parse(decoded)?.url;
+                        success = true;
+                    }
+                    break;
+                case 'xpayzhifu1':
                     if (resData.errcode >= 0) {
                         const decoded = Buffer.from(resData?.data, 'base64').toString('utf8');
                         console.log(decoded);
