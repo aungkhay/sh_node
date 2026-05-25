@@ -2,8 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { WithdrawMerchant } = require('../../models');
-const WithdrawMerchantChannel = require('../../models/WithdrawMerchantChannel');
+const { WithdrawMerchant, Withdraw, WithdrawMerchantChannel } = require('../../models');
 
 class Controller {
     constructor(app) {
@@ -81,7 +80,6 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, methods);
         } catch (error) {
-            this.adminLogger(`[WITHDRAW_METHOD]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
@@ -246,6 +244,85 @@ class Controller {
             await this.adminLogger(req, 'WithdrawMerchantChannel', 'update');
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '排序更新成功', {});
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    SEND_WITHDRAW_TO_THIRD_PARTY = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const { sendCount } = req.body;
+
+            const id = req.params.id;
+            const channel = await WithdrawMerchantChannel.findOne({ 
+                include: {
+                    model: WithdrawMerchant,
+                    as: 'withdraw_merchant',
+                    attributes: ['id', 'xpay360']
+                },
+                where: { id: id } 
+            });
+            if (!channel) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '通道不存在', {});
+            }
+            if (channel.status !== 1) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '通道未启用', {});
+            }
+            if (channel.withdraw_count > 0 && sendCount > channel.remain_count) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, `发送数量不能超过剩余可发送数量${channel.remain_count}`, {});
+            }
+            const method = channel.withdraw_method === 1 ? 'BANK' : 'ALIPAY';
+            const withdraws = await Withdraw.findAll({
+                where: {
+                    type: method,
+                    status: 0,
+                    is_requested_third_party: 0
+                },
+                attributes: ['id'],
+                order: [['createdAt', 'DESC']],
+                limit: sendCount
+            });
+            
+            const withdrawIds = withdraws.map(w => w.id);
+            if (withdrawIds.length === 0) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '没有可发送的提现订单', {});
+            }
+
+            // Channels
+            const processingKey = `withdraw_channel_processes`;
+            const processingChannels = await this.redisHelper.getValue(processingKey);
+            let processingChannelIds = [];
+            if (processingChannels) {
+                processingChannelIds = JSON.parse(processingChannels);
+            }
+            if (!processingChannelIds.includes(channel.id)) {
+                processingChannelIds.push(channel.id);
+                await this.redisHelper.setValue(processingKey, JSON.stringify(processingChannelIds));
+            }
+
+            // Set withdraws to redis list for processing
+            const redisKey = `withdraw_channel_${channel.id}_queue`;
+            const withdrawIds = withdraws.map(w => w.id);
+            await this.redisHelper.setValue(redisKey, JSON.stringify(withdrawIds));
+
+            await Withdraw.update(
+                { is_requested_third_party: 1, withdraw_merchant_id: channel.withdraw_merchant_id },
+                { 
+                    where: {
+                        type: method,
+                        status: 0,
+                        is_requested_third_party: 0
+                    },
+                }
+            );
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '提现订单已发送到处理队列', { sentCount: withdrawIds.length });
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }

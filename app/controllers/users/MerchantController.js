@@ -450,9 +450,8 @@ class Controller {
         }
     }
 
-    XPAY360DAIFU = async (channel, amount, userId, paymentMethod, withdrawBy) => {
+    XPAY360DAIFU = async (channel, amount, userId, paymentMethod, withdrawBy, orderNo) => {
         try {
-            const orderNo = await this.commonHelper.generateWithdrawOrderNo();
             const body = {
                 mid: channel.withdraw_merchant.app_id,
                 orderid: orderNo,
@@ -473,7 +472,6 @@ class Controller {
                 .update(channel.withdraw_merchant.app_key + JSON.stringify(body))
                 .digest("hex");
             body.sign = sign.toLowerCase();
-            body.orderNo = orderNo;
             return body;
         } catch (error) {
             errLogger(`[XPAY360DAIFU] ${error.stack}`);

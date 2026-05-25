@@ -86,6 +86,11 @@ Withdraw.init({
         type: DataTypes.STRING,
         allowNull: true
     },
+    is_requested_third_party: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+        comment: 'Whether the withdrawal request has been sent to the third party'
+    },
     callback_data: {
         type: DataTypes.TEXT('long'),
         allowNull: true,

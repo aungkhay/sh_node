@@ -57,11 +57,6 @@ WithdrawMerchantChannel.init({
         type: DataTypes.TINYINT,
         allowNull: false,
         defaultValue: 1
-    },
-    sort: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 1
     }
 }, {
     sequelize,

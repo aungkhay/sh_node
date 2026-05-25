@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -8,6 +8,7 @@ const RedisHelper = require('../helpers/RedisHelper');
 const moment = require('moment');
 const MasonicPackageHistory = require('../models/MasonicPackageHistory');
 const MasonicPackageEarn = require('../models/MasonicPackageEarn');
+const MerchantController = require('../controllers/users/MerchantController');
 
 class CronJob {
     constructor(app) {
@@ -16,6 +17,7 @@ class CronJob {
         this.getRandomInt = (min, max) => {
             return Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min);
         }
+        this.merchantController = new MerchantController();
     }
 
     START = () => {
@@ -56,6 +58,7 @@ class CronJob {
         // Run at 30th minute of every hour
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
         cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
+        cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -2810,6 +2813,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     EXPORT_USER = async () => {
         try {
             // get all users with createdAt < '2026-04-10'
@@ -2860,6 +2864,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     EXPORT_USER_MAY_9_LAST_LOGIN = async () => {
         try {
             const [result] = await db.query(`
@@ -2894,6 +2899,87 @@ class CronJob {
             console.log(`Export completed. File saved as users_may_9_last_login.xlsx`);
         } catch (error) {
             errLogger(`[EXPORT_USER_MAY_9_LAST_LOGIN]: ${error.stack}`);
+        }
+    }
+
+    SEND_WITHDRAWAL_TO_THIRD_PARTY = async () => {
+        try {
+            const isProcessing = await this.redisHelper.getValue('is_sending_withdrawal_to_third_party');
+            if (isProcessing) {
+                return;
+            }
+
+            const channels = await WithdrawMerchantChannel.findAll({
+                include: {
+                    model: WithdrawMerchant,
+                    as: 'withdraw_merchant',
+                },
+                attributes: ['id', 'withdraw_method', 'merchant_channel']
+            });
+
+            for (const channel of channels) {
+
+                const withdraws = await this.redisHelper.getValue(`withdraw_channel_${channel.id}_queue`);
+                if (!withdraws || withdraws.length === 0) {
+                    continue;
+                }
+
+                const withdrawIds = JSON.parse(withdraws);
+                for (const wdId of withdrawIds) {
+                    const withdraw = await Withdraw.findByPk(wdId);
+                    if (!withdraw) {
+                        continue;
+                    }
+                    
+                    let payload = null;
+                    let headers = { "Content-Type": "application/x-www-form-urlencoded" }
+                    const requestAmount = Number(withdraw.amount) - Number(withdraw.handle_fee);
+                    const paymentMethod = await PaymentMethod.findOne({ 
+                        where: { user_id: withdraw.user_id },
+                        attributes: ['id', 'bank_card_number', 'bank_card_name', 'ali_account_number', 'ali_account_name']
+                    });
+
+                    switch (channel.withdraw_merchant.app_code) {
+                        case 'xpay360':
+                            payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, withdraw.user_id, paymentMethod, withdraw.type, withdraw.order_no);
+                            headers = { "Content-Type": "application/json" }
+                            break;
+                        default:
+                            return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '不支持的商户', {});
+                    }
+                    if (!payload) {
+                        continue;
+                    }
+
+                    try {
+                        if (channel.withdraw_merchant.app_code === 'xpay360') {
+                            const url = channel.withdraw_merchant.api + '?sign=' + payload.sign;
+                            console.log(payload.sign);
+                            delete payload.sign;
+                            console.log(payload);
+
+                            // await axios.post(url, payload, {
+                            //     headers: headers
+                            // });
+                        }
+                    } catch (error) {
+                        errLogger(`[SEND_WITHDRAWAL_TO_THIRD_PARTY][Request Error][${withdraw.id}]: ${error.stack}`);
+                    }
+                }
+
+                const processChannels = await this.redisHelper.getValue('withdraw_channel_processes');
+                let processChannelsArr = [];
+                if (processChannels) {
+                    processChannelsArr = JSON.parse(processChannels);
+                }
+                // remove from array and update redis
+                processChannelsArr = processChannelsArr.filter(id => id !== channel.id);
+                await this.redisHelper.setValue('withdraw_channel_processes', JSON.stringify(processChannelsArr));
+            }
+
+            await this.redisHelper.deleteKey('is_sending_withdrawal_to_third_party');
+        } catch (error) {
+            errLogger(`[SEND_WITHDRAWAL_TO_THIRD_PARTY]: ${error.stack}`);
         }
     }
 }

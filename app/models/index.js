@@ -388,6 +388,7 @@ const models = {
     Deposit,
     Withdraw,
     WithdrawMerchant,
+    WithdrawMerchantChannel,
     Transfer,
     Interest,
     MasonicFund,

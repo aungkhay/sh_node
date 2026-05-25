@@ -3,14 +3,13 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { errLogger, commonLogger, callbackLogger, withdrawCallbackLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
-const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer, GoldPackageHistory, CashFlow, WithdrawMerchant } = require('../../models');
+const { User, PaymentMethod, db, RewardRecord, Transfer, Withdraw, UserKYC, Deposit, Config, DepositMerchant, BalanceTransfer, GoldPackageHistory, CashFlow, WithdrawMerchant, WithdrawMerchantChannel } = require('../../models');
 const { Op, Sequelize } = require('sequelize');
 const Decimal = require('decimal.js');
 const axios = require('axios');
 const MerchantController = require('./MerchantController');
 const MerchantChannel = require('../../models/MerchantChannel');
 const { encrypt } = require('../../helpers/AESHelper');
-const WithdrawMerchantChannel = require('../../models/WithdrawMerchantChannel');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
