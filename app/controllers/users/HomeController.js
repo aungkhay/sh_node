@@ -4294,18 +4294,20 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await CashFlow.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    wallet_type: 1,
-                    model: 'MasonicPackageHistory',
-                    type: `购买上合终身授权`,
-                    amount: reserveAmount,
-                    before_amount: Number(user.reserve_fund),
-                    after_amount: Number(user.reserve_fund) - reserveAmount,
-                    flow_status: 'OUT',
-                    description: `${mPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
-                }, { transaction: t });
+                if (reserveAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'MasonicPackageHistory',
+                        type: `购买上合终身授权`,
+                        amount: reserveAmount,
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: Number(user.reserve_fund) - reserveAmount,
+                        flow_status: 'OUT',
+                        description: `${mPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
+                    }, { transaction: t });
+                }
                 
                 if (balanceAmount > 0) {
                     await CashFlow.create({
@@ -4757,18 +4759,20 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await CashFlow.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    wallet_type: 1,
-                    model: 'FederalReserveGoldPackageHistory',
-                    type: `购买联储黄金礼包`,
-                    amount: reserveAmount,
-                    before_amount: Number(user.reserve_fund),
-                    after_amount: Number(user.reserve_fund) - reserveAmount,
-                    flow_status: 'OUT',
-                    description: `${fPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
-                }, { transaction: t });
+                if (reserveAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'FederalReserveGoldPackageHistory',
+                        type: `购买联储黄金礼包`,
+                        amount: reserveAmount,
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: Number(user.reserve_fund) - reserveAmount,
+                        flow_status: 'OUT',
+                        description: `${fPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
+                    }, { transaction: t });
+                }
 
                 if (balanceAmount > 0) {
                     await CashFlow.create({
@@ -5336,18 +5340,20 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await CashFlow.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    wallet_type: 1,
-                    model: 'PolicyPackageHistory',
-                    type: `购买上合贡献政策礼包`,
-                    amount: reserveAmount,
-                    before_amount: Number(user.reserve_fund),
-                    after_amount: Number(user.reserve_fund) - Number(reserveAmount),
-                    flow_status: 'OUT',
-                    description: `${policyPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
-                }, { transaction: t });
+                if (reserveAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'PolicyPackageHistory',
+                        type: `购买上合贡献政策礼包`,
+                        amount: reserveAmount,
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: Number(user.reserve_fund) - Number(reserveAmount),
+                        flow_status: 'OUT',
+                        description: `${policyPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
+                    }, { transaction: t });
+                }
 
                 if (balanceAmount > 0) {
                     await CashFlow.create({
