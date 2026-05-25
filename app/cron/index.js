@@ -2874,7 +2874,8 @@ class CronJob {
                 WHERE u.is_withdraw_active_code_used = 0
                 AND u.is_internal_account = 0
                 AND u.balance > 0
-                AND u.type = 2;
+                AND u.type = 2
+                AND u.createdAt < '2026-05-10 00:00:00';
             `);
 
             const xlsx = require('xlsx');
