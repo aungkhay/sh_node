@@ -2859,6 +2859,42 @@ class CronJob {
             errLogger(`[EXPORT_USER]: ${error.stack}`);
         }
     }
+
+    EXPORT_USER_MAY_9_LAST_LOGIN = async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT u.id, u.phone_number, u.balance, ul.last_login_at
+                FROM users u
+                JOIN (
+                    SELECT user_id, MAX(createdAt) AS last_login_at
+                    FROM user_logs
+                    GROUP BY user_id
+                    HAVING MAX(createdAt) <= '2026-05-09 23:59:59'
+                ) ul ON ul.user_id = u.id
+                WHERE u.is_withdraw_active_code_used = 0
+                AND u.is_internal_account = 0
+                AND u.balance > 0
+                AND u.type = 2;
+            `);
+
+            const xlsx = require('xlsx');
+            console.log(`Exporting ${result.length} users to Excel...`);
+            const data = result.map(user => ({
+                id: user.id,
+                "手机号": user.phone_number,
+                "余额": Number(user.balance),
+                "最后登录时间": user.last_login_at ? moment(user.last_login_at).format('YYYY-MM-DD HH:mm:ss') : '-',
+            }));
+            const worksheet = xlsx.utils.json_to_sheet(data);
+            const workbook = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook, worksheet, 'Users_May_9_Last_Login');
+            xlsx.writeFile(workbook, 'users_may_9_last_login.xlsx');
+
+            console.log(`Export completed. File saved as users_may_9_last_login.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_USER_MAY_9_LAST_LOGIN]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
