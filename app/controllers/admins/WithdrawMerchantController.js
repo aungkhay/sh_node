@@ -262,14 +262,7 @@ class Controller {
             const { sendCount, withdrawDate } = req.body;
 
             const id = req.params.id;
-            const channel = await WithdrawMerchantChannel.findOne({ 
-                include: {
-                    model: WithdrawMerchant,
-                    as: 'withdraw_merchant',
-                    attributes: ['id', 'xpay360']
-                },
-                where: { id: id } 
-            });
+            const channel = await WithdrawMerchantChannel.findByPk(id);
             if (!channel) {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, '通道不存在', {});
             }
@@ -280,15 +273,36 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, `发送数量不能超过剩余可发送数量${channel.remain_count}`, {});
             }
             const method = channel.withdraw_method === 1 ? 'BANK' : 'ALIPAY';
+            const minAmount = channel.min_amount;
+            const maxAmount = channel.max_amount;
+
+            const whereCondition = {
+                type: method,
+                status: 0,
+                is_requested_third_party: 0,
+                createdAt: {
+                    [Op.lte]: withdrawDate ? new Date(withdrawDate) : new Date()
+                }
+            };
+            if (minAmount > 0 && maxAmount > 0) {
+                whereCondition.amount = {
+                    [Op.gte]: minAmount,
+                    [Op.lte]: maxAmount
+                }
+            }
+            if (minAmount > 0 && maxAmount === 0) {
+                whereCondition.amount = {
+                    [Op.gte]: minAmount
+                }
+            }
+            if (minAmount === 0 && maxAmount > 0) {
+                whereCondition.amount = {
+                    [Op.lte]: maxAmount
+                }
+            }
+
             const withdraws = await Withdraw.findAll({
-                where: {
-                    type: method,
-                    status: 0,
-                    is_requested_third_party: 0,
-                    createdAt: {
-                        [Op.lte]: withdrawDate ? new Date(withdrawDate) : new Date()
-                    }
-                },
+                where: whereCondition,
                 attributes: ['id'],
                 order: [['createdAt', 'DESC']],
                 limit: sendCount ? parseInt(sendCount) : 1000
@@ -316,11 +330,7 @@ class Controller {
                 await Withdraw.update(
                     { is_requested_third_party: 1, withdraw_merchant_id: channel.withdraw_merchant_id },
                     { 
-                        where: {
-                            type: method,
-                            status: 0,
-                            is_requested_third_party: 0
-                        },
+                        where: whereCondition,
                         transaction: t
                     }
                 );
