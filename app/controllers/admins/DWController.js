@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { Deposit, Withdraw, User, DepositMerchant, db, PaymentMethod, CashFlow } = require('../../models');
+const { Deposit, Withdraw, User, DepositMerchant, db, PaymentMethod, CashFlow, WithdrawMerchant } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
 const XLSX = require("xlsx");
@@ -275,6 +275,11 @@ class Controller {
                             as: 'payment_method',
                             attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name'],
                             where: bankCardCondition
+                        },
+                        {
+                            model: WithdrawMerchant,
+                            as: 'withdraw_merchant',
+                            attributes: ['id', 'name']
                         }
                     ],
                     where: userCondition,
