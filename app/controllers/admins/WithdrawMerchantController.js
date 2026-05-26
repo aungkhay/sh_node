@@ -4,6 +4,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { WithdrawMerchant, Withdraw, WithdrawMerchantChannel } = require('../../models');
 const { Op } = require('sequelize');
+const { errLogger } = require('../../helpers/Logger');
 
 class Controller {
     constructor(app) {
@@ -108,7 +109,7 @@ class Controller {
                     as: 'withdraw_merchant',
                     attributes: ['id', 'name']
                 },
-                attributes: ['id', 'withdraw_merchant_id', 'withdraw_method', 'merchant_channel', 'channel_name', 'min_amount', 'max_amount', 'status', 'createdAt', 'updatedAt'],
+                attributes: ['id', 'withdraw_merchant_id', 'withdraw_method', 'merchant_channel', 'channel_name', 'min_amount', 'max_amount', 'status', 'withdraw_count', 'remain_count', 'createdAt', 'updatedAt'],
                 offset: offset,
                 limit: perPage,
                 order: [['createdAt', 'DESC']]
@@ -327,6 +328,8 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '提现订单已发送到处理队列', { sentCount: withdrawIds.length });
         } catch (error) {
+            console.log(error);
+            errLogger.error(`Error in SEND_WITHDRAW_TO_THIRD_PARTY: ${error.message}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
