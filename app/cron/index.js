@@ -2968,21 +2968,24 @@ class CronJob {
                 }
 
                 const processChannels = await this.redisHelper.getValue('withdraw_channel_processes');
-                let processChannelsArr = [];
+                let channelIds = [];
                 if (processChannels) {
-                    processChannelsArr = JSON.parse(processChannels);
+                    channelIds = JSON.parse(processChannels);
                 }
-                // remove from array and update redis
-                processChannelsArr = processChannelsArr.filter(id => id !== channel.id);
-                if (processChannelsArr.length === 0) {
+
+                // remove current channel from array and update redis
+                channelIds = channelIds.filter(id => id !== channel.id);
+                if (channelIds.length === 0) {
                     await this.redisHelper.deleteKey('withdraw_channel_processes');
+                    await this.redisHelper.deleteKey('is_sending_withdrawal_to_third_party');
                 } else {
-                    await this.redisHelper.setValue('withdraw_channel_processes', JSON.stringify(processChannelsArr));
+                    await this.redisHelper.setValue('withdraw_channel_processes', JSON.stringify(channelIds));
                 }
+                
                 await this.redisHelper.deleteKey(`withdraw_channel_${channel.id}_queue`);
             }
-
-            await this.redisHelper.deleteKey('is_sending_withdrawal_to_third_party');
+            
+            console.log('Finished processing withdrawal channels for third party sending.');
         } catch (error) {
             errLogger(`[SEND_WITHDRAWAL_TO_THIRD_PARTY]: ${error.stack}`);
         }
