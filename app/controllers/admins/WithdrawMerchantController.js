@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { WithdrawMerchant, Withdraw, WithdrawMerchantChannel } = require('../../models');
+const { WithdrawMerchant, Withdraw, WithdrawMerchantChannel, db } = require('../../models');
 const { Op } = require('sequelize');
 const { errLogger } = require('../../helpers/Logger');
 
@@ -311,21 +311,32 @@ class Controller {
                 await this.redisHelper.setValue(processingKey, JSON.stringify(processingChannelIds));
             }
 
-            // Set withdraws to redis list for processing
-            const redisKey = `withdraw_channel_${channel.id}_queue`;
-            await this.redisHelper.setValue(redisKey, JSON.stringify(withdrawIds));
+            const t = await db.transaction();
+            try {
+                await Withdraw.update(
+                    { is_requested_third_party: 1, withdraw_merchant_id: channel.withdraw_merchant_id },
+                    { 
+                        where: {
+                            type: method,
+                            status: 0,
+                            is_requested_third_party: 0
+                        },
+                        transaction: t
+                    }
+                );
+                await channel.update({ remain_count: channel.remain_count - withdrawIds.length }, { transaction: t });
+                await t.commit();
 
-            await Withdraw.update(
-                { is_requested_third_party: 1, withdraw_merchant_id: channel.withdraw_merchant_id },
-                { 
-                    where: {
-                        type: method,
-                        status: 0,
-                        is_requested_third_party: 0
-                    },
-                }
-            );
-            await channel.update({ remain_count: channel.remain_count - withdrawIds.length });
+                // Set withdraws to redis list for processing
+                const redisKey = `withdraw_channel_${channel.id}_queue`;
+                await this.redisHelper.setValue(redisKey, JSON.stringify(withdrawIds));
+
+            } catch (error) {
+                console.log(error);
+                errLogger.error(`Error in SEND_WITHDRAW_TO_THIRD_PARTY transaction: ${error.message}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '处理提现订单时出错', {});
+            }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '提现订单已发送到处理队列', { sentCount: withdrawIds.length });
         } catch (error) {
