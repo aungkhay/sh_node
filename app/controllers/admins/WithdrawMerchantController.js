@@ -3,6 +3,7 @@ let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { WithdrawMerchant, Withdraw, WithdrawMerchantChannel } = require('../../models');
+const { Op } = require('sequelize');
 
 class Controller {
     constructor(app) {
@@ -257,7 +258,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { sendCount } = req.body;
+            const { sendCount, withdrawDate } = req.body;
 
             const id = req.params.id;
             const channel = await WithdrawMerchantChannel.findOne({ 
@@ -282,11 +283,14 @@ class Controller {
                 where: {
                     type: method,
                     status: 0,
-                    is_requested_third_party: 0
+                    is_requested_third_party: 0,
+                    createdAt: {
+                        [Op.lte]: withdrawDate ? new Date(withdrawDate) : new Date()
+                    }
                 },
                 attributes: ['id'],
                 order: [['createdAt', 'DESC']],
-                limit: sendCount
+                limit: sendCount ? parseInt(sendCount) : 1000
             });
             
             const withdrawIds = withdraws.map(w => w.id);

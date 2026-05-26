@@ -252,6 +252,7 @@ class AdminRoute extends express.Router {
         this.post('/withdraw-channels/create', FormValidator.create_withdraw_channel(), middleware.isLoggedIn('create-channel'), WithdrawMerchantCtrl.CHANNEL_CREATE);
         this.post('/withdraw-channels/:id/update', FormValidator.create_withdraw_channel(), middleware.isLoggedIn('update-channel'), WithdrawMerchantCtrl.CHANNEL_UPDATE);
         this.post('/withdraw-channels/:id/change-status', FormValidator.update_status(), middleware.isLoggedIn('update-channel-status'), WithdrawMerchantCtrl.CHANGE_CHANNEL_STATUS);
+        this.post('/withdraw-channels/:id/send-to-third-party', FormValidator.send_withdraw_to_third_party(), middleware.isLoggedIn('pdate-channel'), WithdrawMerchantCtrl.SEND_WITHDRAW_TO_THIRD_PARTY);
 
         let RoleController = require('../controllers/admins/RoleController');
         let RoleCtrl = new RoleController();

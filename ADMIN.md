@@ -1678,4 +1678,11 @@ const url = `${baseURL}/withdraw-channels/${channelID}/change-status`;
 const data = {
     status: 1
 }
+
+// [POST] Send Withdrawals to third-party
+const url = `${baseURL}/withdraw-channels/${channelID}/send-to-third-party`;
+const data = {
+    sendCount: 100, // required but can be zero
+    withdrawDate: '2026-05-25' // required
+}
 ```

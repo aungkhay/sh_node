@@ -686,6 +686,18 @@ exports.update_withdraw_merchant = () => {
     ]
 }
 
+exports.send_withdraw_to_third_party = () => {
+    return [
+        check('sendCount').not().isEmpty().withMessage('发送次数不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('发送次数必须是数字'),
+        check('withdrawDate').not().isEmpty().withMessage('提现日期不能为空')
+            .bail()
+            .isISO8601().withMessage('提现日期必须是有效的日期格式'),
+    ]
+}
+
 exports.sort_channel = () => {
     return [
         check('sort').not().isEmpty().withMessage('排序顺序不能为空')
