@@ -2985,7 +2985,9 @@ class CronJob {
                 await this.redisHelper.deleteKey(`withdraw_channel_${channel.id}_queue`);
             }
             
-            console.log('Finished processing withdrawal channels for third party sending.');
+            if (channels.length > 0) {
+                console.log('Finished processing withdrawal channels for third party sending.');
+            }
         } catch (error) {
             errLogger(`[SEND_WITHDRAWAL_TO_THIRD_PARTY]: ${error.stack}`);
         }

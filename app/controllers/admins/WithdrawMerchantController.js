@@ -273,8 +273,8 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, `发送数量不能超过剩余可发送数量${channel.remain_count}`, {});
             }
             const method = channel.withdraw_method === 1 ? 'BANK' : 'ALIPAY';
-            const minAmount = channel.min_amount;
-            const maxAmount = channel.max_amount;
+            const minAmount = Number(channel.min_amount);
+            const maxAmount = Number(channel.max_amount);
 
             const whereCondition = {
                 type: method,
