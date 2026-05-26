@@ -312,7 +312,6 @@ class Controller {
 
             // Set withdraws to redis list for processing
             const redisKey = `withdraw_channel_${channel.id}_queue`;
-            const withdrawIds = withdraws.map(w => w.id);
             await this.redisHelper.setValue(redisKey, JSON.stringify(withdrawIds));
 
             await Withdraw.update(
