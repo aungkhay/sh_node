@@ -5337,6 +5337,9 @@ class Controller {
                 reserveAmount = Number(user.reserve_fund);
                 // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
+            if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+            }
 
             const t = await db.transaction();
             try {
