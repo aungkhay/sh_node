@@ -325,6 +325,7 @@ class Controller {
                     },
                 }
             );
+            await channel.update({ remain_count: channel.remain_count - withdrawIds.length });
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '提现订单已发送到处理队列', { sentCount: withdrawIds.length });
         } catch (error) {
