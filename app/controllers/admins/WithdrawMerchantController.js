@@ -281,7 +281,7 @@ class Controller {
                 status: 0,
                 is_requested_third_party: 0,
                 createdAt: {
-                    [Op.lte]: withdrawDate ? new Date(withdrawDate) : new Date()
+                    [Op.gte]: withdrawDate ? new Date(withdrawDate) : new Date()
                 }
             };
             if (minAmount > 0 && maxAmount > 0) {
