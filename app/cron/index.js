@@ -2974,7 +2974,12 @@ class CronJob {
                 }
                 // remove from array and update redis
                 processChannelsArr = processChannelsArr.filter(id => id !== channel.id);
-                await this.redisHelper.setValue('withdraw_channel_processes', JSON.stringify(processChannelsArr));
+                if (processChannelsArr.length === 0) {
+                    await this.redisHelper.deleteKey('withdraw_channel_processes');
+                } else {
+                    await this.redisHelper.setValue('withdraw_channel_processes', JSON.stringify(processChannelsArr));
+                }
+                await this.redisHelper.deleteKey(`withdraw_channel_${channel.id}_queue`);
             }
 
             await this.redisHelper.deleteKey('is_sending_withdrawal_to_third_party');
