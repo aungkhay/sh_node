@@ -4,6 +4,7 @@ const moment = require('moment');
 const { Op } = require('sequelize');
 const { errLogger } = require('../../helpers/Logger');
 const { GoldPlanCheckIn, db, User, RewardRecord, UserKYC } = require('../../models');
+const RedisHelper = require('../../helpers/RedisHelper');
 
 class Controller {
     constructor(app) {
@@ -12,17 +13,19 @@ class Controller {
         this.getRandomInt = (min, max) => {
             return Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min);
         };
+        this.redisHelper = new RedisHelper(app);
     }
 
     CHECK_IN = async (req, res) => {
         const lockKey = `gold_plan_check_in_${req.user_id}`;
+        let redisLocked = false;
 
         try {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            const locked = await this.redisHelper.setLock(lockKey, 1, 5);
-            if (locked !== 'OK') {
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
             
