@@ -15,7 +15,17 @@ class Controller {
     }
 
     CHECK_IN = async (req, res) => {
+        const lockKey = `gold_plan_check_in_${req.user_id}`;
+
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            const locked = await this.redisHelper.setLock(lockKey, 1, 5);
+            if (locked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+            
             const userId = req.user_id;
             const today = moment().format('YYYY-MM-DD');
             const existingCheckIn = await GoldPlanCheckIn.findOne({

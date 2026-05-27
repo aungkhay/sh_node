@@ -261,30 +261,33 @@ class Controller {
             }
 
             const { rows, count } = await Withdraw.findAndCountAll({
-                include: {
-                    model: User,
-                    as: 'user',
-                    include: [
-                        {
-                            model: User,
-                            as: 'top_account',
-                            attributes: ['id', 'name', 'phone_number'],
-                        },
-                        {
-                            model: PaymentMethod,
-                            as: 'payment_method',
-                            attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name'],
-                            where: bankCardCondition
-                        },
-                        {
-                            model: WithdrawMerchant,
-                            as: 'withdraw_merchant',
-                            attributes: ['id', 'name']
-                        }
-                    ],
-                    where: userCondition,
-                    attributes: ['id', 'name', 'phone_number', 'is_internal_account'],
-                },
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        include: [
+                            {
+                                model: User,
+                                as: 'top_account',
+                                attributes: ['id', 'name', 'phone_number'],
+                            },
+                            {
+                                model: PaymentMethod,
+                                as: 'payment_method',
+                                attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name'],
+                                where: bankCardCondition
+                            },
+                            
+                        ],
+                        where: userCondition,
+                        attributes: ['id', 'name', 'phone_number', 'is_internal_account'],
+                    },
+                    {
+                        model: WithdrawMerchant,
+                        as: 'withdraw_merchant',
+                        attributes: ['id', 'name']
+                    }
+                ],
                 where: condition,
                 order: [['id', 'DESC']],
                 limit: perPage,
