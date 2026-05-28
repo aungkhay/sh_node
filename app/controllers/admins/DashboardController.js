@@ -237,13 +237,20 @@ class Controller {
                 }
             });
 
+            const totalWithdrawActualHandleFee = await Withdraw.sum('handle_fee', {
+                where: {
+                    status: 1
+                }
+            });
+
             const data = {
                 yesterday_withdraw_amount: yesterdayWithdrawAmount ? Number(yesterdayWithdrawAmount) : 0,
                 yesterday_withdraw_fee: yesterdayWitdrawFee ? Number(yesterdayWitdrawFee) : 0,
                 yesterday_withdraw_actual_amount: yesterdayWithdrawActualAmount ? Number(yesterdayWithdrawActualAmount) : 0,
                 today_withdraw_amount: todayWithdrawAmount ? Number(todayWithdrawAmount) : 0,
                 today_withdraw_fee: todayWitdrawFee ? Number(todayWitdrawFee) : 0,
-                today_withdraw_actual_amount: todayWithdrawActualAmount ? Number(todayWithdrawActualAmount) : 0
+                today_withdraw_actual_amount: todayWithdrawActualAmount ? Number(todayWithdrawActualAmount) : 0,
+                total_withdraw_actual_handle_fee: totalWithdrawActualHandleFee ? Number(totalWithdrawActualHandleFee) : 0
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
