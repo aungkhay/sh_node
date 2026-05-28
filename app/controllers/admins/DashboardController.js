@@ -214,9 +214,7 @@ class Controller {
 
             const todayWithdrawAmount = await Withdraw.sum('amount', {
                 where: {
-                    status: {
-                        [Op.ne]: 2
-                    },
+                    status: 1,
                     createdAt: todayCreatedAtCondition
                 }
             });
