@@ -2789,7 +2789,7 @@ class CronJob {
                             
                             await pack.update({ is_finished: 1 }, { transaction: t });
                             
-                            if (Number(pack.masonic_fund) > 0) {
+                            if (Number(pack.package.masonic_fund) > 0) {
                                 const exist = await MasonicFundHistory.findOne({
                                     where: {
                                         user_id: user.id,
@@ -2801,12 +2801,12 @@ class CronJob {
                                     await MasonicFundHistory.create({
                                         relation: user.relation,
                                         user_id: user.id,
-                                        amount: Number(pack.masonic_fund),
+                                        amount: Number(pack.package.masonic_fund),
                                         description: `PKG-${pack.id} 上合贡献政策 - 定时任务发共济基金`,
                                         status: 'APPROVED'
                                     }, { transaction: t });
 
-                                    await user.increment({ masonic_fund: Number(pack.masonic_fund) }, { transaction: t });
+                                    await user.increment({ masonic_fund: Number(pack.package.masonic_fund) }, { transaction: t });
                                 }
                             }
                         } else {
