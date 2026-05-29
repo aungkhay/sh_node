@@ -71,7 +71,7 @@ ShanghaiCooperationHistory.init({
         allowNull: true,
         comment: '本金返还时间'
     },
-    is_returned_exchanghe_value: {
+    is_returned_exchange_value: {
         type: DataTypes.TINYINT,
         allowNull: false,
         defaultValue: 0,
