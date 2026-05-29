@@ -7,14 +7,16 @@ const { Meeting, AttendedMeeting, User } = require('../../models');
 const multer = require('multer');
 const path = require('path');
 const AliOSS = require('../../helpers/AliOSS');
+const RedisHelper = require('../../helpers/RedisHelper');
 
 class Controller {
-    constructor() {
+    constructor(app) {
         this.commonHelper = new CommonHelper();
         this.ResCode = this.commonHelper.ResCode;
         this.adminLogger = this.commonHelper.adminLogger;
         this.getOffset = this.commonHelper.getOffset;
         this.OSS = new AliOSS();
+        this.redisHelper = new RedisHelper(app);
     }
 
     INDEX = async (req, res) => {
@@ -93,6 +95,9 @@ class Controller {
             }
 
             const meeting = await Meeting.create(req.body);
+            if (req.body.is_active == 1) {
+                await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
+            }
 
             // Log
             await this.adminLogger(req, 'Meeting', 'create');
@@ -118,6 +123,11 @@ class Controller {
             }
             
             await meeting.update(req.body);
+            if (req.body.is_active == 1) {
+                await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
+            } else {
+                await this.redisHelper.deleteKey('active_meeting');
+            }
 
             // Log
             await this.adminLogger(req, 'Meeting', 'update');

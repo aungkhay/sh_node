@@ -6923,7 +6923,12 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
-            const meeting = await Meeting.findByPk(req.params.id);
+            let meeting = await this.redisHelper.getValue('active_meeting');
+            if (meeting) {
+                meeting = JSON.parse(meeting);
+            } else {
+                meeting = await Meeting.findByPk(req.params.id);
+            }
             if (!meeting) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议不存在', {});
             }
@@ -6981,7 +6986,11 @@ class Controller {
                 }, { transaction: t });
 
                 await user.increment({ balance: rewardAmount }, { transaction: t });
-                await meeting.increment({ used_code: 1 }, { transaction: t });
+                meeting.used_code += 1;
+                await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
+                if (meeting.used_code >= meeting.total_release_code) {
+                    await Meeting.update({ used_code: meeting.used_code }, { where: { id: meeting.id }, transaction: t });
+                }
 
                 await t.commit();
 
