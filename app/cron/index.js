@@ -2577,7 +2577,7 @@ class CronJob {
         try {
             const packages = await ShanghaiCooperationHistory.findAll({
                 where: {
-                    return_date: {
+                    end_date: {
                         [Op.lte]: moment().toDate(),
                     },
                     is_returned_all: 0
