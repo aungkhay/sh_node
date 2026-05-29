@@ -180,9 +180,6 @@ class Controller {
             const boughtCount = await ShanghaiCooperationHistory.count({ where: { ...condition, price: { [Op.gt]: 0 } } });
             const userBoughtCount = await ShanghaiCooperationHistory.count({ where: { ...condition, price: { [Op.gt]: 0 } }, distinct: true, col: 'user_id' });
 
-            const freeBoughtCount = await ShanghaiCooperationHistory.count({ where: { ...condition, price: 0 } });
-            const freeUserBoughtCount = await ShanghaiCooperationHistory.count({ where: { ...condition, price: 0 }, distinct: true, col: 'user_id' });
-
             const internalUserBought = await ShanghaiCooperationHistory.sum('price', {
                 where: {
                     ...condition,
@@ -202,8 +199,6 @@ class Controller {
                 total_bought: totalBought,
                 bought_count: boughtCount,
                 user_bought_count: userBoughtCount,
-                free_bought_count: freeBoughtCount,
-                free_user_bought_count: freeUserBoughtCount,
                 internal_user_bought: internalUserBought,
                 external_user_bought: externalUserBought,
                 packages: rows,
