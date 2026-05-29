@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting } = require('../../models');
+const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes, where } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -5632,6 +5632,436 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             errLogger(`[MASONIC_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    SHANGHAI_COOPERATION = async (req, res) => {
+        try {
+            const packages = await ShanghaiCooperation.findAll({
+                where: {
+                    status: {
+                        [Op.ne]: 2
+                    }
+                },
+            });
+
+            let package_description = await this.redisHelper.getValue('shanghai_cooperation_description');
+            if (!package_description) {
+                const conf = await Config.findOne({ where: { type: 'shanghai_cooperation_description' } });
+                package_description = conf ? conf.val : '';
+                await this.redisHelper.setValue('shanghai_cooperation_description', package_description);
+            }
+            let package_period = await this.redisHelper.getValue('shanghai_cooperation_period');
+            if (!package_period) {
+                const conf = await Config.findOne({ where: { type: 'shanghai_cooperation_period' } });
+                package_period = conf ? conf.val : '';
+                await this.redisHelper.setValue('shanghai_cooperation_period', package_period);
+            }
+            let release_qty = await this.redisHelper.getValue('shanghai_cooperation_daily_release_qty');
+            if (!release_qty) {
+                const conf = await Config.findOne({ where: { type: 'shanghai_cooperation_daily_release_qty' } });
+                release_qty = conf ? conf.val : '';
+                await this.redisHelper.setValue('shanghai_cooperation_daily_release_qty', release_qty);
+            }
+
+            const data = {
+                package_description: package_description,
+                package_period: package_period,
+                release_qty: release_qty,
+                packages: packages
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[SHANGHAI_COOPERATION][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BUY_SHANGHAI_COOPERATION = async (req, res) => {
+        const lockKey = `lock:buy-shanghai-cooperation-package:${req.ip}`;
+        let redisLocked = false; 
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            let openPeriod = await this.redisHelper.getValue('shanghai_cooperation_package_period');
+            if (!openPeriod) {
+                const conf = await Config.findOne({ where: { type: 'shanghai_cooperation_package_period' } });
+                if (conf) {
+                    openPeriod = conf.val;
+                    await this.redisHelper.setValue('shanghai_cooperation_package_period', openPeriod);
+                }
+            }
+            if (openPeriod) {
+                const [start, end] = openPeriod.split('|');
+                const now = moment();
+                if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上海合作组织时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
+                }                 
+                if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上海合作组织购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
+                }
+            }
+            
+            const scPkg = await ShanghaiCooperation.findByPk(req.params.id);
+            if (!scPkg) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
+            }
+
+            if (scPkg.status === 2) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已下架', {});
+            }
+
+            if (scPkg.status === 3) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
+            }
+
+            if (scPkg.perchase_limit === 'DAILY' && scPkg.quantity_limit > 0) {
+                const history = await ShanghaiCooperationHistory.findAll({
+                    where: {
+                        user_id: req.user_id,
+                        createdAt: {
+                            [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
+                        }
+                    }
+                });
+                if (history.length >= scPkg.quantity_limit) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
+                }
+            }
+
+            if (scPkg.perchase_limit === 'TOTAL' && scPkg.quantity_limit > 0) {
+                const history = await ShanghaiCooperationHistory.findAll({
+                    where: {
+                        package_id: scPkg.id,
+                        user_id: req.user_id
+                    }
+                });
+                if (history.length >= scPkg.quantity_limit) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包已售罄', {});
+                }
+            }
+
+            const userId = req.user_id;
+            const payment_password = req.body.payment_password;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
+            });
+            if (!user.kyc) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+
+            let reserveAmount = scPkg.price;
+            let balanceAmount = 0;
+            if (Number(user.reserve_fund) < scPkg.price) {
+                balanceAmount = scPkg.price - Number(user.reserve_fund);
+                reserveAmount = Number(user.reserve_fund);
+                // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+            if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                if (reserveAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'ShanghaiCooperationHistory',
+                        type: `购买上海合作组织`,
+                        amount: reserveAmount,
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: Number(user.reserve_fund) - Number(reserveAmount),
+                        flow_status: 'OUT',
+                        description: `${scPkg.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
+                    }, { transaction: t });
+                }
+
+                if (balanceAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'ShanghaiCooperationHistory',
+                        type: `购买上海合作组织`,
+                        amount: balanceAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) - balanceAmount,
+                        flow_status: 'OUT',
+                        description: `${scPkg.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
+
+                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
+                if (!user.initial_buy_product_date) {
+                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                }
+
+                const pkgHistory = [];
+                if (scPkg.buy_one_get_quantity > 0) {
+                    const randomNumber = this.commonHelper.randomNumber(6);
+
+                    for (let index = 0; index <= scPkg.buy_one_get_quantity; index++) {
+                        const obj = {
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: scPkg.id,
+                            price: index == 0 ? scPkg.price : 0,
+                            exchange_value: scPkg.exchange_value,
+                            masonic_fund: scPkg.masonic_fund,
+                            end_date: moment().add(scPkg.period, 'days').toDate(),
+                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                        }
+
+                        const pkgHistoryItem = await ShanghaiCooperationHistory.create(obj, { transaction: t });
+                        pkgHistory.push(pkgHistoryItem);
+                    }
+                } else {
+                    const obj = {
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: scPkg.id,
+                        price: scPkg.price,
+                        daily_earn: scPkg.daily_earn,
+                        end_date: moment().add(scPkg.period, 'days').toDate(),
+                    }
+                    const pkgHistoryItem = await ShanghaiCooperationHistory.create(obj, { transaction: t });
+                    pkgHistory.push(pkgHistoryItem);
+                }
+                if (scPkg.coin > 0) {
+                    await RewardRecord.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        reward_id: 14, // 上海合作组织成立25周年纪念币
+                        amount: scPkg.coin,
+                        from_where: `PKG-${pkgHistory[0].id}`
+                    }, { transaction: t });
+                }
+
+                await scPkg.increment({ total_quantity: -pkgHistory.length }, { transaction: t });
+                if (scPkg.total_quantity - pkgHistory.length <= 0) {
+                    await scPkg.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+
+                const bonusArr = [15, 7, 3];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
+                commonLogger(`[BUY_SHANGHAI_COOPERATION_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_SHANGHAI_COOPERATION_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type', 'balance'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                const cashFlows = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(scPkg.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[BUY_SHANGHAI_COOPERATION_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    cashFlows.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        wallet_type: 2,
+                        model: 'ShanghaiCooperationBonuses',
+                        type: `下级购买[上海合作组织]奖励`,
+                        amount: bonus,
+                        before_amount: Number(upLevelUser.balance),
+                        after_amount: Number(upLevelUser.balance) + Number(bonus),
+                        flow_status: 'IN',
+                        description: `${scPkg.product_name}`
+                    });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: pkgHistory[0].id
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await ShanghaiCooperationBonuses.bulkCreate(bonuses, { transaction: t });
+                    await CashFlow.bulkCreate(cashFlows, { transaction: t });
+                }
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买礼包失败', {}); 
+            }
+
+        } catch (error) {
+            errLogger(`[BUY_SHANGHAI_COOPERATION][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    SHANGHAI_COOPERATION_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+
+            const { rows, count } = await ShanghaiCooperationHistory.findAndCountAll({
+                include: {
+                    model: ShanghaiCooperation,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'price', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[SHANGHAI_COOPERATION_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    SHANGHAI_COOPERATION_EARN_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await ShanghaiCooperationEarn.findAndCountAll({
+                include: [
+                    {
+                        model: ShanghaiCooperationHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'price'],
+                    },
+                    {
+                        model: ShanghaiCooperation,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    }
+                ],
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+
+        } catch (error) {
+            errLogger(`[SHANGHAI_COOPERATION_EARN_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    SHANGHAI_COOPERATION_BONUS_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await ShanghaiCooperationBonuses.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                bonuses: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[SHANGHAI_COOPERATION_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }

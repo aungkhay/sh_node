@@ -872,6 +872,61 @@ exports.update_policy_package = () => {
     ]
 }
 
+exports.create_shanghai_cooperation = () => {
+    return [
+        check('product_name').not().isEmpty().withMessage('产品名称不能为空'),
+        check('price').not().isEmpty().withMessage('价格不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('价格必须是数字'),
+        // period
+        check('period').not().isEmpty().withMessage('周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('周期必须是正整数'),
+        check('exchange_value').not().isEmpty().withMessage('兑换价值不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('兑换价值必须是数字'),
+        // masonic_fund optional
+        check('masonic_fund').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('法老基金必须是数字'),
+        // coin 实体纪念币
+        check('coin').not().isEmpty().withMessage('实体纪念币不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('实体纪念币必须是数字'),
+        // purchase_limit (NONE,DAILY,TOTAL)
+        check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
+            .bail()
+            .isIn(['NONE', 'DAILY', 'TOTAL'])
+            .withMessage('购买限制无效'),
+        // quantity_limit
+        check('quantity_limit').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('购买数量限制必须是数字'),
+        // total_quantity
+        check('total_quantity').not().isEmpty().withMessage('总数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('总数量必须是数字'),
+        // buy_one_get_quantity 
+        check('buy_one_get_quantity').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('买一赠一数量必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+        // tag optional => array ['NEW', 'HOT', 'RECOMMENDED']
+        check('tag')
+            .optional({ checkFalsy: true })
+            .isArray({ min: 1 })
+            .withMessage('标签必须是数组')
+    ]
+}
+
 exports.create_meeting = () => {
     return [
         check('title', { msg: '标题不能为空' }).not().isEmpty(),

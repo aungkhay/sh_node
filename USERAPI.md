@@ -813,7 +813,7 @@ const url = `${baseURL}/federal-reserve-gold-packages/bonus-history`;
 
 ### 上合贡献政策
 ``` js
-// [GET] Masonic Gift Package
+// [GET] Policy Package
 const url = `${baseURL}/policy-packages`;
 
 // [POST] Buy Policy Package
@@ -836,6 +836,37 @@ const params = {
 }
 // [GET] Policy Package Bonus History
 const url = `${baseURL}/policy-packages/bonus-history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+```
+
+### 上海合作组织成立25周年纪念币
+``` js
+// [GET] Shanghai Cooperation
+const url = `${baseURL}/shanghai-cooperation`;
+
+// [POST] Buy Shanghai Cooperation
+const url = `${baseURL}/shanghai-cooperation/${packageId}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Shanghai Cooperation History
+const url = `${baseURL}/shanghai-cooperation/history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+// [GET] Shanghai Cooperation Earn History
+const url = `${baseURL}/shanghai-cooperation/earn-history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+// [GET] Shanghai Cooperation Bonus History
+const url = `${baseURL}/shanghai-cooperation/bonus-history`;
 const params = {
     page: 1,
     perPage: 10

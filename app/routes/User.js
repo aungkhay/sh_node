@@ -104,6 +104,12 @@ class UserRoute extends express.Router {
         this.get('/policy-packages/history', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE_HISTORY);
         this.get('/policy-packages/earn-history', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE_EARN_HISTORY);
         this.get('/policy-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE_BONUS_HISTORY);
+        // Shanghai Cooperation Routes
+        this.get('/shanghai-cooperation', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION);
+        this.post('/shanghai-cooperation/:id/buy', FormValidator.buy_shanghai_cooperation(), middleware.isLoggedIn, HomeCtrl.BUY_SHANGHAI_COOPERATION);
+        this.get('/shanghai-cooperation/history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_HISTORY);
+        this.get('/shanghai-cooperation/earn-history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_EARN_HISTORY);
+        this.get('/shanghai-cooperation/bonus-history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

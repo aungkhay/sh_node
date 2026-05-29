@@ -121,6 +121,14 @@
     { "model": "上合贡献政策", "title": "推荐奖励记录", "name": "policy-package-bonus-history-list" },
     { "model": "上合贡献政策", "title": "收益记录", "name": "policy-package-earn-history-list" },
 
+    { "model": "上海合作组织成立25周年纪念币", "title": "列表", "name": "shanghai-cooperation-list" },
+    { "model": "上海合作组织成立25周年纪念币", "title": "创建产品", "name": "shanghai-cooperation-create" },
+    { "model": "上海合作组织成立25周年纪念币", "title": "编辑产品", "name": "shanghai-cooperation-update" },
+    { "model": "上海合作组织成立25周年纪念币", "title": "购买记录", "name": "shanghai-cooperation-history-list" },
+    { "model": "上海合作组织成立25周年纪念币", "title": "发放收益", "name": "shanghai-cooperation-release-earn" },
+    { "model": "上海合作组织成立25周年纪念币", "title": "推荐奖励记录", "name": "shanghai-cooperation-bonus-history-list" },
+    { "model": "上海合作组织成立25周年纪念币", "title": "收益记录", "name": "shanghai-cooperation-earn-history-list" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 

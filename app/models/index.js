@@ -67,6 +67,10 @@ const PolicyPackage = require('./PolicyPackage');
 const PolicyPackageHistory = require('./PolicyPackageHistory');
 const PolicyPackageBonuses = require('./PolicyPackageBonuses');
 const PolicyPackageEarn = require('./PolicyPackageEarn');
+const ShanghaiCooperation = require('./ShanghaiCooperation');
+const ShanghaiCooperationHistory = require('./ShanghaiCooperationHistory');
+const ShanghaiCooperationBonuses = require('./ShanghaiCooperationBonuses');
+const ShanghaiCooperationEarn = require('./ShanghaiCooperationEarn');
 const CashFlow = require('./CashFlow');
 const Meeting = require('./Meeting');
 const AttendedMeeting = require('./AttendedMeeting');
@@ -350,6 +354,31 @@ PolicyPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_use
 User.hasMany(PolicyPackageEarn, { foreignKey: 'user_id', as: 'policy_package_earn', onDelete: 'CASCADE' });
 PolicyPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========= USER ↔️ SHANGHAI_COOPERATION_HISTORY (1:N) ==========
+User.hasMany(ShanghaiCooperationHistory, { foreignKey: 'user_id', as: 'shanghai_cooperation_histories', onDelete: 'CASCADE' });
+ShanghaiCooperationHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ======== SHANGHAI_COOPERATION_HISTORY ↔️ SHANGHAI_COOPERATION_BONUSES (1:N) ==========
+ShanghaiCooperationHistory.hasMany(ShanghaiCooperationBonuses, { foreignKey: 'history_id', as: 'bonuses', onDelete: 'CASCADE' });
+ShanghaiCooperationBonuses.belongsTo(ShanghaiCooperationHistory, { foreignKey: 'history_id', as: 'history', onDelete: 'CASCADE' });
+
+// ======== SHANGHAI_COOPERATION_HISTORY ↔️ SHANGHAI_COOPERATION_EARN (1:N) ==========
+ShanghaiCooperationHistory.hasMany(ShanghaiCooperationEarn, { foreignKey: 'history_id', as: 'earns', onDelete: 'CASCADE' });
+ShanghaiCooperationEarn.belongsTo(ShanghaiCooperationHistory, { foreignKey: 'history_id', as: 'history', onDelete: 'CASCADE' });
+
+// ======== SHANGHAI_COOPERATION ↔️ SHANGHAI_COOPERATION_EARN (1:N) ==========
+ShanghaiCooperation.hasMany(ShanghaiCooperationEarn, { foreignKey: 'cooperation_id', as: 'earns', onDelete: 'CASCADE' });
+ShanghaiCooperationEarn.belongsTo(ShanghaiCooperation, { foreignKey: 'cooperation_id', as: 'cooperation', onDelete: 'CASCADE' });
+
+// ======== SHANGHAI_COOPERATION ↔️ SHANGHAI_COOPERATION_HISTORY (1:N) ==========
+ShanghaiCooperation.hasMany(ShanghaiCooperationHistory, { foreignKey: 'cooperation_id', as: 'histories', onDelete: 'CASCADE' });
+ShanghaiCooperationHistory.belongsTo(ShanghaiCooperation, { foreignKey: 'cooperation_id', as: 'cooperation', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ SHANGHAI_COOPERATION_BONUSES (1:N) ==========
+User.hasMany(ShanghaiCooperationBonuses, { foreignKey: 'user_id', as: 'shanghai_cooperation_bonuses', onDelete: 'CASCADE' });
+ShanghaiCooperationBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+ShanghaiCooperationBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
 // ========== CASH_FLOW ↔️ USER (1:N) ==========
 User.hasMany(CashFlow, { foreignKey: 'user_id', as: 'cash_flows', onDelete: 'CASCADE' });
 CashFlow.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
@@ -425,6 +454,10 @@ const models = {
     PolicyPackageHistory,
     PolicyPackageBonuses,
     PolicyPackageEarn,
+    ShanghaiCooperation,
+    ShanghaiCooperationHistory,
+    ShanghaiCooperationBonuses,
+    ShanghaiCooperationEarn,
     CashFlow,
     Meeting,
     AttendedMeeting,

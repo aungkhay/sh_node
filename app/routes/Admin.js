@@ -302,6 +302,18 @@ class AdminRoute extends express.Router {
         this.get('/policy-package/bonus-history', middleware.isLoggedIn('policy-package-bonus-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_BONUS_HISTORY);
         this.get('/policy-package/earn-history', middleware.isLoggedIn('policy-package-earn-history-list'), PolicyPackageCtrl.POLICY_PACKAGE_EARN_HISTORY);
 
+        // Shanghai Cooperation 
+        let ShanghaiCooperationController = require('../controllers/admins/ShanghaiCooperationController');
+        let ShanghaiCooperationCtrl = new ShanghaiCooperationController(app);
+        this.get('/shanghai-cooperations', middleware.isLoggedIn('shanghai-cooperation-list'), ShanghaiCooperationCtrl.INDEX);
+        this.post('/shanghai-cooperations/:id/upload', middleware.isLoggedIn('shanghai-cooperation-create,shanghai-cooperation-update'), ShanghaiCooperationCtrl.UPLOAD);
+        this.post('/shanghai-cooperations/create', FormValidator.create_shanghai_cooperation(), middleware.isLoggedIn('shanghai-cooperation-create'), ShanghaiCooperationCtrl.CREATE);
+        this.post('/shanghai-cooperations/:id/update', FormValidator.create_shanghai_cooperation(), middleware.isLoggedIn('shanghai-cooperation-update'), ShanghaiCooperationCtrl.UPDATE);
+        this.get('/shanghai-cooperations/history', middleware.isLoggedIn('shanghai-cooperation-history-list'), ShanghaiCooperationCtrl.SHANGHAI_COOPERATION_HISTORY);
+        this.post('/shanghai-cooperations/history/:id/release/:type', middleware.isLoggedIn('shanghai-cooperation-release'), ShanghaiCooperationCtrl.RELEASE_PACKAGE_EARN);
+        this.get('/shanghai-cooperations/bonus-history', middleware.isLoggedIn('shanghai-cooperation-bonus-history-list'), ShanghaiCooperationCtrl.SHANGHAI_COOPERATION_BONUS_HISTORY);
+        this.get('/shanghai-cooperations/earn-history', middleware.isLoggedIn('shanghai-cooperation-earn-history-list'), ShanghaiCooperationCtrl.SHANGHAI_COOPERATION_EARN_HISTORY);
+
         // Meeting
         let MeetingController = require('../controllers/admins/MeetingController');
         let MeetingCtrl = new MeetingController(app);

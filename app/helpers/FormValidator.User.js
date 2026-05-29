@@ -352,3 +352,9 @@ exports.buy_policy_package = () => {
         check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
     ]
 }
+
+exports.buy_shanghai_cooperation = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}

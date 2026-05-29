@@ -247,7 +247,28 @@ module.exports = async () => {
             val: '2026-05-20 00:00:00|2026-06-15 00:00:00',
             description: '-',
             data_type: 'string'
-        }
+        },
+        {
+            type: 'shanghai_cooperation_description',
+            title: '上海合作组织 - 描述',
+            val: '-',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'shanghai_cooperation_period',
+            title: '上海合作组织 - 申报时间',
+            val: '2026-05-28 00:00:00|2026-06-28 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'shanghai_cooperation_daily_release_qty',
+            title: '上海合作组织 - 每日发放数量',
+            val: '200000',
+            description: '-',
+            data_type: 'integer'
+        },
     ];
 
     const count = await Config.count();

@@ -1565,6 +1565,79 @@ const params = {
 }
 ```
 
+### 上海合作组织成立25周年纪念币
+``` js
+// [GET] Product List
+const url = `${baseURL}/shanghai-cooperations`;
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/shanghai-cooperations/${productId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [POST] Craate and Update Product
+const url = `${baseURL}/shanghai-cooperations/create`;
+const url = `${baseURL}/shanghai-cooperations/${productId}/update`;
+const data = {
+    product_name: '',
+    price: 100,
+    period: 45, // 申计周期
+    exchange_value: 10, // 兑换价值
+    masonic_fund: 100, // optional 共济基金
+    coin: 1000, // 实体纪念币
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    status: 1, // 1-在售, 2-下架, 3-售罄
+    tag: ['全新上线', '重磅福利', '全球联动', '每日限购']
+}
+
+// [GET] 购买记录
+const url = `${baseURL}/shanghai-cooperations/history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [POST] 返还收益
+// type => 0-共济基金返还, 1-兑换价值返还 2. 本金返还
+const url = `${baseURL}/shanghai-cooperations/history/${historyId}/release/${type}`;
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/shanghai-cooperations/bonus-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/shanghai-cooperations/earn-history`;
+const params = {
+    page: 1,
+    perPage: 10,
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+```
+
 ### 会议
 ``` js
 // [GET] 列表
