@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -58,6 +58,7 @@ class CronJob {
         // Run at 30th minute of every hour
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
         cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
+        cron.schedule('* * * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
     }
 
@@ -2569,6 +2570,108 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[CHECK_FEDERAL_PACKAGE_REIMBURSEMENT]: ${error.stack}`);
+        }
+    }
+
+    CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT = async () => {
+        try {
+            const packages = await ShanghaiCooperationHistory.findAll({
+                where: {
+                    return_date: {
+                        [Op.lte]: moment().toDate(),
+                    },
+                    is_returned_all: 0
+                },
+                attributes: ['id', 'user_id', 'package_id', 'price', 'masonic_fund', 'exchange_value', 'is_returned_price', 'is_returned_masonic_fund', 'is_returned_exchange_value']
+            });
+
+            for (const pack of packages) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+                    const originalPrice = Number(pack.price);
+                    const masonicFund = Number(pack.masonic_fund);
+                    const exchangeValue = Number(pack.exchange_value);
+
+                    const arr = []
+                    if (masonicFund > 0 && Number(pack.is_returned_masonic_fund) === 0) {
+                        arr.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: masonicFund,
+                            type: 0, // 0-共济基金返还
+                        })
+                    }
+                    if (exchangeValue > 0 && Number(pack.is_returned_exchange_value) === 0) {
+                        arr.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: exchangeValue,
+                            type: 1, // 1-兑换价值返还
+                        })
+                    }
+                    if (originalPrice > 0 && Number(pack.is_returned_price) === 0) {
+                        arr.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: originalPrice,
+                            type: 2, // 2-本金返还
+                        })
+                    }
+
+                    await ShanghaiCooperationEarn.bulkCreate(arr, { transaction: t });
+                    const updateObj = { 
+                        is_returned_all: 1,
+                        description: 'CRON',
+                    }
+                    
+                    if (masonicFund > 0 && Number(pack.is_returned_masonic_fund) === 0) {
+                        updateObj.is_returned_masonic_fund = 1;
+                        updateObj.return_masonic_fund_date = new Date();
+                    }
+                    if (exchangeValue > 0 && Number(pack.is_returned_exchange_value) === 0) {
+                        updateObj.is_returned_exchange_value = 1;
+                        updateObj.return_exchange_value_date = new Date();
+                    }
+                    if (originalPrice > 0 && Number(pack.is_returned_price) === 0) {
+                        updateObj.is_returned_price = 1;
+                        updateObj.return_price_date = new Date();
+                    }
+
+                    await pack.update(updateObj, { transaction: t });
+
+                    await CashFlow.create({
+                        user_id: pack.user_id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'ShanghaiCooperationEarn',
+                        type: '上海合作组织收益返还',
+                        amount: exchangeValue + originalPrice,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + exchangeValue + originalPrice,
+                        flow_status: 'IN',
+                        description: `兑换价值返还${exchangeValue}, 本金返还${originalPrice}`,
+                    }, { transaction: t });
+
+                    await user.increment({ balance: exchangeValue + originalPrice }, { transaction: t });
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }                  
+            }
+        } catch (error) {
+            errLogger(`[CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT]: ${error.stack}`);
         }
     }
 

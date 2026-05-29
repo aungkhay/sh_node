@@ -359,20 +359,20 @@ User.hasMany(ShanghaiCooperationHistory, { foreignKey: 'user_id', as: 'shanghai_
 ShanghaiCooperationHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
 // ======== SHANGHAI_COOPERATION_HISTORY ↔️ SHANGHAI_COOPERATION_BONUSES (1:N) ==========
-ShanghaiCooperationHistory.hasMany(ShanghaiCooperationBonuses, { foreignKey: 'history_id', as: 'bonuses', onDelete: 'CASCADE' });
-ShanghaiCooperationBonuses.belongsTo(ShanghaiCooperationHistory, { foreignKey: 'history_id', as: 'history', onDelete: 'CASCADE' });
+ShanghaiCooperationHistory.hasMany(ShanghaiCooperationBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+ShanghaiCooperationBonuses.belongsTo(ShanghaiCooperationHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
 // ======== SHANGHAI_COOPERATION_HISTORY ↔️ SHANGHAI_COOPERATION_EARN (1:N) ==========
-ShanghaiCooperationHistory.hasMany(ShanghaiCooperationEarn, { foreignKey: 'history_id', as: 'earns', onDelete: 'CASCADE' });
-ShanghaiCooperationEarn.belongsTo(ShanghaiCooperationHistory, { foreignKey: 'history_id', as: 'history', onDelete: 'CASCADE' });
+ShanghaiCooperationHistory.hasMany(ShanghaiCooperationEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+ShanghaiCooperationEarn.belongsTo(ShanghaiCooperationHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
 // ======== SHANGHAI_COOPERATION ↔️ SHANGHAI_COOPERATION_EARN (1:N) ==========
-ShanghaiCooperation.hasMany(ShanghaiCooperationEarn, { foreignKey: 'cooperation_id', as: 'earns', onDelete: 'CASCADE' });
-ShanghaiCooperationEarn.belongsTo(ShanghaiCooperation, { foreignKey: 'cooperation_id', as: 'cooperation', onDelete: 'CASCADE' });
+ShanghaiCooperation.hasMany(ShanghaiCooperationEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+ShanghaiCooperationEarn.belongsTo(ShanghaiCooperation, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
 
 // ======== SHANGHAI_COOPERATION ↔️ SHANGHAI_COOPERATION_HISTORY (1:N) ==========
-ShanghaiCooperation.hasMany(ShanghaiCooperationHistory, { foreignKey: 'cooperation_id', as: 'histories', onDelete: 'CASCADE' });
-ShanghaiCooperationHistory.belongsTo(ShanghaiCooperation, { foreignKey: 'cooperation_id', as: 'cooperation', onDelete: 'CASCADE' });
+ShanghaiCooperation.hasMany(ShanghaiCooperationHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+ShanghaiCooperationHistory.belongsTo(ShanghaiCooperation, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
 
 // ========== USER ↔️ SHANGHAI_COOPERATION_BONUSES (1:N) ==========
 User.hasMany(ShanghaiCooperationBonuses, { foreignKey: 'user_id', as: 'shanghai_cooperation_bonuses', onDelete: 'CASCADE' });

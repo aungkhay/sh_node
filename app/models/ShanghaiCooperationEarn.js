@@ -53,6 +53,12 @@ ShanghaiCooperationEarn.init({
         allowNull: false,
         defaultValue: 0,
     },
+    type: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '0-共济基金返还, 1-兑换价值返还, 2-本金返还'
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,
