@@ -6912,7 +6912,7 @@ class Controller {
                 attributes: ['id'] 
             });
 
-            delete meeting.dataValues.meeting_code; // 不返回福利码
+            delete meeting.meeting_code; // 不返回福利码
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { meeting, already_joined: !!existingRecord });
         } catch (error) {
