@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -60,6 +60,7 @@ class CronJob {
         cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
+        cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -3111,6 +3112,20 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[SEND_WITHDRAWAL_TO_THIRD_PARTY]: ${error.stack}`);
+        }
+    }
+
+    UPDATE_MEETING_USED_CODE = async () => {
+        try {
+            const activeMeeting = await this.redisHelper.getValue('active_meeting');
+            if (activeMeeting) {
+                const parsed = JSON.parse(activeMeeting);
+                if (parsed.is_active === 1) {
+                    await Meeting.update({ used_code: parsed.used_code || 0 }, { where: { id: parsed.id } });
+                }
+            }
+        } catch (error) {
+            errLogger(`[UPDATE_MEETING_USED_CODE]: ${error.stack}`);
         }
     }
 }
