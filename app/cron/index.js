@@ -2642,13 +2642,20 @@ class CronJob {
                         updateObj.is_returned_exchange_value = 1;
                         updateObj.return_exchange_value_date = new Date();
                     }
-                    if (originalPrice > 0 && Number(pack.is_returned_price) === 0) {
+                    if (Number(pack.is_returned_price) === 0) {
                         updateObj.is_returned_price = 1;
                         updateObj.return_price_date = new Date();
                     }
 
                     await pack.update(updateObj, { transaction: t });
 
+                    let desc = '';
+                    if (exchangeValue > 0) {
+                        desc += `兑换价值返还${exchangeValue}`;
+                    }
+                    if (originalPrice > 0) {
+                        desc += `, 本金返还${originalPrice}`;
+                    }
                     await CashFlow.create({
                         user_id: pack.user_id,
                         relation: user.relation,
@@ -2659,7 +2666,7 @@ class CronJob {
                         before_amount: user.balance,
                         after_amount: Number(user.balance) + exchangeValue + originalPrice,
                         flow_status: 'IN',
-                        description: `兑换价值返还${exchangeValue}, 本金返还${originalPrice}`,
+                        description: desc,
                     }, { transaction: t });
 
                     await user.increment({ balance: exchangeValue + originalPrice }, { transaction: t });
