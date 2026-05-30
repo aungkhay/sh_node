@@ -360,7 +360,7 @@ class Controller {
             if (type == 0 && pkgHistory.is_returned_masonic_fund) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该共济基金金额已返还', {});
             }
-            if (type == 1 && pkgHistory.is_returned_exchanghe_value) {
+            if (type == 1 && pkgHistory.is_returned_exchange_value) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该兑换价值已返还', {});
             }
             if (type == 2 && pkgHistory.is_returned_price) {
@@ -376,13 +376,13 @@ class Controller {
                 if (type == 0) {
 
                     // 共济基金金额
-                    await pkgHistory.update({ is_returned_masonic_fund: true, return_masonic_fund_date: new Date() }, { transaction: t });
+                    await pkgHistory.update({ is_returned_masonic_fund: 1, return_masonic_fund_date: new Date() }, { transaction: t });
                     await user.increment({ masonic_fund: Number(pkgHistory.masonic_fund) }, { transaction: t });
                     releaseAmount = pkgHistory.masonic_fund;
 
                 } else if (type == 1) {
                     // 兑换价值返还
-                    await pkgHistory.update({ is_returned_exchanghe_value: true, return_exchange_value_date: new Date() }, { transaction: t });
+                    await pkgHistory.update({ is_returned_exchange_value: 1, return_exchange_value_date: new Date() }, { transaction: t });
                     
                     releaseAmount = pkgHistory.exchange_value;
 
@@ -403,7 +403,7 @@ class Controller {
                     }
                 } else if (type == 2) {
                     // 本金返还
-                    await pkgHistory.update({ is_returned_price: true, return_price_date: new Date() }, { transaction: t });
+                    await pkgHistory.update({ is_returned_price: 1, return_price_date: new Date() }, { transaction: t });
                     releaseAmount = pkgHistory.price;
 
                     if (releaseAmount > 0) {
