@@ -1,30 +1,147 @@
 openapi: 3.0.0
 info:
   title: REST API
-  description: ShangHe
+  description: ShangHe user API
   version: 1.0.0
 servers:
   - url: http://localhost:2580/api/
     description: Development server
-  - url: http://test.com/api/
+  - url: http://161.248.87.252:3690/api/
     description: Deployment server
+
+security:
+  - ApiKeyAuth: []
 
 tags:
   - name: Auth
-    description: Authentication related endpoints
+    description: Authentication and account access endpoints
   - name: Home
-    description: Home page endpoints
+    description: Home page, content, and customer service endpoints
   - name: Certificate
-    description: Certificate page endpoints
+    description: Certificate related endpoints
   - name: Information
-    description: Information page endpoints
+    description: Information content endpoints
+  - name: Rank
+    description: Rank and downline related endpoints
+  - name: Assets
+    description: Asset, allowance, earn, and inheritance endpoints
+  - name: Gold
+    description: Gold trading, coupon, and gold plan endpoints
+  - name: Package
+    description: Package purchase and package history endpoints
+  - name: Meeting
+    description: Meeting related endpoints
+  - name: Profile
+    description: KYC, payment method, and profile endpoints
+  - name: Transaction
+    description: Deposit, withdraw, transfer, and balance transaction endpoints
+  - name: Event
+    description: Event and seasonal activity endpoints
 
 components:
   securitySchemes:
-    ApiKeyAuth: # arbitrary name for the security scheme
+    ApiKeyAuth:
       type: apiKey
-      in: header # can be "header", "query" or "cookie"
+      in: header
       name: authorization
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Page number
+      schema:
+        type: integer
+        example: 1
+    PerPage:
+      name: perPage
+      in: query
+      required: false
+      description: Number of items per page
+      schema:
+        type: integer
+        example: 10
+    UnRead:
+      name: unRead
+      in: query
+      required: false
+      description: Set to 1 to return unread notifications only
+      schema:
+        type: integer
+        example: 1
+    HistoryTab:
+      name: historyTab
+      in: query
+      required: false
+      description: 1 for unused records, 2 for used records
+      schema:
+        type: integer
+        example: 1
+    Id:
+      name: id
+      in: path
+      required: true
+      description: Record identifier
+      schema:
+        type: integer
+        example: 1
+    Type:
+      name: type
+      in: path
+      required: true
+      description: Type discriminator used by the route
+      schema:
+        type: string
+        example: BANK
+    Code:
+      name: code
+      in: path
+      required: true
+      description: Verification code used by the route
+      schema:
+        type: string
+        example: ABC123
+    MethodId:
+      name: method_id
+      in: path
+      required: true
+      description: Payment method identifier
+      schema:
+        type: integer
+        example: 1
+    ChannelId:
+      name: channel_id
+      in: path
+      required: true
+      description: Deposit channel identifier
+      schema:
+        type: integer
+        example: 1
+    OrderNo:
+      name: orderNo
+      in: path
+      required: true
+      description: Merchant order number
+      schema:
+        type: string
+        example: ORD202605300001
+    MerchantId:
+      name: merchantId
+      in: path
+      required: true
+      description: Merchant identifier
+      schema:
+        type: integer
+        example: 1
+    UserId:
+      name: userId
+      in: path
+      required: true
+      description: User identifier
+      schema:
+        type: integer
+        example: 1
 
   schemas:
     Response:
@@ -38,171 +155,344 @@ components:
           example: true
         message:
           type: string
-          example: 'SUCCESS'
+          example: SUCCESS
         data:
+          nullable: true
           oneOf:
             - type: object
-              example: {}
+              additionalProperties: true
             - type: array
-              example: []
-          description: Can be an object or an array
+              items: {}
+            - type: string
+            - type: number
+            - type: boolean
         errors:
           type: object
+          additionalProperties: true
           example: {}
-    Register:
+    RegisterRequest:
       type: object
+      required:
+        - phone
+        - password
+        - invite_code
+        - uuid
+        - verification_code
       properties:
-        data:
-          type: object
-          properties:
-            phone:
-              type: string
-            password:
-              type: string
-            invite_code:
-              type: string
-            uuid:
-              type: string
-            verification_code:
-              type: string
-    Login:
+        phone:
+          type: string
+          example: "13800000000"
+        password:
+          type: string
+          example: Pass123!
+        invite_code:
+          type: string
+          example: INVITE001
+        uuid:
+          type: string
+          example: 6f2f9ef7-b7f9-4b47-a6fd-91be7c04b77e
+        verification_code:
+          type: string
+          example: 1234
+    LoginRequest:
       type: object
+      required:
+        - phone
+        - password
+        - uuid
+        - verification_code
       properties:
-        data:
-          type: object
-          properties:
-            phone:
-              type: string
-            password:
-              type: string
-            uuid:
-              type: string
-            verification_code:
-              type: string
-    News:
+        phone:
+          type: string
+          example: "13800000000"
+        password:
+          type: string
+          example: Pass123!
+        uuid:
+          type: string
+          example: 6f2f9ef7-b7f9-4b47-a6fd-91be7c04b77e
+        verification_code:
+          type: string
+          example: 1234
+    ModifyPasswordRequest:
       type: object
+      required:
+        - phone
+        - new_password
+        - nrc_last_six_digit
       properties:
-        id:
-          type: integer
-          example: 1
+        phone:
+          type: string
+          example: "13800000000"
+        new_password:
+          type: string
+          example: Better123!
+        nrc_last_six_digit:
+          type: string
+          example: "123456"
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - phone
+        - nrc_number
+        - new_password
+        - uuid
+        - verification_code
+      properties:
+        phone:
+          type: string
+          example: "13800000000"
+        nrc_number:
+          type: string
+          example: "110101199001011234"
+        new_password:
+          type: string
+          example: Better123!
+        uuid:
+          type: string
+          example: 6f2f9ef7-b7f9-4b47-a6fd-91be7c04b77e
+        verification_code:
+          type: string
+          example: 1234
+    BindPaymentPasswordRequest:
+      type: object
+      required:
+        - payment_password
+        - nrc_last_six_digit
+      properties:
+        payment_password:
+          type: string
+          example: Pay123!
+        nrc_last_six_digit:
+          type: string
+          example: "123456"
+    SignUrlRequest:
+      type: object
+      required:
+        - filename
+        - content_type
+      properties:
+        filename:
+          type: string
+          example: avatar.png
+        content_type:
+          type: string
+          example: image/png
+    PostNewsRequest:
+      type: object
+      required:
+        - type
+        - content
+      properties:
         type:
           type: integer
+          enum: [1, 2, 3]
           example: 1
-        title:
-          type: string
-          example: "Test"
-        subtitle:
-          type: string
-          example: "Trump has been killed recently"
         content:
           type: string
-          example: "<p>Hello world!</p>"
-        pic:
-          type: string
-          example: "/uploads/news/1.png"
-        status:
-          type: integer
-          example: 1
-        createdAt:
-          type: string
-          format: date-time
-          example: "2025-10-15T06:13:25.000Z"
-        updatedAt:
-          type: string
-          format: date-time
-          example: "2025-10-15T06:13:26.000Z"
-    Notification:
+          example: "<p>News content</p>"
+    ReportNewsRequest:
       type: object
+      required:
+        - description
       properties:
-        id:
-          type: integer
-          example: 1
-        title:
+        description:
           type: string
-          example: "Test"
-        subtitle:
-          type: string
-          example: "Trump has been killed recently"
-        content:
-          type: string
-          example: "<p>Hello world!</p>"
-        createdAt:
-          type: string
-          format: date-time
-          example: "2025-10-15T06:13:25.000Z"
-    Certificate:
+          example: Inaccurate content
+    ImpeachChildRequest:
       type: object
+      required:
+        - child_id
+        - impeach_type
+        - reason
       properties:
-        id:
+        child_id:
           type: integer
+          example: 10
+        impeach_type:
+          type: integer
+          enum: [1, 2, 3]
           example: 1
-        title:
+        reason:
           type: string
-          example: "Certificate 1"
-        pic:
-          type: string
-          example: "/uploads/certificates/1.png"
-        createdAt:
-          type: string
-          format: date-time
-          example: "2025-10-15T06:13:25.000Z"
-        updatedAt:
-          type: string
-          format: date-time
-          example: "2025-10-15T06:13:25.000Z"
-    MyCertificate:
+          example: Evidence details
+    InheritOwnerRequest:
       type: object
+      required:
+        - inherit_account
+        - description
+        - prove_url
       properties:
-        id:
-          type: integer
-          example: 1
-        certificate_id:
-          type: integer
-          example: 1
-        title:
+        inherit_account:
           type: string
-          example: "Certificate 1"
-        pic:
+          example: "13800000001"
+        description:
           type: string
-          example: "/uploads/certificates/1.png"
-        get_time:
+          example: Successor details
+        prove_url:
           type: string
-          format: date-time
-          example: "2025-10-15T06:13:25.000Z"
-        updatedAt:
-          type: string
-          format: date-time
-          example: null
-    Information:
+          example: /uploads/inheritance/proof.png
+    GoldTradeRequest:
       type: object
+      required:
+        - gold_count
       properties:
-        id:
-          type: integer
-          example: 1
-        title:
+        gold_count:
+          type: number
+          example: 1.5
+    RedemptionCodeRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
           type: string
-          example: "Information 1"
-        subtitle:
+          example: GIFT2026
+    KycVerifyRequest:
+      type: object
+      required:
+        - nrc_name
+        - nrc_number
+        - nrc_front_pic
+        - nrc_back_pic
+      properties:
+        nrc_name:
           type: string
-          example: "Information 1"
-        content:
+          example: Zhang San
+        nrc_number:
           type: string
-          example: "<p>Information 1</p>"
-        pic:
+          example: "110101199001011234"
+        nrc_front_pic:
           type: string
-          example: "/uploads/certificates/1.png"
-        createdAt:
+          example: /uploads/kyc/front.png
+        nrc_back_pic:
           type: string
-          format: date-time
-          example: "2025-10-15T06:13:25.000Z"
+          example: /uploads/kyc/back.png
+    BindBankRequest:
+      type: object
+      required:
+        - bank_card_number
+        - bank_card_name
+        - bank_card_phone_number
+        - open_bank_name
+        - bank_card_pic
+      properties:
+        bank_card_number:
+          type: string
+          example: "6222000000000000"
+        bank_card_name:
+          type: string
+          example: Zhang San
+        bank_card_phone_number:
+          type: string
+          example: "13800000000"
+        open_bank_name:
+          type: string
+          example: Industrial and Commercial Bank of China
+        bank_card_pic:
+          type: string
+          example: /uploads/payment/bank-card.png
+    BindAlipayRequest:
+      type: object
+      required:
+        - ali_account_name
+        - ali_account_number
+        - ali_qr_code_pic
+        - ali_home_page_screenshot
+      properties:
+        ali_account_name:
+          type: string
+          example: Zhang San
+        ali_account_number:
+          type: string
+          example: 13800000000
+        ali_qr_code_pic:
+          type: string
+          example: /uploads/payment/alipay-qr.png
+        ali_home_page_screenshot:
+          type: string
+          example: /uploads/payment/alipay-home.png
+    BindAddressRequest:
+      type: object
+      required:
+        - address
+      properties:
+        address:
+          type: string
+          example: Guangdong Province Shenzhen City Nanshan District Science Park 12
+    DepositRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: number
+          example: 100
+    WithdrawRequest:
+      type: object
+      required:
+        - amount
+        - withdrawBy
+        - payment_password
+      properties:
+        amount:
+          type: number
+          example: 100
+        withdrawBy:
+          type: string
+          enum: [BANK, ALIPAY]
+          example: BANK
+        payment_password:
+          type: string
+          example: Pay123!
+    TransferRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: number
+          example: 100
+    BalanceTransferRequest:
+      type: object
+      required:
+        - receiver_phone
+        - amount
+        - payment_password
+      properties:
+        receiver_phone:
+          type: string
+          example: "13800000001"
+        amount:
+          type: number
+          example: 100
+        payment_password:
+          type: string
+          example: Pay123!
+    BuyPackageRequest:
+      type: object
+      required:
+        - payment_password
+      properties:
+        payment_password:
+          type: string
+          example: Pay123!
+    UploadFileRequest:
+      type: object
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          format: binary
 
 paths:
   /get-recaptcha:
     get:
-      tags:
-        - Auth
-      summary: Get a reCAPTCHA token
-      description: Returns a new reCAPTCHA key for client validation.
+      tags: [Auth]
+      summary: Get reCAPTCHA
+      description: Returns a captcha payload for client-side verification.
+      security: []
       responses:
         '200':
           description: SUCCESS
@@ -210,18 +500,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+
   /register:
     post:
-      tags:
-        - Auth
-      summary: Register a new User
-      description: Register a new User in the database
+      tags: [Auth]
+      summary: Register user
+      description: Create a new user account.
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Register"
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
         '200':
           description: SUCCESS
@@ -229,18 +520,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+
   /login:
     post:
-      tags:
-        - Auth
-      summary: Login Authentication
-      description: Login
+      tags: [Auth]
+      summary: Login
+      description: Authenticate with phone, password, and captcha data.
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Login"
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
           description: SUCCESS
@@ -248,14 +540,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+
   /profile:
     get:
-      tags:
-        - Auth
-      summary: Profile
-      description: Get the profile information
-      security:
-        - ApiKeyAuth: []
+      tags: [Auth]
+      summary: Get profile
+      description: Returns the current user profile.
       responses:
         '200':
           description: SUCCESS
@@ -263,14 +553,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+
   /logout:
     post:
-      tags:
-        - Auth
+      tags: [Auth]
       summary: Logout
-      description: Logout from the system
-      security:
-        - ApiKeyAuth: []
+      description: Invalidate the current session or token.
       responses:
         '200':
           description: SUCCESS
@@ -278,29 +566,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
-  /news:
+
+  /modify-password:
+    post:
+      tags: [Auth]
+      summary: Modify password
+      description: Change the login password for the authenticated account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifyPasswordRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /forgot-password:
+    post:
+      tags: [Auth]
+      summary: Forgot password
+      description: Reset the login password using identity data and captcha verification.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /bind-payment-password:
+    post:
+      tags: [Auth]
+      summary: Bind payment password
+      description: Set the payment password for the authenticated account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindPaymentPasswordRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /get-file-path:
     get:
-      tags:
-        - Home
-      summary: News
-      description: News List
-      security:
-        - ApiKeyAuth: []
-      parameters:
-        - name: page
-          in: query
-          required: false
-          description: Page number (default: 1)
-          schema:
-            type: integer
-            example: 1
-        - name: perPage
-          in: query
-          required: false
-          description: Number of items per page (default: 10)
-          schema:
-            type: integer
-            example: 10
+      tags: [Home]
+      summary: Get file path
+      description: Returns file path related configuration used by the client.
       responses:
         '200':
           description: SUCCESS
@@ -308,36 +637,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+
+  /customer-service/{type}:
+    get:
+      tags: [Home]
+      summary: Get customer service
+      description: Returns customer service details for the specified type.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Type'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
   /notifications:
     get:
-      tags:
-        - Home
-      summary: Notification
-      description: Notification List
-      security:
-        - ApiKeyAuth: []
+      tags: [Home]
+      summary: List notifications
+      description: Returns notifications for the authenticated user.
       parameters:
-        - name: page
-          in: query
-          required: false
-          description: Page number (default: 1)
-          schema:
-            type: integer
-            example: 1
-        - name: perPage
-          in: query
-          required: false
-          description: Number of items per page (default: 10)
-          schema:
-            type: integer
-            example: 10
-        - name: unRead
-          in: query
-          required: false
-          description: 1 => For unread notifications (default: 0)
-          schema:
-            type: integer
-            example: 1
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/UnRead'
       responses:
         '200':
           description: SUCCESS
@@ -345,14 +670,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
-  /notifications/1/mark-read:
+
+  /notifications/{id}/details:
+    get:
+      tags: [Home]
+      summary: Get notification detail
+      description: Returns notification detail by identifier.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /notifications/{id}/mark-read:
     post:
-      tags:
-        - Home
-      summary: Read Notification
-      description: Read Notification
-      security:
-        - ApiKeyAuth: []
+      tags: [Home]
+      summary: Mark notification as read
+      description: Marks the specified notification as read.
+      parameters:
+        - $ref: '#/components/parameters/Id'
       responses:
         '200':
           description: SUCCESS
@@ -360,29 +700,139 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+
+  /news:
+    get:
+      tags: [Home]
+      summary: List news
+      description: Returns news visible to the authenticated user.
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /news/get-sign-url:
+    post:
+      tags: [Home]
+      summary: Get news upload sign URL
+      description: Returns a signed upload URL for a news attachment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUrlRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /news/upload:
+    post:
+      tags: [Home]
+      summary: Upload news media
+      description: Uploads a media file for a news post.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /news/post:
+    post:
+      tags: [Home]
+      summary: Create news post
+      description: Publish a news post.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostNewsRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /news/{id}/details:
+    get:
+      tags: [Home]
+      summary: Get news detail
+      description: Returns a single news entry by identifier.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /news/{id}/like:
+    post:
+      tags: [Home]
+      summary: Like news
+      description: Registers a like against a news entry.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /news/{id}/report:
+    post:
+      tags: [Home]
+      summary: Report news
+      description: Reports a news entry with a description.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportNewsRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
   /certificates:
     get:
-      tags:
-        - Certificate
-      summary: Certificate
-      description: Certificate List
-      security:
-        - ApiKeyAuth: []
+      tags: [Certificate]
+      summary: List certificates
+      description: Returns available certificate records.
       parameters:
-        - name: page
-          in: query
-          required: false
-          description: Page number (default: 1)
-          schema:
-            type: integer
-            example: 1
-        - name: perPage
-          in: query
-          required: false
-          description: Number of items per page (default: 10)
-          schema:
-            type: integer
-            example: 10
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
       responses:
         '200':
           description: SUCCESS
@@ -390,36 +840,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+
   /my-certificates:
     get:
-      tags:
-        - Certificate
-      summary: My Certificate
-      description: My Certificate List
-      security:
-        - ApiKeyAuth: []
+      tags: [Certificate]
+      summary: List my certificates
+      description: Returns certificate records owned by the authenticated user.
       parameters:
-        - name: page
-          in: query
-          required: false
-          description: Page number (default: 1)
-          schema:
-            type: integer
-            example: 1
-        - name: perPage
-          in: query
-          required: false
-          description: Number of items per page (default: 10)
-          schema:
-            type: integer
-            example: 10
-        - name: historyTab
-          in: query
-          required: false
-          description: 1 => Not Use | 2 => Already Used (default: 1)
-          schema:
-            type: integer
-            example: 1
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - $ref: '#/components/parameters/HistoryTab'
       responses:
         '200':
           description: SUCCESS
@@ -427,14 +857,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
-  /certificates/1/pick:
+
+  /certificates/{id}/pick:
     post:
-      tags:
-        - Certificate
-      summary: Pick Certificate
-      description: Pick Certificate
-      security:
-        - ApiKeyAuth: []
+      tags: [Certificate]
+      summary: Pick certificate
+      description: Claim the specified certificate.
+      parameters:
+        - $ref: '#/components/parameters/Id'
       responses:
         '200':
           description: SUCCESS
@@ -442,14 +872,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
-  /certificates/1/use:
+
+  /certificates/{id}/use:
     post:
-      tags:
-        - Certificate
-      summary: Use Certificate
-      description: Use Certificate
-      security:
-        - ApiKeyAuth: []
+      tags: [Certificate]
+      summary: Use certificate
+      description: Use the specified certificate.
+      parameters:
+        - $ref: '#/components/parameters/Id'
       responses:
         '200':
           description: SUCCESS
@@ -457,29 +887,1585 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Response'
+
   /informations:
     get:
-      tags:
-        - Information
-      summary: Information
-      description: Information List
-      security:
-        - ApiKeyAuth: []
+      tags: [Information]
+      summary: List information
+      description: Returns information content entries.
       parameters:
-        - name: page
-          in: query
-          required: false
-          description: Page number (default: 1)
-          schema:
-            type: integer
-            example: 1
-        - name: perPage
-          in: query
-          required: false
-          description: Number of items per page (default: 10)
-          schema:
-            type: integer
-            example: 10
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /get-digital-aggrement:
+    get:
+      tags: [Home]
+      summary: Get digital agreement
+      description: Returns the current digital agreement content.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /sign-agreement:
+    post:
+      tags: [Home]
+      summary: Sign agreement
+      description: Signs the active digital agreement.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /get-welcome-message:
+    get:
+      tags: [Home]
+      summary: Get welcome message
+      description: Returns the authenticated user's welcome message payload.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /ranks:
+    get:
+      tags: [Rank]
+      summary: List ranks
+      description: Returns rank information available to the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /request-next-rank:
+    post:
+      tags: [Rank]
+      summary: Request next rank
+      description: Submit a request to move to the next rank.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /downline-child-3-level:
+    get:
+      tags: [Rank]
+      summary: Get three-level downline
+      description: Returns downline child account data up to three levels.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /impeach-child:
+    post:
+      tags: [Rank]
+      summary: Impeach child account
+      description: File an impeachment request against a child account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImpeachChildRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /impeach-history:
+    get:
+      tags: [Rank]
+      summary: Get impeachment history
+      description: Returns impeachment history for the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /allowance-history:
+    get:
+      tags: [Assets]
+      summary: Get allowance history
+      description: Returns allowance history records.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /ticket-list:
+    get:
+      tags: [Assets]
+      summary: Get ticket list
+      description: Returns ticket list data for the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /allowances/{id}/exchange:
+    post:
+      tags: [Assets]
+      summary: Exchange allowance
+      description: Exchange the specified allowance record.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /exchange-history:
+    get:
+      tags: [Assets]
+      summary: Get exchange history
+      description: Returns allowance exchange history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /inherit-owner:
+    post:
+      tags: [Assets]
+      summary: Set inherit owner
+      description: Submit inheritance owner details for the authenticated account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InheritOwnerRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /upload-inheritance-prove:
+    post:
+      tags: [Assets]
+      summary: Upload inheritance proof
+      description: Upload proof material for inheritance processing.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /earn-summary:
+    get:
+      tags: [Assets]
+      summary: Get earn summary
+      description: Returns earnings summary data.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /earn-history:
+    get:
+      tags: [Assets]
+      summary: Get earn history
+      description: Returns earnings history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /get-masonic-fund:
+    post:
+      tags: [Assets]
+      summary: Get masonic fund
+      description: Returns masonic fund data for the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /get-banners:
+    get:
+      tags: [Home]
+      summary: Get banners
+      description: Returns banner content for the application home page.
+      security: []
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /get-gold-prices:
+    get:
+      tags: [Gold]
+      summary: Get gold prices
+      description: Returns current gold pricing information.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /buy-gold:
+    post:
+      tags: [Gold]
+      summary: Buy gold
+      description: Purchase gold using the current gold price.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoldTradeRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /sell-gold:
+    post:
+      tags: [Gold]
+      summary: Sell gold
+      description: Sell gold held by the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoldTradeRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /buy-sell-gold-history:
+    get:
+      tags: [Gold]
+      summary: Get gold trade history
+      description: Returns buy and sell gold history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /superior-internal-account:
+    get:
+      tags: [Assets]
+      summary: Get superior internal account
+      description: Returns superior internal account data.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-summary:
+    get:
+      tags: [Gold]
+      summary: Get gold summary
+      description: Returns the authenticated user's gold summary.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-coupon/{id}/exchange-to-gold:
+    post:
+      tags: [Gold]
+      summary: Exchange gold coupon to gold
+      description: Convert the specified gold coupon into gold.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-coupon/{id}/exchange-to-balance:
+    post:
+      tags: [Gold]
+      summary: Exchange gold coupon to balance
+      description: Convert the specified gold coupon into account balance.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-coupon/history:
+    get:
+      tags: [Gold]
+      summary: Get gold coupon history
+      description: Returns gold coupon history for the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-interest-history:
+    get:
+      tags: [Gold]
+      summary: Get gold interest history
+      description: Returns gold interest history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /redempt-code:
+    post:
+      tags: [Gold]
+      summary: Redeem code
+      description: Redeem a gold or reward code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedemptionCodeRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /reward-history:
+    get:
+      tags: [Assets]
+      summary: Get reward history
+      description: Returns reward history records.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gift-voucher/{id}/use:
+    post:
+      tags: [Gold]
+      summary: Use gift voucher
+      description: Use the specified gift voucher.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-gift-packages:
+    get:
+      tags: [Package]
+      summary: List gold gift packages
+      description: Returns available gold gift packages.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-gift-packages/{id}/buy:
+    post:
+      tags: [Package]
+      summary: Buy gold gift package
+      description: Purchase the specified gold gift package.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-gift-packages/history:
+    get:
+      tags: [Package]
+      summary: Get gold gift package history
+      description: Returns gold gift package purchase history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /buy-authorization-letter:
+    post:
+      tags: [Assets]
+      summary: Buy authorization letter
+      description: Purchase an authorization letter.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-gift-packages/bonuses:
+    get:
+      tags: [Package]
+      summary: Get gold gift package bonuses
+      description: Returns bonus records for gold gift packages.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-gift-packages/repurchase-dialog-info:
+    get:
+      tags: [Package]
+      summary: Get gold repurchase dialog info
+      description: Returns dialog data required before repurchasing a gold gift package.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-gift-packages/repurchase:
+    post:
+      tags: [Package]
+      summary: Repurchase gold gift package
+      description: Repurchase a qualifying gold gift package.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-gift-packages/earn-history:
+    get:
+      tags: [Package]
+      summary: Get gold gift package earn history
+      description: Returns earnings history for gold gift packages.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /apply-withdraw-active-code:
+    post:
+      tags: [Assets]
+      summary: Apply withdraw active code
+      description: Apply for a withdraw activation code.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /balance-tracking:
+    get:
+      tags: [Transaction]
+      summary: Get balance tracking
+      description: Returns balance cash flow data.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /masonic-gift-packages:
+    get:
+      tags: [Package]
+      summary: List masonic gift packages
+      description: Returns available masonic gift packages.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /masonic-gift-packages/{id}/buy:
+    post:
+      tags: [Package]
+      summary: Buy masonic gift package
+      description: Purchase the specified masonic gift package.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyPackageRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /masonic-gift-packages/history:
+    get:
+      tags: [Package]
+      summary: Get masonic gift package history
+      description: Returns masonic gift package purchase history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /masonic-gift-packages/earn-history:
+    get:
+      tags: [Package]
+      summary: Get masonic package earn history
+      description: Returns masonic package earnings history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /masonic-gift-packages/bonus-history:
+    get:
+      tags: [Package]
+      summary: Get masonic package bonus history
+      description: Returns masonic package bonus history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /federal-reserve-gold-packages:
+    get:
+      tags: [Package]
+      summary: List federal reserve gold packages
+      description: Returns available federal reserve gold packages.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /free-federal-reserve-gold-packages:
+    get:
+      tags: [Package]
+      summary: List free federal reserve gold packages
+      description: Returns free federal reserve gold package offers.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /federal-reserve-gold-packages/{id}/buy:
+    post:
+      tags: [Package]
+      summary: Buy federal reserve gold package
+      description: Purchase the specified federal reserve gold package.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyPackageRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /federal-reserve-gold-packages/{id}/get-free:
+    post:
+      tags: [Package]
+      summary: Claim free federal reserve gold package
+      description: Claim the specified free federal reserve gold package.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyPackageRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /federal-reserve-gold-packages/history:
+    get:
+      tags: [Package]
+      summary: Get federal reserve package history
+      description: Returns federal reserve gold package purchase history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /federal-reserve-gold-packages/earn-history:
+    get:
+      tags: [Package]
+      summary: Get federal reserve package earn history
+      description: Returns federal reserve gold package earnings history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /federal-reserve-gold-packages/bonus-history:
+    get:
+      tags: [Package]
+      summary: Get federal reserve package bonus history
+      description: Returns federal reserve gold package bonus history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /policy-packages:
+    get:
+      tags: [Package]
+      summary: List policy packages
+      description: Returns available policy packages.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /policy-packages/{id}/buy:
+    post:
+      tags: [Package]
+      summary: Buy policy package
+      description: Purchase the specified policy package.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyPackageRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /policy-packages/history:
+    get:
+      tags: [Package]
+      summary: Get policy package history
+      description: Returns policy package purchase history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /policy-packages/earn-history:
+    get:
+      tags: [Package]
+      summary: Get policy package earn history
+      description: Returns policy package earnings history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /policy-packages/bonus-history:
+    get:
+      tags: [Package]
+      summary: Get policy package bonus history
+      description: Returns policy package bonus history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /shanghai-cooperation:
+    get:
+      tags: [Package]
+      summary: List Shanghai cooperation packages
+      description: Returns available Shanghai cooperation package records.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /shanghai-cooperation/{id}/buy:
+    post:
+      tags: [Package]
+      summary: Buy Shanghai cooperation package
+      description: Purchase the specified Shanghai cooperation package.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyPackageRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /shanghai-cooperation/history:
+    get:
+      tags: [Package]
+      summary: Get Shanghai cooperation history
+      description: Returns Shanghai cooperation purchase history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /shanghai-cooperation/earn-history:
+    get:
+      tags: [Package]
+      summary: Get Shanghai cooperation earn history
+      description: Returns Shanghai cooperation earnings history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /shanghai-cooperation/bonus-history:
+    get:
+      tags: [Package]
+      summary: Get Shanghai cooperation bonus history
+      description: Returns Shanghai cooperation bonus history.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /meetings/active:
+    get:
+      tags: [Meeting]
+      summary: Get active meetings
+      description: Returns currently active meetings.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /meetings/{id}/check-code/{code}:
+    post:
+      tags: [Meeting]
+      summary: Check meeting code
+      description: Validate a meeting check-in code for the specified meeting.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/Code'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /meetings/attended:
+    get:
+      tags: [Meeting]
+      summary: Get attended meetings
+      description: Returns meetings attended by the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /authorization-letters:
+    get:
+      tags: [Assets]
+      summary: Get authorization letters
+      description: Returns authorization letter records.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /kyc/verify:
+    post:
+      tags: [Profile]
+      summary: Verify KYC
+      description: Submit KYC identity details for verification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KycVerifyRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /kyc/get-kyc-sign-url:
+    post:
+      tags: [Profile]
+      summary: Get KYC upload sign URL
+      description: Returns a signed upload URL for KYC material.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUrlRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /kyc/{type}/upload:
+    post:
+      tags: [Profile]
+      summary: Upload KYC file
+      description: Upload a KYC file for the specified type.
+      parameters:
+        - $ref: '#/components/parameters/Type'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /kyc/info:
+    get:
+      tags: [Profile]
+      summary: Get KYC info
+      description: Returns KYC information for the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /payment-method/get-sign-url:
+    post:
+      tags: [Profile]
+      summary: Get payment method upload sign URL
+      description: Returns a signed upload URL for payment method assets.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUrlRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /payment-method/{type}/upload:
+    post:
+      tags: [Profile]
+      summary: Upload payment method file
+      description: Upload a payment method related file for the specified type.
+      parameters:
+        - $ref: '#/components/parameters/Type'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /payment-method/bind-bank:
+    post:
+      tags: [Profile]
+      summary: Bind bank account
+      description: Bind bank account details for withdrawals and settlements.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindBankRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /payment-method/bind-alipay:
+    post:
+      tags: [Profile]
+      summary: Bind Alipay account
+      description: Bind Alipay account details for withdrawals and settlements.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindAlipayRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /payment-method/info:
+    get:
+      tags: [Profile]
+      summary: Get payment method info
+      description: Returns the authenticated user's bound payment method data.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /bind-address:
+    post:
+      tags: [Profile]
+      summary: Bind address
+      description: Save a mailing or residential address for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindAddressRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /upload-profile-picture:
+    post:
+      tags: [Profile]
+      summary: Upload profile picture
+      description: Upload a profile picture for the authenticated user.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /teams:
+    get:
+      tags: [Profile]
+      summary: Get teams
+      description: Returns team data for the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /recharge-callback/{orderNo}/{merchantId}/{userId}:
+    post:
+      tags: [Transaction]
+      summary: Recharge callback
+      description: Merchant callback endpoint for deposit completion.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/OrderNo'
+        - $ref: '#/components/parameters/MerchantId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /deposit-methods:
+    get:
+      tags: [Transaction]
+      summary: Get deposit methods
+      description: Returns deposit methods available to the authenticated user.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /payment-channels/{method_id}:
+    get:
+      tags: [Transaction]
+      summary: Get payment channels
+      description: Returns payment channels for the specified deposit method.
+      parameters:
+        - $ref: '#/components/parameters/MethodId'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /deposit/{channel_id}:
+    post:
+      tags: [Transaction]
+      summary: Create deposit
+      description: Create a deposit for the specified channel.
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /deposit-history:
+    get:
+      tags: [Transaction]
+      summary: Get deposit history
+      description: Returns deposit history records.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /withdraw-callback/{orderNo}/{merchantId}/{userId}:
+    post:
+      tags: [Transaction]
+      summary: Withdraw callback
+      description: Merchant callback endpoint for withdraw completion.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/OrderNo'
+        - $ref: '#/components/parameters/MerchantId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /withdraw-channels/{method_id}:
+    get:
+      tags: [Transaction]
+      summary: Get withdraw channels
+      description: Returns withdraw channels for the specified payment method.
+      parameters:
+        - $ref: '#/components/parameters/MethodId'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /withdraw:
+    post:
+      tags: [Transaction]
+      summary: Create withdraw
+      description: Submit a withdraw request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WithdrawRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /withdraw-history:
+    get:
+      tags: [Transaction]
+      summary: Get withdraw history
+      description: Returns withdraw history records.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /transfer-balance-to-reserve-fund:
+    post:
+      tags: [Transaction]
+      summary: Transfer balance to reserve fund
+      description: Transfer balance into the reserve fund wallet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /referral-bonus-coupons:
+    get:
+      tags: [Transaction]
+      summary: Get referral bonus coupons
+      description: Returns available referral bonus coupons.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /transfer-referral-bonus-to-balance-by-coupon/{id}:
+    post:
+      tags: [Transaction]
+      summary: Transfer referral bonus coupon to balance
+      description: Convert the specified referral bonus coupon into balance.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /transfer-referral-bonus-to-reserve-fund-by-coupon/{id}:
+    post:
+      tags: [Transaction]
+      summary: Transfer referral bonus coupon to reserve fund
+      description: Convert the specified referral bonus coupon into reserve fund balance.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /transfer-allowance-to-balance:
+    post:
+      tags: [Transaction]
+      summary: Transfer allowance to balance
+      description: Transfer allowance into the balance wallet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /transfer-balance-to-earn:
+    post:
+      tags: [Transaction]
+      summary: Transfer balance to earn
+      description: Transfer balance into the earn wallet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /transfer-earn-to-balance:
+    post:
+      tags: [Transaction]
+      summary: Transfer earn to balance
+      description: Transfer funds from earn wallet back to balance.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /transfer-gold-interest-to-balance:
+    post:
+      tags: [Transaction]
+      summary: Transfer gold interest to balance
+      description: Transfer accrued gold interest into the balance wallet.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /balance-transfers/get-receiver-account:
+    get:
+      tags: [Transaction]
+      summary: Get receiver account for balance transfer
+      description: Resolve receiver account data before sending a balance transfer.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /balance-transfers/send:
+    post:
+      tags: [Transaction]
+      summary: Send balance transfer
+      description: Transfer balance to another internal account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BalanceTransferRequest'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /balance-transfers/history:
+    get:
+      tags: [Transaction]
+      summary: Get balance transfer history
+      description: Returns history of internal balance transfers.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /spring-festival-event/check-in:
+    post:
+      tags: [Event]
+      summary: Spring festival event check in
+      description: Perform a spring festival event check-in.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /spring-festival-event/repair-card/{id}/use:
+    post:
+      tags: [Event]
+      summary: Use spring festival repair card
+      description: Use a repair card for the spring festival event.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /spring-festival-event/logs:
+    get:
+      tags: [Event]
+      summary: Get spring festival logs
+      description: Returns spring festival event logs.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-plan/check-in:
+    post:
+      tags: [Gold]
+      summary: Gold plan check in
+      description: Perform a gold plan check-in.
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /gold-plan/check-in-history:
+    get:
+      tags: [Gold]
+      summary: Get gold plan check-in history
+      description: Returns gold plan check-in history.
       responses:
         '200':
           description: SUCCESS

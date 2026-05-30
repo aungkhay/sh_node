@@ -121,6 +121,15 @@ class Controller {
             if (!meeting) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '会议不存在', {});
             }
+
+            const redisMeeting = await this.redisHelper.getValue('active_meeting');
+            if (redisMeeting) {
+                // update query used_code
+                const parsed = JSON.parse(redisMeeting);
+                if (parsed.id === meeting.id) {
+                    req.body.used_code = parsed.used_code || 0;
+                }
+            }
             
             await meeting.update(req.body);
             if ([1,2].includes(req.body.is_active)) {

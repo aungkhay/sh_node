@@ -1,0 +1,3467 @@
+openapi: 3.0.0
+info:
+  title: 'REST API'
+  description: 'ShangHe admin API'
+  version: 1.0.0
+servers:
+  -
+    url: 'http://localhost:2580/admin/'
+    description: 'Development server'
+  -
+    url: 'http://161.248.87.252:3690/admin/'
+    description: 'Deployment server'
+security:
+  -
+    ApiKeyAuth: []
+tags:
+  -
+    name: Auth
+    description: 'Auth endpoints'
+  -
+    name: Banner
+    description: 'Banner endpoints'
+  -
+    name: Certificate
+    description: 'Certificate endpoints'
+  -
+    name: Config
+    description: 'Config endpoints'
+  -
+    name: Dashboard
+    description: 'Dashboard endpoints'
+  -
+    name: Deposit
+    description: 'Deposit endpoints'
+  -
+    name: Earn
+    description: 'Earn endpoints'
+  -
+    name: Event
+    description: 'Event endpoints'
+  -
+    name: 'Export user wallet'
+    description: 'Export user wallet endpoints'
+  -
+    name: 'Export withdraw by phone_numbers'
+    description: 'Export withdraw by phone_numbers endpoints'
+  -
+    name: FederalReserve
+    description: 'FederalReserve endpoints'
+  -
+    name: Gold
+    description: 'Gold endpoints'
+  -
+    name: 'Gold coupon user count'
+    description: 'Gold coupon user count endpoints'
+  -
+    name: Impeach
+    description: 'Impeach endpoints'
+  -
+    name: Information
+    description: 'Information endpoints'
+  -
+    name: Inherit
+    description: 'Inherit endpoints'
+  -
+    name: KYC
+    description: 'KYC endpoints'
+  -
+    name: Log
+    description: 'Log endpoints'
+  -
+    name: 'Masonic fund'
+    description: 'Masonic fund endpoints'
+  -
+    name: 'Masonic fund history'
+    description: 'Masonic fund history endpoints'
+  -
+    name: 'Masonic package'
+    description: 'Masonic package endpoints'
+  -
+    name: 'Masonic packages'
+    description: 'Masonic packages endpoints'
+  -
+    name: Meeting
+    description: 'Meeting endpoints'
+  -
+    name: Merchant
+    description: 'Merchant endpoints'
+  -
+    name: News
+    description: 'News endpoints'
+  -
+    name: Notification
+    description: 'Notification endpoints'
+  -
+    name: Oss
+    description: 'Oss endpoints'
+  -
+    name: Payment
+    description: 'Payment endpoints'
+  -
+    name: Policy
+    description: 'Policy endpoints'
+  -
+    name: Rank
+    description: 'Rank endpoints'
+  -
+    name: Redempt
+    description: 'Redempt endpoints'
+  -
+    name: Reward
+    description: 'Reward endpoints'
+  -
+    name: Role
+    description: 'Role endpoints'
+  -
+    name: Shanghai
+    description: 'Shanghai endpoints'
+  -
+    name: Ticket
+    description: 'Ticket endpoints'
+  -
+    name: Transfer
+    description: 'Transfer endpoints'
+  -
+    name: User
+    description: 'User endpoints'
+  -
+    name: Withdraw
+    description: 'Withdraw endpoints'
+  -
+    name: WithdrawMerchant
+    description: 'WithdrawMerchant endpoints'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: authorization
+  schemas:
+    Response:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 1000
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: SUCCESS
+        data:
+          nullable: true
+          oneOf:
+            -
+              type: object
+              additionalProperties: true
+            -
+              type: array
+              items: {}
+            -
+              type: string
+            -
+              type: number
+            -
+              type: boolean
+        errors:
+          type: object
+          additionalProperties: true
+          example: {}
+paths:
+  /get-recaptcha:
+    get:
+      tags:
+        - Auth
+      summary: 'GET /get-recaptcha'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      security: []
+  /check-2fa-enabled:
+    get:
+      tags:
+        - Auth
+      summary: 'GET /check-2fa-enabled'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      security: []
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: 'POST /login'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      security: []
+  /profile:
+    get:
+      tags:
+        - Auth
+      summary: 'GET /profile'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /logout:
+    post:
+      tags:
+        - Auth
+      summary: 'POST /logout'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /dashboard/summary:
+    get:
+      tags:
+        - Dashboard
+      summary: 'GET /dashboard/summary'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /dashboard/masonic-fund-summary:
+    get:
+      tags:
+        - Dashboard
+      summary: 'GET /dashboard/masonic-fund-summary'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /dashboard/check-in-summary:
+    get:
+      tags:
+        - Dashboard
+      summary: 'GET /dashboard/check-in-summary'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /dashboard/today-user-active-count:
+    get:
+      tags:
+        - Dashboard
+      summary: 'GET /dashboard/today-user-active-count'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /dashboard/withdraw-summary:
+    get:
+      tags:
+        - Dashboard
+      summary: 'GET /dashboard/withdraw-summary'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /dashboard/dw-chart:
+    get:
+      tags:
+        - Dashboard
+      summary: 'GET /dashboard/dw-chart'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /dashboard/recent-dw-list:
+    get:
+      tags:
+        - Dashboard
+      summary: 'GET /dashboard/recent-dw-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /get-file-path:
+    get:
+      tags:
+        - Config
+      summary: 'GET /get-file-path'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /configs:
+    get:
+      tags:
+        - Config
+      summary: 'GET /configs'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/configs/{id}/update':
+    post:
+      tags:
+        - Config
+      summary: 'POST /configs/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /certificates:
+    get:
+      tags:
+        - Certificate
+      summary: 'GET /certificates'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /certificates/create:
+    post:
+      tags:
+        - Certificate
+      summary: 'POST /certificates/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/certificates/{id}/update':
+    post:
+      tags:
+        - Certificate
+      summary: 'POST /certificates/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/certificates/{id}/update-status':
+    post:
+      tags:
+        - Certificate
+      summary: 'POST /certificates/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /certificates/upload:
+    post:
+      tags:
+        - Certificate
+      summary: 'POST /certificates/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/certificates/{id}/delete':
+    post:
+      tags:
+        - Certificate
+      summary: 'POST /certificates/:id/delete'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /deposit-list:
+    get:
+      tags:
+        - Deposit
+      summary: 'GET /deposit-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/deposit-list/{id}/approve':
+    post:
+      tags:
+        - Deposit
+      summary: 'POST /deposit-list/:id/approve'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/deposit-list/{id}/reject':
+    post:
+      tags:
+        - Deposit
+      summary: 'POST /deposit-list/:id/reject'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/deposit-list/{id}/repair-failed':
+    post:
+      tags:
+        - Deposit
+      summary: 'POST /deposit-list/:id/repair-failed'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /withdraw-list:
+    get:
+      tags:
+        - Withdraw
+      summary: 'GET /withdraw-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/withdraw-list/{id}/reject':
+    post:
+      tags:
+        - Withdraw
+      summary: 'POST /withdraw-list/:id/reject'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /export-withdraw:
+    get:
+      tags:
+        - Withdraw
+      summary: 'GET /export-withdraw'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /export-withdraw-by-phone_numbers:
+    post:
+      tags:
+        - 'Export withdraw by phone_numbers'
+      summary: 'POST /export-withdraw-by-phone_numbers'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /import-withdraw:
+    post:
+      tags:
+        - Withdraw
+      summary: 'POST /import-withdraw'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /earns:
+    get:
+      tags:
+        - Earn
+      summary: 'GET /earns'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /impeaches:
+    get:
+      tags:
+        - Impeach
+      summary: 'GET /impeaches'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/impeaches/{id}/update':
+    post:
+      tags:
+        - Impeach
+      summary: 'POST /impeaches/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /informations:
+    get:
+      tags:
+        - Information
+      summary: 'GET /informations'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /informations/create:
+    post:
+      tags:
+        - Information
+      summary: 'POST /informations/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/informations/{id}/update':
+    post:
+      tags:
+        - Information
+      summary: 'POST /informations/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/informations/{id}/update-status':
+    post:
+      tags:
+        - Information
+      summary: 'POST /informations/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /informations/upload:
+    post:
+      tags:
+        - Information
+      summary: 'POST /informations/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/informations/{id}/delete':
+    post:
+      tags:
+        - Information
+      summary: 'POST /informations/:id/delete'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /inherits:
+    get:
+      tags:
+        - Inherit
+      summary: 'GET /inherits'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/inherits/{id}/update':
+    post:
+      tags:
+        - Inherit
+      summary: 'POST /inherits/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /masonic-fund-history:
+    get:
+      tags:
+        - 'Masonic fund history'
+      summary: 'GET /masonic-fund-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /masonic-fund/substract:
+    post:
+      tags:
+        - 'Masonic fund'
+      summary: 'POST /masonic-fund/substract'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /masonic-fund/temp-history:
+    get:
+      tags:
+        - 'Masonic fund'
+      summary: 'GET /masonic-fund/temp-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/masonic-fund-history/{id}/update-status':
+    post:
+      tags:
+        - 'Masonic fund history'
+      summary: 'POST /masonic-fund-history/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /masonic-fund-history/approve-by-excel:
+    post:
+      tags:
+        - 'Masonic fund history'
+      summary: 'POST /masonic-fund-history/approve-by-excel'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /masonic-packages:
+    get:
+      tags:
+        - 'Masonic packages'
+      summary: 'GET /masonic-packages'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/masonic-packages/{id}/upload':
+    post:
+      tags:
+        - 'Masonic packages'
+      summary: 'POST /masonic-packages/:id/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      security: []
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /masonic-packages/create:
+    post:
+      tags:
+        - 'Masonic packages'
+      summary: 'POST /masonic-packages/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/masonic-packages/{id}/update':
+    post:
+      tags:
+        - 'Masonic packages'
+      summary: 'POST /masonic-packages/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /masonic-package/history:
+    get:
+      tags:
+        - 'Masonic package'
+      summary: 'GET /masonic-package/history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /masonic-package/bonus-history:
+    get:
+      tags:
+        - 'Masonic package'
+      summary: 'GET /masonic-package/bonus-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /masonic-package/earn-history:
+    get:
+      tags:
+        - 'Masonic package'
+      summary: 'GET /masonic-package/earn-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /oss/get-sign-url:
+    post:
+      tags:
+        - Oss
+      summary: 'POST /oss/get-sign-url'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /news:
+    get:
+      tags:
+        - News
+      summary: 'GET /news'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /news/create:
+    post:
+      tags:
+        - News
+      summary: 'POST /news/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/news/{id}/update':
+    post:
+      tags:
+        - News
+      summary: 'POST /news/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/news/{id}/update-status':
+    post:
+      tags:
+        - News
+      summary: 'POST /news/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /news/upload:
+    post:
+      tags:
+        - News
+      summary: 'POST /news/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/news/{id}/delete':
+    post:
+      tags:
+        - News
+      summary: 'POST /news/:id/delete'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /news/reported-list:
+    get:
+      tags:
+        - News
+      summary: 'GET /news/reported-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/news-reports/{id}/update-status':
+    post:
+      tags:
+        - News
+      summary: 'POST /news-reports/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /notifications:
+    get:
+      tags:
+        - Notification
+      summary: 'GET /notifications'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /notifications/create:
+    post:
+      tags:
+        - Notification
+      summary: 'POST /notifications/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/notifications/{id}/update':
+    post:
+      tags:
+        - Notification
+      summary: 'POST /notifications/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/notifications/{id}/update-status':
+    post:
+      tags:
+        - Notification
+      summary: 'POST /notifications/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/notifications/{id}/delete':
+    post:
+      tags:
+        - Notification
+      summary: 'POST /notifications/:id/delete'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /ranks:
+    get:
+      tags:
+        - Rank
+      summary: 'GET /ranks'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/ranks/{id}/update':
+    post:
+      tags:
+        - Rank
+      summary: 'POST /ranks/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/ranks/{id}/upload':
+    post:
+      tags:
+        - Rank
+      summary: 'POST /ranks/:id/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /reward-types:
+    get:
+      tags:
+        - Reward
+      summary: 'GET /reward-types'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/reward-types/{id}/set-as-energy-forum':
+    post:
+      tags:
+        - Reward
+      summary: 'POST /reward-types/:id/set-as-energy-forum'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/reward-types/{id}/update':
+    post:
+      tags:
+        - Reward
+      summary: 'POST /reward-types/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/reward-types/{id}/update-status':
+    post:
+      tags:
+        - Reward
+      summary: 'POST /reward-types/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /reward-history:
+    get:
+      tags:
+        - Reward
+      summary: 'GET /reward-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /rewards/add-reward:
+    post:
+      tags:
+        - Reward
+      summary: 'POST /rewards/add-reward'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/rewards/{id}/delete-reward':
+    post:
+      tags:
+        - Reward
+      summary: 'POST /rewards/:id/delete-reward'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /rewards/delete-multiple-rewards:
+    post:
+      tags:
+        - Reward
+      summary: 'POST /rewards/delete-multiple-rewards'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /rewards/delete-all-rewards:
+    post:
+      tags:
+        - Reward
+      summary: 'POST /rewards/delete-all-rewards'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /referral-reward-settings:
+    get:
+      tags:
+        - Reward
+      summary: 'GET /referral-reward-settings'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /referral-reward-settings/create:
+    post:
+      tags:
+        - Reward
+      summary: 'POST /referral-reward-settings/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/referral-reward-settings/{id}/update':
+    post:
+      tags:
+        - Reward
+      summary: 'POST /referral-reward-settings/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/referral-reward-settings/{id}/delete':
+    post:
+      tags:
+        - Reward
+      summary: 'POST /referral-reward-settings/:id/delete'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /tickets:
+    get:
+      tags:
+        - Ticket
+      summary: 'GET /tickets'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/tickets/{id}/update':
+    post:
+      tags:
+        - Ticket
+      summary: 'POST /tickets/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /ticket-history:
+    get:
+      tags:
+        - Ticket
+      summary: 'GET /ticket-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /transfers:
+    get:
+      tags:
+        - Transfer
+      summary: 'GET /transfers'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/transfers/{id}/update-status':
+    post:
+      tags:
+        - Transfer
+      summary: 'POST /transfers/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /users:
+    get:
+      tags:
+        - User
+      summary: 'GET /users'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /user-certificates:
+    get:
+      tags:
+        - User
+      summary: 'GET /user-certificates'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /users/buy-authorization-letter-history:
+    get:
+      tags:
+        - User
+      summary: 'GET /users/buy-authorization-letter-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /user-bonuses:
+    get:
+      tags:
+        - User
+      summary: 'GET /user-bonuses'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /user-rank-points:
+    get:
+      tags:
+        - User
+      summary: 'GET /user-rank-points'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/users/{id}/update-status':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/update-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/set-win-whitelist':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/set-win-whitelist'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/change-password':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/change-password'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/change-payment-password':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/change-payment-password'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/update-agreement-status':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/update-agreement-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/set-to-internal-account':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/set-to-internal-account'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /users/child-summary:
+    get:
+      tags:
+        - User
+      summary: 'GET /users/child-summary'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/users/{id}/superior-internal-account':
+    get:
+      tags:
+        - User
+      summary: 'GET /users/:id/superior-internal-account'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /users/allowance-history:
+    get:
+      tags:
+        - User
+      summary: 'GET /users/allowance-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /users/child-register-list:
+    get:
+      tags:
+        - User
+      summary: 'GET /users/child-register-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /users/export-child-register-list:
+    get:
+      tags:
+        - User
+      summary: 'GET /users/export-child-register-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/users/{id}/update-wallet':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/update-wallet'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /users/release-balance-by-excel:
+    post:
+      tags:
+        - User
+      summary: 'POST /users/release-balance-by-excel'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/users/{id}/update-contact-info':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/update-contact-info'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/money-tracking':
+    get:
+      tags:
+        - User
+      summary: 'GET /users/:id/money-tracking'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/cash-flow':
+    get:
+      tags:
+        - User
+      summary: 'GET /users/:id/cash-flow'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /gold-coupon-user-count:
+    get:
+      tags:
+        - 'Gold coupon user count'
+      summary: 'GET /gold-coupon-user-count'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /export-user-wallet:
+    get:
+      tags:
+        - 'Export user wallet'
+      summary: 'GET /export-user-wallet'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/users/{id}/setup-2fa':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/setup-2fa'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/disable-2fa':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/disable-2fa'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/enable-2fa':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/enable-2fa'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /kyc-list:
+    get:
+      tags:
+        - KYC
+      summary: 'GET /kyc-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/kyc/{id}/update-kyc-status':
+    post:
+      tags:
+        - KYC
+      summary: 'POST /kyc/:id/update-kyc-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /kyc/approved-multiple:
+    post:
+      tags:
+        - KYC
+      summary: 'POST /kyc/approved-multiple'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /kyc/denied-multiple:
+    post:
+      tags:
+        - KYC
+      summary: 'POST /kyc/denied-multiple'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/users/{id}/add-kyc':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/add-kyc'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/kyc/{id}/update-kyc':
+    post:
+      tags:
+        - KYC
+      summary: 'POST /kyc/:id/update-kyc'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/kyc/{id}/delete-kyc':
+    post:
+      tags:
+        - KYC
+      summary: 'POST /kyc/:id/delete-kyc'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /users/find-user-by-phone:
+    get:
+      tags:
+        - User
+      summary: 'GET /users/find-user-by-phone'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/users/{id}/upload-kyc/{type}':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/upload-kyc/:type'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: type
+          in: path
+          required: true
+          schema:
+            type: string
+  /payment-methods:
+    get:
+      tags:
+        - Payment
+      summary: 'GET /payment-methods'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /payment-methods/get-sign-url:
+    post:
+      tags:
+        - Payment
+      summary: 'POST /payment-methods/get-sign-url'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/payment-methods/{id}/update-pic-link':
+    post:
+      tags:
+        - Payment
+      summary: 'POST /payment-methods/:id/update-pic-link'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/payment-methods/{id}/update-bank':
+    post:
+      tags:
+        - Payment
+      summary: 'POST /payment-methods/:id/update-bank'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/payment-methods/{id}/update-alipay':
+    post:
+      tags:
+        - Payment
+      summary: 'POST /payment-methods/:id/update-alipay'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/payment-methods/{id}/update-bank-status':
+    post:
+      tags:
+        - Payment
+      summary: 'POST /payment-methods/:id/update-bank-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/payment-methods/{id}/update-alipay-status':
+    post:
+      tags:
+        - Payment
+      summary: 'POST /payment-methods/:id/update-alipay-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/assign-roles':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/assign-roles'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/users/{id}/generate-withdraw-active-code':
+    post:
+      tags:
+        - User
+      summary: 'POST /users/:id/generate-withdraw-active-code'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /users/generate-withdraw-active-code-by-excel:
+    post:
+      tags:
+        - User
+      summary: 'POST /users/generate-withdraw-active-code-by-excel'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /logs:
+    get:
+      tags:
+        - Log
+      summary: 'GET /logs'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-prices/changes-percentage:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-prices/changes-percentage'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-prices/update-changes-percentage:
+    post:
+      tags:
+        - Gold
+      summary: 'POST /gold-prices/update-changes-percentage'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-prices/history:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-prices/history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/gold-prices/{id}/update':
+    post:
+      tags:
+        - Gold
+      summary: 'POST /gold-prices/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /gold-prices/user-buy-sell-records:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-prices/user-buy-sell-records'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-prices/interest-records:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-prices/interest-records'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-packages/history:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-packages/history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-packages/bonus-history:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-packages/bonus-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-packages/return-history:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-packages/return-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-packages/repurchase-history:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-packages/repurchase-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /gold-plan/check-in-history:
+    get:
+      tags:
+        - Gold
+      summary: 'GET /gold-plan/check-in-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /banners:
+    get:
+      tags:
+        - Banner
+      summary: 'GET /banners'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /banners/upload:
+    post:
+      tags:
+        - Banner
+      summary: 'POST /banners/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/banners/{id}/delete':
+    post:
+      tags:
+        - Banner
+      summary: 'POST /banners/:id/delete'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /redempt-codes:
+    get:
+      tags:
+        - Redempt
+      summary: 'GET /redempt-codes'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /redempt-codes/create:
+    post:
+      tags:
+        - Redempt
+      summary: 'POST /redempt-codes/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /merchants/payment-methods:
+    get:
+      tags:
+        - Merchant
+      summary: 'GET /merchants/payment-methods'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /merchants:
+    get:
+      tags:
+        - Merchant
+      summary: 'GET /merchants'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/merchants/{id}/change-status':
+    post:
+      tags:
+        - Merchant
+      summary: 'POST /merchants/:id/change-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /channels:
+    get:
+      tags:
+        - Merchant
+      summary: 'GET /channels'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /channels/create:
+    post:
+      tags:
+        - Merchant
+      summary: 'POST /channels/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/channels/{id}/update':
+    post:
+      tags:
+        - Merchant
+      summary: 'POST /channels/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/channels/{id}/change-status':
+    post:
+      tags:
+        - Merchant
+      summary: 'POST /channels/:id/change-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/channels/{id}/sort':
+    post:
+      tags:
+        - Merchant
+      summary: 'POST /channels/:id/sort'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /withdraw-merchants:
+    get:
+      tags:
+        - WithdrawMerchant
+      summary: 'GET /withdraw-merchants'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/withdraw-merchants/{id}/change-status':
+    post:
+      tags:
+        - WithdrawMerchant
+      summary: 'POST /withdraw-merchants/:id/change-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /withdraw-channels:
+    get:
+      tags:
+        - WithdrawMerchant
+      summary: 'GET /withdraw-channels'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /withdraw-channels/create:
+    post:
+      tags:
+        - WithdrawMerchant
+      summary: 'POST /withdraw-channels/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/withdraw-channels/{id}/update':
+    post:
+      tags:
+        - WithdrawMerchant
+      summary: 'POST /withdraw-channels/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/withdraw-channels/{id}/change-status':
+    post:
+      tags:
+        - WithdrawMerchant
+      summary: 'POST /withdraw-channels/:id/change-status'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/withdraw-channels/{id}/send-to-third-party':
+    post:
+      tags:
+        - WithdrawMerchant
+      summary: 'POST /withdraw-channels/:id/send-to-third-party'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /roles/list:
+    get:
+      tags:
+        - Role
+      summary: 'GET /roles/list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /roles/permission-list:
+    get:
+      tags:
+        - Role
+      summary: 'GET /roles/permission-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/roles/{id}/permissions':
+    get:
+      tags:
+        - Role
+      summary: 'GET /roles/:id/permissions'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /roles/create:
+    post:
+      tags:
+        - Role
+      summary: 'POST /roles/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/roles/{id}/update':
+    post:
+      tags:
+        - Role
+      summary: 'POST /roles/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/roles/{id}/delete':
+    post:
+      tags:
+        - Role
+      summary: 'POST /roles/:id/delete'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/roles/{id}/assign-permissions':
+    post:
+      tags:
+        - Role
+      summary: 'POST /roles/:id/assign-permissions'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /spring-festival-event/joined-event-list:
+    get:
+      tags:
+        - Event
+      summary: 'GET /spring-festival-event/joined-event-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /spring-festival-event/check-in-logs:
+    get:
+      tags:
+        - Event
+      summary: 'GET /spring-festival-event/check-in-logs'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /spring-festival-event/add-white-list:
+    post:
+      tags:
+        - Event
+      summary: 'POST /spring-festival-event/add-white-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /spring-festival-event/white-list:
+    get:
+      tags:
+        - Event
+      summary: 'GET /spring-festival-event/white-list'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /spring-festival-event/import-check-in:
+    post:
+      tags:
+        - Event
+      summary: 'POST /spring-festival-event/import-check-in'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /balance-transfers:
+    get:
+      tags:
+        - Transfer
+      summary: 'GET /balance-transfers'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /federal-reserve-gold-packages:
+    get:
+      tags:
+        - FederalReserve
+      summary: 'GET /federal-reserve-gold-packages'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /federal-reserve-gold-packages/create:
+    post:
+      tags:
+        - FederalReserve
+      summary: 'POST /federal-reserve-gold-packages/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/federal-reserve-gold-packages/{id}/update':
+    post:
+      tags:
+        - FederalReserve
+      summary: 'POST /federal-reserve-gold-packages/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/federal-reserve-gold-packages/{id}/upload':
+    post:
+      tags:
+        - FederalReserve
+      summary: 'POST /federal-reserve-gold-packages/:id/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /federal-reserve-gold-package/history:
+    get:
+      tags:
+        - FederalReserve
+      summary: 'GET /federal-reserve-gold-package/history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/federal-reserve-gold-package/history/{id}/release/{type}':
+    post:
+      tags:
+        - FederalReserve
+      summary: 'POST /federal-reserve-gold-package/history/:id/release/:type'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: type
+          in: path
+          required: true
+          schema:
+            type: string
+  /federal-reserve-gold-package/bonus-history:
+    get:
+      tags:
+        - FederalReserve
+      summary: 'GET /federal-reserve-gold-package/bonus-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /federal-reserve-gold-package/earn-history:
+    get:
+      tags:
+        - FederalReserve
+      summary: 'GET /federal-reserve-gold-package/earn-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /policy-packages:
+    get:
+      tags:
+        - Policy
+      summary: 'GET /policy-packages'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/policy-packages/{id}/upload':
+    post:
+      tags:
+        - Policy
+      summary: 'POST /policy-packages/:id/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      security: []
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /policy-packages/create:
+    post:
+      tags:
+        - Policy
+      summary: 'POST /policy-packages/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/policy-packages/{id}/update':
+    post:
+      tags:
+        - Policy
+      summary: 'POST /policy-packages/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /policy-package/history:
+    get:
+      tags:
+        - Policy
+      summary: 'GET /policy-package/history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /policy-package/bonus-history:
+    get:
+      tags:
+        - Policy
+      summary: 'GET /policy-package/bonus-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /policy-package/earn-history:
+    get:
+      tags:
+        - Policy
+      summary: 'GET /policy-package/earn-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /shanghai-cooperations:
+    get:
+      tags:
+        - Shanghai
+      summary: 'GET /shanghai-cooperations'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/shanghai-cooperations/{id}/upload':
+    post:
+      tags:
+        - Shanghai
+      summary: 'POST /shanghai-cooperations/:id/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /shanghai-cooperations/create:
+    post:
+      tags:
+        - Shanghai
+      summary: 'POST /shanghai-cooperations/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/shanghai-cooperations/{id}/update':
+    post:
+      tags:
+        - Shanghai
+      summary: 'POST /shanghai-cooperations/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /shanghai-cooperations/history:
+    get:
+      tags:
+        - Shanghai
+      summary: 'GET /shanghai-cooperations/history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/shanghai-cooperations/history/{id}/release/{type}':
+    post:
+      tags:
+        - Shanghai
+      summary: 'POST /shanghai-cooperations/history/:id/release/:type'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: type
+          in: path
+          required: true
+          schema:
+            type: string
+  /shanghai-cooperations/bonus-history:
+    get:
+      tags:
+        - Shanghai
+      summary: 'GET /shanghai-cooperations/bonus-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /shanghai-cooperations/earn-history:
+    get:
+      tags:
+        - Shanghai
+      summary: 'GET /shanghai-cooperations/earn-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /meetings:
+    get:
+      tags:
+        - Meeting
+      summary: 'GET /meetings'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /meetings/upload:
+    post:
+      tags:
+        - Meeting
+      summary: 'POST /meetings/upload'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  /meetings/create:
+    post:
+      tags:
+        - Meeting
+      summary: 'POST /meetings/create'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+  '/meetings/{id}/update':
+    post:
+      tags:
+        - Meeting
+      summary: 'POST /meetings/:id/update'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  '/meetings/{id}/delete':
+    post:
+      tags:
+        - Meeting
+      summary: 'POST /meetings/:id/delete'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /meetings/attended-history:
+    get:
+      tags:
+        - Meeting
+      summary: 'GET /meetings/attended-history'
+      description: 'Auto-generated from app/routes/Admin.js'
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
