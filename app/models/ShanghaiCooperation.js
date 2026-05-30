@@ -10,6 +10,8 @@ class ShanghaiCooperation extends Model {
             attributes.exchange_value = Number(attributes.exchange_value);
         if (attributes.masonic_fund)
             attributes.masonic_fund = Number(attributes.masonic_fund);
+        if (attributes.coin)
+            attributes.coin = Number(attributes.coin);
         if (attributes.tag)
             attributes.tag = attributes.tag.split('|');
 

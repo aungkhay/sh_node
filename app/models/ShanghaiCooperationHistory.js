@@ -10,6 +10,8 @@ class ShanghaiCooperationHistory extends Model {
             attributes.price = Number(attributes.price);
         if (attributes.exchange_value)
             attributes.exchange_value = Number(attributes.exchange_value);
+        if (attributes.masonic_fund)
+            attributes.masonic_fund = Number(attributes.masonic_fund);
         return attributes
     }
 }
