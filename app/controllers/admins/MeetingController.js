@@ -95,7 +95,7 @@ class Controller {
             }
 
             const meeting = await Meeting.create(req.body);
-            if (req.body.is_active == 1) {
+            if ([1,2].includes(req.body.is_active)) {
                 await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
             }
 
@@ -123,7 +123,7 @@ class Controller {
             }
             
             await meeting.update(req.body);
-            if (req.body.is_active == 1) {
+            if ([1,2].includes(req.body.is_active)) {
                 await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
             } else {
                 await this.redisHelper.deleteKey('active_meeting');

@@ -6880,14 +6880,22 @@ class Controller {
 
     ACTIVE_MEETING = async (req, res) => {
         try {
-            const meeting = await Meeting.findOne({
-                where: {
-                    is_active: {
-                        [Op.ne]: 0
+            let meeting = await this.redisHelper.getValue('active_meeting');
+            if (meeting) {
+                meeting = JSON.parse(meeting);
+            } else {
+                meeting = await Meeting.findOne({
+                    where: {
+                        is_active: {
+                            [Op.ne]: 0
+                        },
                     },
-                },
-                order: [['createdAt', 'DESC']]
-            });
+                    order: [['createdAt', 'DESC']]
+                });
+                if (meeting) {
+                    await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
+                }
+            }
 
             if (!meeting) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无活动会议', {});
@@ -6900,7 +6908,8 @@ class Controller {
                     user_id: userId,
                     meeting_id: meeting.id,
                     meeting_code: meetingCode
-                }
+                },
+                attributes: ['id'] 
             });
 
             delete meeting.dataValues.meeting_code; // 不返回福利码
@@ -6928,6 +6937,7 @@ class Controller {
                 meeting = JSON.parse(meeting);
             } else {
                 meeting = await Meeting.findByPk(req.params.id);
+                await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
             }
             if (!meeting) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议不存在', {});
@@ -6952,7 +6962,8 @@ class Controller {
                     user_id: userId,
                     meeting_id: meeting.id,
                     meeting_code: meetingCode
-                }
+                },
+                attributes: ['id']
             });
             if (existingRecord) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已参加过本次会议', {});
