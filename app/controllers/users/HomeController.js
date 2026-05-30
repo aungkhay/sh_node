@@ -6947,7 +6947,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议未结束', {});
             }
 
-            if (meeting.used_code >= meeting.total_release_code) {
+            if (Number(meeting.used_code) >= Number(meeting.total_release_code)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您来迟了，今日福利码已发完。', {});
             }
 
@@ -6997,11 +6997,12 @@ class Controller {
                 }, { transaction: t });
 
                 await user.increment({ balance: rewardAmount }, { transaction: t });
-                meeting.used_code += 1;
+
+                meeting.used_code = Number(meeting.used_code) + 1;
                 await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
-                if (meeting.used_code >= meeting.total_release_code) {
-                    await Meeting.update({ used_code: meeting.used_code }, { where: { id: meeting.id }, transaction: t });
-                }
+                // if (Number(meeting.used_code) >= Number(meeting.total_release_code)) {
+                //     await Meeting.update({ used_code: meeting.used_code }, { where: { id: meeting.id }, transaction: t });
+                // }
 
                 await t.commit();
 
