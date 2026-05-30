@@ -2547,20 +2547,29 @@ class CronJob {
 
                     await pack.update(updateObj, { transaction: t });
 
-                    await CashFlow.create({
-                        user_id: pack.user_id,
-                        relation: user.relation,
-                        wallet_type: 2,
-                        model: 'FederalReserveGoldPackageEarn',
-                        type: '联储备黄金礼包返还',
-                        amount: reserveEarn + originalPrice,
-                        before_amount: user.balance,
-                        after_amount: Number(user.balance) + reserveEarn + originalPrice,
-                        flow_status: 'IN',
-                        description: `储备收益${reserveEarn}和本金返还${originalPrice}`,
-                    }, { transaction: t });
+                    let desc = '';
+                    if (reserveEarn > 0) {
+                        desc += `储备收益返还${reserveEarn}`;
+                    }
+                    if (originalPrice > 0) {
+                        desc += `, 本金返还${originalPrice}`;
+                    }
+                    if (reserveEarn > 0 || originalPrice > 0) {
+                        await CashFlow.create({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'FederalReserveGoldPackageEarn',
+                            type: '联储备黄金礼包返还',
+                            amount: reserveEarn + originalPrice,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + reserveEarn + originalPrice,
+                            flow_status: 'IN',
+                            description: desc,
+                        }, { transaction: t });
 
-                    await user.increment({ balance: reserveEarn + originalPrice }, { transaction: t });
+                        await user.increment({ balance: reserveEarn + originalPrice }, { transaction: t });
+                    }
 
                     await t.commit();
                 } catch (error) {
@@ -2656,20 +2665,22 @@ class CronJob {
                     if (originalPrice > 0) {
                         desc += `, 本金返还${originalPrice}`;
                     }
-                    await CashFlow.create({
-                        user_id: pack.user_id,
-                        relation: user.relation,
-                        wallet_type: 2,
-                        model: 'ShanghaiCooperationEarn',
-                        type: '上海合作组织收益返还',
-                        amount: exchangeValue + originalPrice,
-                        before_amount: user.balance,
-                        after_amount: Number(user.balance) + exchangeValue + originalPrice,
-                        flow_status: 'IN',
-                        description: desc,
-                    }, { transaction: t });
+                    if (exchangeValue > 0 || originalPrice > 0) {
+                        await CashFlow.create({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'ShanghaiCooperationEarn',
+                            type: '上海合作组织收益返还',
+                            amount: exchangeValue + originalPrice,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + exchangeValue + originalPrice,
+                            flow_status: 'IN',
+                            description: desc,
+                        }, { transaction: t });
 
-                    await user.increment({ balance: exchangeValue + originalPrice }, { transaction: t });
+                        await user.increment({ balance: exchangeValue + originalPrice }, { transaction: t });
+                    }
 
                     await t.commit();
                 } catch (error) {
