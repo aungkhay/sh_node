@@ -5698,12 +5698,12 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            let openPeriod = await this.redisHelper.getValue('shanghai_cooperation_package_period');
+            let openPeriod = await this.redisHelper.getValue('shanghai_cooperation_period');
             if (!openPeriod) {
-                const conf = await Config.findOne({ where: { type: 'shanghai_cooperation_package_period' } });
+                const conf = await Config.findOne({ where: { type: 'shanghai_cooperation_period' } });
                 if (conf) {
                     openPeriod = conf.val;
-                    await this.redisHelper.setValue('shanghai_cooperation_package_period', openPeriod);
+                    await this.redisHelper.setValue('shanghai_cooperation_period', openPeriod);
                 }
             }
             if (openPeriod) {
