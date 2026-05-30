@@ -379,6 +379,10 @@ User.hasMany(ShanghaiCooperationBonuses, { foreignKey: 'user_id', as: 'shanghai_
 ShanghaiCooperationBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 ShanghaiCooperationBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ SHANGHAI_COOPERATION_EARN (1:N) ==========
+User.hasMany(ShanghaiCooperationEarn, { foreignKey: 'user_id', as: 'shanghai_cooperation_earn', onDelete: 'CASCADE' });
+ShanghaiCooperationEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 // ========== CASH_FLOW ↔️ USER (1:N) ==========
 User.hasMany(CashFlow, { foreignKey: 'user_id', as: 'cash_flows', onDelete: 'CASCADE' });
 CashFlow.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
