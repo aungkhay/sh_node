@@ -7147,7 +7147,7 @@ class Controller {
                     limit: PER_TABLE_LIMIT,
                     offset: 0,
                 }),
-                MasonicFundHistory.findAll({    
+                MasonicPackageHistory.findAll({    
                     where: { user_id: userId },
                     include: {
                         model: MasonicPackage,
