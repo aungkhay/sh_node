@@ -6956,7 +6956,7 @@ class Controller {
             if (meeting.meeting_code !== meetingCode) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
             }
-            
+
             const existingRecord = await AttendedMeeting.findOne({
                 where: {
                     user_id: userId,
@@ -6969,49 +6969,16 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已参加过本次会议', {});
             }
 
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'balance'] });
+            meeting.used_code = Number(meeting.used_code) + 1;
+            await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
 
-            const t = await db.transaction();
-            try {
+            // const rewardAmount = this.getRandomInt(1, 10); // 随机奖励1-10元
+            const rewardAmount = 1;
+            const QUEUE_KEY = 'QUEUE:MEETING_REWARD_PROCESS';
+            await this.redisHelper.rPushValue(QUEUE_KEY, String(userId));
 
-                // const rewardAmount = this.getRandomInt(1, 10); // 随机奖励1-10元
-                const rewardAmount = 1;
-                await AttendedMeeting.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    meeting_id: meeting.id,
-                    meeting_code: meetingCode,
-                    reward_amount: rewardAmount
-                }, { transaction: t });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, `参加会议成功，获得奖励${rewardAmount}元`, { reward_amount: rewardAmount });
 
-                await CashFlow.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    wallet_type: 2,
-                    model: 'Meeting',
-                    type: `参加会议获得奖励`,
-                    amount: rewardAmount,
-                    before_amount: Number(user.balance),
-                    after_amount: Number(user.balance) + rewardAmount,
-                    flow_status: 'IN',
-                }, { transaction: t });
-
-                await user.increment({ balance: rewardAmount }, { transaction: t });
-
-                meeting.used_code = Number(meeting.used_code) + 1;
-                await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
-                // if (Number(meeting.used_code) >= Number(meeting.total_release_code)) {
-                //     await Meeting.update({ used_code: meeting.used_code }, { where: { id: meeting.id }, transaction: t });
-                // }
-
-                await t.commit();
-
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, `参加会议成功，获得奖励${rewardAmount}元`, { reward_amount: rewardAmount });
-            } catch (error) {
-                await t.rollback();
-                errLogger(`[CHECK_MEETING_CODE][Transaction][${req.user_id}]: ${error.stack}`);
-                return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-            }
         } catch (error) {
             errLogger(`[CHECK_MEETING_CODE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});

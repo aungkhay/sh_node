@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting } = require('../models');
+const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -61,6 +61,8 @@ class CronJob {
         cron.schedule('* * * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
         cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
+        // Run every 10 second
+        cron.schedule('*/10 * * * * *', this.RELEASE_MEETING_REWARD).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -3120,7 +3122,7 @@ class CronJob {
             const activeMeeting = await this.redisHelper.getValue('active_meeting');
             if (activeMeeting) {
                 const parsed = JSON.parse(activeMeeting);
-                if (parsed.is_active === 1) {
+                if (parsed.is_active !== 0) {
                     await Meeting.update({ used_code: parsed.used_code || 0 }, { where: { id: parsed.id } });
                 }
             }
@@ -3129,6 +3131,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     READ_EXCEL_FILE_AND_UPDATE_USER_BALANCE = async () => {
         try {
             // filepath READ file from main directory
@@ -3158,6 +3161,58 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[READ_EXCEL_FILE_AND_UPDATE_USER_BALANCE]: ${error.stack}`);
+        }
+    }
+
+    RELEASE_MEETING_REWARD = async () => {
+        try {
+            const QUEUE_KEY = 'QUEUE:MEETING_REWARD_PROCESS';
+            const item = await this.redisHelper.lPopValue(QUEUE_KEY);
+            if (!item) {
+                return;
+            }
+
+            const userId = Number(item);
+
+            const t = await db.transaction();
+            try {
+
+                const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'balance'], transaction: t });
+
+                // const rewardAmount = this.getRandomInt(1, 10); // 随机奖励1-10元
+                const rewardAmount = 1;
+                await AttendedMeeting.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    meeting_id: meeting.id,
+                    meeting_code: meetingCode,
+                    reward_amount: rewardAmount
+                }, { transaction: t });
+
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 2,
+                    model: 'Meeting',
+                    type: `参加会议获得奖励`,
+                    amount: rewardAmount,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) + rewardAmount,
+                    flow_status: 'IN',
+                }, { transaction: t });
+
+                await user.increment({ balance: rewardAmount }, { transaction: t });
+
+                await t.commit();
+
+                commonLogger(`[RELEASE_MEETING_REWARD][User ID: ${userId}]: Released meeting reward of ${rewardAmount}.`);
+            } catch (error) {
+                await t.rollback();
+                errLogger(`[RELEASE_MEETING_REWARD][Transaction][User ID: ${userId}]: ${error.stack}`);
+            }
+            
+        } catch (error) {
+            errLogger(`[RELEASE_MEETING_REWARD][User ID: ${userId}]: ${error.stack}`);
         }
     }
 }
