@@ -116,6 +116,10 @@ class UserRoute extends express.Router {
         // this.post('/meetings/:id/join/:code', middleware.isLoggedIn, HomeCtrl.JOIN_MEETING);
         this.get('/meetings/attended', middleware.isLoggedIn, HomeCtrl.ATTENDED_MEETINGS);
         this.get('/authorization-letters', middleware.isLoggedIn, HomeCtrl.AUTHORIZE_LETTERS);
+        // All product
+        this.get('/all-product-history', middleware.isLoggedIn, HomeCtrl.ALL_PRODUCT_HISTORY);
+        this.get('/all-product-earn-history', middleware.isLoggedIn, HomeCtrl.ALL_PRODUCT_EARNING_HISTORY);
+        this.get('/all-product-bonus-history', middleware.isLoggedIn, HomeCtrl.ALL_PRODUCT_BONUS_HISTORY);
 
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);

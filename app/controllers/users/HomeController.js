@@ -7122,6 +7122,432 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    ALL_PRODUCT_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = Math.max(parseInt(req.query.page ?? '1', 10), 1);
+            const pageSize = Math.min(Math.max(parseInt(req.query.perPage ?? '20', 10), 1), 100);
+            const offset = (page - 1) * pageSize;
+            
+            // Models GoldPackageHistory, MasonicFundHistory, PolicyPackageHistory, FederalReserveGoldPackageHistory, ShanghaiCooperationHistory
+            const PER_TABLE_LIMIT = Math.min(pageSize * 5, 200);
+
+            const [
+                goldPackageHistory,
+                masonicFundHistory,
+                policyPackageHistory,
+                federalReserveGoldPackageHistory,
+                shanghaiCooperationHistory
+            ] = await Promise.all([
+                GoldPackageHistory.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'package_id', 'price', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                MasonicFundHistory.findAll({    
+                    where: { user_id: userId },
+                    include: {
+                        model: MasonicPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    attributes: ['id', 'price', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                PolicyPackageHistory.findAll({    
+                    where: { user_id: userId },
+                    include: {
+                        model: PolicyPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    attributes: ['id', 'price', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,  
+                }),
+                FederalReserveGoldPackageHistory.findAll({    
+                    where: { user_id: userId },
+                    include: {
+                        model: FederalReserveGoldPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    attributes: ['id', 'price', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                ShanghaiCooperationHistory.findAll({    
+                    where: { user_id: userId },
+                    include: {
+                        model: ShanghaiCooperation,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    attributes: ['id', 'package_id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+            ]);
+
+            const goldPackageMap =  goldPackageHistory.map(g => ({
+                type: `黄金礼包`,
+                product_name: g.package_id == 1 ? '和衷联储黄金初级礼包 588元' : '和衷联储黄金中级礼包 1288元',
+                amount: Number(g.price),
+                createdAt: g.createdAt,
+            }));
+
+            const masonicFundMap = masonicFundHistory.map(m => ({
+                type: `终身授权`,
+                product_name: m.package ? m.package.product_name : '',
+                amount: Number(m.price),
+                createdAt: m.createdAt,
+            }));
+
+            const policyPackageMap = policyPackageHistory.map(p => ({
+                type: `贡献`,
+                product_name: p.package ? p.package.product_name : '',
+                amount: Number(p.price),
+                createdAt: p.createdAt,
+            }));
+
+            const federalReserveGoldPackageMap = federalReserveGoldPackageHistory.map(f => ({
+                type: `联储`,
+                product_name: f.package ? f.package.product_name : '',
+                amount: Number(f.price),
+                createdAt: f.createdAt,
+            }));
+
+            const shanghaiCooperationMap = shanghaiCooperationHistory.map(s => ({
+                type: `纪念币`,
+                product_name: s.package ? s.package.product_name : '',
+                amount: Number(s.amount),
+                createdAt: s.createdAt,
+            }));
+
+            let mergedData = [
+                ...goldPackageMap,
+                ...masonicFundMap,
+                ...policyPackageMap,
+                ...federalReserveGoldPackageMap,
+                ...shanghaiCooperationMap
+             ];
+
+            mergedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            const paged = mergedData.slice(offset, offset + pageSize);
+
+            const hasMore = mergedData.length > offset + pageSize;
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
+                data: paged,
+                meta: { page, pageSize, hasMore },
+            });
+
+        } catch (error) {
+            errLogger(`[ALL_PRODUCT_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ALL_PRODUCT_EARNING_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = Math.max(parseInt(req.query.page ?? '1', 10), 1);
+            const pageSize = Math.min(Math.max(parseInt(req.query.perPage ?? '20', 10), 1), 100);
+            const offset = (page - 1) * pageSize;
+
+            const PER_TABLE_LIMIT = Math.min(pageSize * 5, 200);
+
+            const [
+                goldPackageEarnHistory,
+                masonicPackageEarnHistory,
+                policyPackageEarnHistory,
+                federalReserveGoldPackageEarnHistory,
+                shanghaiCooperationEarnHistory
+            ] = await Promise.all([
+                GoldPackageReturn.findAll({
+                    where: { user_id: userId, package_id: { [Op.in]: [1, 2] } },
+                    attributes: ['id', 'package_id', 'amount', 'description', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                MasonicPackageEarn.findAll({
+                    where: { user_id: userId },
+                    include: [
+                        {
+                            model: MasonicPackageHistory,
+                            as: 'package_history',
+                            attributes: ['id', 'price'],
+                        },
+                        {
+                            model: MasonicPackage,
+                            as: 'package',
+                            attributes: ['id', 'product_name']
+                        }
+                    ],
+                    attributes: ['id', 'amount', 'description', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                PolicyPackageEarn.findAll({
+                    where: { user_id: userId },
+                    include: [
+                        {
+                            model: PolicyPackageHistory,
+                            as: 'package_history',
+                            attributes: ['id', 'price'],
+                        },
+                        {
+                            model: PolicyPackage,
+                            as: 'package',
+                            attributes: ['id', 'product_name']
+                        }
+                    ],
+                    attributes: ['id', 'amount', 'description', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                // 类型: 0-储备收益, 1-个人黄金, 2-本金返还
+                FederalReserveGoldPackageEarn.findAll({
+                    where: { user_id: userId },
+                    include: [
+                        {
+                            model: FederalReserveGoldPackageHistory,
+                            as: 'package_history',
+                            attributes: ['id', 'price'],
+                        },
+                        {
+                            model: FederalReserveGoldPackage,
+                            as: 'package',
+                            attributes: ['id', 'product_name']
+                        }
+                    ],
+                    attributes: ['id', 'type', 'amount', 'description', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                // 0-共济基金返还, 1-兑换价值返还, 2-本金返还
+                ShanghaiCooperationEarn.findAll({
+                    where: { user_id: userId },
+                    include: [
+                        {
+                            model: ShanghaiCooperationHistory,
+                            as: 'package_history',
+                            attributes: ['id', 'price'],
+                        },
+                        {
+                            model: ShanghaiCooperation,
+                            as: 'package',
+                            attributes: ['id', 'product_name']
+                        }
+                    ],
+                    attributes: ['id', 'type', 'amount', 'description', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+            ]);
+            
+            const goldPackageEarnMap = goldPackageEarnHistory.map(g => ({
+                type: `黄金礼包`,
+                product_price: g.package_id == 1 ? 588 : 1288,
+                product_name: g.package_id == 1 ? '和衷联储黄金初级礼包 588元' : '和衷联储黄金中级礼包 1288元',
+                amount: Number(g.amount),
+                description: g.description,
+                createdAt: g.createdAt,
+            }));
+
+            const masonicPackageEarnMap = masonicPackageEarnHistory.map(m => ({
+                type: `终身授权`,
+                product_price: m.package_history ? m.package_history.price : 0,
+                product_name: m.package ? m.package.product_name : '',
+                amount: Number(m.amount),
+                description: m.description,
+                createdAt: m.createdAt,
+            }));
+
+            const policyPackageEarnMap = policyPackageEarnHistory.map(p => ({
+                type: `贡献`,
+                product_price: p.package_history ? p.package_history.price : 0,
+                product_name: p.package ? p.package.product_name : '',
+                amount: Number(p.amount),
+                description: p.description,
+                createdAt: p.createdAt,
+            }));
+
+            const federalReserveGoldPackageEarnMap = federalReserveGoldPackageEarnHistory.map(f => {
+                const typeMap = { 0: '储备收益', 1: '个人黄金', 2: '本金返还' };
+                let desc = typeMap[f.type] ?? '';
+
+                return {
+                    type: `联储`,
+                    product_price: f.package_history ? f.package_history.price : 0,
+                    product_name: f.package ? f.package.product_name : '',
+                    amount: Number(f.amount),
+                    description: desc,
+                    createdAt: f.createdAt,
+                }
+            });
+
+            const shanghaiCooperationEarnMap = shanghaiCooperationEarnHistory.map(s => {
+                const typeMap = { 0: '共济基金返还', 1: '兑换价值返还', 2: '本金返还' };
+                let desc = typeMap[s.type] ?? '';
+
+                return {
+                    type: `纪念币`,
+                    product_price: s.package_history ? s.package_history.price : 0,
+                    product_name: s.package ? s.package.product_name : '',
+                    amount: Number(s.amount),
+                    description: desc,
+                    createdAt: s.createdAt,
+                }
+            });
+
+            let mergedData = [
+                ...goldPackageEarnMap,
+                ...masonicPackageEarnMap,
+                ...policyPackageEarnMap,
+                ...federalReserveGoldPackageEarnMap,
+                ...shanghaiCooperationEarnMap
+            ];
+
+            mergedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            const paged = mergedData.slice(offset, offset + pageSize);
+
+            const hasMore = mergedData.length > offset + pageSize;
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
+                data: paged,
+                meta: { page, pageSize, hasMore },
+            });
+
+        } catch (error) {
+            errLogger(`[ALL_PRODUCT_EARNING_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ALL_PRODUCT_BONUS_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = Math.max(parseInt(req.query.page ?? '1', 10), 1);
+            const pageSize = Math.min(Math.max(parseInt(req.query.perPage ?? '20', 10), 1), 100);
+            const offset = (page - 1) * pageSize;
+
+            const PER_TABLE_LIMIT = Math.min(pageSize * 5, 200);
+            
+            const [
+                goldPackageBonuses,
+                masonicPackageBonuses,
+                policyPackageBonuses,
+                federalPackageBonuses,
+                shanghaiCooperationBonuses,
+            ] = await Promise.all([
+                GoldPackageBonuses.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                MasonicPackageBonuses.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                PolicyPackageBonuses.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                FederalPackageBonuses.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+                ShanghaiCooperationBonuses.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'amount', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: PER_TABLE_LIMIT,
+                    offset: 0,
+                }),
+            ]);
+
+            const newGoldPackageBonuses = goldPackageBonuses.map(g => ({
+                type: '黄金礼包',
+                amount: Number(g.amount),
+                createdAt: g.createdAt,
+                description: g.description ?? '',
+            }));
+            const newMasonicPackageBonuses = masonicPackageBonuses.map(m => ({
+                type: '终身授权',
+                amount: Number(m.amount),
+                createdAt: m.createdAt,
+                description: m.description ?? '',
+            }));
+            const newPolicyPackageBonuses = policyPackageBonuses.map(p => ({
+                type: '贡献',
+                amount: Number(p.amount),
+                createdAt: p.createdAt,
+                description: p.description ?? '',
+            }));
+            const newFederalPackageBonuses = federalPackageBonuses.map(f => ({
+                type: '联储',
+                amount: Number(f.amount),
+                createdAt: f.createdAt,
+                description: f.description ?? '',
+            }));
+            const newShanghaiCooperationBonuses = shanghaiCooperationBonuses.map(s => ({
+                type: '纪念币',
+                amount: Number(s.amount),
+                createdAt: s.createdAt,
+                description: s.description ?? '',
+            }));
+
+            let mergedData = [
+                ...newGoldPackageBonuses,
+                ...newMasonicPackageBonuses,
+                ...newPolicyPackageBonuses,
+                ...newFederalPackageBonuses,
+                ...newShanghaiCooperationBonuses,
+            ];
+
+            mergedData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            const paged = mergedData.slice(offset, offset + pageSize);
+
+            const hasMore = mergedData.length > offset + pageSize;
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
+                data: paged,
+                meta: { page, pageSize, hasMore },
+            });
+
+        } catch (error) {
+            errLogger(`[ALL_PRODUCT_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;
