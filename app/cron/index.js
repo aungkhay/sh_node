@@ -3128,6 +3128,38 @@ class CronJob {
             errLogger(`[UPDATE_MEETING_USED_CODE]: ${error.stack}`);
         }
     }
+
+    READ_EXCEL_FILE_AND_UPDATE_USER_BALANCE = async () => {
+        try {
+            // filepath READ file from main directory
+            const filepath = 'update_balance.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            for (const row of data) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findOne({ where: { id: row.id, balance: { [Op.gt]: 0 } }, attributes: ['id'], transaction: t });
+                    console.log(`Processing User ID ${row?.id} for balance update...`);
+                    if (!user) {
+                        continue;
+                    }
+                    await user.update({ balance: 0 }, { transaction: t });
+                    await t.commit();
+
+                    commonLogger(`Updated balance for User ID ${row.id} to 0. [original balance: ${row["余额"]}]`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[READ_EXCEL_FILE_AND_UPDATE_USER_BALANCE]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[READ_EXCEL_FILE_AND_UPDATE_USER_BALANCE]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
