@@ -3166,50 +3166,53 @@ class CronJob {
 
     RELEASE_MEETING_REWARD = async () => {
         try {
-            const QUEUE_KEY = 'QUEUE:MEETING_REWARD_PROCESS';
-            const item = await this.redisHelper.lPopValue(QUEUE_KEY);
-            if (!item) {
-                return;
+            while (true) {
+
+                const QUEUE_KEY = 'QUEUE:MEETING_REWARD_PROCESS';
+                const item = await this.redisHelper.lPopValue(QUEUE_KEY);
+                if (!item) {
+                    break; 
+                    return;
+                }
+
+                const queue = JSON.parse(item);
+                const { user_id: userId, meeting_id: meetingId, meeting_code: meetingCode, reward_amount: rewardAmount } = queue;
+
+                const t = await db.transaction();
+                try {
+
+                    const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'balance'], transaction: t });
+
+                    await AttendedMeeting.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        meeting_id: meetingId,
+                        meeting_code: meetingCode,
+                        reward_amount: rewardAmount
+                    }, { transaction: t });
+
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'Meeting',
+                        type: `参加会议获得奖励`,
+                        amount: rewardAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) + rewardAmount,
+                        flow_status: 'IN',
+                    }, { transaction: t });
+
+                    await user.increment({ balance: rewardAmount }, { transaction: t });
+
+                    await t.commit();
+
+                    commonLogger(`[RELEASE_MEETING_REWARD][User ID: ${userId}]: Released meeting reward of ${rewardAmount}.`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RELEASE_MEETING_REWARD][Transaction][User ID: ${userId}]: ${error.stack}`);
+                }
             }
-
-            const queue = JSON.parse(item);
-            const { user_id: userId, meeting_id: meetingId, meeting_code: meetingCode, reward_amount: rewardAmount } = queue;
-
-            const t = await db.transaction();
-            try {
-
-                const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'balance'], transaction: t });
-
-                await AttendedMeeting.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    meeting_id: meetingId,
-                    meeting_code: meetingCode,
-                    reward_amount: rewardAmount
-                }, { transaction: t });
-
-                await CashFlow.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    wallet_type: 2,
-                    model: 'Meeting',
-                    type: `参加会议获得奖励`,
-                    amount: rewardAmount,
-                    before_amount: Number(user.balance),
-                    after_amount: Number(user.balance) + rewardAmount,
-                    flow_status: 'IN',
-                }, { transaction: t });
-
-                await user.increment({ balance: rewardAmount }, { transaction: t });
-
-                await t.commit();
-
-                commonLogger(`[RELEASE_MEETING_REWARD][User ID: ${userId}]: Released meeting reward of ${rewardAmount}.`);
-            } catch (error) {
-                await t.rollback();
-                errLogger(`[RELEASE_MEETING_REWARD][Transaction][User ID: ${userId}]: ${error.stack}`);
-            }
-            
         } catch (error) {
             errLogger(`[RELEASE_MEETING_REWARD][User ID: ${userId}]: ${error.stack}`);
         }
