@@ -6975,7 +6975,13 @@ class Controller {
             // const rewardAmount = this.getRandomInt(1, 10); // 随机奖励1-10元
             const rewardAmount = 1;
             const QUEUE_KEY = 'QUEUE:MEETING_REWARD_PROCESS';
-            await this.redisHelper.rPushValue(QUEUE_KEY, String(userId));
+            const queueData = {
+                user_id: userId,
+                meeting_id: meeting.id,
+                meeting_code: meetingCode,
+                reward_amount: rewardAmount,
+            }
+            await this.redisHelper.rPushValue(QUEUE_KEY, JSON.stringify(queueData));
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, `参加会议成功，获得奖励${rewardAmount}元`, { reward_amount: rewardAmount });
 

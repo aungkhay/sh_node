@@ -3172,19 +3172,18 @@ class CronJob {
                 return;
             }
 
-            const userId = Number(item);
+            const queue = JSON.parse(item);
+            const { user_id: userId, meeting_id: meetingId, meeting_code: meetingCode, reward_amount: rewardAmount } = queue;
 
             const t = await db.transaction();
             try {
 
                 const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'balance'], transaction: t });
 
-                // const rewardAmount = this.getRandomInt(1, 10); // 随机奖励1-10元
-                const rewardAmount = 1;
                 await AttendedMeeting.create({
                     relation: user.relation,
                     user_id: userId,
-                    meeting_id: meeting.id,
+                    meeting_id: meetingId,
                     meeting_code: meetingCode,
                     reward_amount: rewardAmount
                 }, { transaction: t });
