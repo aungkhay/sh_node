@@ -7190,7 +7190,7 @@ class Controller {
                         as: 'package',
                         attributes: ['id', 'product_name']
                     },
-                    attributes: ['id', 'package_id', 'amount', 'createdAt'],
+                    attributes: ['id', 'price', 'createdAt'],
                     order: [['createdAt', 'DESC']],
                     limit: PER_TABLE_LIMIT,
                     offset: 0,
@@ -7228,7 +7228,7 @@ class Controller {
             const shanghaiCooperationMap = shanghaiCooperationHistory.map(s => ({
                 type: `纪念币`,
                 product_name: s.package ? s.package.product_name : '',
-                amount: Number(s.amount),
+                amount: Number(s.price),
                 createdAt: s.createdAt,
             }));
 
@@ -7252,6 +7252,7 @@ class Controller {
             });
 
         } catch (error) {
+            console.log('[ALL_PRODUCT_HISTORY]', error);
             errLogger(`[ALL_PRODUCT_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
