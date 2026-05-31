@@ -7477,7 +7477,7 @@ class Controller {
                     limit: PER_TABLE_LIMIT,
                     offset: 0,
                 }),
-                FederalPackageBonuses.findAll({
+                FederalReserveGoldPackageBonuses.findAll({
                     where: { user_id: userId },
                     attributes: ['id', 'amount', 'createdAt'],
                     order: [['createdAt', 'DESC']],
