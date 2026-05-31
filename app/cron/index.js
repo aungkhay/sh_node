@@ -3165,7 +3165,15 @@ class CronJob {
     }
 
     RELEASE_MEETING_REWARD = async () => {
+        const processingKey = 'is_releasing_meeting_reward';
         try {
+            const isProcessing = await this.redisHelper.getValue(processingKey);
+            if (isProcessing) {
+                return;
+            }
+
+            await this.redisHelper.setValue(processingKey, 1);
+
             while (true) {
 
                 const QUEUE_KEY = 'QUEUE:MEETING_REWARD_PROCESS';
@@ -3215,6 +3223,8 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RELEASE_MEETING_REWARD][User ID: ${userId}]: ${error.stack}`);
+        } finally {
+            await this.redisHelper.deleteKey(processingKey);
         }
     }
 }
