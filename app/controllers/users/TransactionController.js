@@ -50,6 +50,7 @@ class Controller {
                 '14': 'success', // xpayzhifu
                 '15': 'success', // duocaizhifu
                 '16': 'success', // xpayzhifu1
+                '17': 'SUCCESS', // qfzhifu
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -387,6 +388,26 @@ class Controller {
                     resMsg = 'success';
                     break;
 
+                case 'qfzhifu':
+                    const qfzhifuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const qfzhifuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("qfzhifuCleaned:", qfzhifuCleaned);
+                    const qfzhifuSign = this.merchantController.CREATE_SIGN(qfzhifuCleaned, `&key=${merchant.app_key}`);
+                    console.log("qfzhifuSign:", qfzhifuSign, "qfzhifuReqSign:", qfzhifuReqSign);
+
+                    // PROCESSING：待支付 | SUCCESS：支付成功 | FAIL：支付失败 | TIMEOUT：超时关闭 | EXCEPTION：发起支付异常 | CLOSE：手动关闭 | TEST：测试冲正
+                    if (reqBody.payStatus === 'SUCCESS') {
+                        status = 1;
+                    } else if (reqBody.payStatus === 'FAIL') {
+                        status = 2;
+                    } else {
+                        status = 0;
+                    }
+                    break;
+                    
                 default:
                     break;
             }
@@ -663,6 +684,10 @@ class Controller {
                 case 'duocaizhifu':
                     payload = await this.merchantController.DUOCAIZHIFU(channel, amount, userId);
                     break;
+                case 'qfzhifu':
+                    payload = await this.merchantController.QFZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
                 default:
                     break;
             }
@@ -819,6 +844,13 @@ class Controller {
                         redirectUrl = resData?.result?.payUrl;
                         success = true;
                     }
+                    break;
+                 case 'qfzhifu':
+                    if (resData.code == 200) {
+                        redirectUrl = resData?.data?.url?.payUrl;
+                        success = true;
+                    }
+                    break;
                 default:
                     break;
             }
