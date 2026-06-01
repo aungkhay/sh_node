@@ -5853,7 +5853,8 @@ class Controller {
                         user_id: user.id,
                         package_id: scPkg.id,
                         price: scPkg.price,
-                        daily_earn: scPkg.daily_earn,
+                        exchange_value: scPkg.exchange_value,
+                        masonic_fund: scPkg.masonic_fund,
                         end_date: moment().add(scPkg.period, 'days').toDate(),
                     }
                     const pkgHistoryItem = await ShanghaiCooperationHistory.create(obj, { transaction: t });
