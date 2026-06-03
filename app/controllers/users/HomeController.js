@@ -7263,7 +7263,7 @@ class Controller {
                     END AS product_name,
                     CAST(gph.price AS DECIMAL(18,2)) AS amount,
                     gph.createdAt AS createdAt
-                FROM GoldPackageHistories gph
+                FROM gold_package_history gph
                 WHERE gph.user_id = :userId
 
                 UNION ALL
@@ -7273,8 +7273,8 @@ class Controller {
                     mp.product_name AS product_name,
                     CAST(mph.price AS DECIMAL(18,2)) AS amount,
                     mph.createdAt AS createdAt
-                FROM MasonicPackageHistories mph
-                LEFT JOIN MasonicPackages mp ON mp.id = mph.package_id
+                FROM masonic_fund_history mph
+                LEFT JOIN masonic_packages mp ON mp.id = mph.package_id
                 WHERE mph.user_id = :userId
 
                 UNION ALL
@@ -7284,8 +7284,8 @@ class Controller {
                     pp.product_name AS product_name,
                     CAST(pph.price AS DECIMAL(18,2)) AS amount,
                     pph.createdAt AS createdAt
-                FROM PolicyPackageHistories pph
-                LEFT JOIN PolicyPackages pp ON pp.id = pph.package_id
+                FROM policy_package_history pph
+                LEFT JOIN policy_packages pp ON pp.id = pph.package_id
                 WHERE pph.user_id = :userId
 
                 UNION ALL
@@ -7295,8 +7295,8 @@ class Controller {
                     frgp.product_name AS product_name,
                     CAST(frh.price AS DECIMAL(18,2)) AS amount,
                     frh.createdAt AS createdAt
-                FROM FederalReserveGoldPackageHistories frh
-                LEFT JOIN FederalReserveGoldPackages frgp ON frgp.id = frh.package_id
+                FROM federal_reserve_gold_package_history frh
+                LEFT JOIN federal_reserve_gold_packages frgp ON frgp.id = frh.package_id
                 WHERE frh.user_id = :userId
 
                 UNION ALL
@@ -7306,8 +7306,8 @@ class Controller {
                     sc.product_name AS product_name,
                     CAST(sch.price AS DECIMAL(18,2)) AS amount,
                     sch.createdAt AS createdAt
-                FROM ShanghaiCooperationHistories sch
-                LEFT JOIN ShanghaiCooperations sc ON sc.id = sch.package_id
+                FROM shanghai_cooperation_history sch
+                LEFT JOIN shanghai_cooperation sc ON sc.id = sch.package_id
                 WHERE sch.user_id = :userId
             `;
 
@@ -7328,7 +7328,7 @@ class Controller {
             `;
 
             const [data, countResult] = await Promise.all([
-                sequelize.query(dataQuery, {
+                db.query(dataQuery, {
                     replacements: {
                         userId,
                         pageSize,
@@ -7336,7 +7336,7 @@ class Controller {
                     },
                     type: QueryTypes.SELECT
                 }),
-                sequelize.query(countQuery, {
+                db.query(countQuery, {
                     replacements: {
                         userId
                     },
