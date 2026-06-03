@@ -7097,7 +7097,7 @@ class Controller {
         }
     }
 
-    ALL_PRODUCT_HISTORY = async (req, res) => {
+    ALL_PRODUCT_HISTORY_OLD = async (req, res) => {
         try {
             const userId = req.user_id;
             const page = Math.max(parseInt(req.query.page ?? '1', 10), 1);
@@ -7240,6 +7240,118 @@ class Controller {
                 meta: { page, pageSize, total, totalPages, hasMore },
             });
 
+        } catch (error) {
+            console.log('[ALL_PRODUCT_HISTORY]', error);
+            errLogger(`[ALL_PRODUCT_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ALL_PRODUCT_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = Math.max(parseInt(req.query.page ?? '1', 10), 1);
+            const pageSize = Math.min(Math.max(parseInt(req.query.perPage ?? '20', 10), 1), 100);
+            const offset = (page - 1) * pageSize;
+
+            const unionQuery = `
+                SELECT 
+                    '黄金礼包' AS type,
+                    CASE
+                        WHEN gph.package_id = 1 THEN '和衷联储黄金初级礼包 588元'
+                        ELSE '和衷联储黄金中级礼包 1288元'
+                    END AS product_name,
+                    CAST(gph.price AS DECIMAL(18,2)) AS amount,
+                    gph.createdAt AS createdAt
+                FROM GoldPackageHistories gph
+                WHERE gph.user_id = :userId
+
+                UNION ALL
+
+                SELECT
+                    '终身授权' AS type,
+                    mp.product_name AS product_name,
+                    CAST(mph.price AS DECIMAL(18,2)) AS amount,
+                    mph.createdAt AS createdAt
+                FROM MasonicPackageHistories mph
+                LEFT JOIN MasonicPackages mp ON mp.id = mph.package_id
+                WHERE mph.user_id = :userId
+
+                UNION ALL
+
+                SELECT
+                    '贡献' AS type,
+                    pp.product_name AS product_name,
+                    CAST(pph.price AS DECIMAL(18,2)) AS amount,
+                    pph.createdAt AS createdAt
+                FROM PolicyPackageHistories pph
+                LEFT JOIN PolicyPackages pp ON pp.id = pph.package_id
+                WHERE pph.user_id = :userId
+
+                UNION ALL
+
+                SELECT
+                    '联储' AS type,
+                    frgp.product_name AS product_name,
+                    CAST(frh.price AS DECIMAL(18,2)) AS amount,
+                    frh.createdAt AS createdAt
+                FROM FederalReserveGoldPackageHistories frh
+                LEFT JOIN FederalReserveGoldPackages frgp ON frgp.id = frh.package_id
+                WHERE frh.user_id = :userId
+
+                UNION ALL
+
+                SELECT
+                    '纪念币' AS type,
+                    sc.product_name AS product_name,
+                    CAST(sch.price AS DECIMAL(18,2)) AS amount,
+                    sch.createdAt AS createdAt
+                FROM ShanghaiCooperationHistories sch
+                LEFT JOIN ShanghaiCooperations sc ON sc.id = sch.package_id
+                WHERE sch.user_id = :userId
+            `;
+
+            const dataQuery = `
+                SELECT *
+                FROM (
+                    ${unionQuery}
+                ) AS merged
+                ORDER BY createdAt DESC
+                LIMIT :pageSize OFFSET :offset
+            `;
+
+            const countQuery = `
+                SELECT COUNT(*) AS total
+                FROM (
+                    ${unionQuery}
+                ) AS merged
+            `;
+
+            const [data, countResult] = await Promise.all([
+                sequelize.query(dataQuery, {
+                    replacements: {
+                        userId,
+                        pageSize,
+                        offset
+                    },
+                    type: QueryTypes.SELECT
+                }),
+                sequelize.query(countQuery, {
+                    replacements: {
+                        userId
+                    },
+                    type: QueryTypes.SELECT
+                })
+            ]);
+
+            const total = Number(countResult[0]?.total ?? 0);
+            const totalPages = Math.ceil(total / pageSize);
+            const hasMore = page < totalPages;
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
+                data,
+                meta: { page, pageSize, total, totalPages, hasMore },
+            });
         } catch (error) {
             console.log('[ALL_PRODUCT_HISTORY]', error);
             errLogger(`[ALL_PRODUCT_HISTORY][${req.user_id}]: ${error.stack}`);
