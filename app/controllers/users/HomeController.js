@@ -7108,12 +7108,23 @@ class Controller {
             const PER_TABLE_LIMIT = Math.min(pageSize * 5, 200);
 
             const [
+                goldCount,
+                masonicCount,
+                policyCount,
+                federalCount,
+                shanghaiCount,
                 goldPackageHistory,
                 masonicFundHistory,
                 policyPackageHistory,
                 federalReserveGoldPackageHistory,
                 shanghaiCooperationHistory
             ] = await Promise.all([
+                GoldPackageHistory.count({ where: { user_id: userId } }),
+                MasonicPackageHistory.count({ where: { user_id: userId } }),
+                PolicyPackageHistory.count({ where: { user_id: userId } }),
+                FederalReserveGoldPackageHistory.count({ where: { user_id: userId } }),
+                ShanghaiCooperationHistory.count({ where: { user_id: userId } }),
+                
                 GoldPackageHistory.findAll({
                     where: { user_id: userId },
                     attributes: ['id', 'package_id', 'price', 'createdAt'],
@@ -7218,11 +7229,15 @@ class Controller {
 
             const paged = mergedData.slice(offset, offset + pageSize);
 
-            const hasMore = mergedData.length > offset + pageSize;
+            // const hasMore = mergedData.length > offset + pageSize;
+
+            const total = goldCount + masonicCount + policyCount + federalCount + shanghaiCount;
+            const totalPages = Math.ceil(total / pageSize);
+            const hasMore = page < totalPages;
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
                 data: paged,
-                meta: { page, pageSize, hasMore },
+                meta: { page, pageSize, total, totalPages, hasMore },
             });
 
         } catch (error) {
@@ -7242,12 +7257,23 @@ class Controller {
             const PER_TABLE_LIMIT = Math.min(pageSize * 5, 200);
 
             const [
+                goldCount,
+                masonicCount,
+                policyCount,
+                federalCount,
+                shanghaiCount,
                 goldPackageEarnHistory,
                 masonicPackageEarnHistory,
                 policyPackageEarnHistory,
                 federalReserveGoldPackageEarnHistory,
                 shanghaiCooperationEarnHistory
             ] = await Promise.all([
+                GoldPackageReturn.count({ where: { user_id: userId, package_id: { [Op.in]: [1, 2] } }}),
+                MasonicPackageEarn.count({ where: { user_id: userId } }),
+                PolicyPackageEarn.count({ where: { user_id: userId } }),
+                FederalReserveGoldPackageEarn.count({ where: { user_id: userId } }),
+                ShanghaiCooperationEarn.count({ where: { user_id: userId } }),
+
                 GoldPackageReturn.findAll({
                     where: { user_id: userId, package_id: { [Op.in]: [1, 2] } },
                     attributes: ['id', 'package_id', 'amount', 'description', 'createdAt'],
@@ -7402,11 +7428,14 @@ class Controller {
 
             const paged = mergedData.slice(offset, offset + pageSize);
 
-            const hasMore = mergedData.length > offset + pageSize;
+            // const hasMore = mergedData.length > offset + pageSize;
+            const total = goldCount + masonicCount + policyCount + federalCount + shanghaiCount;
+            const totalPages = Math.ceil(total / pageSize);
+            const hasMore = page < totalPages;
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
                 data: paged,
-                meta: { page, pageSize, hasMore },
+                meta: { page, pageSize, total, totalPages, hasMore },
             });
 
         } catch (error) {
@@ -7425,12 +7454,23 @@ class Controller {
             const PER_TABLE_LIMIT = Math.min(pageSize * 5, 200);
             
             const [
+                goldCount,
+                masonicCount,
+                policyCount,
+                federalCount,
+                shanghaiCount,
                 goldPackageBonuses,
                 masonicPackageBonuses,
                 policyPackageBonuses,
                 federalPackageBonuses,
                 shanghaiCooperationBonuses,
             ] = await Promise.all([
+                GoldPackageBonuses.count({ where: { user_id: userId } }),
+                MasonicPackageBonuses.count({ where: { user_id: userId } }),
+                PolicyPackageBonuses.count({ where: { user_id: userId } }),
+                FederalReserveGoldPackageBonuses.count({ where: { user_id: userId } }),
+                ShanghaiCooperationBonuses.count({ where: { user_id: userId } }),
+
                 GoldPackageBonuses.findAll({
                     where: { user_id: userId },
                     attributes: ['id', 'amount', 'createdAt'],
@@ -7511,11 +7551,14 @@ class Controller {
 
             const paged = mergedData.slice(offset, offset + pageSize);
 
-            const hasMore = mergedData.length > offset + pageSize;
+            // const hasMore = mergedData.length > offset + pageSize;
+            const total = goldCount + masonicCount + policyCount + federalCount + shanghaiCount;
+            const totalPages = Math.ceil(total / pageSize);
+            const hasMore = page < totalPages;
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
                 data: paged,
-                meta: { page, pageSize, hasMore },
+                meta: { page, pageSize, total, totalPages, hasMore },
             });
 
         } catch (error) {
