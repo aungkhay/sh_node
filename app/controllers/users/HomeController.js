@@ -7261,7 +7261,7 @@ class Controller {
                         WHEN gph.package_id = 1 THEN '和衷联储黄金初级礼包 588元'
                         ELSE '和衷联储黄金中级礼包 1288元'
                     END AS product_name,
-                    CAST(gph.price AS DECIMAL(18,2)) AS amount,
+                    gph.price AS price,
                     gph.createdAt AS createdAt
                 FROM gold_package_history gph
                 WHERE gph.user_id = :userId
@@ -7271,9 +7271,9 @@ class Controller {
                 SELECT
                     '终身授权' AS type,
                     mp.product_name AS product_name,
-                    CAST(mph.price AS DECIMAL(18,2)) AS amount,
+                    mph.price AS price,
                     mph.createdAt AS createdAt
-                FROM masonic_fund_history mph
+                FROM masonic_package_history mph
                 LEFT JOIN masonic_packages mp ON mp.id = mph.package_id
                 WHERE mph.user_id = :userId
 
@@ -7282,7 +7282,7 @@ class Controller {
                 SELECT
                     '贡献' AS type,
                     pp.product_name AS product_name,
-                    CAST(pph.price AS DECIMAL(18,2)) AS amount,
+                    pph.price AS price,
                     pph.createdAt AS createdAt
                 FROM policy_package_history pph
                 LEFT JOIN policy_packages pp ON pp.id = pph.package_id
@@ -7293,7 +7293,7 @@ class Controller {
                 SELECT
                     '联储' AS type,
                     frgp.product_name AS product_name,
-                    CAST(frh.price AS DECIMAL(18,2)) AS amount,
+                    frh.price AS price,
                     frh.createdAt AS createdAt
                 FROM federal_reserve_gold_package_history frh
                 LEFT JOIN federal_reserve_gold_packages frgp ON frgp.id = frh.package_id
@@ -7304,7 +7304,7 @@ class Controller {
                 SELECT
                     '纪念币' AS type,
                     sc.product_name AS product_name,
-                    CAST(sch.price AS DECIMAL(18,2)) AS amount,
+                    sch.price AS price,
                     sch.createdAt AS createdAt
                 FROM shanghai_cooperation_history sch
                 LEFT JOIN shanghai_cooperation sc ON sc.id = sch.package_id
@@ -7344,12 +7344,17 @@ class Controller {
                 })
             ]);
 
+            const formattedData = data.map(item => ({
+                ...item,
+                price: Number(item.price)
+            }));
+
             const total = Number(countResult[0]?.total ?? 0);
             const totalPages = Math.ceil(total / pageSize);
             const hasMore = page < totalPages;
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', {
-                data,
+                data: formattedData,
                 meta: { page, pageSize, total, totalPages, hasMore },
             });
         } catch (error) {
