@@ -135,6 +135,8 @@ class Controller {
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
             const is_internal_account = req.query.is_internal_account;
+            // 1 => is_returned_price | 2 => is_returned_exchange_value | 3 => is_returned_masonic_fund
+            const is_returned = req.query.is_returned; 
 
             let condition = {}
             if (userId != 1) {
@@ -154,6 +156,15 @@ class Controller {
             }
             if (startTime && endTime) {
                 condition.createdAt = { [Op.between]: [startTime, endTime] }
+            }
+            if (is_returned) {
+                if (is_returned == 1) {
+                    condition.is_returned_price = 1;
+                } else if (is_returned == 2) {
+                    condition.is_returned_exchange_value = 1;
+                } else if (is_returned == 3) {
+                    condition.is_returned_masonic_fund = 1;
+                }
             }
 
             const { rows, count } = await ShanghaiCooperationHistory.findAndCountAll({
