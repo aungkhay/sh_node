@@ -12,6 +12,7 @@ class Controller {
         this.commonHelper = new CommonHelper();
         this.ResCode = this.commonHelper.ResCode;
         this.OSS = new AliOSS();
+        this.getOffset = this.commonHelper.getOffset;
     }
 
     INDEX = async (req, res) => {
