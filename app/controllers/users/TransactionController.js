@@ -273,6 +273,7 @@ class Controller {
                     break;
 
                 case 'fulinxinzhifu':
+                case 'fulinxinzhifu1':
                     // {"amount":"10000","clientIp":"161.248.87.252","createdAt":"1776395476756","ifCode":"dkpay2","mchNo":"M1776387795","mchOrderNo":"SH6190729800543056","payOrderId":"P2044976964454436866","state":"2","successTime":"1776395762162","reqTime":"1776395762231","sign":"003A9AE239BA1D63DB474F593012CA0C"}
                     const fulinxinReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
@@ -658,6 +659,7 @@ class Controller {
                     headers = { "Content-Type": "application/json" }
                     break;
                 case 'fulinxinzhifu':
+                case 'fulinxinzhifu1':
                     const fulinxinzhifuClientIp = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                     payload = await this.merchantController.FULINXINZHIFU(channel, amount, fulinxinzhifuClientIp, userId);
                     headers = { "Content-Type": "application/json" }
@@ -801,6 +803,7 @@ class Controller {
                     }
                     break;
                 case 'fulinxinzhifu':
+                case 'fulinxinzhifu1':
                     if (resData.code == 0 && resData.data?.payDataType === 'payUrl') {
                         redirectUrl = resData?.data?.payData;
                         success = true;

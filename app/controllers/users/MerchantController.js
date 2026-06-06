@@ -450,25 +450,6 @@ class Controller {
         }
     }
 
-    // 参数名	类型	必填	说明	示例
-    // mchKey	String	是	商户ID	10008
-    // product	String	是	通道编码	wechat-h5
-    // mchOrderNo	String	是	商户订单号；需保证整个系统中唯一	order_0000000001
-    // amount	Integer	是	交易金额；单位：分	20000
-    // nonce	String	是	随机字符串；长度 8 ~ 32个字符	BzPdZr#WfSImpHjp
-    // timestamp	String	是	请求毫秒级时间戳；13位	1636972859708
-    // notifyUrl	String	是	支付结果回调地址	http://www.xxxx.com/api/order/notify
-    // returnUrl	String		支付成功后跳转地址	http://www.xxxx.com/api/order/success
-    // mchUserId	String		商户用户id；如果没有可传任意值或不传	user_0001
-    // userIp	String		支付用户ip，传递该参数用于风控控制以提高成功率	124.196.121.112
-    // userName	String		用户姓名	John Wilson
-    // userFirstName	String		用户姓	Wilson
-    // userLastName	String		用户名	John
-    // mobile	String		手机号	18888888888
-    // email	String		邮箱	johnWilson@gmail.com
-    // attach	String		透传值；回调时原样返回	name=aaa;age=18
-    // remark	String		订单备注	这个是订单备注
-    // sign	String	是	请求参数签名	acb4a97c3eedc80c0a1522c6a6522667
     QFZHIFU = async (channel, amount, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
