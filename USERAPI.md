@@ -758,9 +758,6 @@ const params = {
 
 // [POST] Use Gift Voucher
 const url = `${baseURL}/gift-voucher/${rewardId}/use`;
-
-// [POST] Buy Authorization Letter 购买上合组织中国区授权书
-const url = `${baseURL}/buy-authorization-letter`;
 ```
 ### Spring Festival Event
 ``` js
@@ -890,11 +887,17 @@ const params = {
     page: 1,
     perPage: 10
 }
+```
 
-// [GET] Letter List
+### Authorize Letter
+``` js
+// [GET] List
 const url = `${baseURL}/authorization-letters`;
 
-// [POST] Transfer Letter
+// [POST] Buy 
+const url = `${baseURL}/authorization-letters/${letterId}/buy`;
+
+// [POST] Transfer
 const url = `${baseURL}/authorization-letters/${letterId}/transfer`;
 const data = {
     receiver_phone: ''
