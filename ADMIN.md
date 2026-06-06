@@ -1759,3 +1759,44 @@ const data = {
     withdrawDate: '2026-05-25' // required
 }
 ```
+
+### 授权书
+``` js
+// [GET] List
+const url = `${baseURL}/authorization-letters`;
+
+// [POST] Upload
+const url = `${baseURL}/authorization-letters/${letterId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [POST] Update
+const url = `${baseURL}/authorization-letters/${letterId}/update`;
+const data = {
+    title: '',
+    price: 0,
+    gold_count: 0,
+    content: '',
+    can_buy: 0, // 0 or 1
+    status: 0, // 0 or 1
+}
+
+// [GET] History
+const url = `${baseURL}/authorization-letters/history`;
+const params = {
+    phone: '',
+    letterId: '',
+    startTime: '',
+    endTime: '',
+}
+```

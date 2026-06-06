@@ -946,3 +946,26 @@ exports.create_meeting = () => {
             .withMessage('总发布数量必须是数字')
     ]
 }
+
+exports.update_authorization_letter = () => {
+    return [
+        check('title', { msg: '标题不能为空' }).not().isEmpty(),
+        check('price').not().isEmpty().withMessage('价格不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('价格必须是数字'),
+        check('gold_count').not().isEmpty().withMessage('黄金数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('黄金数量必须是数字'),
+        check('content', { msg: '内容不能为空' }).not().isEmpty(),
+        check('can_buy').not().isEmpty().withMessage('是否可购买不能为空')
+            .bail()
+            .isIn([0, 1])
+            .withMessage('是否可购买值无效'),
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([0, 1])
+            .withMessage('状态值无效'),
+    ]
+}

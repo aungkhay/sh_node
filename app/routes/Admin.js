@@ -323,6 +323,14 @@ class AdminRoute extends express.Router {
         this.post('/meetings/:id/update', FormValidator.create_meeting(), middleware.isLoggedIn('meeting-update'), MeetingCtrl.UPDATE);
         this.post('/meetings/:id/delete', middleware.isLoggedIn('meeting-delete'), MeetingCtrl.DELETE);
         this.get('/meetings/attended-history', middleware.isLoggedIn('meeting-attended-history-list'), MeetingCtrl.ATTENDED_MEETINGS);
+
+        // Authorization Letter
+        let AuthorizeLetterController = require('../controllers/admins/AuthorizeLetterController');
+        let AuthorizeLetterCtrl = new AuthorizeLetterController(app);
+        this.get('/authorization-letters', middleware.isLoggedIn('authorize-letter-list'), AuthorizeLetterCtrl.INDEX);
+        this.post('/authorization-letters/:id/upload', middleware.isLoggedIn('authorize-letter-update'), AuthorizeLetterCtrl.UPLOAD);
+        this.post('/authorization-letters/:id/update', FormValidator.update_authorization_letter(), middleware.isLoggedIn('authorize-letter-update'), AuthorizeLetterCtrl.UPDATE);
+        this.get('/authorization-letters/history', middleware.isLoggedIn('authorize-letter-history-list'), AuthorizeLetterCtrl.HISTORY);
     }
 }
 

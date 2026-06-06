@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory, GoldPrice, FederalReserveGoldPackageEarn } = require('../../models');
+const { AuthorizeLetterHistory, db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory, GoldPrice, FederalReserveGoldPackageEarn } = require('../../models');
 const { encrypt } = require('../../helpers/AESHelper');
 const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
 const { commonLogger, errLogger } = require('../../helpers/Logger');
@@ -312,42 +312,21 @@ class Controller {
                 order: [['createdAt', 'DESC']],
                 attributes: ['price']
             });
-            
-            // 上合组织塔吉克斯坦区授权书
-            const letterOfTajikistan = await RewardRecord.count({
-                where: {
-                    user_id: userId,
-                    reward_id: 11,
-                    is_used: 0,
-                },
-                useMaster: userId % 2 === 0 ? true : false
-            });
-
-            // 上合组织哈萨克斯坦区授权书
-            const letterOfKazakhstan = await RewardRecord.count({
-                where: {
-                    user_id: userId,
-                    reward_id: 12,
-                    is_used: 0,
-                },
-                useMaster: userId % 2 === 0 ? true : false
-            });
-
-            // 上合组织乌兹别克斯坦区授权书
-            const letterOfUzbekistan = await RewardRecord.count({
-                where: {
-                    user_id: userId,
-                    reward_id: 13,
-                    is_used: 0,
-                },
-                useMaster: userId % 2 === 0 ? true : false
-            });
 
             // Federal Gold
             const federalGold = await FederalReserveGoldPackageEarn.sum('amount', {
                 where: {
                     user_id: userId,
                     type: 1, // 个人黄金
+                },
+                useMaster: userId % 2 === 0 ? true : false
+            }) || 0;
+
+            const goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
+                where: {
+                    user_id: userId,
+                    is_used: 0,
+                    gold_owner_id: userId
                 },
                 useMaster: userId % 2 === 0 ? true : false
             }) || 0;
@@ -360,9 +339,10 @@ class Controller {
                 next_rank_point: 0,
                 gold_count_in_coupon: goldCouponCount,
                 total_coupon_gold_price: goldCouponCount * (goldPrice ? goldPrice.price : 0),
-                letter_of_tajikistan: letterOfTajikistan + letterOfKazakhstan + letterOfUzbekistan,
-                gold_count_in_tajikstan: (letterOfTajikistan * 1000) + (letterOfKazakhstan * 1000) + (letterOfUzbekistan * 1000),
-                total_tajikstan_gold_price: (letterOfTajikistan * 1000 + letterOfKazakhstan * 1000 + letterOfUzbekistan * 1000) * (goldPrice ? goldPrice.price : 0),
+
+                gold_count_in_tajikstan: goldCountInLetter,
+                total_tajikstan_gold_price: goldCountInLetter * (goldPrice ? goldPrice.price : 0),
+
                 federal_reserve_gold_count: federalGold,
                 federal_reserve_gold_price: federalGold * (goldPrice ? goldPrice.price : 0),
             }

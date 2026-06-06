@@ -11,6 +11,7 @@ const UserSeeder = require('./UserSeeder');
 const RewardTypeSeeder = require('./RewardTypeSeeder');
 const TicketSeeder = require('./TicketSeeder');
 const MasonicSeeder = require('./MasonicSeeder');
+const AuthorizeLetterSeeder = require('./AuthorizeLetterSeeder');
 
 const seed = async () => {
     await RoleSeeder();
@@ -21,6 +22,7 @@ const seed = async () => {
     await RewardTypeSeeder();
     await TicketSeeder();
     await MasonicSeeder();
+    await AuthorizeLetterSeeder();
 
     console.log('\x1b[32m%s\x1b[0m', '[Seeder] All seeders are seeded successfully');
     process.exit();

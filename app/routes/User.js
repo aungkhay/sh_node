@@ -77,7 +77,9 @@ class UserRoute extends express.Router {
         this.get('/gold-gift-packages', middleware.isLoggedIn, HomeCtrl.GOLD_GIFT_PACKAGE);
         this.post('/gold-gift-packages/:id/buy', middleware.isLoggedIn, HomeCtrl.BUY_GOLD_PACKAGE);
         this.get('/gold-gift-packages/history', middleware.isLoggedIn, HomeCtrl.GOLD_PACKAGE_HISTORY);
-        this.post('/buy-authorization-letter', middleware.isLoggedIn, HomeCtrl.BUY_AUTHORIZATION_LETTER);
+        this.get('/authorization-letters', middleware.isLoggedIn, HomeCtrl.AUTHORIZE_LETTERS);
+        this.post('/authorization-letters/:id/buy', middleware.isLoggedIn, HomeCtrl.BUY_AUTHORIZATION_LETTER);
+        this.post('/authorization-letters/:letterId/transfer', FormValidator.transfer_authorize_letter(), middleware.isLoggedIn, HomeCtrl.TRANSFER_AUTHORIZE_LETTER);
         this.get('/gold-gift-packages/bonuses', middleware.isLoggedIn, HomeCtrl.GET_GOLD_PACKAGE_BONUS);
         this.get('/gold-gift-packages/repurchase-dialog-info', middleware.isLoggedIn, HomeCtrl.REPURCHASE_PACKAGE_DIALOG);
         this.post('/gold-gift-packages/repurchase', middleware.isLoggedIn, HomeCtrl.REPURCHASE_PACKAGE);
@@ -115,7 +117,6 @@ class UserRoute extends express.Router {
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);
         // this.post('/meetings/:id/join/:code', middleware.isLoggedIn, HomeCtrl.JOIN_MEETING);
         this.get('/meetings/attended', middleware.isLoggedIn, HomeCtrl.ATTENDED_MEETINGS);
-        this.get('/authorization-letters', middleware.isLoggedIn, HomeCtrl.AUTHORIZE_LETTERS);
         // All product
         this.get('/all-product-history', middleware.isLoggedIn, HomeCtrl.ALL_PRODUCT_HISTORY);
         this.get('/all-product-earn-history', middleware.isLoggedIn, HomeCtrl.ALL_PRODUCT_EARNING_HISTORY);

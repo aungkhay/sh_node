@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn } = require('../../models');
+const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes, where } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -4378,12 +4378,22 @@ class Controller {
                 if (mPackage.is_release_authorize_letter) {
                     for (let index = 0; index < pkgHistory.length; index++) {
                         const pkg = pkgHistory[index];
-                        await RewardRecord.create({
+                        // await RewardRecord.create({
+                        //     user_id: user.id,
+                        //     relation: user.relation,
+                        //     reward_id: 11, // 上合组织塔吉克斯坦区授权书
+                        //     amount: 1,
+                        //     from_where: `PKG-${pkg.id}`
+                        // }, { transaction: t });
+                        await AuthorizeLetterHistory.create({
                             user_id: user.id,
                             relation: user.relation,
-                            reward_id: 11, // 上合组织塔吉克斯坦区授权书
-                            amount: 1,
-                            from_where: `PKG-${pkg.id}`
+                            letter_id: 2,
+                            price: 0,
+                            gold_count: 1000,
+                            gold_owner_id: user.id,
+                            product_type: 3, // 终身授权
+                            description: `PKG-${pkg.id}`
                         }, { transaction: t });
                     }
                 }
@@ -4837,12 +4847,22 @@ class Controller {
 
                 if (fPackage.is_release_authorize_letter) {
                     for (const pkg of pkgHistory) {
-                        await RewardRecord.create({
+                        // await RewardRecord.create({
+                        //     user_id: user.id,
+                        //     relation: user.relation,
+                        //     reward_id: 12, // 上合组织哈萨克斯坦区授权书
+                        //     amount: 1,
+                        //     from_where: `PKG-${pkg.id}`
+                        // }, { transaction: t });
+                        await AuthorizeLetterHistory.create({
                             user_id: user.id,
                             relation: user.relation,
-                            reward_id: 12, // 上合组织哈萨克斯坦区授权书
-                            amount: 1,
-                            from_where: `PKG-${pkg.id}`
+                            letter_id: 3,
+                            price: 0,
+                            gold_count: 1000,
+                            gold_owner_id: user.id,
+                            product_type: 5, // 联储
+                            description: `PKG-${pkg.id}`
                         }, { transaction: t });
                     }
                 }
@@ -5429,12 +5449,22 @@ class Controller {
                 if (policyPackage.is_release_authorize_letter) {
                     for (let index = 0; index < pkgHistory.length; index++) {
                         const pkg = pkgHistory[index];
-                        await RewardRecord.create({
+                        // await RewardRecord.create({
+                        //     user_id: user.id,
+                        //     relation: user.relation,
+                        //     reward_id: 13, // 上合组织乌兹别克斯坦区授权书
+                        //     amount: 1,
+                        //     from_where: `PKG-${pkg.id}`
+                        // }, { transaction: t });
+                        await AuthorizeLetterHistory.create({
                             user_id: user.id,
                             relation: user.relation,
-                            reward_id: 13, // 上合组织乌兹别克斯坦区授权书
-                            amount: 1,
-                            from_where: `PKG-${pkg.id}`
+                            letter_id: 4,
+                            price: 0,
+                            gold_count: 1000,
+                            gold_owner_id: user.id,
+                            product_type: 4, // 贡献
+                            description: `PKG-${pkg.id}`
                         }, { transaction: t });
                     }
                 }
@@ -6067,7 +6097,7 @@ class Controller {
         }
     }
 
-    BUY_AUTHORIZATION_LETTER = async (req, res) => {
+    BUY_AUTHORIZATION_LETTER_OLD = async (req, res) => {
         try {
             const userId = req.user_id || 156;
             const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6'] });
@@ -6113,6 +6143,205 @@ class Controller {
         } catch (error) {
             errLogger(`[BUY_AUTHORIZATION_LETTER][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    AUTHORIZE_LETTERS_OLD = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const letters = await RewardRecord.findAll({
+                where: { 
+                    user_id: userId, 
+                    reward_id: {
+                        [Op.in]: [6, 11, 12, 13]
+                    }
+                },
+                attributes: ['id', 'reward_id', 'is_used', 'createdAt'],
+                order: [['createdAt', 'DESC']]
+            });
+
+            // group the letters by reward_id
+            // format = [{reward_id: 6, count: 2, is_used: 0, createdAt: '2024-01-01'}, {reward_id: 11, count: 1, is_used: 1, createdAt: '2024-02-01'}]
+            const grouped = {};
+            letters.forEach(letter => {
+                const rewardId = letter.reward_id;
+                if (!grouped[rewardId]) {
+                    grouped[rewardId] = {
+                        count: 1,
+                        is_used: letter.is_used,
+                        createdAt: letter.createdAt
+                    };
+                } else {
+                    grouped[rewardId].count += 1;
+                }
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { letters: grouped });
+        } catch (error) {
+            errLogger(`[AUTHORIZE_LETTERS][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    AUTHORIZE_LETTERS = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const letters = await AuthorizeLetter.findAll({
+                attributes: [
+                    'id', 'title', 'content', 'price', 'can_buy', 'flag', 'createdAt',
+                    [
+                        Sequelize.literal(`(
+                            SELECT COUNT(*) 
+                            FROM authorize_letter_histories AS alh
+                            WHERE alh.letter_id = AuthorizeLetter.id 
+                            AND alh.user_id = ${userId}
+                        )`), 'owned_count'
+                    ],
+                    [
+                        Sequelize.literal(`(
+                            SELECT COALESCE(MAX(alh.is_used), 0)
+                            FROM authorize_letter_histories AS alh
+                            WHERE alh.letter_id = AuthorizeLetter.id
+                            AND alh.user_id = ${Number(userId)}
+                        )`), 'is_used'
+                    ]
+                ],
+                where: { 
+                    user_id: userId, 
+                },
+                order: [['createdAt', 'DESC']]
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', letters);
+        } catch (error) {
+            errLogger(`[AUTHORIZE_LETTERS][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BUY_AUTHORIZATION_LETTER = async (req, res) => {
+        const lockKey = `lock:buy-authorization-letter:${req.ip}`;
+        let redisLocked = false;
+
+        try {
+
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 2);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const userId = req.user_id;
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6'] });
+            const letterId = req.params.id;
+            if (letterId == 1 && Number(user.have_reward_6) == 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
+            }
+            const letter = await AuthorizeLetter.findByPk(letterId);
+            if (!letter) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '授权书不存在', {});
+            }
+            if (letter.can_buy == 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该授权书暂不开放购买', {});
+            }
+            if (Number(user.reserve_fund) < Number(letter.price)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `储备金不足: 价格${letter.price}元`, {});
+            }
+            const t = await db.transaction();
+            try {
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 1,
+                    model: 'AuthorizeLetterHistory',
+                    type: `购买${letter.title}`,
+                    amount: letter.price,
+                    before_amount: Number(user.reserve_fund),
+                    after_amount: Number(user.reserve_fund) - Number(letter.price),
+                    flow_status: 'OUT',
+                }, { transaction: t });
+
+                const updateObj = { reserve_fund: Number(user.reserve_fund) - Number(letter.price) };
+                if (letter.id == 1) {
+                    updateObj.have_reward_6 = 1;
+                    updateObj.reward_6_from_where = 2;
+                }
+                await user.update(updateObj, { transaction: t });
+
+                const obj = {
+                    user_id: user.id,
+                    relation: user.relation,
+                    letter_id: letter.id,
+                    price: letter.price,
+                    gold_count: letter.gold_count,
+                    gold_owner_id: user.id,
+                    description: `购买${letter.title}`,
+                }
+                await AuthorizeLetterHistory.create(obj, { transaction: t });
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+            } catch (error) {
+                errLogger(`[BUY_AUTHORIZATION_LETTER][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '购买失败', {});
+            }
+        } catch (error) {
+            errLogger(`[BUY_AUTHORIZATION_LETTER][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_AUTHORIZE_LETTER = async (req, res) => {
+        const lockKey = `lock:transfer-authorize-letter:${req.ip}`;
+        let redisLocked = false;
+
+        try {
+
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 2);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const letterId = req.params.letterId;
+            const { receiver_phone } = req.body;
+
+            const receiver = await User.findOne({ where: { phone_number: receiver_phone }, attributes: ['id', 'relation'] });
+            if (!receiver) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '接收人不存在', {});
+            }
+
+            const letterHistory = await AuthorizeLetterHistory.findOne({
+                where: {
+                    user_id: userId,
+                    letter_id: letterId,
+                    is_used: 0,
+                },
+                attributes: ['id', 'is_used', 'gold_owner_id', 'from_user_id'],
+            });
+
+            if (!letterHistory) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '没有可转让的授权书', {});
+            }
+            
+            await letterHistory.update({ user_id: receiver.id, relation: receiver.relation, from_user_id: userId });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '转让成功', {});
+        } catch (error) {
+            errLogger(`[TRANSFER_AUTHORIZE_LETTER][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
 
@@ -7024,43 +7253,6 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', data);
         } catch (error) {
             errLogger(`[ATTENDED_MEETINGS][${req.user_id}]: ${error.stack}`);
-            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
-        }
-    }
-
-    AUTHORIZE_LETTERS = async (req, res) => {
-        try {
-            const userId = req.user_id;
-            const letters = await RewardRecord.findAll({
-                where: { 
-                    user_id: userId, 
-                    reward_id: {
-                        [Op.in]: [6, 11, 12, 13]
-                    }
-                },
-                attributes: ['id', 'reward_id', 'is_used', 'createdAt'],
-                order: [['createdAt', 'DESC']]
-            });
-
-            // group the letters by reward_id
-            // format = [{reward_id: 6, count: 2, is_used: 0, createdAt: '2024-01-01'}, {reward_id: 11, count: 1, is_used: 1, createdAt: '2024-02-01'}]
-            const grouped = {};
-            letters.forEach(letter => {
-                const rewardId = letter.reward_id;
-                if (!grouped[rewardId]) {
-                    grouped[rewardId] = {
-                        count: 1,
-                        is_used: letter.is_used,
-                        createdAt: letter.createdAt
-                    };
-                } else {
-                    grouped[rewardId].count += 1;
-                }
-            });
-
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { letters: grouped });
-        } catch (error) {
-            errLogger(`[AUTHORIZE_LETTERS][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

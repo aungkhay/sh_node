@@ -1,0 +1,96 @@
+const { Model, DataTypes } = require('sequelize');
+const sequelize = require('../connections/Mysql');
+const User = require('./User');
+const AuthorizeLetter = require('./AuthorizeLetter');
+
+const PROTECTED_ATTRIBUTES = ['deletedAt'];
+class AuthorizeLetterHistory extends Model {
+    toJSON() {
+        let attributes = Object.assign({}, this.get())
+        for (let a of PROTECTED_ATTRIBUTES) {
+            delete attributes[a]
+        }
+        return attributes
+    }
+}
+
+AuthorizeLetterHistory.init({
+    id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    relation: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    user_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+            model: User,
+            key: 'id',
+        },
+    },
+    letter_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false,
+        references: {
+            model: AuthorizeLetter,
+            key: 'id',
+        },
+    },
+    price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.00,
+    },
+    gold_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    gold_owner_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+            model: User,
+            key: 'id',
+        },
+    },
+    from_user_id: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+        references: {
+            model: User,
+            key: 'id',
+        },
+    },
+    is_used: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    product_type: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: '1-红包雨, 2-黄金礼包, 3-终身授权, 4-贡献, 5-联储, 6-纪念币, 7-黄金增值, 8-其他',
+    },
+    transfer_remark: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    description: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+}, {
+    sequelize,
+    modelName: 'AuthorizeLetterHistory',
+    tableName: 'authorize_letter_histories',
+    timestamps: true,
+    paranoid: true,
+});
+
+module.exports = AuthorizeLetterHistory;

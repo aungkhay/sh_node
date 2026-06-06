@@ -74,6 +74,8 @@ const ShanghaiCooperationEarn = require('./ShanghaiCooperationEarn');
 const CashFlow = require('./CashFlow');
 const Meeting = require('./Meeting');
 const AttendedMeeting = require('./AttendedMeeting');
+const AuthorizeLetter = require('./AuthorizeLetter');
+const AuthorizeLetterHistory = require('./AuthorizeLetterHistory');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -395,6 +397,18 @@ AttendedMeeting.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: '
 Meeting.hasMany(AttendedMeeting, { foreignKey: 'meeting_id', as: 'attendees', onDelete: 'CASCADE' });
 AttendedMeeting.belongsTo(Meeting, { foreignKey: 'meeting_id', as: 'meeting', onDelete: 'CASCADE' });
 
+// ========== AUTHORIZE_LETTER_HISTORY ↔️ AUTHORIZE_LETTER (1:N) ==========
+AuthorizeLetter.hasMany(AuthorizeLetterHistory, { foreignKey: 'letter_id', as: 'histories', onDelete: 'CASCADE' });
+AuthorizeLetterHistory.belongsTo(AuthorizeLetter, { foreignKey: 'letter_id', as: 'letter', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ AUTHORIZE_LETTER_HISTORY (1:N) ==========
+User.hasMany(AuthorizeLetterHistory, { foreignKey: 'user_id', as: 'authorize_letter_histories', onDelete: 'CASCADE' });
+AuthorizeLetterHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+User.hasMany(AuthorizeLetterHistory, { foreignKey: 'from_user_id', as: 'authorize_letter_from_histories', onDelete: 'CASCADE' });
+AuthorizeLetterHistory.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+User.hasMany(AuthorizeLetterHistory, { foreignKey: 'gold_owner_id', as: 'authorize_letter_gold_owner_histories', onDelete: 'CASCADE' });
+AuthorizeLetterHistory.belongsTo(User, { foreignKey: 'gold_owner_id', as: 'gold_owner', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -465,6 +479,8 @@ const models = {
     CashFlow,
     Meeting,
     AttendedMeeting,
+    AuthorizeLetter,
+    AuthorizeLetterHistory,
 };
 
 // Export models + db connection

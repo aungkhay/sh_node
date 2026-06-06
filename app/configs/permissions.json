@@ -194,6 +194,10 @@
     { "model": "和衷联储黄金礼包", "title": "返还记录", "name": "gold-package-return-history-list"},
     { "model": "和衷联储黄金礼包", "title": "回购记录", "name": "gold-package-repurchase-history-list"},
 
+    { "model": "授权书", "title": "列表", "name": "authorize-letter-list" },
+    { "model": "授权书", "title": "编辑", "name": "authorize-letter-update" },
+    { "model": "授权书", "title": "记录", "name": "authorize-letter-history-list" },
+
     { "model": "签到赢黄金计划", "title": "签到记录", "name": "gold-plan-check-in-history" },
 
     { "model": "会议", "title": "列表", "name": "meeting-list" },

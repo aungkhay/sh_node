@@ -893,8 +893,10 @@ const params = {
 
 // [GET] Letter List
 const url = `${baseURL}/authorization-letters`;
-// 6. 上合组织中国区授权书 
-// 11. 上合组织塔吉克斯坦区授权书 
-// 12. 上合组织哈萨克斯坦区授权书 
-// 13. 上合组织乌兹别克斯坦区授权书
+
+// [POST] Transfer Letter
+const url = `${baseURL}/authorization-letters/${letterId}/transfer`;
+const data = {
+    receiver_phone: ''
+}
 ```

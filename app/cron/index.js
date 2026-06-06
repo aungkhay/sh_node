@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -3225,6 +3225,79 @@ class CronJob {
             errLogger(`[RELEASE_MEETING_REWARD][User ID: ${userId}]: ${error.stack}`);
         } finally {
             await this.redisHelper.deleteKey(processingKey);
+        }
+    }
+
+    // NOT CRON
+    MOVE_AUTHORIZE_LETTER = async () => {
+        try {
+            const now = new Date();
+            console.log(`Starting to move authorize letter history at ${now.toISOString()}...`);
+            
+            const rewardRecords = await RewardRecord.findAll({
+                where: {
+                    reward_id: {
+                        [Op.in]: [6, 11, 12, 13]
+                    }
+                },
+                attributes: ['id', 'user_id', 'relation', 'reward_id', 'amount', 'is_used', 'from_where', 'createdAt']
+            });
+            console.log(`Found ${rewardRecords.length} reward records to process for moving authorize letter history.`);
+
+            for (const record of rewardRecords) {
+                const t = await db.transaction();
+                try {
+                    let letterId = null;
+                    let desc = record.from_where || null;
+                    let product_type = 0;
+                    if (record.reward_id == 6) {
+                        letterId = 1;
+                    } else if (record.reward_id == 11) {
+                        letterId = 2;
+                        product_type = 3; // 终身授权
+                    } else if (record.reward_id == 12) {
+                        letterId = 3;
+                        product_type = 5; // 联储
+                    } else if (record.reward_id == 13) {
+                        letterId = 4;
+                        product_type = 4; // 贡献
+                    }
+                    if (letterId) {
+                        const exist = await AuthorizeLetterHistory.findOne({
+                            where: {
+                                user_id: record.user_id,
+                                letter_id: letterId,
+                                price: record.amount,
+                                createdAt: record.createdAt,
+                            },
+                            attributes: ['id'],
+                            transaction: t
+                        });
+                        if (!exist) {
+                            await AuthorizeLetterHistory.create({
+                                user_id: record.user_id,
+                                relation: record.relation,
+                                letter_id: letterId,
+                                price: record.amount,
+                                gold_count: letterId == 1 ? 0 : 1000,
+                                gold_owner_id: record.user_id,
+                                is_used: record.is_used,
+                                description: desc,
+                                createdAt: record.createdAt,
+                            }, { transaction: t });
+                        }
+                    }
+
+                    await t.commit();
+                    console.log(`Moved reward record ID ${record.reward_id} to authorize letter history with letter ID ${letterId}.`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[MOVE_AUTHORIZE_LETTER][Transaction][Record ID: ${record.id}]: ${error.stack}`);
+                }
+            }
+            console.log(`Completed moving authorize letter history at ${new Date().toISOString()}.`);
+        } catch (error) {
+            errLogger(`[MOVE_AUTHORIZE_LETTER]: ${error.stack}`);
         }
     }
 }
