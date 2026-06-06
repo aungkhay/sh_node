@@ -6206,9 +6206,6 @@ class Controller {
                         )`), 'is_used'
                     ]
                 ],
-                where: { 
-                    user_id: userId, 
-                },
                 order: [['createdAt', 'DESC']]
             });
 
