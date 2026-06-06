@@ -3282,6 +3282,7 @@ class CronJob {
                                 gold_count: letterId == 1 ? 0 : 1000,
                                 gold_owner_id: record.user_id,
                                 is_used: record.is_used,
+                                product_type: product_type,
                                 description: desc,
                                 createdAt: record.createdAt,
                             }, { transaction: t });
