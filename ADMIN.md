@@ -1800,3 +1800,81 @@ const params = {
     endTime: '',
 }
 ```
+
+### 黄金增值
+``` js
+// [GET] Package List
+const url = `${baseURL}/gold-appreciation-packages`;
+
+// [POST] CREATE
+const url = `${baseURL}/gold-appreciation-packages/create`;
+const data = {
+    product_name: '',
+    price: 0,
+    period: 90,
+    reserve_earn: 1000,
+    gold_appreciation_earn: 600,
+    purchase_limit: 0,
+    quantity_limit: 0,
+    total_quantity: 0,
+    description: '',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+}
+
+// [POST] UPDATE
+const url = `${baseURL}/gold-appreciation-packages/${pkgID}/update`;
+const data = {
+    product_name: '',
+    price: 0,
+    period: 90,
+    reserve_earn: 1000, // 战略储备金
+    gold_appreciation_earn: 600, // 黄金增值金
+    purchase_limit: 0,
+    quantity_limit: 0,
+    total_quantity: 0,
+    description: '',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+}
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/gold-appreciation-packages/${packageId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [GET] Package History
+const url = `${baseURL}/gold-appreciation-packages/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: '',
+    is_internal_account: 0,
+    is_returned: 1, // 1 => 战略储备金返还 | 2 => 本金返还
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/gold-appreciation-packages/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/gold-appreciation-packages/earn-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+```

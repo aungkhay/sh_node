@@ -969,3 +969,59 @@ exports.update_authorization_letter = () => {
             .withMessage('状态值无效'),
     ]
 }
+
+exports.create_gold_appreciation_package = () => {
+    return [
+        check('product_name', { msg: '产品名称不能为空' }).not().isEmpty(),
+        check('price').not().isEmpty().withMessage('价格不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('价格必须是数字'),
+        check('period').not().isEmpty().withMessage('周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('周期必须是正整数'),
+        // reserve_earn 储备收益
+        check('reserve_earn').not().isEmpty().withMessage('储备收益不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('储备收益必须是数字'),
+        // gold_appreciation_earn 黄金增值金
+        check('gold_appreciation_earn').not().isEmpty().withMessage('黄金增值金不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('黄金增值金必须是数字'),
+        // is_release_authorize_letter (0, 1)
+        check('is_release_authorize_letter').not().isEmpty().withMessage('是否发布授权书不能为空')
+            .bail()
+            .isIn([0, 1])
+            .withMessage('是否发布授权书值无效'),
+        // perchase_limit 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+        check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
+            .bail()
+            .isIn(['NONE', 'DAILY', 'TOTAL'])
+            .withMessage('购买限制无效'),
+        // quantity_limit 限购数量
+        check('quantity_limit').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('限购数量必须是数字'),
+        // total_quantity
+        check('total_quantity').not().isEmpty().withMessage('总数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('总数量必须是数字'),
+        // buy_one_get_quantity 
+        check('buy_one_get_quantity').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('买一赠一数量必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+        // tag optional => array ['NEW', 'HOT', 'RECOMMENDED']
+        check('tag')
+            .optional({ checkFalsy: true })
+            .isArray({ min: 1 })
+            .withMessage('标签必须是数组')
+    ]
+}

@@ -269,6 +269,27 @@ module.exports = async () => {
             description: '-',
             data_type: 'integer'
         },
+        {
+            type: 'gold_appreciation_package_description',
+            title: '黄金增值计划 - 描述',
+            val: '-',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'gold_appreciation_package_period',
+            title: '黄金增值计划 - 申报时间',
+            val: '2026-05-28 00:00:00|2026-06-28 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'gold_appreciation_package_daily_release_qty',
+            title: '黄金增值计划 - 每日发放数量',
+            val: '200000',
+            description: '-',
+            data_type: 'integer'
+        },
     ];
 
     const count = await Config.count();

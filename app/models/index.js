@@ -76,6 +76,10 @@ const Meeting = require('./Meeting');
 const AttendedMeeting = require('./AttendedMeeting');
 const AuthorizeLetter = require('./AuthorizeLetter');
 const AuthorizeLetterHistory = require('./AuthorizeLetterHistory');
+const GoldAppreciationPackage = require('./GoldAppreciationPackage');
+const GoldAppreciationPackageHistory = require('./GoldAppreciationPackageHistory');
+const GoldAppreciationPackageBonuses = require('./GoldAppreciationPackageBonuses');
+const GoldAppreciationPackageEarn = require('./GoldAppreciationPackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -409,6 +413,35 @@ AuthorizeLetterHistory.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_u
 User.hasMany(AuthorizeLetterHistory, { foreignKey: 'gold_owner_id', as: 'authorize_letter_gold_owner_histories', onDelete: 'CASCADE' });
 AuthorizeLetterHistory.belongsTo(User, { foreignKey: 'gold_owner_id', as: 'gold_owner', onDelete: 'CASCADE' });
 
+// ========== GOLD_APPRECIATION_PACKAGE ↔️ GOLD_APPRECIATION_PACKAGE_HISTORY (1:N) ==========
+GoldAppreciationPackage.hasMany(GoldAppreciationPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+GoldAppreciationPackageHistory.belongsTo(GoldAppreciationPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ GOLD_APPRECIATION_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(GoldAppreciationPackageHistory, { foreignKey: 'user_id', as: 'gold_appreciation_package_histories', onDelete: 'CASCADE' });
+GoldAppreciationPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ GOLD_APPRECIATION_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(GoldAppreciationPackageBonuses, { foreignKey: 'user_id', as: 'gold_appreciation_package_bonuses', onDelete: 'CASCADE' });
+GoldAppreciationPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+GoldAppreciationPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== GOLD_APPRECIATION_PACKAGE_HISTORY ↔️ GOLD_APPRECIATION_PACKAGE_BONUSES (1:N) ==========
+GoldAppreciationPackageHistory.hasMany(GoldAppreciationPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+GoldAppreciationPackageBonuses.belongsTo(GoldAppreciationPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ GOLD_APPRECIATION_PACKAGE_EARN (1:N) ==========
+User.hasMany(GoldAppreciationPackageEarn, { foreignKey: 'user_id', as: 'gold_appreciation_package_earn', onDelete: 'CASCADE' });
+GoldAppreciationPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== GOLD_APPRECIATION_PACKAGE_HISTORY ↔️ GOLD_APPRECIATION_PACKAGE_EARN (1:N) ==========
+GoldAppreciationPackageHistory.hasMany(GoldAppreciationPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+GoldAppreciationPackageEarn.belongsTo(GoldAppreciationPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== GOLD_APPRECIATION_PACKAGE ↔️ GOLD_APPRECIATION_PACKAGE_EARN (1:N) ==========
+GoldAppreciationPackage.hasMany(GoldAppreciationPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+GoldAppreciationPackageEarn.belongsTo(GoldAppreciationPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -481,6 +514,10 @@ const models = {
     AttendedMeeting,
     AuthorizeLetter,
     AuthorizeLetterHistory,
+    GoldAppreciationPackage,
+    GoldAppreciationPackageHistory,
+    GoldAppreciationPackageBonuses,
+    GoldAppreciationPackageEarn
 };
 
 // Export models + db connection

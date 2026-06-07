@@ -903,3 +903,25 @@ const data = {
     receiver_phone: ''
 }
 ```
+
+### 黄金增值计划
+```js
+// [GET] Packages
+const url = `${baseURL}/gold-appreciation-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/gold-appreciation-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/gold-appreciation-packages/history`;
+
+// [GET] Earn History
+// type: 0-储备收益, 1-个人黄金, 2-本金返还
+const url = `${baseURL}/gold-appreciation-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/gold-appreciation-packages/bonus-history`;
+```

@@ -314,6 +314,17 @@ class AdminRoute extends express.Router {
         this.get('/shanghai-cooperations/bonus-history', middleware.isLoggedIn('shanghai-cooperation-bonus-history-list'), ShanghaiCooperationCtrl.SHANGHAI_COOPERATION_BONUS_HISTORY);
         this.get('/shanghai-cooperations/earn-history', middleware.isLoggedIn('shanghai-cooperation-earn-history-list'), ShanghaiCooperationCtrl.SHANGHAI_COOPERATION_EARN_HISTORY);
 
+        // Gold Appreciation Package
+        let GoldAppreciationPackageController = require('../controllers/admins/GoldAppreciationPackageController');
+        let GoldAppreciationPackageCtrl = new GoldAppreciationPackageController(app);
+        this.get('/gold-appreciation-packages', middleware.isLoggedIn('gold-appreciation-package-list'), GoldAppreciationPackageCtrl.INDEX);
+        this.post('/gold-appreciation-packages/create', FormValidator.create_gold_appreciation_package(), middleware.isLoggedIn('gold-appreciation-package-create'), GoldAppreciationPackageCtrl.CREATE);
+        this.post('/gold-appreciation-packages/:id/update', FormValidator.create_gold_appreciation_package(), middleware.isLoggedIn('gold-appreciation-package-update'), GoldAppreciationPackageCtrl.UPDATE);
+        this.post('/gold-appreciation-packages/:id/upload', middleware.isLoggedIn('gold-appreciation-package-create,gold-appreciation-package-update'), GoldAppreciationPackageCtrl.UPLOAD);
+        this.get('/gold-appreciation-packages/history', middleware.isLoggedIn('gold-appreciation-package-history-list'), GoldAppreciationPackageCtrl.PACKAGE_HISTORY);
+        this.get('/gold-appreciation-packages/bonus-history', middleware.isLoggedIn('gold-appreciation-package-bonus-history-list'), GoldAppreciationPackageCtrl.BONUSES_HISTORY);
+        this.get('/gold-appreciation-packages/earn-history', middleware.isLoggedIn('gold-appreciation-package-earn-history-list'), GoldAppreciationPackageCtrl.EARN_HISTORY);
+
         // Meeting
         let MeetingController = require('../controllers/admins/MeetingController');
         let MeetingCtrl = new MeetingController(app);

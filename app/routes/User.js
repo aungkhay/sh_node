@@ -112,6 +112,12 @@ class UserRoute extends express.Router {
         this.get('/shanghai-cooperation/history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_HISTORY);
         this.get('/shanghai-cooperation/earn-history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_EARN_HISTORY);
         this.get('/shanghai-cooperation/bonus-history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_BONUS_HISTORY);
+        // Gold Appreciation Package Routes
+        this.get('/gold-appreciation-packages', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE);
+        this.post('/gold-appreciation-packages/:id/buy', FormValidator.buy_gold_appreciation_package(), middleware.isLoggedIn, HomeCtrl.BUY_GOLD_APPRECIATION_PACKAGE);
+        this.get('/gold-appreciation-packages/history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_HISTORY);
+        this.get('/gold-appreciation-packages/earn-history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_EARN_HISTORY);
+        this.get('/gold-appreciation-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

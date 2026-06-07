@@ -359,6 +359,12 @@ exports.buy_shanghai_cooperation = () => {
     ]
 }
 
+exports.buy_gold_appreciation_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
 exports.transfer_authorize_letter = () => {
     return [
         check('receiver_phone', { msg: '接收方手机号不能为空' }).not().isEmpty(),

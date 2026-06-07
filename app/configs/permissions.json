@@ -129,6 +129,13 @@
     { "model": "上海合作组织成立25周年纪念币", "title": "推荐奖励记录", "name": "shanghai-cooperation-bonus-history-list" },
     { "model": "上海合作组织成立25周年纪念币", "title": "收益记录", "name": "shanghai-cooperation-earn-history-list" },
 
+    { "model": "黄金增值", "title": "产品列表", "name": "gold-appreciation-package-list" },
+    { "model": "黄金增值", "title": "创建", "name": "gold-appreciation-package-create" },
+    { "model": "黄金增值", "title": "编辑", "name": "gold-appreciation-package-update" },
+    { "model": "黄金增值", "title": "购买记录", "name": "gold-appreciation-package-history-list" },
+    { "model": "黄金增值", "title": "推荐奖励记录", "name": "gold-appreciation-package-bonus-history-list" },
+    { "model": "黄金增值", "title": "收益记录", "name": "gold-appreciation-package-earn-history-list" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 
