@@ -2612,11 +2612,10 @@ class CronJob {
                     }
 
                     let addBalance = 0;
-
                     let updateObj = {};
 
                     // 2 - 本金返还
-                    if (pack.is_returned_price === 0) {
+                    if (pack.is_returned_price == 0) {
                         await GoldAppreciationPackageEarn.create({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -2653,6 +2652,7 @@ class CronJob {
                     const letterHistory = await AuthorizeLetterHistory.findOne({
                         where: {
                             user_id: pack.user_id,
+                            letter_id: 5, // 黄金增值金授权书
                             gold_count: {
                                 [Op.gte]: goldGram,
                             },
