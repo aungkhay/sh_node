@@ -2596,7 +2596,7 @@ class CronJob {
                         [Op.gt]: 0,
                     },
                 },
-                attributes: ['id', 'user_id', 'package_id', 'price', 'period', 'reserve_earn', 'gold_appreciation_earn', 'is_returned_earn', 'is_returned_price']
+                attributes: ['id', 'user_id', 'package_id', 'price', 'period', 'reserve_earn', 'gold_appreciation_earn', 'is_returned_earn', 'is_returned_price', 'gold_appreciation_earn_count_remain']
             });
 
             const goldPrice = await GoldPrice.findOne({
