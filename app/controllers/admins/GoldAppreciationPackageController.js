@@ -80,7 +80,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { product_name, price, period, reserve_earn, release_reserve_earn_at, gold_appreciation_earn, gold_appreciation_earn_count, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity,  } = req.body;
+            const { product_name, price, period, reserve_earn, release_reserve_earn_at, gold_appreciation_earn, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity,  } = req.body;
             const newPackage = await GoldAppreciationPackage.create({
                 product_name: product_name,
                 price: price,
@@ -88,7 +88,6 @@ class Controller {
                 reserve_earn: reserve_earn,
                 release_reserve_earn_at: release_reserve_earn_at,
                 gold_appreciation_earn: gold_appreciation_earn,
-                gold_appreciation_earn_count: gold_appreciation_earn_count,
                 is_release_authorize_letter: is_release_authorize_letter,
                 purchase_limit: purchase_limit,
                 quantity_limit: quantity_limit,
@@ -118,7 +117,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
-            const { product_name, price, period, reserve_earn, release_reserve_earn_at, gold_appreciation_earn, gold_appreciation_earn_count, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, status } = req.body;
+            const { product_name, price, period, reserve_earn, release_reserve_earn_at, gold_appreciation_earn, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, status } = req.body;
             await pkg.update({
                 product_name: product_name,
                 price: price,
@@ -126,7 +125,6 @@ class Controller {
                 reserve_earn: reserve_earn,
                 release_reserve_earn_at: release_reserve_earn_at,
                 gold_appreciation_earn: gold_appreciation_earn,
-                gold_appreciation_earn_count: gold_appreciation_earn_count,
                 is_release_authorize_letter: is_release_authorize_letter,
                 purchase_limit: purchase_limit,
                 quantity_limit: quantity_limit,
