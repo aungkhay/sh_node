@@ -2628,7 +2628,6 @@ class CronJob {
                         updateObj = {
                             is_returned_price: 1,
                             return_price_date: new Date(),
-                            description: 'CRON',
                         }
 
                         await CashFlow.create({

@@ -3532,7 +3532,12 @@ class Controller {
             * LIST QUERY (WITH JOIN)
             * =============================== */
             const rows = await RewardRecord.findAll({
-                where: { user_id: userId },
+                where: { 
+                    user_id: userId,
+                    reward_id: {
+                        [Op.notIn]: [6, 11, 12, 13]
+                    }
+                 },
                 attributes: ['id', 'amount', 'is_used', 'is_spring_festival_event', 'check_in_type', 'validedAt', 'createdAt'],
                 include: [
                     {
