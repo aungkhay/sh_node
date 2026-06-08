@@ -2666,7 +2666,7 @@ class CronJob {
                             package_history_id: pack.id,
                             amount: pack.gold_appreciation_earn,
                             type: 0, // 0-黄金增值金
-                            description: `扣除${goldGram.toFixed(4)}克黄金`,
+                            description: `转换${goldGram.toFixed(4)}克黄金`,
                         }, { transaction: t });
 
                         await CashFlow.create({
