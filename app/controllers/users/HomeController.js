@@ -8081,7 +8081,7 @@ class Controller {
                             gold_appreciation_earn: gPackage.gold_appreciation_earn,
                             period: gPackage.period,
                             return_date: moment().add(gPackage.release_reserve_earn_at, 'days').toDate(),
-                            gold_appreciation_earn_count_remain: gPackage.gold_appreciation_earn_count,
+                            gold_appreciation_earn_count_remain: gPackage.period,
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
                         const gPackageHistoryItem = await GoldAppreciationPackageHistory.create(obj, { transaction: t });
@@ -8097,7 +8097,7 @@ class Controller {
                         gold_appreciation_earn: gPackage.gold_appreciation_earn,
                         period: gPackage.period,
                         return_date: moment().add(gPackage.release_reserve_earn_at, 'days').toDate(),
-                        gold_appreciation_earn_count_remain: gPackage.gold_appreciation_earn_count,
+                        gold_appreciation_earn_count_remain: gPackage.period,
                     }
                     const gPackageHistoryItem = await GoldAppreciationPackageHistory.create(obj, { transaction: t });
                     pkgHistory.push(gPackageHistoryItem);

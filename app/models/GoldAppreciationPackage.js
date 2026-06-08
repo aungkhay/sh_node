@@ -56,12 +56,6 @@ GoldAppreciationPackage.init({
         defaultValue: 0,
         comment: '黄金增值金',
     },
-    gold_appreciation_earn_count: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
-        comment: '发放黄金增值金数量',
-    },
     is_release_authorize_letter: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
