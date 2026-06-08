@@ -2615,7 +2615,7 @@ class CronJob {
                     let updateObj = {};
 
                     // 2 - 本金返还
-                    if (pack.is_returned_price == 0) {
+                    if (pack.is_returned_price == 0 && pack.price > 0) {
                         await GoldAppreciationPackageEarn.create({
                             user_id: pack.user_id,
                             relation: user.relation,
