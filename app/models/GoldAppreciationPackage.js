@@ -37,7 +37,7 @@ GoldAppreciationPackage.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
-        comment: '周期(天)',
+        comment: '周期(期)',
     },
     reserve_earn: {
         type: DataTypes.DECIMAL(20, 8),

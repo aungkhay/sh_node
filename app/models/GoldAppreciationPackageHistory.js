@@ -63,7 +63,7 @@ GoldAppreciationPackageHistory.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
-        comment: '周期(天)',
+        comment: '周期(期)',
     },
     return_date: {
         type: DataTypes.DATE,
@@ -92,11 +92,11 @@ GoldAppreciationPackageHistory.init({
         allowNull: true,
         comment: '实际返还本金日期',
     },
-    is_returned_all: {
-        type: DataTypes.TINYINT,
+    gold_appreciation_earn_count_remain: {
+        type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
-        comment: '是否已返还全部',
+        comment: '未返还的黄金增值金数量',
     },
     description: {
         type: DataTypes.STRING,

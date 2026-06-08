@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -59,10 +59,13 @@ class CronJob {
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
         cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
+        cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
         cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
         // Run every 10 second
         cron.schedule('*/10 * * * * *', this.RELEASE_MEETING_REWARD).start();
+        // every 15th of month at 00:40 AM
+        cron.schedule('40 0 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -2582,6 +2585,184 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[CHECK_FEDERAL_PACKAGE_REIMBURSEMENT]: ${error.stack}`);
+        }
+    }
+
+    CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN = async () => {
+        try {
+            const packages = await GoldAppreciationPackageHistory.findAll({
+                where: {
+                    gold_appreciation_earn_count_remain: {
+                        [Op.gt]: 0,
+                    },
+                },
+                attributes: ['id', 'user_id', 'package_id', 'price', 'period', 'reserve_earn', 'gold_appreciation_earn', 'is_returned_earn', 'is_returned_price']
+            });
+
+            const goldPrice = await GoldPrice.findOne({
+                order: [['createdAt', 'DESC']],
+            });
+
+            for (const pack of packages) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+
+                    let addBalance = 0;
+
+                    let updateObj = {};
+
+                    // 2 - 本金返还
+                    if (pack.is_returned_price === 0) {
+                        await GoldAppreciationPackageEarn.create({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: Number(pack.price),
+                            type: 2, // 2-本金返还
+                        }, { transaction: t });
+
+                        updateObj = {
+                            is_returned_price: 1,
+                            return_price_date: new Date(),
+                            description: 'CRON',
+                        }
+
+                        await CashFlow.create({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldAppreciationPackageEarn',
+                            type: '黄金增值计划本金返还',
+                            amount: Number(pack.price),
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(pack.price),
+                            flow_status: 'IN',
+                            description: `黄金增值计划本金返还${pack.price}`,
+                        }, { transaction: t });
+
+                        addBalance += Number(pack.price);
+                    }
+
+                    // 0 - 黄金增值金
+                    const goldGram = Number(pack.gold_appreciation_earn) / Number(goldPrice.reserve_price);
+                    const letterHistory = await AuthorizeLetterHistory.findOne({
+                        where: {
+                            user_id: pack.user_id,
+                            gold_count: {
+                                [Op.gte]: goldGram,
+                            },
+                        },
+                    });
+                    if (letterHistory && goldGram > 0) {
+                        await letterHistory.increment({ gold_count: -goldGram }, { transaction: t });
+                        await GoldAppreciationPackageEarn.create({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: pack.gold_appreciation_earn,
+                            type: 0, // 0-黄金增值金
+                            description: `金价-${goldPrice.reserve_price} | 扣除${goldGram.toFixed(4)}克`,
+                        }, { transaction: t });
+
+                        await CashFlow.create({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldAppreciationPackageEarn',
+                            type: '黄金增值金返还',
+                            amount: pack.gold_appreciation_earn,
+                            before_amount: user.balance + addBalance,
+                            after_amount: Number(user.balance) + Number(pack.gold_appreciation_earn) + addBalance,
+                            flow_status: 'IN',
+                        }, { transaction: t });
+
+                        updateObj.gold_appreciation_earn_count_remain = pack.gold_appreciation_earn_count_remain - 1;
+                        addBalance += Number(pack.gold_appreciation_earn);
+                    }
+                    
+                    if (addBalance > 0) {
+                        await user.increment({ balance: addBalance }, { transaction: t });
+                        await pack.update(updateObj, { transaction: t });
+                    }
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }                  
+            }
+        } catch (error) {
+            errLogger(`[CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN]: ${error.stack}`);
+        }
+    }
+
+    CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT = async () => {
+        try {
+            const packages = await GoldAppreciationPackageHistory.findAll({
+                where: {
+                    return_date: {
+                        [Op.lte]: moment().toDate(),
+                    },
+                    is_returned_earn: 0
+                },
+                attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn']
+            });
+
+            for (const pack of packages) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+                    const reserveEarn = Number(pack.reserve_earn);
+
+                    if (reserveEarn > 0) {
+                        await GoldAppreciationPackageEarn.create({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: reserveEarn,
+                            type: 1, // 1-战略储备金
+                        }, { transaction: t });
+
+                        await pack.update({
+                            is_returned_earn: 1,
+                            return_earn_date: new Date(),
+                        }, { transaction: t });
+
+                        await CashFlow.create({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldAppreciationPackageEarn',
+                            type: '黄金增值计划战略储备金返还',
+                            amount: reserveEarn,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + reserveEarn,
+                            flow_status: 'IN',
+                            description: `黄金增值计划战略储备金返还${reserveEarn}`,
+                        }, { transaction: t });
+
+                        await user.increment({ balance: reserveEarn }, { transaction: t });
+                    }
+                    await t.commit();
+
+                } catch (error) {
+                    errLogger(`[CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }                  
+            }
+
+        } catch (error) {
+            errLogger(`[CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT]: ${error.stack}`);
         }
     }
 
