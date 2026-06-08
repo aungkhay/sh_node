@@ -46,8 +46,8 @@ GoldAppreciationPackage.init({
         comment: '战略储备金',
     },
     release_reserve_earn_at: {
-        type: DataTypes.DATE,
-        allowNull: true,
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
         comment: '战略储备金发放时间',
     },
     gold_appreciation_earn: {

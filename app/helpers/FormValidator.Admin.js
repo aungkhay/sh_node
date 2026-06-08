@@ -987,7 +987,8 @@ exports.create_gold_appreciation_package = () => {
             .withMessage('储备收益必须是数字'),
         check('release_reserve_earn_at').not().isEmpty().withMessage('储备收益释放时间不能为空')
             .bail()
-            .isISO8601().withMessage('储备收益释放时间必须是有效的日期格式'),
+            .isNumeric()
+            .withMessage('储备收益释放时间必须是数字'),
         // gold_appreciation_earn 黄金增值金
         check('gold_appreciation_earn').not().isEmpty().withMessage('黄金增值金不能为空')
             .bail()
