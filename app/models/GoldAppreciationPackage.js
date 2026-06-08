@@ -45,11 +45,22 @@ GoldAppreciationPackage.init({
         defaultValue: 0,
         comment: '战略储备金',
     },
+    release_reserve_earn_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '战略储备金发放时间',
+    },
     gold_appreciation_earn: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,
         defaultValue: 0,
         comment: '黄金增值金',
+    },
+    gold_appreciation_earn_count: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '发放黄金增值金数量',
     },
     is_release_authorize_letter: {
         type: DataTypes.INTEGER,

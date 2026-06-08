@@ -1812,11 +1812,14 @@ const data = {
     product_name: '',
     price: 0,
     period: 90,
-    reserve_earn: 1000,
-    gold_appreciation_earn: 600,
-    purchase_limit: 0,
-    quantity_limit: 0,
-    total_quantity: 0,
+    reserve_earn: 1000, // 战略储备金
+    release_reserve_earn_at: '', // 战略储备金发放时间
+    gold_appreciation_earn: 600, // 黄金增值金
+    gold_appreciation_earn_count: 20, // 发放黄金增值金数量
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
     description: '',
     status: 1, // 1-在售, 2-下架, 3-售罄
 }
@@ -1828,10 +1831,13 @@ const data = {
     price: 0,
     period: 90,
     reserve_earn: 1000, // 战略储备金
+    release_reserve_earn_at: '', // 战略储备金发放时间
     gold_appreciation_earn: 600, // 黄金增值金
-    purchase_limit: 0,
-    quantity_limit: 0,
-    total_quantity: 0,
+    gold_appreciation_earn_count: 20, // 发放黄金增值金数量
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
     description: '',
     status: 1, // 1-在售, 2-下架, 3-售罄
 }

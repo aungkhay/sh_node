@@ -985,11 +985,18 @@ exports.create_gold_appreciation_package = () => {
             .bail()
             .isNumeric()
             .withMessage('储备收益必须是数字'),
+        check('release_reserve_earn_at').not().isEmpty().withMessage('储备收益释放时间不能为空')
+            .bail()
+            .isISO8601().withMessage('储备收益释放时间必须是有效的日期格式'),
         // gold_appreciation_earn 黄金增值金
         check('gold_appreciation_earn').not().isEmpty().withMessage('黄金增值金不能为空')
             .bail()
             .isNumeric()
             .withMessage('黄金增值金必须是数字'),
+        check('gold_appreciation_earn_count').not().isEmpty().withMessage('发放黄金增值金数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('发放黄金增值金数量必须是数字'),
         // is_release_authorize_letter (0, 1)
         check('is_release_authorize_letter').not().isEmpty().withMessage('是否发布授权书不能为空')
             .bail()
