@@ -8243,7 +8243,6 @@ class Controller {
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
             const userId = req.user_id;
-            const type = req.query.type;
 
             const { rows, count } = await GoldAppreciationPackageEarn.findAndCountAll({
                 include: [
@@ -8258,7 +8257,7 @@ class Controller {
                         attributes: ['id', 'product_name']
                     }
                 ],
-                where: { user_id: userId, type: type },
+                where: { user_id: userId },
                 attributes: ['id', 'amount', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
