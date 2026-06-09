@@ -2708,7 +2708,10 @@ class CronJob {
                     return_date: {
                         [Op.lte]: moment().toDate(),
                     },
-                    is_returned_earn: 0
+                    is_returned_earn: 0,
+                    reserve_earn: {
+                        [Op.gt]: 0,
+                    }
                 },
                 attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn']
             });
