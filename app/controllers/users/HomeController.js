@@ -6236,7 +6236,14 @@ class Controller {
             }
 
             const userId = req.user_id;
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6'] });
+            const { payment_password } = req.body;
+
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6', 'payment_password'] });
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+
             const letterId = req.params.id;
             if (letterId == 1 && Number(user.have_reward_6) == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
@@ -6251,6 +6258,7 @@ class Controller {
             if (Number(user.reserve_fund) < Number(letter.price)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `储备金不足: 价格${letter.price}元`, {});
             }
+            
             const t = await db.transaction();
             try {
                 await CashFlow.create({
@@ -6318,11 +6326,15 @@ class Controller {
 
             const userId = req.user_id;
             const letterId = req.params.letterId;
-            const { receiver_phone } = req.body;
+            const { receiver_phone, payment_password } = req.body;
 
-            const sender = await User.findByPk(userId, { attributes: ['id', 'relation', 'phone_number'] });
+            const sender = await User.findByPk(userId, { attributes: ['id', 'relation', 'phone_number', 'payment_password'] });
             if (sender.phone_number === receiver_phone) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不能转让给自己', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== sender.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
             const receiver = await User.findOne({ where: { phone_number: receiver_phone }, attributes: ['id', 'relation'] });
