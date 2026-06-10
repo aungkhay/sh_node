@@ -6304,6 +6304,43 @@ class Controller {
         }
     }
 
+    LETTER_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await AuthorizeLetterHistory.findAndCountAll({
+                include: {
+                    model: AuthorizeLetter,
+                    as: 'letter',
+                    attributes: ['id', 'title']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'price', 'gold_count', 'is_used', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[LETTER_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     TRANSFER_AUTHORIZE_LETTER = async (req, res) => {
         const lockKey = `lock:transfer-authorize-letter:${req.ip}`;
         let redisLocked = false;

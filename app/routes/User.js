@@ -79,6 +79,7 @@ class UserRoute extends express.Router {
         this.get('/gold-gift-packages/history', middleware.isLoggedIn, HomeCtrl.GOLD_PACKAGE_HISTORY);
         this.get('/authorization-letters', middleware.isLoggedIn, HomeCtrl.AUTHORIZE_LETTERS);
         this.post('/authorization-letters/:id/buy', middleware.isLoggedIn, HomeCtrl.BUY_AUTHORIZATION_LETTER);
+        this.get('/authorization-letters/history', middleware.isLoggedIn, HomeCtrl.LETTER_HISTORY);
         this.post('/authorization-letters/:letterId/transfer', FormValidator.transfer_authorize_letter(), middleware.isLoggedIn, HomeCtrl.TRANSFER_AUTHORIZE_LETTER);
         this.get('/gold-gift-packages/bonuses', middleware.isLoggedIn, HomeCtrl.GET_GOLD_PACKAGE_BONUS);
         this.get('/gold-gift-packages/repurchase-dialog-info', middleware.isLoggedIn, HomeCtrl.REPURCHASE_PACKAGE_DIALOG);

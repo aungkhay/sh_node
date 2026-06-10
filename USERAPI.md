@@ -897,6 +897,13 @@ const url = `${baseURL}/authorization-letters`;
 // [POST] Buy 
 const url = `${baseURL}/authorization-letters/${letterId}/buy`;
 
+// [GET] History
+const url = `${baseURL}/authorization-letters/history`;
+const params = {
+    page: 1,
+    perPage: 10
+}
+
 // [POST] Transfer
 const url = `${baseURL}/authorization-letters/${letterId}/transfer`;
 const data = {

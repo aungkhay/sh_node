@@ -324,7 +324,6 @@ class Controller {
 
             const goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
                 where: {
-                    user_id: userId,
                     is_used: 0,
                     gold_owner_id: userId
                 },
