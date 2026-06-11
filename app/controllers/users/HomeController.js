@@ -5064,12 +5064,23 @@ class Controller {
                 }
 
                 if (fPackage.is_release_authorize_letter) {
-                    await RewardRecord.create({
+                    // await RewardRecord.create({
+                    //     user_id: user.id,
+                    //     relation: user.relation,
+                    //     reward_id: 12, // 上合组织哈萨克斯坦区授权书
+                    //     amount: 1,
+                    //     from_where: `PKG-${pkgHistory.id}`
+                    // }, { transaction: t });
+
+                    await AuthorizeLetterHistory.create({
                         user_id: user.id,
                         relation: user.relation,
-                        reward_id: 12, // 上合组织哈萨克斯坦区授权书
-                        amount: 1,
-                        from_where: `PKG-${pkgHistory.id}`
+                        letter_id: 3,
+                        price: 0,
+                        gold_count: 1000,
+                        gold_owner_id: user.id,
+                        product_type: 5, // 联储
+                        description: `PKG-${pkg.id}`
                     }, { transaction: t });
                 }
 
