@@ -15,6 +15,7 @@ class Controller {
         this.getOffset = this.commonHelper.getOffset;
         this.adminLogger = this.commonHelper.adminLogger;
         this.OSS = new AliOSS();
+        this.adminLogger = this.commonHelper.adminLogger;
     }
 
     INDEX = async (req, res) => {
@@ -96,6 +97,10 @@ class Controller {
                 buy_one_get_quantity: buy_one_get_quantity,
                 tag: req.body.tag ? req.body.tag.join('|') : '',
             });
+
+            // log
+            await this.adminLogger(req, 'GoldAppreciationPackage', 'create');
+
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', newPackage);
 
         } catch (error) {
@@ -134,6 +139,10 @@ class Controller {
                 status: status,
                 tag: req.body.tag ? req.body.tag.join('|') : '',
             });
+
+            // log
+            await this.adminLogger(req, 'GoldAppreciationPackage', 'update');
+
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', pkg);
         } catch (error) {
             errLogger(`[GoldAppreciationPackage][UPDATE]: ${error.stack}`);
