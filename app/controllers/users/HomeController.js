@@ -5080,7 +5080,7 @@ class Controller {
                         gold_count: 1000,
                         gold_owner_id: user.id,
                         product_type: 5, // 联储
-                        description: `PKG-${pkg.id}`
+                        description: `PKG-${pkgHistory.id}`
                     }, { transaction: t });
                 }
 
