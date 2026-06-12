@@ -293,7 +293,7 @@ module.exports = async () => {
         {
             type: 'shanghai_cooperation_get_free_time',
             title: '上海合作组织免费领取时间',
-            val: '2026-05-20 00:00:00|2026-06-15 00:00:00',
+            val: '2026-06-15 00:00:00|2026-06-30 00:00:00',
             description: '-',
             data_type: 'string'
         },
