@@ -925,8 +925,17 @@ const data = {
 // [GET] Packages
 const url = `${baseURL}/gold-appreciation-packages`;
 
+// [GET] Get Free
+const url = `${baseURL}/free-gold-appreciation-packages`;
+
 // [POST] Buy Package
 const url = `${baseURL}/gold-appreciation-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [POST] Buy Package
+const url = `${baseURL}/gold-appreciation-packages/${pkgID}/get-free`;
 const data = {
     payment_password: ''
 }

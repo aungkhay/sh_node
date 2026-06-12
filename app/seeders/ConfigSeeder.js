@@ -303,7 +303,14 @@ module.exports = async () => {
             val: '2',
             description: '1 - 联储 | 2 - 上海合作组织 | 3 - 黄金增值',
             data_type: 'integer'
-        }
+        },
+        {
+            type: 'gold_appreciation_package_get_free_time',
+            title: '黄金增值计划免费领取时间',
+            val: '2026-06-15 00:00:00|2026-06-30 00:00:00',
+            description: '-',
+            data_type: 'string'
+        },
     ];
 
     const count = await Config.count();

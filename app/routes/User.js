@@ -117,7 +117,9 @@ class UserRoute extends express.Router {
         this.get('/shanghai-cooperation/bonus-history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_BONUS_HISTORY);
         // Gold Appreciation Package Routes
         this.get('/gold-appreciation-packages', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE);
+        this.get('/free-gold-appreciation-packages', middleware.isLoggedIn, HomeCtrl.FREE_GOLD_APPRECIATION_PACKAGE);
         this.post('/gold-appreciation-packages/:id/buy', FormValidator.buy_gold_appreciation_package(), middleware.isLoggedIn, HomeCtrl.BUY_GOLD_APPRECIATION_PACKAGE);
+        this.post('/gold-appreciation-packages/:id/get-free', FormValidator.buy_gold_appreciation_package(), middleware.isLoggedIn, HomeCtrl.GET_FREE_GOLD_APPRECIATION_PACKAGE);
         this.get('/gold-appreciation-packages/history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_HISTORY);
         this.get('/gold-appreciation-packages/earn-history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_EARN_HISTORY);
         this.get('/gold-appreciation-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_BONUS_HISTORY);
