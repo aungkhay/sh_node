@@ -1662,13 +1662,23 @@ class Controller {
                 }
                 await this.redisHelper.setValue(`masonic_fund_summary`, JSON.stringify(masonicFund), 600); // cache for 10 minutes
             }
+
+            // get_free_product_type
+            let freeProductType = await this.redisHelper.getValue('get_free_product_type');
+            if (!freeProductType) {
+                const config = await Config.findOne({ where: { type: 'get_free_product_type' }, attributes: ['val'] });
+                await this.redisHelper.setValue('get_free_product_type', config.val);
+                freeProductType = config.val;
+            }
+
             let data = {
                 welcome_message: cachedMessage,
                 popup_announcement: popup_announcement,
                 is_show_popup: is_show_popup,
                 popup_announcement_1: popup_announcement_1,
                 is_show_popup_1: is_show_popup_1,
-                masonic_fund: masonicFund
+                masonic_fund: masonicFund,
+                free_product_type: freeProductType
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);

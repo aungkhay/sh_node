@@ -92,6 +92,10 @@ class Controller {
                     return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, valError);
                 }
             }
+            if (config.type === 'get_free_product_type' && ![1,2,3].includes(Number(val))) {
+                const valError = [{ field: 'val', msg: '值无效，必须是1、2或3' }];
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, valError);
+            }
 
             let newVal = val;
             if (Array.isArray(val) || typeof val === 'object') {

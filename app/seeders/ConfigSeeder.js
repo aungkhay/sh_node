@@ -297,6 +297,13 @@ module.exports = async () => {
             description: '-',
             data_type: 'string'
         },
+        {
+            type: 'get_free_product_type',
+            title: '免费领取产品类型',
+            val: '2',
+            description: '1 - 联储 | 2 - 上海合作组织 | 3 - 黄金增值',
+            data_type: 'integer'
+        }
     ];
 
     const count = await Config.count();
