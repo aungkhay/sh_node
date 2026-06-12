@@ -853,7 +853,7 @@ const data = {
     payment_password: ''
 }
 
-// [POST] Buy Shanghai Cooperation
+// [POST] Get Free Shanghai Cooperation
 const url = `${baseURL}/shanghai-cooperation/${packageId}/get-free`;
 const data = {
     payment_password: ''
