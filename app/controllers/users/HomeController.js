@@ -5725,6 +5725,21 @@ class Controller {
         }
     }
 
+    FREE_SHANGHAI_COOPERATION = async (req, res) => {
+        try {
+            const packages = await ShanghaiCooperation.findAll({
+                where: {
+                    can_new_registered_user_get_free: 1
+                }
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { packages });
+        } catch (error) {
+            errLogger(`[FREE_SHANGHAI_COOPERATION][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
     BUY_SHANGHAI_COOPERATION = async (req, res) => {
         const lockKey = `lock:buy-shanghai-cooperation-package:${req.ip}`;
         let redisLocked = false; 
@@ -5991,6 +6006,133 @@ class Controller {
 
         } catch (error) {
             errLogger(`[BUY_SHANGHAI_COOPERATION][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    GET_FREE_SHANGHAI_COOPERATION = async (req, res) => {
+        const lockKey = `lock:free-shanghai-cooperation-package:${req.ip}`;
+        let redisLocked = false;
+
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.user_id;
+            const existingFreePackage = await ShanghaiCooperationHistory.findOne({
+                where: {
+                    user_id: userId,
+                    price: 0,
+                    package_id: req.params.id,
+                    description: '新注册用户福利'
+                }
+            });
+            if (existingFreePackage) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过免费礼包', {});
+            }
+
+            const scPkg = await ShanghaiCooperation.findByPk(req.params.id);
+            if (scPkg.can_new_registered_user_get_free < 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包不支持新注册用户免费领取', {});
+            }
+
+            const payment_password = req.body.payment_password;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'createdAt']
+            });
+
+            let getTime = await this.redisHelper.getValue('shanghai_cooperation_get_free_time');
+            if (!getTime) {
+                const conf = await Config.findOne({ where: { type: 'shanghai_cooperation_get_free_time' } });
+                if (conf) {
+                    getTime = conf.val;
+                    await this.redisHelper.setValue('shanghai_cooperation_get_free_time', getTime);
+                }
+            }
+            if (getTime) {
+                const [start, end] = getTime.split('|');
+
+                // check user's registration time is between start and end time
+                if (moment(user.createdAt).isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss')) || moment(user.createdAt).isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '注册时间不符合领取条件', {});
+                }
+            }
+
+            if (!user.kyc) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                const [pkgHistory, created] = await ShanghaiCooperationHistory.findOrCreate({
+                    where: {
+                        user_id: user.id,
+                        package_id: scPkg.id,
+                    },
+                    defaults: {
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: scPkg.id,
+                        price: 0,
+                        exchange_value: scPkg.exchange_value,
+                        masonic_fund: scPkg.masonic_fund,
+                        end_date: moment().add(scPkg.period, 'days').toDate(),
+                        description: '新注册用户福利'
+                    },
+                    transaction: t
+                });
+
+                if (!created) {
+                    await t.rollback();
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过免费礼包', {});
+                }
+
+                if (scPkg.coin > 0) {
+                    await RewardRecord.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        reward_id: 14, // 上海合作组织成立25周年纪念币
+                        amount: scPkg.coin,
+                        from_where: `PKG-${pkgHistory.id}`
+                    }, { transaction: t });
+                }
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '免费领取成功', {});
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '免费领取礼包失败', {}); 
+            }
+            
+        } catch (error) {
+            errLogger(`[GET_FREE_SHANGHAI_COOPERATION_PACKAGE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }

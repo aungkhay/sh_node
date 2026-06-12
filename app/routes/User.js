@@ -109,7 +109,9 @@ class UserRoute extends express.Router {
         this.get('/policy-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.POLICY_PACKAGE_BONUS_HISTORY);
         // Shanghai Cooperation Routes
         this.get('/shanghai-cooperation', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION);
+        this.get('/free-shanghai-cooperation', middleware.isLoggedIn, HomeCtrl.FREE_SHANGHAI_COOPERATION);
         this.post('/shanghai-cooperation/:id/buy', FormValidator.buy_shanghai_cooperation(), middleware.isLoggedIn, HomeCtrl.BUY_SHANGHAI_COOPERATION);
+        this.post('/shanghai-cooperation/:id/get-free', FormValidator.buy_shanghai_cooperation(), middleware.isLoggedIn, HomeCtrl.GET_FREE_SHANGHAI_COOPERATION);
         this.get('/shanghai-cooperation/history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_HISTORY);
         this.get('/shanghai-cooperation/earn-history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_EARN_HISTORY);
         this.get('/shanghai-cooperation/bonus-history', middleware.isLoggedIn, HomeCtrl.SHANGHAI_COOPERATION_BONUS_HISTORY);

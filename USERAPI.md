@@ -844,8 +844,17 @@ const params = {
 // [GET] Shanghai Cooperation
 const url = `${baseURL}/shanghai-cooperation`;
 
+// [GET] Free Shanghai Cooperation
+const url = `${baseURL}/free-shanghai-cooperation`;
+
 // [POST] Buy Shanghai Cooperation
 const url = `${baseURL}/shanghai-cooperation/${packageId}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [POST] Buy Shanghai Cooperation
+const url = `${baseURL}/shanghai-cooperation/${packageId}/get-free`;
 const data = {
     payment_password: ''
 }

@@ -919,6 +919,9 @@ exports.create_shanghai_cooperation = () => {
             .bail()
             .isIn([1, 2, 3])
             .withMessage('状态无效'),
+        check('can_new_registered_user_get_free').optional({ checkFalsy: true })
+            .isIn([0, 1])
+            .withMessage('新注册用户是否可以免费领取无效'),
         // tag optional => array ['NEW', 'HOT', 'RECOMMENDED']
         check('tag')
             .optional({ checkFalsy: true })
