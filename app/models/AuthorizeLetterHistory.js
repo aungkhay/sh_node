@@ -10,6 +10,8 @@ class AuthorizeLetterHistory extends Model {
         for (let a of PROTECTED_ATTRIBUTES) {
             delete attributes[a]
         }
+        if (attributes.gold_count)
+            attributes.gold_count = Number(attributes.gold_count);
         return attributes
     }
 }
@@ -47,7 +49,7 @@ AuthorizeLetterHistory.init({
         defaultValue: 0.00,
     },
     gold_count: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DOUBLE(18,8),
         allowNull: false,
         defaultValue: 0,
     },
