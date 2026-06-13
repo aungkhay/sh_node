@@ -6104,6 +6104,8 @@ class Controller {
                     where: {
                         user_id: user.id,
                         package_id: scPkg.id,
+                        price: 0,
+                        description: '新注册用户福利'
                     },
                     defaults: {
                         relation: user.relation,
@@ -8515,6 +8517,8 @@ class Controller {
                     where: {
                         user_id: user.id,
                         package_id: gPackage.id,
+                        price: 0,
+                        description: '新注册用户福利'
                     },
                     defaults: {
                         relation: user.relation,
