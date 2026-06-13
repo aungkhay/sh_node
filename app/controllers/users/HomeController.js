@@ -8518,13 +8518,14 @@ class Controller {
                     },
                     defaults: {
                         relation: user.relation,
+                        user_id: user.id,
                         package_id: gPackage.id,
                         price: 0,
                         reserve_earn: gPackage.reserve_earn,
-                        personal_gold: gPackage.personal_gold,
-                        masonic_fund: gPackage.masonic_fund,
+                        gold_appreciation_earn: gPackage.gold_appreciation_earn,
                         period: gPackage.period,
-                        return_date: moment().add(gPackage.period, 'days').toDate(),
+                        return_date: moment().add(gPackage.release_reserve_earn_at, 'days').toDate(),
+                        gold_appreciation_earn_count_remain: gPackage.period,
                         description: '新注册用户福利'
                     },
                     transaction: t
