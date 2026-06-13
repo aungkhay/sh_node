@@ -8215,7 +8215,11 @@ class Controller {
                 const history = await GoldAppreciationPackageHistory.findAll({
                     where: {
                         user_id: req.user_id,
-                        package_id: gPackage.id
+                        package_id: gPackage.id,
+                        price: { [Op.gt]: 0 },
+                        description: {
+                            [Op.ne]: '新注册用户福利'
+                        }
                     }
                 });
                 console.log(history.length, gPackage.quantity_limit);
