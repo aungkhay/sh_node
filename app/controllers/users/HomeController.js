@@ -8204,12 +8204,12 @@ class Controller {
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         },
-                        description: {
-                            [Op.ne]: '新注册用户福利'
-                        }
-                    }
+                        price: { [Op.gt]: 0 },
+                    },
+                    attributes: ['id', 'description']
                 });
-                if (history.length >= gPackage.quantity_limit) {
+                const buyCount = history.map(h => h.description).filter(d => d !== '新注册用户福利').length;
+                if (buyCount >= gPackage.quantity_limit) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
                 }
             }
@@ -8220,13 +8220,12 @@ class Controller {
                         user_id: req.user_id,
                         package_id: gPackage.id,
                         price: { [Op.gt]: 0 },
-                        description: {
-                            [Op.ne]: '新注册用户福利'
-                        }
-                    }
+                    },
+                    attributes: ['id', 'description']
                 });
-                console.log(history.length, gPackage.quantity_limit);
-                if (history.length >= gPackage.quantity_limit) {
+                const historyCount = history.map(h => h.description).filter(d => d !== '新注册用户福利').length;
+                console.log(historyCount, gPackage.quantity_limit);
+                if (historyCount >= gPackage.quantity_limit) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已经购买了该礼包', {});
                 }
             }
