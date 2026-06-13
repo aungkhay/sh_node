@@ -934,7 +934,7 @@ const data = {
     payment_password: ''
 }
 
-// [POST] Buy Package
+// [POST] Get Free Package
 const url = `${baseURL}/gold-appreciation-packages/${pkgID}/get-free`;
 const data = {
     payment_password: ''
