@@ -8203,6 +8203,9 @@ class Controller {
                         user_id: req.user_id,
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
+                        },
+                        description: {
+                            [Op.ne]: '新注册用户福利'
                         }
                     }
                 });
