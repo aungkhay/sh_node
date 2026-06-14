@@ -3484,6 +3484,30 @@ class CronJob {
             errLogger(`[MOVE_AUTHORIZE_LETTER]: ${error.stack}`);
         }
     }
+
+    FROZEN_USER = async () => {
+        try {
+            const filepath = 'phones.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            for (const row of data) {
+                const phoneNumber = row['phone_number'];
+                if (!phoneNumber) {
+                    continue;
+                }
+                await User.update({ status: 0 }, { where: { phone_number: phoneNumber } });
+                console.log(`Frozen user with phone number ${phoneNumber}`);
+            }
+
+            console.log(`Completed freezing users from file ${filepath}.`);
+        } catch (error) {
+            errLogger(`[FROZEN_USER]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
