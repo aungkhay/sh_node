@@ -3499,8 +3499,14 @@ class CronJob {
                 if (!phoneNumber) {
                     continue;
                 }
-                await User.update({ status: 0 }, { where: { phone_number: phoneNumber } });
-                console.log(`Frozen user with phone number ${phoneNumber}`);
+                const user = await User.findOne({ where: { phone_number: phoneNumber }, attributes: ['id'] });
+                if (user) {
+                    await User.update({ status: 0 }, { where: { id: user.id } });
+                    await this.redisHelper.deleteKey(`user_token_${user.id}`);
+                    console.log(`Frozen user with phone number ${phoneNumber}`);
+                } else {
+                    console.log(`No user found with phone number ${phoneNumber}`);
+                }
             }
 
             console.log(`Completed freezing users from file ${filepath}.`);
