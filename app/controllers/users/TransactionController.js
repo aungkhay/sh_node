@@ -2403,6 +2403,16 @@ class Controller {
         const lockKey = `lock:transfer_balance:${req.user_id}`;
         let redisLocked = false;
         try {
+
+            let canTransfer = this.redisHelper.getValue(`balance_transfer_on_off`);
+            if (!canTransfer) {
+                const config = await Config.findOne({ where: { type: 'balance_transfer_on_off' }, attributes: ['val'] });
+                canTransfer = config ? Number(config.val) : 0;
+            }
+            if (Number(canTransfer) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */

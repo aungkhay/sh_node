@@ -311,6 +311,20 @@ module.exports = async () => {
             description: '-',
             data_type: 'string'
         },
+        {
+            type: 'balance_transfer_on_off',
+            title: '账户转账开关',
+            val: '1',
+            description: '0 - 关闭 | 1 - 开启',
+            data_type: 'boolean'
+        },
+        {
+            type: 'buy_product_on_off',
+            title: '购买产品开关',
+            val: '1',
+            description: '0 - 关闭 | 1 - 开启',
+            data_type: 'boolean'
+        }
     ];
 
     const count = await Config.count();

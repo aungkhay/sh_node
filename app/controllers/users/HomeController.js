@@ -4200,6 +4200,15 @@ class Controller {
         let redisLocked = false;
 
         try {
+            let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
+            if (!buyOnOff) {
+                const conf = await Config.findOne({ where: { type: 'buy_product_on_off' }, attributes: ['val'] });
+                buyOnOff = conf ? Number(conf.val) : 0;
+            }
+            if (Number(buyOnOff) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+            
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
@@ -4674,6 +4683,16 @@ class Controller {
         const lockKey = `lock:buy-federal-reserve-package:${req.ip}`;
         let redisLocked = false;
         try {
+
+            let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
+            if (!buyOnOff) {
+                const conf = await Config.findOne({ where: { type: 'buy_product_on_off' }, attributes: ['val'] });
+                buyOnOff = conf ? Number(conf.val) : 0;
+            }
+            if (Number(buyOnOff) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
@@ -5280,6 +5299,15 @@ class Controller {
         let redisLocked = false; 
 
         try {
+            let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
+            if (!buyOnOff) {
+                const conf = await Config.findOne({ where: { type: 'buy_product_on_off' }, attributes: ['val'] });
+                buyOnOff = conf ? Number(conf.val) : 0;
+            }
+            if (Number(buyOnOff) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
@@ -5755,6 +5783,15 @@ class Controller {
         let redisLocked = false; 
 
         try {
+            let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
+            if (!buyOnOff) {
+                const conf = await Config.findOne({ where: { type: 'buy_product_on_off' }, attributes: ['val'] });
+                buyOnOff = conf ? Number(conf.val) : 0;
+            }
+            if (Number(buyOnOff) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
@@ -8151,6 +8188,15 @@ class Controller {
         const lockKey = `lock:buy-gold-appreciation-package:${req.ip}`;
         let redisLocked = false;
         try {
+            let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
+            if (!buyOnOff) {
+                const conf = await Config.findOne({ where: { type: 'buy_product_on_off' }, attributes: ['val'] });
+                buyOnOff = conf ? Number(conf.val) : 0;
+            }
+            if (Number(buyOnOff) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+            
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
