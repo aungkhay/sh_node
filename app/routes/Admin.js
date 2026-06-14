@@ -177,6 +177,7 @@ class AdminRoute extends express.Router {
         this.get('/users/:id/cash-flow', middleware.isLoggedIn('user-list'), UserCtrl.CASH_FLOW);
         this.get('/gold-coupon-user-count', middleware.isLoggedIn(), UserCtrl.GOLD_COUPON_USER_COUNT);
         this.get('/export-user-wallet', middleware.isLoggedIn(), UserCtrl.EXPORT_WALLET);
+        this.get('/export-users', middleware.isLoggedIn('user-list'), UserCtrl.EXPORT_USER);
         // 2FA
         this.post('/users/:id/setup-2fa', FormValidator.setup_2fa(), middleware.isLoggedIn(), UserCtrl.SETUP_2FA);
         this.post('/users/:id/disable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn(), UserCtrl.DISABLE_2FA);

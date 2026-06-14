@@ -3299,6 +3299,91 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    EXPORT_USER = async (req, res) => {
+        try {
+            const type = parseInt(req.query.type || 0);
+            const phone = req.query.phone || '';
+            const status = req.query.status || -1;
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
+            const isInternalAccount = req.query.isInternalAccount || 0;
+            const politicalVettingStatus = req.query.politicalVettingStatus;
+            const inviteCode = req.query.inviteCode || '';
+            const userId = req.user_id;
+            const referral_bonus = req.query.referral_bonus || 0;
+            const initialBuyProductStartTime = req.query.initialBuyProductStartTime;
+            const initialBuyProductEndTime = req.query.initialBuyProductEndTime;
+
+            let condition = {};
+            if (userId != 1) {
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
+            }
+            if (type > 0) {
+                condition.type = type;
+            }
+            if (phone) {
+                condition.phone_number = phone;
+            }
+            if (status >= 0) {
+                condition.status = status;
+            }
+            if (startTime && endTime) {
+                condition.createdAt = {
+                    [Op.between]: [startTime, endTime]
+                }
+            }
+            if (isInternalAccount) {
+                condition.is_internal_account = isInternalAccount;
+            }
+            if (politicalVettingStatus) {
+                condition.political_vetting_status = politicalVettingStatus;
+            }
+            if (inviteCode) {
+                condition.invite_code = inviteCode;
+            }
+            if (referral_bonus) {
+                condition.referral_bonus = {
+                    [Op.gte]: referral_bonus
+                }
+            }
+            if (initialBuyProductStartTime && initialBuyProductEndTime) {
+                condition.initial_buy_product_date = {
+                    [Op.between]: [initialBuyProductStartTime, initialBuyProductEndTime]
+                }
+            }
+
+            const users = await User.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'parent',
+                        attributes: ['id', 'name', 'phone_number']
+                    },
+                    {
+                        model: UserLog,
+                        as: 'userlogs',
+                        attributes: ['id', 'ip', 'createdAt'],
+                        separate: true,
+                        limit: 1,
+                        order: [['createdAt', 'DESC']]
+                    }
+                ],
+                where: condition,
+                attributes: [
+                    'id', 'name', 'phone_number', 'invite_code', 'reserve_fund', 'balance', 'password', 'payment_password', 
+                    'is_internal_account', 'status', 'initial_buy_product_date', 'createdAt'
+                ],
+                order: [['id', 'DESC']],
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { users: users.map(user => user.toJSON()) });
+        } catch (error) {
+            errLogger(`[EXPORT_USER]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;

@@ -2,7 +2,8 @@ const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../connections/Mysql');
 const Rank = require('./Rank');
 
-const PROTECTED_ATTRIBUTES = ['password', 'deletedAt'];
+// const PROTECTED_ATTRIBUTES = ['password', 'deletedAt'];
+const PROTECTED_ATTRIBUTES = ['deletedAt'];
 class User extends Model {
     toJSON() {
         // hide protected fields
