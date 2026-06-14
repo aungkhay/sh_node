@@ -2404,7 +2404,7 @@ class Controller {
         let redisLocked = false;
         try {
 
-            let canTransfer = this.redisHelper.getValue(`balance_transfer_on_off`);
+            let canTransfer = await this.redisHelper.getValue(`balance_transfer_on_off`);
             if (!canTransfer) {
                 const config = await Config.findOne({ where: { type: 'balance_transfer_on_off' }, attributes: ['val'] });
                 canTransfer = config ? Number(config.val) : 0;
