@@ -53,6 +53,7 @@ class Controller {
                 '17': 'SUCCESS', // qfzhifu
                 '18': 'success', // fulinxinzhifu1
                 '19': 'SUCCESS', // xinkonglianzhifu
+                '20': 'SUCCESS', // echpayzhifu
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -721,6 +722,7 @@ class Controller {
                     break;
                 case 'ecpayzhifu':
                     payload = await this.merchantController.ECPAYZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
                     break;
                 default:
                     break;
