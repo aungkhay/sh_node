@@ -413,21 +413,7 @@ class Controller {
                     }
                     break;
 
-                case 'echpayzhifu':
-                    // {
-                    //     "orderNo": "10202605192056650171906846722",
-                    //     "outOrderNo": "10202605192056650171906846722",
-                    //     "rechargeAmount": "1.7",
-                    //     "actualAmount": "1.6",
-                    //     "rechargeFee": "0.1",
-                    //     "orderStatus": "SUCCESS",
-                    //     "finishTime": "2026-05-19 16:46:26",
-                    //     "partnerNo": "SP20260512000001",
-                    //     "signature": "CQhG82wBVW6PPwZOySZOtd3etmjmxYz3oi8L/FK39TB8JnK1v/TfE0UG9UqcOuhmSQ2W0hjcqEd2LeA6KIGUPSBgS9Z141azOVlDQPwFvlDv7ouWrxa8stL48QY/5pNl/5bTz8fzlMRe5Hi6h/ODD7ahUsI7XSId4Y/Xqb2SUrSXa+vNZvq2SwFe/RdcKY8C5QyoTdDeTfIaipvT4B6rlGePlteoJBktxaQFvnK9rBoWGWInDX0RX7cnhLf8G/lPJ0Jdm3evFufYmkncbWPWnOY07BE5p35Q/eQqDePmeGfW46lchQ7hozimoZMfhgesDkf92fJFp8RYUd/eeGgujw==",
-                    //     "transDate": "1779245138123",
-                    //     "transNonce": "a0d71132-f1e8-4441-8a41-43137f52615f"
-                    // }
-
+                case 'ecpayzhifu':
                     // 状态。INIT:初始,PROCESSING:处理中,PENDING:待支付,SUCCESS:成功,CLOSE:关闭,CANCEL:取消
                     if (reqBody.orderStatus === 'SUCCESS') {
                         status = 1;
