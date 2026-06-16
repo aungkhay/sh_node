@@ -3514,6 +3514,116 @@ class CronJob {
             errLogger(`[FROZEN_USER]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    READ_EXCEL_FILE_EXPORT_STATUS = async () => {
+        try {
+            // filepath READ file from main directory
+            const filepath = 'phonenumbers.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            const users = [];
+            for (const row of data) {
+                console.log(`Processing phone number ${row.phone_number} for status export...`);
+                const user = await User.findOne({ where: { phone_number: row.phone_number }, attributes: ['id', 'name', 'phone_number', 'balance', 'reserve_fund', 'status', 'initial_buy_product_date'] });
+                if (!user) {
+                    continue;
+                }
+
+                // last buy product time
+                // const PolicyTime = await PolicyPackageHistory.findOne({
+                //     where: { user_id: user.id },
+                //     attributes: ['createdAt'],
+                //     order: [['createdAt', 'ASC']]
+                // });
+                // const GoldTime = await GoldPackageHistory.findOne({
+                //     where: { user_id: user.id },
+                //     attributes: ['createdAt'],
+                //     order: [['createdAt', 'ASC']]
+                // });
+                // const FederalTime = await FederalReserveGoldPackageHistory.findOne({
+                //     where: { user_id: user.id },
+                //     attributes: ['createdAt'],
+                //     order: [['createdAt', 'ASC']]
+                // });
+                // const MasonicTime = await MasonicPackageHistory.findOne({
+                //     where: { user_id: user.id },
+                //     attributes: ['createdAt'],
+                //     order: [['createdAt', 'ASC']]
+                // });
+                // const goldAppreciationTime = await GoldAppreciationPackageHistory.findOne({
+                //     where: { user_id: user.id },
+                //     attributes: ['createdAt'],
+                //     order: [['createdAt', 'ASC']]
+                // });
+
+                // const lastBuyTime = Math.max(
+                //     PolicyTime ? new Date(PolicyTime.createdAt).getTime() : 0,
+                //     GoldTime ? new Date(GoldTime.createdAt).getTime() : 0,
+                //     FederalTime ? new Date(FederalTime.createdAt).getTime() : 0,
+                //     MasonicTime ? new Date(MasonicTime.createdAt).getTime() : 0,
+                //     goldAppreciationTime ? new Date(goldAppreciationTime.createdAt).getTime() : 0
+                // );
+
+                users.push({
+                    id: user.id,
+                    '姓名': user.name,
+                    '手机号': user.phone_number,
+                    '余额': Number(user.balance),
+                    '储备金': Number(user.reserve_fund),
+                    '状态': user.status == 0 ? '冻结' : '正常',
+                    '首次购买时间': user.initial_buy_product_date ? moment(user.initial_buy_product_date).format('YYYY-MM-DD HH:mm:ss') : '-',
+                });
+            }
+
+            const worksheet = xlsx.utils.json_to_sheet(users);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'User Status');
+            xlsx.writeFile(workbook1, 'user_status.xlsx');
+
+            console.log(`Export completed. File saved as user_status.xlsx`);
+        } catch (error) {
+            errLogger(`[READ_EXCEL_FILE_EXPORT_STATUS]: ${error.stack}`);
+        }
+    }
+
+    UNFREEZE_USER = async () => {
+        try {
+            const filepath = 'unfreeze_phones.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            for (const row of data) {
+                const phoneNumber = row['phone_number'];
+                if (!phoneNumber) {
+                    continue;
+                }
+                const user = await User.findOne({ where: { phone_number: phoneNumber }, attributes: ['id', 'balance'] });
+                if (!user) {
+                    continue;
+                }
+                // if (row['处置'] == '解封') {
+                //     await User.update({ status: 1 }, { where: { id: user.id } });
+                //     console.log(`Unfrozen user with phone number ${phoneNumber}`);
+                // }
+                if (row['资金'] === '清零') {
+                    await User.update({ balance: 0 }, { where: { id: user.id } });
+                    commonLogger(`Reset balance to 0 [Origin: ${user.balance}] for user with phone number ${phoneNumber} [Id: ${user.id}]`);
+                }
+            }
+
+            console.log(`Completed unfreezing users from file ${filepath}.`);
+        } catch (error) {
+            errLogger(`[UNFREEZE_USER]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;

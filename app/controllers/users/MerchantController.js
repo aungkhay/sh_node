@@ -3,6 +3,8 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const { errLogger } = require('../../helpers/Logger');
 const crypto = require("crypto");
 const moment = require('moment');
+const ecpayPublicKey = require('../../../keys/ecpay_public_key.pem');
+const ecpayPrivateKey = require('../../../keys/ecpay_private_key.pem');
 
 class Controller {
     constructor () {
@@ -468,6 +470,45 @@ class Controller {
             return body;
         } catch (error) {
             errLogger(`[QFZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
+
+    // 请求参数
+    // 名称	类型	必选	长度	说明
+    // signature	string	true		签名
+    // partnerNo	string	true	32	商户编号
+    // transNonce	string	true	32	请求流水号
+    // transDate	string	true	13	请求时间(13位时间戳)
+    // rechargeAmount	string	true	17	充值金额: 元
+    // outOrderNo	string	true	64	商户订单号
+    // callbackUrl	string	false	256	异步通知地址
+    ECPAYZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                partnerNo: channel.deposit_merchant.app_id,
+                transNonce: crypto.randomBytes(16).toString('hex'),
+                transDate: Date.now(),
+                rechargeAmount: Number(amount).toFixed(2),
+                outOrderNo: orderNo,
+                callbackUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+            }
+
+            const sign = crypto.createSign('RSA-SHA256');
+            const signString = Object.keys(body)
+                .filter(key => body[key] !== null && body[key] !== undefined && body[key] !== '')
+                .sort()
+                .map(key => `${key}=${body[key]}`)
+                .join('&');
+            sign.update(signString);
+            const signature = sign.sign(ecpayPrivateKey, 'base64');
+
+            body.signature = signature;
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[ECPAYZHIFU] ${error.stack}`);
             return null;
         }
     }
