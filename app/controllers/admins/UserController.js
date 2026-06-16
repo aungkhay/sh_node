@@ -212,7 +212,9 @@ class Controller {
             const alipay_status = req.query.alipay_status || '';
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
-            const userId = req.user_id;
+            const userId = req.user_id || 1;
+            const isDuplicate = req.query.isDuplicate || 0; // 1 => show only users with duplicate payment methods
+            const duplicateType = req.query.duplicateType || 1; // 1 => bank_card_name | 2 => alipay_account
 
             let userCondition = {};
             if (phone) {
@@ -235,18 +237,94 @@ class Controller {
                 }
             }
 
-            const { rows, count } = await PaymentMethod.findAndCountAll({
-                include: {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'name', 'phone_number'],
-                    where: userCondition
-                },
-                where: condition,
-                order: [['id', 'DESC']],
-                limit: perPage,
-                offset: offset
-            });
+            let rows;
+            let count;
+
+            if (isDuplicate) {
+
+                const columnName = duplicateType == 1 ? 'bank_card_name' : 'ali_account_name';
+
+                const result = await db.query(`
+                    SELECT
+                        p.*,
+                        u.id AS userId,
+                        u.name AS userName,
+                        u.phone_number AS phoneNumber
+                    FROM user_payment_methods p
+                    JOIN users u
+                        ON u.id = p.user_id
+                    JOIN (
+                        SELECT
+                            ${columnName},
+                            COUNT(*) AS cnt
+                        FROM user_payment_methods
+                        WHERE ${columnName} IS NOT NULL
+                        GROUP BY ${columnName}
+                        HAVING COUNT(*) > 1
+                        ORDER BY cnt DESC, ${columnName} ASC
+                    ) d
+                        ON p.${columnName} = d.${columnName}
+                    WHERE p.${columnName} IS NOT NULL
+                    ${bank_status ? `AND p.bank_status = ${bank_status}` : ''}
+                    ${alipay_status ? `AND p.alipay_status = ${alipay_status}` : ''}
+                    ${startTime && endTime ? `AND p.createdAt BETWEEN '${startTime}' AND '${endTime}'` : ''}
+                    ${userId != 1 ? `AND u.relation LIKE (SELECT CONCAT(relation, '%') FROM users WHERE id = ${userId})` : ''}
+                    ${phone ? `AND u.phone_number = '${phone}'` : ''}
+                    AND p.deletedAt IS NULL
+                    ORDER BY d.cnt ASC, p.${columnName} ASC, p.id ASC
+                    LIMIT ${perPage} OFFSET ${offset}   
+                `);
+
+                const countResult = await db.query(`
+                    SELECT
+                        COUNT(*) AS count
+                    FROM (
+                        SELECT
+                            ${columnName}
+                        FROM user_payment_methods
+                        WHERE ${columnName} IS NOT NULL
+                        ${bank_status ? `AND bank_status = ${bank_status}` : ''}
+                        ${alipay_status ? `AND alipay_status = ${alipay_status}` : ''}
+                        ${startTime && endTime ? `AND createdAt BETWEEN '${startTime}' AND '${endTime}'` : ''}
+                        ${userId != 1 ? `AND user_id IN (SELECT id FROM users WHERE relation LIKE (SELECT CONCAT(relation, '%') FROM users WHERE id = ${userId}))` : ''}
+                        ${phone ? `AND user_id IN (SELECT id FROM users WHERE phone_number = '${phone}')` : ''}
+                        AND deletedAt IS NULL
+                        GROUP BY ${columnName}
+                        HAVING COUNT(*) > 1
+                    ) d
+                `);
+
+                rows = result[0].map(item => {
+                    const { deletedAt, userId, userName, phoneNumber, ...rest } = item;
+
+                    return {
+                        ...rest,
+                        user: {
+                            id: userId,
+                            name: userName,
+                            phone_number: phoneNumber
+                        }
+                    };
+                });
+                count = countResult[0][0] ? countResult[0][0].count : 0;
+
+            } else {
+                const result = await PaymentMethod.findAndCountAll({
+                    include: {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number'],
+                        where: userCondition
+                    },
+                    where: condition,
+                    order: [['id', 'DESC']],
+                    limit: perPage,
+                    offset: offset
+                });
+
+                rows = result.rows;
+                count = result.count;
+            }
 
             const data = {
                 kycs: rows,
@@ -260,6 +338,7 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            console.log(error)
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
