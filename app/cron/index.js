@@ -3055,26 +3055,31 @@ class CronJob {
         try {
             const [activeFederal, activeGold, activeMasonic, activePolicy, activeGoldAppr] = await Promise.all([
                 FederalReserveGoldPackageHistory.findAll({
+                    where: { price: { [Op.gt]: 0 } },
                     attributes: ["user_id"],
                     group: ["user_id"],
                     raw: true,
                 }),
                 GoldPackageHistory.findAll({
+                    where: { price: { [Op.gt]: 0 } },
                     attributes: ["user_id"],
                     group: ["user_id"],
                     raw: true,
                 }),
                 MasonicPackageHistory.findAll({
+                    where: { price: { [Op.gt]: 0 } },
                     attributes: ["user_id"],
                     group: ["user_id"],
                     raw: true,
                 }),
                 PolicyPackageHistory.findAll({
+                    where: { price: { [Op.gt]: 0 } },
                     attributes: ["user_id"],
                     group: ["user_id"],
                     raw: true,
                 }),
                 GoldAppreciationPackageHistory.findAll({
+                    where: { price: { [Op.gt]: 0 } },
                     attributes: ["user_id"],
                     group: ["user_id"],
                     raw: true,
@@ -3092,27 +3097,27 @@ class CronJob {
 
             for (const userId of activeUserIds) {
                 const federalRecord = await FederalReserveGoldPackageHistory.findOne({
-                    where: { user_id: userId },
+                    where: { user_id: userId, price: { [Op.gt]: 0 } },
                     attributes: ['createdAt'],
                     order: [['createdAt', 'ASC']]
                 });
                 const goldRecord = await GoldPackageHistory.findOne({
-                    where: { user_id: userId },
+                    where: { user_id: userId, price: { [Op.gt]: 0 } },
                     attributes: ['createdAt'],
                     order: [['createdAt', 'ASC']]
                 });
                 const masonicRecord = await MasonicPackageHistory.findOne({
-                    where: { user_id: userId },
+                    where: { user_id: userId, price: { [Op.gt]: 0 } },
                     attributes: ['createdAt'],
                     order: [['createdAt', 'ASC']]
                 });
                 const policyRecord = await PolicyPackageHistory.findOne({
-                    where: { user_id: userId },
+                    where: { user_id: userId, price: { [Op.gt]: 0 } },
                     attributes: ['createdAt'],
                     order: [['createdAt', 'ASC']]
                 });
                 const goldApprRecord = await GoldAppreciationPackageHistory.findOne({
-                    where: { user_id: userId },
+                    where: { user_id: userId, price: { [Op.gt]: 0 } },
                     attributes: ['createdAt'],
                     order: [['createdAt', 'ASC']]
                 });
