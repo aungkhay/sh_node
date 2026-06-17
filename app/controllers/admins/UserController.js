@@ -284,6 +284,7 @@ class Controller {
                             ${columnName}
                         FROM user_payment_methods
                         WHERE ${columnName} IS NOT NULL
+                        AND ${columnName} != ''
                         ${bank_status ? `AND bank_status = ${bank_status}` : ''}
                         ${alipay_status ? `AND alipay_status = ${alipay_status}` : ''}
                         ${startTime && endTime ? `AND createdAt BETWEEN '${startTime}' AND '${endTime}'` : ''}
