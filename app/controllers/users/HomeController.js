@@ -3778,10 +3778,13 @@ class Controller {
                     description: `${selectedPack.name}`,
                 }, { transaction: t });
 
-                await user.increment({ reserve_fund: -selectedPack.price }, { transaction: t });
-                if (!user.initial_buy_product_date) {
-                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                const updates = {
+                    reserve_fund: new Decimal(user.reserve_fund).minus(selectedPack.price).toNumber(),
                 }
+                if (!user.initial_buy_product_date) {
+                    updates.initial_buy_product_date = new Date();
+                }
+                await user.update(updates, { transaction: t });
 
                 await GoldPackageHistory.create({
                     relation: user.relation,
@@ -4348,10 +4351,14 @@ class Controller {
                     }, { transaction: t });
                 }
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
-                if (!user.initial_buy_product_date) {
-                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                const updates = {
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount,
                 }
+                if (!user.initial_buy_product_date) {
+                    updates.initial_buy_product_date = new Date();
+                }
+                await user.update(updates, { transaction: t });
                 
                 const pkgHistory = [];
                 if (mPackage.buy_one_get_quantity > 0) {
@@ -4833,10 +4840,14 @@ class Controller {
                     }, { transaction: t });
                 }
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
-                if (!user.initial_buy_product_date) {
-                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                const updates = {
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount,
                 }
+                if (!user.initial_buy_product_date) {
+                    updates.initial_buy_product_date = new Date();
+                }
+                await user.update(updates, { transaction: t });
 
                 const pkgHistory = [];
                 if (fPackage.buy_one_get_quantity > 0) {
@@ -5447,10 +5458,14 @@ class Controller {
                     }, { transaction: t });
                 }
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
-                if (!user.initial_buy_product_date) {
-                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                const updates = {
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount,
                 }
+                if (!user.initial_buy_product_date) {
+                    updates.initial_buy_product_date = new Date();
+                }
+                await user.update(updates, { transaction: t });
 
                 const pkgHistory = [];
                 if (policyPackage.buy_one_get_quantity > 0) {
@@ -5931,10 +5946,14 @@ class Controller {
                     }, { transaction: t });
                 }
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
-                if (!user.initial_buy_product_date) {
-                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                const updates = {
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount,
                 }
+                if (!user.initial_buy_product_date) {
+                    updates.initial_buy_product_date = new Date();
+                }
+                await user.update(updates, { transaction: t });
 
                 const pkgHistory = [];
                 if (scPkg.buy_one_get_quantity > 0) {
@@ -8343,10 +8362,14 @@ class Controller {
                     }, { transaction: t });
                 }
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - reserveAmount, balance: Number(user.balance) - balanceAmount }, { transaction: t });
+                const updates = {
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount
+                };
                 if (!user.initial_buy_product_date) {
-                    await user.update({ initial_buy_product_date: new Date() }, { transaction: t });
+                    updates.initial_buy_product_date = new Date();
                 }
+                await user.update(updates, { transaction: t });
 
                 const pkgHistory = [];
                 if (gPackage.buy_one_get_quantity > 0) {
