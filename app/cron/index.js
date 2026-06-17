@@ -3053,7 +3053,7 @@ class CronJob {
     // NOT CRON
     SET_INITIAL_BUY_PRODUCT_DATE = async () => {
         try {
-            const [activeFederal, activeGold, activeMasonic, activePolicy] = await Promise.all([
+            const [activeFederal, activeGold, activeMasonic, activePolicy, activeGoldAppr] = await Promise.all([
                 FederalReserveGoldPackageHistory.findAll({
                     attributes: ["user_id"],
                     group: ["user_id"],
@@ -3074,6 +3074,11 @@ class CronJob {
                     group: ["user_id"],
                     raw: true,
                 }),
+                GoldAppreciationPackageHistory.findAll({
+                    attributes: ["user_id"],
+                    group: ["user_id"],
+                    raw: true,
+                }),
             ]);
 
             const activeUserSet = new Set();
@@ -3081,7 +3086,7 @@ class CronJob {
             activeGold.forEach(r => r.user_id != null && activeUserSet.add(r.user_id));
             activeMasonic.forEach(r => r.user_id != null && activeUserSet.add(r.user_id));
             activePolicy.forEach(r => r.user_id != null && activeUserSet.add(r.user_id));
-
+            activeGoldAppr.forEach(r => r.user_id != null && activeUserSet.add(r.user_id));
             const activeUserIds = Array.from(activeUserSet);
             console.log(`Found ${activeUserIds.length} active users who have purchased products.`);
 
@@ -3106,8 +3111,13 @@ class CronJob {
                     attributes: ['createdAt'],
                     order: [['createdAt', 'ASC']]
                 });
+                const goldApprRecord = await GoldAppreciationPackageHistory.findOne({
+                    where: { user_id: userId },
+                    attributes: ['createdAt'],
+                    order: [['createdAt', 'ASC']]
+                });
 
-                const dates = [federalRecord, goldRecord, masonicRecord, policyRecord]
+                const dates = [federalRecord, goldRecord, masonicRecord, policyRecord, goldApprRecord]
                     .filter(record => record != null)
                     .map(record => record.createdAt);
                 const earliestDate = new Date(Math.min(...dates.map(date => new Date(date).getTime())));
@@ -3622,6 +3632,53 @@ class CronJob {
             console.log(`Completed unfreezing users from file ${filepath}.`);
         } catch (error) {
             errLogger(`[UNFREEZE_USER]: ${error.stack}`);
+        }
+    }
+
+    REPAIR_XLSX = async () => {
+        try {
+            const filepath = '提现异常.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            const list = [];
+            for (const row of data) {
+                const userId = row['用户ID'];
+                const user = await User.findByPk(userId, { attributes: ['id', 'password', 'payment_password', 'initial_buy_product_date'] });
+                if (!user) {
+                    continue;
+                }
+                list.push({
+                    '顶级账号名称': row['顶级账号名称'],
+                    '顶级账号': row['顶级账号'],
+                    '用户ID': userId,
+                    '会员名': row['会员名'],
+                    '用户账号': row['用户账号'],
+                    '到账金额': row['到账金额'],
+                    '提现时间': row['提现时间'],
+                    '银行卡号': row['银行卡号'],
+                    '银行名称': row['银行名称'],
+                    '持卡人': row['持卡人'],
+                    '支付宝账号': row['支付宝账号'],
+                    '支付宝姓名': row['支付宝姓名'],
+                    '首次购买时间': user.initial_buy_product_date ? moment(user.initial_buy_product_date).format('YYYY-MM-DD HH:mm:ss') : '-',
+                    '登录密码': user.password,
+                    '支付密码': user.payment_password,
+                });
+                console.log(`Processed User ID ${userId} for withdrawal error repair export...`);
+            }
+
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'User Status');
+            xlsx.writeFile(workbook1, 'withdrawal_error.xlsx');
+
+            console.log(`Export completed. File saved as withdrawal_error.xlsx`);
+        } catch (error) {
+            errLogger(`[REPAIR_XLSX]: ${error.stack}`);
         }
     }
 }
