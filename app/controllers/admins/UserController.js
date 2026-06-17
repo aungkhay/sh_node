@@ -265,6 +265,7 @@ class Controller {
                     ) d
                         ON p.${columnName} = d.${columnName}
                     WHERE p.${columnName} IS NOT NULL
+                    AND p.${columnName} != ''
                     ${bank_status ? `AND p.bank_status = ${bank_status}` : ''}
                     ${alipay_status ? `AND p.alipay_status = ${alipay_status}` : ''}
                     ${startTime && endTime ? `AND p.createdAt BETWEEN '${startTime}' AND '${endTime}'` : ''}
