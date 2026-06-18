@@ -3500,6 +3500,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     FROZEN_USER = async () => {
         try {
             const filepath = 'phones.xlsx';
@@ -3606,6 +3607,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     UNFREEZE_USER = async () => {
         try {
             const filepath = 'unfreeze_phones.xlsx';
@@ -3640,6 +3642,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     REPAIR_XLSX = async () => {
         try {
             const filepath = '提现异常.xlsx';
@@ -3684,6 +3687,195 @@ class CronJob {
             console.log(`Export completed. File saved as withdrawal_error.xlsx`);
         } catch (error) {
             errLogger(`[REPAIR_XLSX]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    REFUND_WITHDRAWAL_XLSX = async () => {
+        try {
+            const filepath = '提现处理_含提现ID.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            const withdraws = [];
+            for (const row of data) {
+                const wId = row['提现ID'];
+                const isRefund = row['是否驳回'] === '是';
+                const isClear = row['是否清零'] === '是';
+                const withdraw = await Withdraw.findByPk(wId, { attributes: ['id', 'user_id', 'amount', 'status', 'createdAt'] });
+                if (!withdraw || withdraw.status != 0) {
+                    continue;
+                }
+                
+                const wObj = {
+                    '提现ID': wId,
+                    '用户ID': withdraw.user_id,
+                    '提现金额': withdraw.amount,
+                    '当前余额': '',
+                    '驳回后余额': '',
+                    '是否驳回': '',
+                    '已清零': '',
+                    '提现时间': withdraw.createdAt ? moment(withdraw.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                    '登录密码': row['登录密码'] || '',
+                    '支付密码': row['支付密码'] || '',
+                }
+
+                if (isRefund) {
+                    const t = await db.transaction();
+                    try {
+                        const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                        if (!user) {
+                            await t.rollback();
+                            continue;
+                        }
+                        wObj['当前余额'] = user.balance;
+                        wObj['驳回后余额'] = Number(user.balance) + Number(withdraw.amount);
+                        wObj['是否驳回'] = '是';
+
+                        await CashFlow.create({
+                            relation: user.relation,
+                            user_id: user.id,
+                            wallet_type: 2,
+                            model: 'Withdraw',
+                            type: `提现`,
+                            amount: withdraw.amount,
+                            before_amount: Number(user.balance),
+                            after_amount: Number(user.balance) + Number(withdraw.amount),
+                            flow_status: 'IN',
+                            description: '系统-退款提现金额'
+                        }, { transaction: t });
+
+                        await user.increment({ balance: withdraw.amount }, { transaction: t });
+                        await withdraw.update({ status: 2, description: '系统-退款提现金额' }, { transaction: t });
+
+                        await t.commit();
+                        console.log(`Refunded withdrawal ID ${wId} amount ${withdraw.amount} to User ID ${user.id} due to rejection.`);
+                    } catch (error) {
+                        await t.rollback();
+                        errLogger(`[REFUND_WITHDRAWAL_XLSX][Transaction][Withdraw ID: ${wId}]: ${error.stack}`);
+                    }
+                }
+
+                withdraws.push(wObj);
+                console.log(`Processed withdrawal ID ${wId} for refund/clear export...`);
+            }
+
+            const worksheet = xlsx.utils.json_to_sheet(withdraws);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Withdraw Refund Clear');
+            xlsx.writeFile(workbook1, 'withdrawal_fund_clear.xlsx');
+
+            console.log(`Export completed. File saved as withdrawal_fund_clear.xlsx`);
+        } catch (error) {
+            errLogger(`[REFUND_WITHDRAWAL_XLSX]: ${error.stack}`);
+        }
+    }
+    
+    // NOT CRON
+    CLEAR_WITHDRAWAL_XLSX = async () => {
+        try {
+            const filepath = '提现处理_含提现ID.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            const withdraws = [];
+            for (const row of data) {
+                const wId = row['提现ID'];
+                const isRefund = row['是否驳回'] === '是';
+                const isClear = row['是否清零'] === '是';
+                const withdraw = await Withdraw.findByPk(wId, { attributes: ['id', 'user_id', 'amount', 'status', 'createdAt'] });
+                if (!withdraw) {
+                    continue;
+                }
+                
+                const wObj = {
+                    '提现ID': wId,
+                    '用户ID': withdraw.user_id,
+                    '提现金额': withdraw.amount,
+                    '是否驳回': isRefund ? '是' : '',
+                    '清零前余额': '',
+                    '已清零': '',
+                    '提现时间': withdraw.createdAt ? moment(withdraw.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                    '登录密码': row['登录密码'] || '',
+                    '支付密码': row['支付密码'] || '',
+                }
+
+                const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'relation', 'balance'] });
+                if (!user) {
+                    continue;
+                }
+                if (isClear) {
+                    wObj['清零前余额'] = user.balance;
+                    wObj['已清零'] = '是';
+                    await user.update({ balance: 0 });
+                }
+
+                withdraws.push(wObj);
+                console.log(`Processed withdrawal ID ${wId} for refund/clear export...`);
+            }
+
+            const worksheet = xlsx.utils.json_to_sheet(withdraws);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Withdrawals');
+            xlsx.writeFile(workbook1, 'withdrawal_fund_clear_complete.xlsx');
+
+            console.log(`Export completed. File saved as withdrawal_fund_clear_complete.xlsx`);
+        } catch (error) {
+            errLogger(`[CLEAR_WITHDRAWAL_XLSX]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    GET_ALL_FROZEN_USERS = async () => {
+        try {
+            const xlsx = require('xlsx');
+            const frozenUsers = await User.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'parent',
+                        attributes: ['id', 'name', 'phone_number']
+                    },
+                    {
+                        model: User,
+                        as: 'top_account',
+                        attributes: ['id', 'name', 'phone_number']
+                    }
+                ],
+                where: { status: 0 },
+                attributes: ['id', 'name', 'phone_number', 'balance', 'reserve_fund', 'password', 'payment_password', 'initial_buy_product_date'],
+                order: [['id', 'ASC']]
+            });
+
+            const users = frozenUsers.map(user => ({
+                "用户ID": user.id,
+                "姓名": user.name,
+                "手机号": user.phone_number,
+                "余额": Number(user.balance),
+                "储备金": Number(user.reserve_fund),
+                "登录密码": user.password,
+                "支付密码": user.payment_password,
+                "首次购买时间": user.initial_buy_product_date ? moment(user.initial_buy_product_date).format('YYYY-MM-DD HH:mm:ss') : '-',
+                "上级姓名": user.parent ? `${user.parent.name}` : '',
+                "上级手机号": user.parent ? `${user.parent.phone_number}` : '',
+                "顶级姓名": user.top_account ? `${user.top_account.name}` : '',
+                "顶级手机号": user.top_account ? `${user.top_account.phone_number}` : '',
+            }));
+
+            const worksheet = xlsx.utils.json_to_sheet(users);
+            const workbook = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook, worksheet, 'Frozen Users');
+            xlsx.writeFile(workbook, 'frozen_users.xlsx');
+
+            console.log(`Export completed. File saved as frozen_users.xlsx`);
+        } catch (error) {
+            errLogger(`[GET_ALL_FROZEN_USERS]: ${error.stack}`);
         }
     }
 }
