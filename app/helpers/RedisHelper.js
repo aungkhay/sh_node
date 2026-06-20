@@ -128,6 +128,18 @@ class Helper {
         }
     }
 
+    lRangeValue = async (key, start, end) => {
+        try {
+            var newKey = key;
+            if (prefix) {
+                newKey = `${prefix}_${key}`;
+            }
+            return await this.redis.lrange(newKey, start, end);
+        } catch (error) {
+            console.error('RedisHelper lRangeValue error:', error);
+        }
+    }
+
     sAddValue = async (key, value) => {
         try {
             var newKey = key;

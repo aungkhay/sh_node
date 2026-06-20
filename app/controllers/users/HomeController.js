@@ -7504,6 +7504,20 @@ class Controller {
                 meeting_code: meetingCode,
                 reward_amount: rewardAmount,
             }
+            const itemsInQueue = await this.redisHelper.lRangeValue(QUEUE_KEY, 0, -1);
+            const alreadyInQueue = itemsInQueue.some(item => {
+                try {
+                    const parsedItem = JSON.parse(item);
+                    return parsedItem.user_id === userId && parsedItem.meeting_id === meeting.id;
+                } catch (e) {
+                    return false;
+                }
+            });
+
+            if (alreadyInQueue) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已参加过本次会议', {});
+            }
+
             await this.redisHelper.rPushValue(QUEUE_KEY, JSON.stringify(queueData));
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, `参加会议成功，获得奖励${rewardAmount}元`, { reward_amount: rewardAmount });
