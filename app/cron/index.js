@@ -3412,6 +3412,7 @@ class CronJob {
                     }, { transaction: t });
 
                     await user.increment({ balance: rewardAmount }, { transaction: t });
+                    await this.redisHelper.setValue(`attended_meeting_${userId}_${meetingId}`, '1', 3600); // cache for 1 hour
 
                     await t.commit();
 
