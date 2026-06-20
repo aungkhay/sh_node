@@ -306,6 +306,8 @@ class CronJob {
             } else {
                 await GoldPrice.create({ price: pricePerGram, reserve_price: pricePerGram });
             }
+            
+            await this.redisHelper.setValue('latest_gold_price', pricePerGram);
 
         } catch (error) {
             errLogger(`[GET_GOLD_PRICE]: ${error.stack}`);

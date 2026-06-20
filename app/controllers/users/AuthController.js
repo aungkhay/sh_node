@@ -8,6 +8,7 @@ const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uu
 const { commonLogger, errLogger } = require('../../helpers/Logger');
 const { Op } = require('sequelize');
 const svgCaptcha = require('svg-captcha');
+const { fn, col, literal, Sequelize } = require('sequelize');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -280,9 +281,9 @@ class Controller {
                     'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
                     'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest',
                     'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
-                    'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop'
+                    'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop', 'activedAt'
                 ],
-                useMaster: userId % 2 === 0 ? true : false
+                useMaster: userId % 2 === 0
             });
 
             // Calculate Rank Percentage
@@ -298,20 +299,29 @@ class Controller {
             }
 
             // Gold Coupon Count
-            const goldCouponCount = await RewardRecord.sum('amount', {
-                where: {
-                    user_id: userId,
-                    reward_id: 7,
-                    is_used: 0,
-                    validedAt: { [Op.lte]: new Date() }
-                },
-                useMaster: userId % 2 === 0 ? true : false
-            }) || 0;
+            let goldCouponCount = await this.redisHelper.getValue(`gold_coupon_count_${userId}`);
+            if (!goldCouponCount) {
+                goldCouponCount = await RewardRecord.sum('amount', {
+                    where: {
+                        user_id: userId,
+                        reward_id: 7,
+                        is_used: 0,
+                        validedAt: { [Op.lte]: new Date() }
+                    },
+                    useMaster: userId % 2 === 0
+                }) || 0;
+                await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 43200); // 12 hours cache
+            }
 
-            const goldPrice = await GoldPrice.findOne({
-                order: [['createdAt', 'DESC']],
-                attributes: ['price']
-            });
+            let goldPrice = await this.redisHelper.getValue('latest_gold_price');
+            if (!goldPrice) {
+                const latestGoldPrice = await GoldPrice.findOne({
+                    order: [['createdAt', 'DESC']],
+                    attributes: ['price']
+                });
+                goldPrice = latestGoldPrice ? latestGoldPrice.price : 0;
+                await this.redisHelper.setValue('latest_gold_price', goldPrice);
+            }
 
             // Federal Gold
             const federalGold = await FederalReserveGoldPackageEarn.sum('amount', {
@@ -319,7 +329,7 @@ class Controller {
                     user_id: userId,
                     type: 1, // 个人黄金
                 },
-                useMaster: userId % 2 === 0 ? true : false
+                useMaster: userId % 2 === 0
             }) || 0;
 
             const goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
@@ -327,7 +337,7 @@ class Controller {
                     is_used: 0,
                     gold_owner_id: userId
                 },
-                useMaster: userId % 2 === 0 ? true : false
+                useMaster: userId % 2 === 0
             }) || 0;
 
             let data = {
@@ -336,14 +346,14 @@ class Controller {
                 can_impeach_count: 0,
                 next_rank_percentage: 0,
                 next_rank_point: 0,
-                gold_count_in_coupon: goldCouponCount,
-                total_coupon_gold_price: goldCouponCount * (goldPrice ? goldPrice.price : 0),
+                gold_count_in_coupon: Number(goldCouponCount),
+                total_coupon_gold_price: Number(goldCouponCount) * Number(goldPrice),
 
                 gold_count_in_tajikstan: goldCountInLetter,
-                total_tajikstan_gold_price: goldCountInLetter * (goldPrice ? goldPrice.price : 0),
+                total_tajikstan_gold_price: goldCountInLetter * Number(goldPrice),
 
                 federal_reserve_gold_count: federalGold,
-                federal_reserve_gold_price: federalGold * (goldPrice ? goldPrice.price : 0),
+                federal_reserve_gold_price: federalGold * Number(goldPrice),
             }
 
             delete data.payment_password;
@@ -370,18 +380,30 @@ class Controller {
             data.can_impeach_count = currentRank?.number_of_impeach;
 
             // Check Gold Gift Package already bought
-            const goldGiftPackHistory = await GoldPackageHistory.findAll({ 
-                where: { 
-                    user_id: userId,
-                }, 
-                attributes: ['package_id'],
-                useMaster: userId % 2 === 0 ? true : false
-            });
-            const boughtPackageIds = goldGiftPackHistory.map(g => g.package_id);
-            data.bought_gold_gift_package_ids = boughtPackageIds;
+            let boughtGoldPackageIds = await this.redisHelper.getValue(`bought_gold_gift_package_ids_${userId}`);
+            if (!boughtGoldPackageIds) {
+                // 588 | 1288
+                const goldGiftPackHistory = await GoldPackageHistory.findAll({ 
+                    where: { user_id: userId },
+                    attributes: [
+                        [Sequelize.fn('DISTINCT', Sequelize.col('package_id')), 'package_id'],
+                    ],
+                    raw: true,
+                    useMaster: userId % 2 === 0
+                });
+                const boughtPackageIds = goldGiftPackHistory.map(g => g.package_id);
+                await this.redisHelper.setValue(`bought_gold_gift_package_ids_${userId}`, JSON.stringify(boughtPackageIds), 43200); // 12 hours cache
+                boughtGoldPackageIds = boughtPackageIds;
+            } else {
+                boughtGoldPackageIds = JSON.parse(boughtGoldPackageIds);
+            }
+            data.bought_gold_gift_package_ids = boughtGoldPackageIds;
 
-            // Update Active
-            await user.update({ activedAt: new Date, isActive: 1 });
+            // Update Active if 5 minutes passed since last active
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            if (!user.activedAt || user.activedAt < fiveMinutesAgo) {
+                await user.update({ activedAt: new Date, isActive: 1 });
+            }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
