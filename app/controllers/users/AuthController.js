@@ -256,6 +256,13 @@ class Controller {
     PROFILE = async (req, res) => {
         try {
             const userId = req.user_id;
+
+            const profileCacheKey = `user_profile_${userId}`;
+            let cachedProfile = await this.redisHelper.getValue(profileCacheKey);
+            if (cachedProfile) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cachedProfile));
+            }
+
             const user = await User.findByPk(userId, {
                 include: [
                     {
@@ -404,6 +411,9 @@ class Controller {
             if (!user.activedAt || user.activedAt < fiveMinutesAgo) {
                 await user.update({ activedAt: new Date, isActive: 1 });
             }
+
+            // set profile cache
+            await this.redisHelper.setValue(profileCacheKey, JSON.stringify(data), 60); // 1 minute cache
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
