@@ -7410,18 +7410,27 @@ class Controller {
 
             const userId = req.user_id;
             const meetingCode = meeting.meeting_code;
-            const existingRecord = await AttendedMeeting.findOne({
-                where: {
-                    user_id: userId,
-                    meeting_id: meeting.id,
-                    meeting_code: meetingCode
-                },
-                attributes: ['id'] 
-            });
+
+            // cache
+            const cacheKey = `attended_meeting_${userId}_${meeting.id}`;
+            let cachedRecord = await this.redisHelper.getValue(cacheKey);
+            if (!cachedRecord) {
+                const existingRecord = await AttendedMeeting.findOne({
+                    where: {
+                        user_id: userId,
+                        meeting_id: meeting.id,
+                        meeting_code: meetingCode
+                    },
+                    attributes: ['id'] 
+                });
+                cachedRecord = existingRecord ? '1' : '0';
+                await this.redisHelper.setValue(cacheKey, cachedRecord, 3600); // cache for 1 hour
+            }
+            const already_joined = cachedRecord === '1';
 
             delete meeting.meeting_code; // 不返回福利码
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { meeting, already_joined: !!existingRecord });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { meeting, already_joined });
         } catch (error) {
             errLogger(`[ACTIVE_MEETING][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
@@ -7464,15 +7473,22 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '福利码错误', {});
             }
 
-            const existingRecord = await AttendedMeeting.findOne({
-                where: {
-                    user_id: userId,
-                    meeting_id: meeting.id,
-                    meeting_code: meetingCode
-                },
-                attributes: ['id']
-            });
-            if (existingRecord) {
+            // cache
+            const cacheKey = `attended_meeting_${userId}_${meeting.id}`;
+            let cachedRecord = await this.redisHelper.getValue(cacheKey);
+            if (!cachedRecord) {
+                const existingRecord = await AttendedMeeting.findOne({
+                    where: {
+                        user_id: userId,
+                        meeting_id: meeting.id,
+                        meeting_code: meetingCode
+                    },
+                    attributes: ['id']
+                });
+                cachedRecord = existingRecord ? '1' : '0';
+                await this.redisHelper.setValue(cacheKey, cachedRecord, 3600); // cache for 1 hour
+            }
+            if (cachedRecord === '1') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已参加过本次会议', {});
             }
 
