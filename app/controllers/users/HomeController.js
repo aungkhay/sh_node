@@ -697,10 +697,9 @@ class Controller {
                         ],
                         order: [['id', 'DESC']],
                         limit: perPage,
-                        offset,
-                        useMaster: true
+                        offset
                     }),
-                    News.count({ where, useMaster: true })
+                    News.count({ where })
                 ]);
 
                 data = {
