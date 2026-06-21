@@ -430,9 +430,8 @@ class Controller {
                     order: [['id', 'DESC']],
                     limit: perPage,
                     offset,
-                    useMaster: userId % 3 === 0 ? true : false
                 }),
-                Notification.count({ where: baseWhere, useMaster: userId % 3 === 0 ? true : false })
+                Notification.count({ where: baseWhere })
             ]);
 
             const data = {
@@ -630,13 +629,12 @@ class Controller {
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset,
-                useMaster: true
             });
 
             /* ===============================
             * COUNT QUERY (NO SUBQUERY)
             * =============================== */
-            const total = await News.count({ where, useMaster: true });
+            const total = await News.count({ where });
 
             const data = {
                 news: rows,
@@ -728,7 +726,6 @@ class Controller {
                     },
                     attributes: ['news_id'],
                     raw: true,
-                    useMaster: true
                 });
 
                 likedNewsIds = new Set(likes.map(item => item.news_id));
@@ -1758,7 +1755,6 @@ class Controller {
                     attributes: ['status'],
                     required: false
                 },
-                useMaster: true
             });
 
             // check kyc status is approved
@@ -1961,7 +1957,6 @@ class Controller {
             const authorize_letter_amount = reward.authorize_letter_amount;
             const user = await User.findByPk(userId, { 
                 attributes: ['id', 'masonic_fund', 'balance', 'relation'], 
-                useMaster: userId % 2 === 0 ? true : false 
             });
 
             const obj = {

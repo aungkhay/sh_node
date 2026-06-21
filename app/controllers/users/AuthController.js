@@ -283,7 +283,6 @@ class Controller {
                     'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
                     'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop', 'activedAt'
                 ],
-                useMaster: userId % 2 === 0
             });
 
             // Calculate Rank Percentage
@@ -308,7 +307,6 @@ class Controller {
                         is_used: 0,
                         validedAt: { [Op.lte]: new Date() }
                     },
-                    useMaster: userId % 2 === 0
                 }) || 0;
                 await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 43200); // 12 hours cache
             }
@@ -331,7 +329,6 @@ class Controller {
                         user_id: userId,
                         type: 1, // 个人黄金
                     },
-                    useMaster: userId % 2 === 0
                 }) || 0;
                 await this.redisHelper.setValue(`federal_gold_${userId}`, federalGold, 300); // 5 minutes cache
             }
@@ -343,7 +340,6 @@ class Controller {
                         is_used: 0,
                         gold_owner_id: userId
                     },
-                    useMaster: userId % 2 === 0
                 }) || 0;
                 await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60); // 1 minute cache
             }
@@ -397,7 +393,6 @@ class Controller {
                         [Sequelize.fn('DISTINCT', Sequelize.col('package_id')), 'package_id'],
                     ],
                     raw: true,
-                    useMaster: userId % 2 === 0
                 });
                 const boughtPackageIds = goldGiftPackHistory.map(g => g.package_id);
                 await this.redisHelper.setValue(`bought_gold_gift_package_ids_${userId}`, JSON.stringify(boughtPackageIds), 43200); // 12 hours cache

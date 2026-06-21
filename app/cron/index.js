@@ -998,7 +998,6 @@ class CronJob {
             const authorize_letter_amount = reward.authorize_letter_amount;
             const user = await User.findByPk(userId, { 
                 attributes: ['id', 'masonic_fund', 'balance', 'relation'], 
-                useMaster: userId % 2 === 0 ? true : false 
             });
 
             const obj = {
