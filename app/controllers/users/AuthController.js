@@ -174,7 +174,17 @@ class Controller {
     }
 
     LOGIN = async (req, res) => {
+        const lockKey = `lock:login:${req.body.phone}`;
+
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            const redLocked = await this.redisHelper.setLock(lockKey, 1, 2);
+            if (redLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
@@ -254,7 +264,16 @@ class Controller {
     }
 
     PROFILE = async (req, res) => {
+        const lockKey = `lock:profile:${req.user_id}`;
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            const redLocked = await this.redisHelper.setLock(lockKey, 1, 1);
+            if (redLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const userId = req.user_id;
             const user = await User.findByPk(userId, {
                 include: [

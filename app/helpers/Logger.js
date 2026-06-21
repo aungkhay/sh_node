@@ -7,14 +7,31 @@ const fileName = moment(new Date()).format('YYYY-MM-DD');
 
 const consoleLog = new winston.transports.Console();
 
+const getClientIP = (req) => {
+    try {
+        var ip = req.headers['x-forwarded-for'] ||
+            req.ip ||
+            req.connection.remoteAddress ||
+            req.socket.remoteAddress ||
+            req.connection.socket.remoteAddress || '';
+        if (ip.indexOf(":") >= 0) {
+            ip = ip.split(':')[3]
+        }
+        return ip;
+    } catch (e) {
+        return '0:0:0:0';
+    }
+}
+
 function createRequestLogger() {
+
     const logger = winston.createLogger({
         format: combine(
             timestamp({format: 'YYYY-MM-DD HH:mm:ss'}),
             json(),
             printf(info => {
                 const {req, res} = info.message;
-                return `\x1b[36m[${[info.timestamp]}]: [${res.statusCode}]\x1b[0m \x1b[32m${req.originalUrl}\x1b[0m   ${JSON.stringify(req.body ?? {})}`;
+                return `\x1b[36m[${[info.timestamp]}]: [${res.statusCode}] [${getClientIP(req)}]\x1b[0m \x1b[32m${req.originalUrl}\x1b[0m   ${JSON.stringify(req.body ?? {})}`;
             })
         ),
         transports: [ 
