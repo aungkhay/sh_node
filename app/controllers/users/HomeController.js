@@ -1591,7 +1591,7 @@ class Controller {
             let popup_announcement = await this.redisHelper.getValue('popup_announcement');
             let is_show_popup = Number(await this.redisHelper.getValue('is_show_popup') || 0);
             if (!popup_announcement) {
-                const config = await Config.findOne({ where: { type: 'popup_announcement' }, attributes: ['val', 'description'] });
+                const config = await Config.findOne({ where: { type: 'popup_announcement' }, attributes: ['val', 'description'], useMaster: true });
                 await this.redisHelper.setValue('popup_announcement', config.val);
                 popup_announcement = config.val;
                 is_show_popup = Number(config.description);
@@ -1600,7 +1600,7 @@ class Controller {
             let popup_announcement_1 = await this.redisHelper.getValue('popup_announcement_1');
             let is_show_popup_1 = Number(await this.redisHelper.getValue('is_show_popup_1') || 0);
             if (!popup_announcement_1) {
-                const config = await Config.findOne({ where: { type: 'popup_announcement_1' }, attributes: ['val', 'description'] });
+                const config = await Config.findOne({ where: { type: 'popup_announcement_1' }, attributes: ['val', 'description'], useMaster: true });
                 await this.redisHelper.setValue('popup_announcement_1', config.val);
                 popup_announcement_1 = config.val;
                 is_show_popup_1 = Number(config.description);
@@ -1610,7 +1610,7 @@ class Controller {
             if (cachedMessage) {
                 cachedMessage = JSON.parse(cachedMessage);
             } else {
-                const user = await User.findByPk(req.user_id, { attributes: ['name', 'rank_id'] });
+                const user = await User.findByPk(req.user_id, { attributes: ['name', 'rank_id'], useMaster: true });
                 const now = new Date();
                 const hour = now.getHours();
                 let timeOfDay = '';
@@ -1624,10 +1624,16 @@ class Controller {
                     timeOfDay = '晚安';
                 }
 
-                const ranks = await Rank.findAll({
-                    attributes: ['id', 'name', 'point', 'pic', 'welcome_message'],
-                    order: [['id', 'ASC']]
-                });
+                let ranks = await this.redisHelper.getValue('WELCOME_MESSAGE_ranks');
+                if (!ranks) {
+                    ranks = await Rank.findAll({
+                        attributes: ['id', 'name', 'point', 'pic', 'welcome_message'],
+                        order: [['id', 'ASC']]
+                    });
+                    await this.redisHelper.setValue('WELCOME_MESSAGE_ranks', JSON.stringify(ranks));
+                } else {
+                    ranks = JSON.parse(ranks);
+                }
 
                 const currentRankIndex = ranks.findIndex(r => r.id === user.rank_id);
                 const currentRank = ranks[currentRankIndex];
@@ -1662,7 +1668,7 @@ class Controller {
             // get_free_product_type
             let freeProductType = await this.redisHelper.getValue('get_free_product_type');
             if (!freeProductType) {
-                const config = await Config.findOne({ where: { type: 'get_free_product_type' }, attributes: ['val'] });
+                const config = await Config.findOne({ where: { type: 'get_free_product_type' }, attributes: ['val'], useMaster: true });
                 await this.redisHelper.setValue('get_free_product_type', config.val);
                 freeProductType = config.val;
             }

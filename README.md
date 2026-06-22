@@ -1,5 +1,5 @@
 ### Master Slave
-``` mysql
+``` sql
 CREATE USER 'dbUser'@'192.168.100.11' IDENTIFIED BY 'password';
 CREATE USER 'dbUser'@'192.168.100.12' IDENTIFIED BY 'password';
 GRANT ALL PRIVILEGES ON shanghe.* TO 'dbUser'@'192.168.100.11';
@@ -10,6 +10,37 @@ CREATE USER 'dbUser'@'localhost' IDENTIFIED BY 'password';
 CREATE USER 'dbUser'@'192.168.100.11' IDENTIFIED BY 'password';
 GRANT SELECT ON shanghe.* TO 'dbUser'@'localhost';
 GRANT SELECT ON shanghe.* TO 'dbUser'@'192.168.100.11';
+FLUSH PRIVILEGES;
+```
+
+### Primary Replication
+``` sql
+/**
+ * Primary Server Configuration
+ * 192.168.100.13 Replica IP
+ */
+CREATE USER 'replica1'@'192.168.100.13' IDENTIFIED BY 'Mysql@password';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'replica1'@'192.168.100.13';
+FLUSH PRIVILEGES;
+SHOW MASTER STATUS;
+
+/**
+ * Replica Server Configuration
+ */
+CHANGE MASTER TO
+  MASTER_HOST='192.168.100.11',
+  MASTER_USER='replica1',
+  MASTER_PASSWORD='Mysql@password',
+  MASTER_LOG_FILE='mysql-bin.000140',
+  MASTER_LOG_POS=494052;
+
+START SLAVE;
+SHOW SLAVE STATUS\G
+/**
+ * Admin User Creation (Optional)
+ */
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'Mysql@password';
+GRANT ALL PRIVILEGES ON *.* TO 'admin'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 ```
 
