@@ -529,6 +529,10 @@ class Controller {
                 await this.redisHelper.deleteKey(uuid);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '账号被已被冻结', {});
             }
+            if (!user.kyc || !user.kyc.nrc_number) {
+                await this.redisHelper.deleteKey(uuid);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '账号未实名认证', {});
+            }
             if (user.kyc.nrc_number != nrc_number) {
                 await this.redisHelper.deleteKey(uuid);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '身份证号不正确', {});

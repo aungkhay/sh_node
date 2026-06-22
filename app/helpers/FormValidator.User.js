@@ -199,7 +199,7 @@ exports.modify_password = () => {
 exports.forgot_password = () => {
     return [
         check('phone', { msg: '手机号不能为空' }).not().isEmpty(),
-        check('nrc_number', { msg: '身份证号手机号不能为空' }).not().isEmpty(),
+        check('nrc_number', { msg: '身份证号不能为空' }).not().isEmpty(),
         check('new_password')
             .not().isEmpty().withMessage('新密码不能为空')
             .isLength({ min: 8 }).withMessage('密码长度至少为8个字符')
