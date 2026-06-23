@@ -3880,6 +3880,129 @@ class CronJob {
             errLogger(`[GET_ALL_FROZEN_USERS]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    EXPORT_MINUS_BALANCE = async () => {
+        try {
+            const users = await User.findAll({
+                where: {
+                    balance: { [Op.lt]: 0 }
+                },
+                attributes: ['id', 'name', 'phone_number', 'balance', 'initial_buy_product_date', 'createdAt']
+            });
+
+            const list = [];
+            for (const user of users) {
+                console.log(`Processing User ID ${user.id} for balance export...`);
+                list.push({
+                    "用户ID": user.id,
+                    "姓名": user.name,
+                    "手机号": user.phone_number,
+                    "余额": Number(user.balance),
+                    "首次购买时间": user.initial_buy_product_date ? moment(user.initial_buy_product_date).format('YYYY-MM-DD HH:mm:ss') : '-',
+                    "注册时间": user.createdAt ? moment(user.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
+                });
+            }
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Users');
+            xlsx.writeFile(workbook1, 'balance_lt_0.xlsx');
+        } catch (error) {
+            errLogger(`[MINUS_BALANCE]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    REFUND_WITHDRAWAL = async () => {
+        try {
+            const result = await Withdraw.findAll({
+                attributes: [
+                    'user_id',
+                    [fn('COUNT', col('*')), 'total_count'],
+                ],
+                where: {
+                    status: 0,
+                    createdAt: {
+                        [Op.gt]: '2026-06-23',
+                    },
+                },
+                group: ['user_id'],
+                having: literal('total_count > 1'),
+            });
+
+            const withdrawToRefund = [];
+            for (const row of result) {
+                const withdraws = await Withdraw.findAll({
+                    where: {
+                        user_id: row.user_id,
+                        status: 0,
+                        createdAt: {
+                            [Op.gt]: '2026-06-23',
+                        },
+                    },
+                    attributes: ['id', 'user_id', 'amount', 'order_no', 'createdAt'],
+                    order: [['createdAt', 'DESC']],
+                    limit: row.dataValues.total_count - 1, // keep the latest one
+                });
+                // Process the withdraws for each user
+                for (const withdraw of withdraws) {
+                    const t = await db.transaction();
+                    try {
+                        const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'name', 'phone_number', 'relation', 'balance'], transaction: t });
+                        if (!user) {
+                            await t.rollback();
+                            continue;
+                        }
+
+                        withdrawToRefund.push({
+                            "提现ID": withdraw.id,
+                            "提现订单号": withdraw.order_no,
+                            "用户ID": user.id,
+                            "姓名": user.name,
+                            "手机号": user.phone_number,
+                            "提现金额": withdraw.amount,
+                            "提现时间": withdraw.createdAt ? moment(withdraw.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                        });
+
+                        await CashFlow.create({
+                            relation: user.relation,
+                            user_id: user.id,
+                            wallet_type: 2,
+                            model: 'Withdraw',
+                            type: `提现`,
+                            amount: withdraw.amount,
+                            before_amount: Number(user.balance),
+                            after_amount: Number(user.balance) + Number(withdraw.amount),
+                            flow_status: 'IN',
+                            description: '系统-退款提现金额'
+                        }, { transaction: t });
+
+                        await user.increment({ balance: withdraw.amount }, { transaction: t });
+                        await withdraw.update({ status: 2, description: '系统-退款提现金额' }, { transaction: t });
+                        await t.commit();
+
+                        commonLogger(`Refunded withdrawal ID ${withdraw.id} amount ${withdraw.amount} to User ID ${user.id} due to multiple withdrawals on the same day.`);
+                    } catch (error) {
+                        await t.rollback();
+                        errLogger(`[REFUND_WITHDRAWAL][Transaction][Withdraw ID: ${withdraw.id}]: ${error.stack}`);
+                    }
+                }
+            }
+
+            // Export to Excel
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(withdrawToRefund);
+            const workbook = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook, worksheet, 'Refunded Withdrawals');
+            xlsx.writeFile(workbook, 'refund_withdrawals.xlsx');
+
+            console.log(`Export completed. File saved as refund_withdrawals.xlsx`);
+        } catch (error) {
+            errLogger(`[REFUND_WITHDRAWAL]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;

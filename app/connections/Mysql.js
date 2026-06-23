@@ -34,12 +34,12 @@ const replication = {
             username: env.DB_SLAVE_USER,
             password: env.DB_SLAVE_PASS
         },
-        {
-            host: env.DB_SLAVE1_HOST,
-            port: env.DB_SLAVE1_PORT,
-            username: env.DB_SLAVE1_USER,
-            password: env.DB_SLAVE1_PASS
-        }
+        // {
+        //     host: env.DB_SLAVE1_HOST,
+        //     port: env.DB_SLAVE1_PORT,
+        //     username: env.DB_SLAVE1_USER,
+        //     password: env.DB_SLAVE1_PASS
+        // }
         // you can add more slaves here
     ]
 }
