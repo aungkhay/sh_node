@@ -55,7 +55,6 @@ class Controller {
             const user = await User.findOne({
                 where: { phone_number: phone, type: 1 },
                 attributes: ['id', 'google_2fa_enabled'],
-                useMaster: true
             });
             if (!user) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到用户信息', {});
@@ -87,7 +86,6 @@ class Controller {
             const user = await User.findOne({ 
                 where: { phone_number: phone }, 
                 attributes: ['id', 'password', 'status', 'relation', 'login_count', 'google_2fa_enabled', 'google_2fa_secret'],
-                useMaster: true
             });
             if (!user) {
                 await this.redisHelper.deleteKey(uuid);
@@ -149,7 +147,6 @@ class Controller {
             const user = await User.findOne({ 
                 where: { id: userId }, 
                 attributes: ['id', 'phone_number', 'name', 'type', 'invite_code', 'profile_picture', 'google_2fa_enabled', 'createdAt'],
-                useMaster: true
             });
 
             const permissions = await this.commonHelper.getAllPermissions(userId);

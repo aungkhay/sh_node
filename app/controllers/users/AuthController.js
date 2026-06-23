@@ -86,13 +86,13 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [recaptchaError]);
             }
 
-            const checkExist = await User.findOne({ where: { phone_number: phone }, attributes: ['id'], useMaster: true });
+            const checkExist = await User.findOne({ where: { phone_number: phone }, attributes: ['id']});
             if (checkExist) {
                 await this.redisHelper.deleteKey(uuid);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '账号已存在', {});
             }
 
-            const parent = await User.findOne({ where: { invite_code: invite_code, status: 1 }, attributes: ['id', 'relation', 'top_account_id', 'is_internal_account'], useMaster: true });
+            const parent = await User.findOne({ where: { invite_code: invite_code, status: 1 }, attributes: ['id', 'relation', 'top_account_id', 'is_internal_account'] });
             if (!parent) {
                 await this.redisHelper.deleteKey(uuid);
                 const invideCodeError = { field: 'invite_code', msg: '邀请码无效' };
@@ -101,7 +101,7 @@ class Controller {
 
             const user_invite_code = await this.commonHelper.generateInviteCode();
             const encPassword = encrypt(PASS_PREFIX + password + PASS_SUFFIX, PASS_KEY, PASS_IV);
-            const rank = await Rank.findOne({ order: [['id', 'ASC']], useMaster: true });
+            const rank = await Rank.findOne({ order: [['id', 'ASC']] });
 
             let top_account_id = null;
             if (parent.top_account_id) {
@@ -204,7 +204,6 @@ class Controller {
             const user = await User.findOne({ 
                 where: { phone_number: phone }, 
                 attributes: ['id', 'relation', 'password', 'invite_code', 'serial_number', 'status', 'impeach_type'],
-                useMaster: true
             });
             if (!user) {
                 await this.redisHelper.deleteKey(uuid);
