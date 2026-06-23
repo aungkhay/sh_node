@@ -302,6 +302,7 @@ class Controller {
                     'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
                     'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop', 'activedAt'
                 ],
+                useMaster: true
             });
 
             // Calculate Rank Percentage

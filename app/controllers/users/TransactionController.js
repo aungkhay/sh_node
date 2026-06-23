@@ -74,17 +74,18 @@ class Controller {
                     deposit_merchant_id: merchantId, 
                     user_id: userId,
                     status: 0
-                } 
+                },
+                useMaster: true
             });
             if (!deposit) {
                 return res.send(resMsg);
             }
-            const merchant = await DepositMerchant.findByPk(merchantId);
+            const merchant = await DepositMerchant.findByPk(merchantId, { useMaster: true });
             if (!merchant) {
                 return res.send(resMsg);
             }
 
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund'] });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund'], useMaster: true });
 
             let status = 0;
             let reqBody = req.body;
@@ -1089,7 +1090,8 @@ class Controller {
                     as: 'payment_method',
                     attributes: ['id', 'bank_card_number', 'bank_card_name', 'bank_card_phone_number', 'open_bank_name', 'ali_account_name', 'ali_account_number']
                 },
-                attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date']
+                attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date'],
+                useMaster: true
             });
 
             if (!user.initial_buy_product_date) {
@@ -1554,6 +1556,7 @@ class Controller {
                 const user = await User.findByPk(userId, {
                     attributes: ['id', 'relation', 'reserve_fund', 'balance'],
                     transaction: t,
+                    useMaster: true
                 });
 
                 if (amount > user.balance) {
@@ -2470,6 +2473,7 @@ class Controller {
                     attributes: ['id', 'status'],
                 },
                 attributes: ['id', 'relation', 'phone_number', 'reserve_fund', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password'],
+                useMaster: true
             });
 
             if (!sender.kyc || sender.kyc.status !== 'APPROVED') {

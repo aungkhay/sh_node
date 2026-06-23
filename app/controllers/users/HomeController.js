@@ -1610,7 +1610,7 @@ class Controller {
             if (cachedMessage) {
                 cachedMessage = JSON.parse(cachedMessage);
             } else {
-                const user = await User.findByPk(req.user_id, { attributes: ['name', 'rank_id'] });
+                const user = await User.findByPk(req.user_id, { attributes: ['name', 'rank_id'], useMaster: true });
                 const now = new Date();
                 const hour = now.getHours();
                 let timeOfDay = '';
@@ -1655,7 +1655,7 @@ class Controller {
             if (masonicFund) {
                 masonicFund = JSON.parse(masonicFund);
             } else {
-                const totalRegister = await User.count({ where: { type: 2 } });
+                const totalRegister = await User.count({ where: { type: 2 }, useMaster: true });
                 const participantCount = (await this.redisHelper.getValue('MASONIC_FUND_PARTICIPANT_COUNT') || 0);
                 const ReteriverCount = (await this.redisHelper.getValue('MASONIC_FUND_RETRIEVER_COUNT') || 0);
                 masonicFund = {
@@ -4292,7 +4292,8 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date'],
+                useMaster: true
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -4781,7 +4782,8 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date'],
+                useMaster: true
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -5399,7 +5401,8 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date'],
+                useMaster: true
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -5887,7 +5890,8 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date'],
+                useMaster: true
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
@@ -6459,7 +6463,7 @@ class Controller {
             const userId = req.user_id;
             const { payment_password } = req.body;
 
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6', 'payment_password'] });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6', 'payment_password'], useMaster: true });
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
@@ -8312,7 +8316,8 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date'],
+                useMaster: true
             });
             if (!user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
