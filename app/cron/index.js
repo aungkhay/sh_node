@@ -4322,6 +4322,320 @@ class CronJob {
             errLogger(`[EXPORT_GOLD_APPRECIATION_PACKAGE_HISTORY]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    DELETE_POLICY = async () => {
+        try {
+            const filepath = 'delete-policy.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            const bonusNotEnoughtToDelete = [];
+            for (const row of data) {
+                const productName = row['产品名'];
+                if (!productName || !row['订单号']) {
+                    console.log(`Row missing product name or order number. Skipping...`);
+                    continue;
+                }
+
+                // check productName contain 贡献政策
+                if (!productName.includes('贡献政策')) {
+                    continue;
+                }
+
+                const historyId = Number(row['订单号']);
+                const history = await PolicyPackageHistory.findByPk(historyId, { attributes: ['id', 'user_id', 'price'] });
+                if (!history) {
+                    console.log(`PolicyPackageHistory ID ${historyId} not found. Skipping...`);
+                    continue;
+                }
+                const user = await User.findByPk(history.user_id, { attributes: ['id', 'name', 'phone_number', 'relation'] });
+                if (!user) {
+                    console.log(`User ID ${history.user_id} not found. Skipping...`);
+                    continue;
+                }
+                const bonuses = await PolicyPackageBonuses.findAll({
+                    where: {
+                        from_user_id: user.id,
+                        package_history_id: history.id,
+                    },
+                    attributes: ['id', 'user_id', 'package_history_id', 'amount', 'createdAt'],
+                });
+
+                const t = await db.transaction();
+                try {
+                    for (const bonus of bonuses) {
+                        const bonusUser = await User.findByPk(bonus.user_id, { attributes: ['id', 'name', 'relation', 'phone_number', 'balance'] });
+                        if (!bonusUser) {
+                            console.log(`Bonus User ID ${bonus.user_id} not found. Skipping...`);
+                            continue;
+                        }
+                        if (Number(bonusUser.balance) < Number(bonus.amount)) {
+                            bonusNotEnoughtToDelete.push({
+                                "订单号": history.id,
+                                "户ID": bonusUser.id,
+                                "户姓名": bonusUser.name,
+                                "户手机号": bonusUser.phone_number,
+                                "奖金金额": Number(bonus.amount),
+                                "创建时间": bonus.createdAt ? moment(bonus.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                            });
+                        } else {
+                            await CashFlow.create({
+                                relation: bonusUser.relation,
+                                user_id: bonusUser.id,
+                                wallet_type: 2,
+                                model: 'PolicyPackageBonuses',
+                                type: `政策礼包奖金扣除`,
+                                amount: -Number(bonus.amount),
+                                before_amount: Number(bonusUser.balance),
+                                after_amount: Number(bonusUser.balance) - Number(bonus.amount),
+                                flow_status: 'OUT',
+                                description: `异常订单扣除`,
+                            }, { transaction: t });
+                            await bonusUser.decrement({ balance: bonus.amount }, { transaction: t });
+                            await bonus.destroy({ transaction: t });
+                        }
+                    }
+
+                    await CashFlow.destroy({
+                        where: {
+                            user_id: user.id,
+                            id: row['异常流水ID'],
+                        },
+                        transaction: t,
+                    });
+                    await history.destroy({ transaction: t });
+                    await t.commit();
+                    console.log(`Deleted PolicyPackageHistory ID ${historyId} and related bonuses for User ID ${user.id}.`);
+                } catch (error) {
+                    await t.rollback();
+                    console.log(`Error deleting PolicyPackageHistory ID ${historyId} and related bonuses for User ID ${user.id}: ${error.message}`);
+                }
+            }
+
+            if (bonusNotEnoughtToDelete.length > 0) {
+                const worksheet = xlsx.utils.json_to_sheet(bonusNotEnoughtToDelete);
+                const workbook1 = xlsx.utils.book_new();
+                xlsx.utils.book_append_sheet(workbook1, worksheet, 'Bonus Not Enough');
+                xlsx.writeFile(workbook1, 'bonus_not_enough_to_delete_policy.xlsx');
+                console.log(`Exported bonuses not enough to delete to bonus_not_enough_to_delete_policy.xlsx`);
+            }
+
+        } catch (error) {
+            errLogger(`[DELETE_POLICY]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    DELETE_GOLD_APPRECIATION = async () => {
+        try {
+            const filepath = 'delete-gold-appreciation.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            const bonusNotEnoughtToDelete = [];
+            for (const row of data) {
+                const productName = row['产品名'];
+                if (!productName || !row['订单号']) {
+                    console.log(`Row missing product name or order number. Skipping...`);
+                    continue;
+                }
+
+                // check productName contain 上合黄金增值
+                if (!productName.includes('上合黄金增值')) {
+                    continue;
+                }
+
+                const history = await GoldAppreciationPackageHistory.findByPk(row['订单号'], { attributes: ['id', 'user_id', 'price'] });
+                if (!history) {
+                    console.log(`GoldAppreciationPackageHistory ID ${row['订单号']} not found. Skipping...`);
+                    continue;
+                }
+                const user = await User.findByPk(history.user_id, { attributes: ['id', 'name', 'phone_number', 'relation'] });
+                if (!user) {
+                    console.log(`User ID ${history.user_id} not found. Skipping...`);
+                    continue;
+                }
+                const bonuses = await GoldAppreciationPackageBonuses.findAll({
+                    where: {
+                        from_user_id: user.id,
+                        package_history_id: history.id,
+                    },
+                    attributes: ['id', 'user_id', 'amount', 'createdAt'],
+                });
+
+                const t = await db.transaction();
+                try {
+                    for (const bonus of bonuses) {
+                        const bonusUser = await User.findByPk(bonus.user_id, { attributes: ['id', 'name', 'relation', 'phone_number', 'balance'] });
+                        if (!bonusUser) {
+                            console.log(`Bonus User ID ${bonus.user_id} not found. Skipping...`);
+                            continue;
+                        }
+                        if (Number(bonusUser.balance) < Number(bonus.amount)) {
+                            bonusNotEnoughtToDelete.push({
+                                "订单号": history.id,
+                                "户ID": bonusUser.id,
+                                "户姓名": bonusUser.name,
+                                "户手机号": bonusUser.phone_number,
+                                "奖金金额": Number(bonus.amount),
+                                "创建时间": bonus.createdAt ? moment(bonus.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                            });
+                        } else {
+                            await CashFlow.create({
+                                relation: bonusUser.relation,
+                                user_id: bonusUser.id,
+                                wallet_type: 2,
+                                model: 'GoldAppreciationPackageBonuses',
+                                type: `上合黄金增值奖金扣除`,
+                                amount: -Number(bonus.amount),
+                                before_amount: Number(bonusUser.balance),
+                                after_amount: Number(bonusUser.balance) - Number(bonus.amount),
+                                flow_status: 'OUT',
+                                description: `异常订单扣除`,
+                            }, { transaction: t });
+                            await bonusUser.decrement({ balance: bonus.amount }, { transaction: t });
+                            await bonus.destroy({ transaction: t });
+                        }
+                    }
+
+                    await CashFlow.destroy({
+                        where: {
+                            user_id: user.id,
+                            id: row['异常流水ID'],
+                        },
+                        transaction: t,
+                    });
+                    await history.destroy({ transaction: t });
+                    await t.commit();
+                    console.log(`Deleted GoldAppreciationPackageHistory ID ${history.id} and related bonuses for User ID ${user.id}.`);
+                } catch (error) {
+                    await t.rollback();
+                }
+            }
+
+            if (bonusNotEnoughtToDelete.length > 0) {
+                const worksheet = xlsx.utils.json_to_sheet(bonusNotEnoughtToDelete);
+                const workbook1 = xlsx.utils.book_new();
+                xlsx.utils.book_append_sheet(workbook1, worksheet, 'Bonus Not Enough');
+                xlsx.writeFile(workbook1, 'bonus_not_enough_to_delete_gold_appreciation.xlsx');
+                console.log(`Exported bonuses not enough to delete to bonus_not_enough_to_delete_gold_appreciation.xlsx`);
+            }
+
+        } catch (error) {
+            errLogger(`[DELETE_GOLD_APPRECIATION]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    DELETE_SHANGHAI_COOPERATION = async () => {
+        try {
+            const filepath = 'delete-shanghai-cooperation.xlsx';
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            const bonusNotEnoughtToDelete = [];
+            for (const row of data) {
+                const productName = row['产品名'];
+                if (!productName || !row['订单号']) {
+                    console.log(`Row missing product name or order number. Skipping...`);
+                    continue;
+                }
+
+                // check productName contain 纪念币方案
+                if (!productName.includes('纪念币方案')) {
+                    continue;
+                }
+
+                const history = await ShanghaiCooperationHistory.findByPk(row['订单号'], { attributes: ['id', 'user_id', 'price'] });
+                if (!history) {
+                    console.log(`ShanghaiCooperationHistory ID ${row['订单号']} not found. Skipping...`);
+                    continue;
+                }
+                const user = await User.findByPk(history.user_id, { attributes: ['id', 'name', 'phone_number', 'relation'] });
+                if (!user) {
+                    console.log(`User ID ${history.user_id} not found. Skipping...`);
+                    continue;
+                }
+                const bonuses = await ShanghaiCooperationBonuses.findAll({
+                    where: {
+                        from_user_id: user.id,
+                        package_history_id: history.id,
+                    },
+                    attributes: ['id', 'user_id', 'amount', 'createdAt'],
+                });
+
+                const t = await db.transaction();
+                try {
+                    for (const bonus of bonuses) {
+                        const bonusUser = await User.findByPk(bonus.user_id, { attributes: ['id', 'name', 'relation', 'phone_number', 'balance'] });
+                        if (!bonusUser) {
+                            console.log(`Bonus User ID ${bonus.user_id} not found. Skipping...`);
+                            continue;
+                        }
+                        if (Number(bonusUser.balance) < Number(bonus.amount)) {
+                            bonusNotEnoughtToDelete.push({
+                                "订单号": history.id,
+                                "户ID": bonusUser.id,
+                                "户姓名": bonusUser.name,
+                                "户手机号": bonusUser.phone_number,
+                                "奖金金额": Number(bonus.amount),
+                                "创建时间": bonus.createdAt ? moment(bonus.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                            });
+                        } else {
+                            await CashFlow.create({
+                                relation: bonusUser.relation,
+                                user_id: bonusUser.id,
+                                wallet_type: 2,
+                                model: 'ShanghaiCooperationBonuses',
+                                type: `纪念币方案奖金扣除`,
+                                amount: -Number(bonus.amount),
+                                before_amount: Number(bonusUser.balance),
+                                after_amount: Number(bonusUser.balance) - Number(bonus.amount),
+                                flow_status: 'OUT',
+                                description: `异常订单扣除`,
+                            }, { transaction: t });
+                            await bonusUser.decrement({ balance: bonus.amount }, { transaction: t });
+                            await bonus.destroy({ transaction: t });
+                        }
+                    }
+
+                    await CashFlow.destroy({
+                        where: {
+                            user_id: user.id,
+                            id: row['异常流水ID'],
+                        },
+                        transaction: t,
+                    });
+                    await history.destroy({ transaction: t });
+                    await t.commit();
+                    console.log(`Deleted ShanghaiCooperationHistory ID ${history.id} and related bonuses for User ID ${user.id}.`);
+                } catch (error) {
+                    await t.rollback();
+                }
+            }
+
+            if (bonusNotEnoughtToDelete.length > 0) {
+                const worksheet = xlsx.utils.json_to_sheet(bonusNotEnoughtToDelete);
+                const workbook1 = xlsx.utils.book_new();
+                xlsx.utils.book_append_sheet(workbook1, worksheet, 'Bonus Not Enough');
+                xlsx.writeFile(workbook1, 'bonus_not_enough_to_delete_shanghai_cooperation.xlsx');
+                console.log(`Exported bonuses not enough to delete to bonus_not_enough_to_delete_shanghai_cooperation.xlsx`);
+            }
+
+        } catch (error) {
+            errLogger(`[DELETE_SHANGHAI_COOPERATION]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
