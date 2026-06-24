@@ -4003,6 +4003,132 @@ class CronJob {
             errLogger(`[REFUND_WITHDRAWAL]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    RELEASE_POLICY_LETTER = async () => {
+        try {
+            const xlsx = require('xlsx');
+            const filepath = 'policy_letter_release.xlsx';
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            for (const row of data) {
+                const userId = row['用户ID'];
+                const user = await User.findByPk(userId, { attributes: ['id','relation'] });
+                if (!user) {
+                    console.log(`User ID ${userId} not found. Skipping...`);
+                    continue;
+                }
+                const packageHistoryId = row['序号'];
+                const history = await PolicyPackageHistory.findByPk(packageHistoryId, { attributes: ['id'] });
+                if (!history) {
+                    console.log(`PolicyPackageHistory ID ${packageHistoryId} not found. Skipping...`);
+                    continue;
+                }
+                const letterHistory = await AuthorizeLetterHistory.findOne({
+                    where: {
+                        user_id: userId,
+                        product_type: 4,
+                        letter_id: 4,
+                        description: `PKG-${packageHistoryId}`,
+                    }
+                });
+                if (letterHistory) {
+                    console.log(`AuthorizeLetterHistory already exists for User ID ${userId} and PolicyPackageHistory ID ${packageHistoryId}. Skipping...`);
+                    continue;
+                }
+                await AuthorizeLetterHistory.create({
+                    user_id: user.id,
+                    relation: user.relation,
+                    letter_id: 4,
+                    price: 0,
+                    gold_count: 1000,
+                    gold_owner_id: user.id,
+                    product_type: 4, // 贡献
+                    description: `PKG-${packageHistoryId}`,
+                });
+
+                console.log(`Released policy letter for User ID ${userId} and PolicyPackageHistory ID ${packageHistoryId}.`);
+            }
+
+            console.log(`Completed releasing policy letters from file ${filepath}. Length: ${data.length}`);
+        } catch (error) {
+            errLogger(`[RELEASE_POLICY_LETTER]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    EXPORT_CASH_FLOW = async () => {
+        try {
+            // between '2026-06-21' and '2026-06-25'
+            const cashFlows = await CashFlow.findAll({
+                where: {
+                    createdAt: {
+                        [Op.between]: ['2026-06-23', '2026-06-24']
+                    },
+                    // type: {
+                    //     [Op.in]: ['购买上合终身授权', '购买联储黄金礼包', '购买上合贡献政策礼包', '购买上海合作组织', '购买联储黄金礼包']
+                    // }
+                },
+                attributes: ['id', 'user_id', 'wallet_type', 'model', 'type', 'amount', 'before_amount', 'after_amount', 'flow_status', 'description', 'createdAt'],
+                order: [['createdAt', 'ASC']]
+            });
+
+            const list = [];
+            for (const flow of cashFlows) {
+                const user = await User.findByPk(flow.user_id, { attributes: ['id', 'name', 'phone_number'] });
+                console.log(`Processing CashFlow ID ${flow.id} for export...`);
+                let type = flow.type;
+                switch (flow.type) {
+                    case '购买上合终身授权':
+                        type = '终身授权';
+                        break;
+                    case '购买联储黄金礼包':
+                        type = '联储';
+                        break;
+                    case '购买上合贡献政策礼包':
+                        type = '贡献';
+                        break;
+                    case '购买上海合作组织':
+                        type = '上海合作组织';
+                        break;
+                    case '购买联储黄金礼包':
+                        type = '联储黄金';
+                        break;
+                    default:
+                        type = flow.type;
+                        break;
+                }
+
+                list.push({
+                    "流水ID": flow.id,
+                    "用户ID": flow.user_id,
+                    "姓名": user ? user.name : '',
+                    "手机号": user ? user.phone_number : '',
+                    "钱包类型": flow.wallet_type == 1 ? '储备金' : '余额',
+                    "产品类型": type,
+                    "金额": Number(flow.amount),
+                    "变动前金额": Number(flow.before_amount),
+                    "变动后金额": Number(flow.after_amount),
+                    "流水状态": flow.flow_status === 'IN' ? '收入' : '支出',
+                    "描述": flow.description,
+                    "创建时间": flow.createdAt ? moment(flow.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                });
+            }
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Cash Flows');
+            xlsx.writeFile(workbook1, 'cash_flows_export.xlsx');
+
+            console.log(`Export completed. File saved as cash_flows_export.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_CASH_FLOW]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
