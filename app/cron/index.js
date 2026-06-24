@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -4127,6 +4127,199 @@ class CronJob {
             console.log(`Export completed. File saved as cash_flows_export.xlsx`);
         } catch (error) {
             errLogger(`[EXPORT_CASH_FLOW]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    EXPORT_POLICY_PACKAGE_HISTORY = async () => {
+        try {
+            const rows = await PolicyPackageHistory.findAll({
+                include: [
+                    {
+                        model: PolicyPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number']
+                    }
+                ],
+                where: {
+                    createdAt: {
+                        [Op.between]: ['2026-06-21', '2026-06-25']
+                    }
+                },
+            });
+
+            const list = [];
+            for (const row of rows) {
+                list.push({
+                    "订单号": row.id,
+                    "用户ID": row.user_id,
+                    "姓名": row.user ? row.user.name : '',
+                    "手机号": row.user ? row.user.phone_number : '',
+                    "产品名称": row.package ? row.package.product_name : '',
+                    "购买金额": row.price,
+                    "购买时间": row.createdAt ? moment(row.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                });
+            }
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Policy Package History');
+            xlsx.writeFile(workbook1, 'policy_package_history_export.xlsx');
+
+            console.log(`Export completed. File saved as policy_package_history_export.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_POLICY_PACKAGE_HISTORY]: ${error.stack}`); 
+        }
+    }
+
+    // NOT CRON
+    EXPORT_FEDERAL_RESERVE_GOLD_PACKAGE_HISTORY = async () => {
+        try {
+            const rows = await FederalReserveGoldPackageHistory.findAll({
+                include: [
+                    {
+                        model: FederalReserveGoldPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number']
+                    }
+                ],
+                where: {
+                    createdAt: {
+                        [Op.between]: ['2026-06-21', '2026-06-25']
+                    }
+                },
+            });
+
+            const list = [];
+            for (const row of rows) {
+                const list = [];
+                list.push({
+                    "订单号": row.id,
+                    "用户ID": row.user_id,
+                    "姓名": row.user ? row.user.name : '',
+                    "手机号": row.user ? row.user.phone_number : '',
+                    "产品名称": row.package ? row.package.product_name : '',
+                    "购买金额": Number(row.price),
+                    "购买时间": row.createdAt ? moment(row.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                });
+            }
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Federal Reserve Gold Package History');
+            xlsx.writeFile(workbook1, 'federal_reserve_gold_package_history_export.xlsx');
+
+            console.log(`Export completed. File saved as federal_reserve_gold_package_history_export.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_FEDERAL_RESERVE_GOLD_PACKAGE_HISTORY]: ${error.stack}`);
+        }
+    }
+    
+    // NOT CRON
+    EXPORT_SHANGHAI_COOPERATION_HISTORY = async () => {
+        try {
+            const rows = await ShanghaiCooperationHistory.findAll({
+                include: [
+                    {
+                        model: ShanghaiCooperation,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number']
+                    }
+                ],
+                where: {
+                    createdAt: {
+                        [Op.between]: ['2026-06-21', '2026-06-25']
+                    }
+                },
+            });
+
+            const list = [];
+            for (const row of rows) {
+                list.push({
+                    "订单号": row.id,
+                    "用户ID": row.user_id,
+                    "姓名": row.user ? row.user.name : '',
+                    "手机号": row.user ? row.user.phone_number : '',
+                    "产品名称": row.package ? row.package.product_name : '',
+                    "购买金额": Number(row.price),
+                    "购买时间": row.createdAt ? moment(row.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                });
+            }
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Shanghai Cooperation History');
+            xlsx.writeFile(workbook1, 'shanghai_cooperation_history_export.xlsx');
+
+            console.log(`Export completed. File saved as shanghai_cooperation_history_export.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_SHANGHAI_COOPERATION_HISTORY]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    EXPORT_GOLD_APPRECIATION_PACKAGE_HISTORY = async () => {
+        try {
+            const rows = await GoldAppreciationPackageHistory.findAll({
+                include: [
+                    {
+                        model: GoldAppreciationPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number']
+                    }
+                ],
+                where: {
+                    createdAt: {
+                        [Op.between]: ['2026-06-21', '2026-06-25']
+                    }
+                }
+            });
+
+            const list = [];
+            for (const row of rows) {
+                list.push({
+                    "订单号": row.id,
+                    "用户ID": row.user_id,
+                    "姓名": row.user ? row.user.name : '',
+                    "手机号": row.user ? row.user.phone_number : '',
+                    "产品名称": row.package ? row.package.product_name : '',
+                    "购买金额": Number(row.price),
+                    "购买时间": row.createdAt ? moment(row.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                });
+            }
+            
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Gold Appreciation Package');
+            xlsx.writeFile(workbook1, 'gold_appreciation_package_history_export.xlsx');
+
+            console.log(`Export completed. File saved as gold_appreciation_package_history_export.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_GOLD_APPRECIATION_PACKAGE_HISTORY]: ${error.stack}`);
         }
     }
 }

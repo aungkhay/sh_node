@@ -493,6 +493,7 @@ const models = {
     GoldPackageRepurchase,
     GoldPlanCheckIn,
     BalanceTransfer,
+    MasonicPackage,
     MasonicPackageHistory,
     MasonicPackageBonuses,
     MasonicPackageEarn,
