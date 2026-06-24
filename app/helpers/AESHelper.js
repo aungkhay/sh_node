@@ -59,11 +59,17 @@ const decryptReqQuery = (query) => {
     return JSON.parse(dec || '{}');
 }
 
+const decryptResponse = (data) => {
+    const dec = decrypt(data, API_KEY, API_IV);
+    return JSON.parse(dec || '{}');
+}
+
 module.exports = {
     encrypt,
     decrypt,
     decryptPass,
     decryptPhone,
     decryptReqBody,
-    decryptReqQuery
+    decryptReqQuery,
+    decryptResponse
 }

@@ -55,6 +55,7 @@ class Controller {
                 '19': 'SUCCESS', // xinkonglianzhifu
                 '20': 'SUCCESS', // echpayzhifu
                 '21': 'success', // mzhifu1
+                '22': 'success', // xpayzhifu2
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -362,12 +363,8 @@ class Controller {
                     break;
 
                 case 'xpayzhifu':
-                    // doc say: 收到通知本身已经代表支付成功，没有成功不会有回调
-                    status = 1;
-                    resMsg = 'success';
-                    break;
-
                 case 'xpayzhifu1':
+                case 'xpayzhifu2':
                     // doc say: 收到通知本身已经代表支付成功，没有成功不会有回调
                     status = 1;
                     resMsg = 'success';
@@ -699,6 +696,7 @@ class Controller {
                     headers = { "Content-Type": "application/json" }
                     break;
                 case 'xpayzhifu1':
+                case 'xpayzhifu2':
                     payload = await this.merchantController.XPAYZHIFU1(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
@@ -852,14 +850,8 @@ class Controller {
                     }
                     break;
                 case 'xpayzhifu':
-                    if (resData.errcode >= 0) {
-                        const decoded = Buffer.from(resData?.data, 'base64').toString('utf8');
-                        console.log(decoded);
-                        redirectUrl = JSON.parse(decoded)?.url;
-                        success = true;
-                    }
-                    break;
                 case 'xpayzhifu1':
+                case 'xpayzhifu2':
                     if (resData.errcode >= 0) {
                         const decoded = Buffer.from(resData?.data, 'base64').toString('utf8');
                         console.log(decoded);
