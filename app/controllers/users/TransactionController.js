@@ -737,7 +737,7 @@ class Controller {
                     response = await axios.post(url, formData.toString(), {
                         headers: headers
                     });
-                } else if (channel.deposit_merchant.app_code === 'xpayzhifu' || channel.deposit_merchant.app_code === 'xpayzhifu1') { 
+                } else if (['xpayzhifu', 'xpayzhifu1', 'xpayzhifu2'].includes(channel.deposit_merchant.app_code)) { 
                     const url = channel.deposit_merchant.api + '?sign=' + payload.sign;
                     delete payload.sign;
                     response = await axios.post(url, payload, {
