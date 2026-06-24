@@ -59,7 +59,7 @@ class CronJob {
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
         cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
-        cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
+        // cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
         cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
         // Run every 10 second
@@ -4634,6 +4634,50 @@ class CronJob {
 
         } catch (error) {
             errLogger(`[DELETE_SHANGHAI_COOPERATION]: ${error.stack}`);
+        }
+    }
+
+    EXPORT_NEW_CASH_FLOWS = async () => {
+        try {
+            const rows = await CashFlow.findAll({
+                where: {
+                    createdAt: {
+                        [Op.gt]: '2026-06-25 04:00:00'
+                    },
+                    type: {
+                        [Op.in]: ['黄金增值计划战略储备金返还', '账户转账', '转账']
+                    }
+                }
+            });
+
+            const list = [];
+            for (const row of rows) {
+                const user = await User.findByPk(row.user_id, { attributes: ['id', 'name', 'phone_number'] });
+                list.push({
+                    "流水ID": row.id,
+                    "用户ID": row.user_id,
+                    "姓名": user ? user.name : '',
+                    "手机号": user ? user.phone_number : '',
+                    "钱包类型": row.wallet_type == 1 ? '储备金' : '余额',
+                    "产品类型": row.type,
+                    "金额": Number(row.amount),
+                    "变动前金额": Number(row.before_amount),
+                    "变动后金额": Number(row.after_amount),
+                    "流水状态": row.flow_status === 'IN' ? '收入' : '支出',
+                    "描述": row.description,
+                    "创建时间": row.createdAt ? moment(row.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                });
+            }
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'New Cash Flows');
+            xlsx.writeFile(workbook1, 'new_cash_flows_export.xlsx');
+
+            console.log(`Export completed. File saved as new_cash_flows_export.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_NEW_CASH_FLOWS]: ${error.stack}`); 
         }
     }
 }
