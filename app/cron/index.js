@@ -4680,6 +4680,135 @@ class CronJob {
             errLogger(`[EXPORT_NEW_CASH_FLOWS]: ${error.stack}`); 
         }
     }
+
+    TO_SUBSTRACT = async () => {
+        try {
+            const xlsx = require('xlsx');
+            const filepath = 'tofix.xlsx';
+            const workbook = xlsx.readFile(filepath);
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(sheet);
+
+            for (const row of data) {
+                const userId = row['用户ID'];
+                if (!userId) {
+                    continue;
+                }
+                const user = await User.findByPk(userId, { attributes: ['id', 'name', 'phone_number', 'relation', 'balance', 'reserve_fund'] });
+                if (!user) {
+                    console.log(`User ID ${userId} not found. Skipping...`);
+                    continue;
+                }
+
+                const toSubstractBalance = Number(row['从余额扣除']) || 0;
+                const toSubstractReserveFund = Number(row['从储备金扣除']) || 0;
+                const cashflowIds = row['发放流水IDs'] ? row['发放流水IDs'].toString().split(',').map(id => Number(id.trim())) : [];
+                
+                const t = await db.transaction();
+                try {
+                    await user.decrement({ balance: toSubstractBalance, reserve_fund: toSubstractReserveFund }, { transaction: t });
+                    for (const cashflowId of cashflowIds) {
+                        const cashflow = await CashFlow.findByPk(cashflowId, { transaction: t });
+                        if (cashflow) {
+                            await cashflow.destroy({ transaction: t });
+                        } else {
+                            console.log(`CashFlow ID ${cashflowId} not found. Skipping...`);
+                        }
+                    }
+                    await t.commit();
+                    commonLogger(`Processed User ID ${userId}: Subtracted Balance ${toSubstractBalance}, Subtracted Reserve Fund ${toSubstractReserveFund}, Deleted CashFlows [${cashflowIds.join(', ')}]`);
+                } catch (error) {
+                    await t.rollback();
+                    console.log(`Error processing User ID ${userId}: ${error.message}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[TO_SUBSTRACT]: ${error.stack}`);    
+        }
+    }
+
+    RECALL_GOLD_APPRECIATION_PACKAGE = async () => {
+        try {
+            const ids = [
+                { id: [177787, 177784], substract: 2229.3, phone_number: '15675679368' },
+                { id: [177805], substract: 2400, phone_number: '18519236931' },
+                { id: [177789], substract: 1115.55, phone_number: '18887250638' },
+                { id: [177790], substract: 1600, phone_number: '13838941246' },
+                { id: [177780], substract: 881.2, phone_number: '15844855079' },
+                { id: [177793], substract: 800, phone_number: '18169216566' },
+                { id: [177810], substract: 272.9, phone_number: '13973525583' },
+                { id: [177792], substract: 800, phone_number: '18890139525' },
+                { id: [177810], substract: 400, phone_number: '13973525583' },
+                { id: [177789], substract: 1200, phone_number: '18887250638' },
+                { id: [177806], substract: 800, phone_number: '13091309729' },
+            ]
+
+            for (const item of ids) {
+                const user = await User.findOne({ where: { phone_number: item.phone_number }, attributes: ['id', 'name', 'phone_number', 'relation', 'balance', 'reserve_fund'] });
+                if (!user) {
+                    console.log(`User with phone number ${item.phone_number} not found. Skipping...`);
+                    continue;
+                }
+
+                const t = await db.transaction();
+                try {
+                    const histories = await GoldAppreciationPackageHistory.findAll({
+                        where: {
+                            id: {
+                                [Op.in]: item.id
+                            },
+                            user_id: user.id
+                        },
+                        transaction: t
+                    });
+
+                    const refund = histories.reduce((sum, history) => sum + Number(history.price), 0);
+                    const remainReserveFund = refund - item.substract;
+                    await user.increment({ reserve_fund: remainReserveFund }, { transaction: t });  
+
+                    // Bonuses
+                    const bonuses = await GoldAppreciationPackageBonuses.findAll({
+                        where: {
+                            from_user_id: user.id,
+                            package_history_id: {
+                                [Op.in]: item.id
+                            }
+                        },
+                        transaction: t
+                    });
+
+                    for (const bonus of bonuses) {
+                        const bonusUser = await User.findByPk(bonus.user_id, { attributes: ['id', 'name', 'relation', 'phone_number', 'balance'], transaction: t });
+                        if (!bonusUser) {
+                            console.log(`Bonus User ID ${bonus.user_id} not found. Skipping...`);
+                            continue;
+                        }
+                        await bonusUser.decrement({ balance: bonus.amount }, { transaction: t });
+                    }
+                    
+                    await GoldAppreciationPackageHistory.destroy({
+                        where: {
+                            id: {
+                                [Op.in]: item.id
+                            },
+                            user_id: user.id
+                        },
+                        transaction: t
+                    });
+
+                    await t.commit();
+                    console.log(`Recalled Gold Appreciation Package for User ID ${user.id}: Refund ${refund}, Subtracted ${item.substract}, Remaining Reserve Fund ${remainReserveFund}`);
+                } catch (error) {
+                    await t.rollback();
+                    console.log(`Error recalling Gold Appreciation Package for User ID ${user.id}: ${error.message}`);
+                }
+            }
+
+        } catch (error) {
+            errLogger(`[RECALL_GOLD_APPRECIATION_PACKAGE]: ${error.stack}`); 
+        }
+    }
 }
 
 module.exports = CronJob;
