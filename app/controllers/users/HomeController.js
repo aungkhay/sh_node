@@ -3704,7 +3704,7 @@ class Controller {
         }
     }
 
-    GOLD_SUMMARY = async (req, res) => {
+    GOLD_SUMMARY_ = async (req, res) => {
         try {
             const userId = req.user_id;
             const user = await User.findByPk(userId, { attributes: ['id', 'gold', 'gold_interest'] });
@@ -3743,6 +3743,99 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GOLD_SUMMARY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const cacheKey = `gold_summary:${userId}`;
+            const lockKey = `lock:${cacheKey}`;
+
+            const cached = await this.redisHelper.getValue(cacheKey);
+            if (cached) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cached));
+            }
+
+            const lockAcquired = await this.redisHelper.setLock(lockKey, '1', 5);
+
+            if (!lockAcquired) {
+                // another request is rebuilding; avoid DB stampede
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const retryCached = await this.redisHelper.getValue(cacheKey);
+                if (retryCached) {
+                    return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(retryCached));
+                }
+
+                // optional fallback
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', {
+                    gold: 0,
+                    gold_in_amount: 0,
+                    total_gold_interest: 0,
+                    total_gold_coupon: 0,
+                    gold_coupon_count: 0,
+                    yesterday_gold_interest: 0
+                });
+            }
+
+            try {
+                const [
+                    user,
+                    totalGoldCoupon,
+                    goldCouponCount,
+                    yesterdayEarn,
+                    latestPrice
+                ] = await Promise.all([
+                    User.findByPk(userId, {
+                        attributes: ['id', 'gold', 'gold_interest'],
+                        raw: true
+                    }),
+                    RewardRecord.sum('amount', {
+                        where: { reward_id: 7, user_id: userId, is_used: 0 }
+                    }),
+                    RewardRecord.count({
+                        where: { reward_id: 7, user_id: userId, is_used: 0 }
+                    }),
+                    GoldInterest.findOne({
+                        where: { user_id: userId },
+                        attributes: ['id', 'amount'],
+                        order: [['id', 'DESC']],
+                        raw: true
+                    }),
+                    GoldPrice.findOne({
+                        attributes: ['price'],
+                        order: [['id', 'DESC']],
+                        raw: true
+                    })
+                ]);
+
+                const gold = Number(user?.gold || 0);
+                const goldInterest = Number(user?.gold_interest || 0);
+                const price = Number(latestPrice?.price || 0);
+
+                const goldInAmount = new Decimal(gold).times(price).toNumber();
+
+                const data = {
+                    gold,
+                    gold_in_amount: goldInAmount,
+                    total_gold_interest: goldInterest,
+                    total_gold_coupon: Number(totalGoldCoupon || 0),
+                    gold_coupon_count: Number(goldCouponCount || 0),
+                    yesterday_gold_interest: Number(yesterdayEarn?.amount || 0)
+                };
+
+                const ttl = 60 + Math.floor(Math.random() * 10); // jitter 60-69 sec
+                await this.redisHelper.setValue(cacheKey, JSON.stringify(data), ttl);
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+            } finally {
+                await this.redisHelper.client.del(lockKey);
+            }
+
+        } catch (error) {
+            console.error('[GOLD_SUMMARY]', error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
