@@ -3831,7 +3831,7 @@ class Controller {
 
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
             } finally {
-                await this.redisHelper.client.del(lockKey);
+                await this.redisHelper.deleteKey(lockKey);
             }
 
         } catch (error) {
