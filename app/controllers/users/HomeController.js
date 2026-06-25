@@ -389,7 +389,7 @@ class Controller {
         }
     }
 
-    NOTIFICATIONS = async (req, res) => {
+    NOTIFICATIONS___ = async (req, res) => {
         const userId = Number(req.user_id);
         const page = Math.max(parseInt(req.query.page || 1, 10), 1);
         const perPage = Math.min(Math.max(parseInt(req.query.perPage || 10, 10), 1), 50);
@@ -446,6 +446,108 @@ class Controller {
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            console.error('[NOTIFICATIONS]', error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    NOTIFICATIONS = async (req, res) => {
+        try {
+            const userId = Number(req.user_id);
+
+            const page = Math.max(Number(req.query.page) || 1, 1);
+            const perPage = Math.min(Math.max(Number(req.query.perPage) || 10, 1), 50);
+            const offset = (page - 1) * perPage;
+            const isRead = Number(req.query.isRead || 0);
+
+            const cacheKey = `notifications:${userId}:${page}:${perPage}:${isRead}`;
+
+            /**
+             * Cache first
+             */
+            const cached = await this.redisHelper.getValue(cacheKey);
+            if (cached) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', JSON.parse(cached));
+            }
+
+            const readCondition =
+                isRead === 1
+                    ? literal(`
+                        EXISTS (
+                            SELECT 1
+                            FROM read_notifications rn
+                            WHERE rn.notification_id = Notification.id
+                            AND rn.user_id = ${userId}
+                        )
+                    `)
+                    : literal(`
+                        NOT EXISTS (
+                            SELECT 1
+                            FROM read_notifications rn
+                            WHERE rn.notification_id = Notification.id
+                            AND rn.user_id = ${userId}
+                        )
+                    `);
+
+            const where = {
+                [Op.or]: [
+                    {
+                        type: {
+                            [Op.in]: [1, 2]
+                        }
+                    },
+                    literal(`
+                        EXISTS (
+                            SELECT 1
+                            FROM specific_user_notifications sn
+                            WHERE sn.notification_id = Notification.id
+                            AND sn.user_id = ${userId}
+                        )
+                    `)
+                ],
+                [Op.and]: [readCondition]
+            };
+
+            const [notifications, total] =
+                await Promise.all([
+                    Notification.findAll({
+                        attributes: [
+                            'id',
+                            'type',
+                            'title',
+                            'subtitle',
+                            'createdAt'
+                        ],
+                        where,
+                        order: [['id', 'DESC']],
+                        limit: perPage,
+                        offset,
+                        raw: true
+                    }),
+                    Notification.count({
+                        where
+                    })
+                ]);
+
+            const result = {
+                notifications,
+                meta: {
+                    page,
+                    perPage,
+                    total,
+                    totalPage: Math.ceil(
+                        total / perPage
+                    )
+                }
+            };
+
+            /**
+             * Cache 600 sec
+             */
+            await this.redisHelper.setValue(cacheKey, JSON.stringify(result), 600);
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', result);
         } catch (error) {
             console.error('[NOTIFICATIONS]', error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
@@ -1963,7 +2065,7 @@ class Controller {
             let popup_announcement = await this.redisHelper.getValue('popup_announcement');
             let is_show_popup = Number(await this.redisHelper.getValue('is_show_popup') || 0);
             if (!popup_announcement) {
-                const config = await Config.findOne({ where: { type: 'popup_announcement' }, attributes: ['val', 'description'] });
+                const config = await Config.findOne({ where: { type: 'popup_announcement' }, attributes: ['val', 'description'], useMaster: true });
                 await this.redisHelper.setValue('popup_announcement', config.val);
                 popup_announcement = config.val;
                 is_show_popup = Number(config.description);
@@ -1972,7 +2074,7 @@ class Controller {
             let popup_announcement_1 = await this.redisHelper.getValue('popup_announcement_1');
             let is_show_popup_1 = Number(await this.redisHelper.getValue('is_show_popup_1') || 0);
             if (!popup_announcement_1) {
-                const config = await Config.findOne({ where: { type: 'popup_announcement_1' }, attributes: ['val', 'description'] });
+                const config = await Config.findOne({ where: { type: 'popup_announcement_1' }, attributes: ['val', 'description'], useMaster: true });
                 await this.redisHelper.setValue('popup_announcement_1', config.val);
                 popup_announcement_1 = config.val;
                 is_show_popup_1 = Number(config.description);
@@ -2000,7 +2102,8 @@ class Controller {
                 if (!ranks) {
                     ranks = await Rank.findAll({
                         attributes: ['id', 'name', 'point', 'pic', 'welcome_message'],
-                        order: [['id', 'ASC']]
+                        order: [['id', 'ASC']],
+                        useMaster: true
                     });
                     await this.redisHelper.setValue('WELCOME_MESSAGE_ranks', JSON.stringify(ranks));
                 } else {
@@ -2019,7 +2122,7 @@ class Controller {
                     message: currentRank.welcome_message,
                     next_rank_level: nextRank ? nextRank.name : '已达到最高军衔'
                 }
-                await this.redisHelper.setValue(`WELCOME_MESSAGE_${req.user_id}`, JSON.stringify(obj), 180); // cache for 3 minute
+                await this.redisHelper.setValue(`WELCOME_MESSAGE_${req.user_id}`, JSON.stringify(obj), 600); // cache for 10 minutes
                 cachedMessage = obj;
             }
 
@@ -2040,7 +2143,7 @@ class Controller {
             // get_free_product_type
             let freeProductType = await this.redisHelper.getValue('get_free_product_type');
             if (!freeProductType) {
-                const config = await Config.findOne({ where: { type: 'get_free_product_type' }, attributes: ['val'] });
+                const config = await Config.findOne({ where: { type: 'get_free_product_type' }, attributes: ['val'], useMaster: true });
                 await this.redisHelper.setValue('get_free_product_type', config.val);
                 freeProductType = config.val;
             }
