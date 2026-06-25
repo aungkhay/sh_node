@@ -17,6 +17,7 @@ const MasonicPackageBonuses = require('../../models/MasonicPackageBonuses');
 const MasonicPackageEarn = require('../../models/MasonicPackageEarn');
 const MasonicPackage = require('../../models/MasonicPackage');
 const { encrypt } = require('../../helpers/AESHelper');
+const { randomUUID } = require('crypto');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -660,7 +661,7 @@ class Controller {
         }
     }
 
-    GET_NEWS = async (req, res) => {
+    GET_NEWS_ = async (req, res) => {
         try {
             const page = Math.max(Number(req.query.page) || 1, 1);
             const perPage = Math.min(Math.max(Number(req.query.perPage) || 30, 1), 50);
@@ -741,6 +742,375 @@ class Controller {
                 meta: data.meta
             });
 
+        } catch (error) {
+            console.error('[GET_NEWS]', error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GET_NEWS__ = async (req, res) => {
+        try {
+            const page = Math.max(Number(req.query.page) || 1, 1);
+            const perPage = Math.min(Math.max(Number(req.query.perPage) || 30, 1), 50);
+            const offset = this.getOffset(page, perPage);
+            const type = Number(req.query.type || 0);
+
+            const where = {
+                status: 'APPROVED',
+                contain_sensitive_word: 0,
+                type: type ? type : { [Op.in]: [2, 3] }
+            };
+
+            const baseKey = `news:${page}:${perPage}:${type}`;
+            const freshKey = `${baseKey}:fresh`;
+            const staleKey = `${baseKey}:stale`;
+            const lockKey = `${baseKey}:lock`;
+
+            const freshTtl = type === 1 ? 60 : 300;
+            const staleTtl = freshTtl + 600; // stale survives longer
+            const ttlWithJitter = freshTtl + Math.floor(Math.random() * 30);
+
+            let data = null;
+
+            // 1) fresh cache
+            const freshCached = await this.redisHelper.getValue(freshKey);
+            if (freshCached) {
+                data = JSON.parse(freshCached);
+            } else {
+                // 2) stale cache
+                const staleCached = await this.redisHelper.getValue(staleKey);
+
+                // 3) try distributed lock
+                const lockAcquired = await this.redisHelper.setLock(lockKey, '1', 5);
+
+                if (lockAcquired) {
+                    try {
+                        const [rows, total] = await Promise.all([
+                            News.findAll({
+                                where,
+                                attributes: [
+                                    'id',
+                                    'title',
+                                    'subtitle',
+                                    'file_url',
+                                    'liked_count',
+                                    'createdAt'
+                                ],
+                                order: [['id', 'DESC']],
+                                limit: perPage,
+                                offset,
+                                raw: true
+                            }),
+                            News.count({ where })
+                        ]);
+
+                        data = {
+                            news: rows,
+                            meta: {
+                                page,
+                                perPage,
+                                total,
+                                totalPage: Math.ceil(total / perPage)
+                            }
+                        };
+
+                        await Promise.all([
+                            this.redisHelper.setValue(freshKey, JSON.stringify(data), ttlWithJitter),
+                            this.redisHelper.setValue(staleKey, JSON.stringify(data), staleTtl)
+                        ]);
+                    } finally {
+                        await this.redisHelper.deleteKey(lockKey);
+                    }
+                } else {
+                    // 4) another worker is rebuilding
+                    if (staleCached) {
+                        data = JSON.parse(staleCached);
+
+                        // optional: async refresh trigger can happen elsewhere
+                    } else {
+                        // brief wait and retry fresh cache
+                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                        const retryCached = await this.redisHelper.getValue(freshKey);
+                        if (retryCached) {
+                            data = JSON.parse(retryCached);
+                        } else {
+                            // last resort: query DB
+                            const [rows, total] = await Promise.all([
+                                News.findAll({
+                                    where,
+                                    attributes: [
+                                        'id',
+                                        'title',
+                                        'subtitle',
+                                        'file_url',
+                                        'liked_count',
+                                        'createdAt'
+                                    ],
+                                    order: [['id', 'DESC']],
+                                    limit: perPage,
+                                    offset,
+                                    raw: true
+                                }),
+                                News.count({ where })
+                            ]);
+
+                            data = {
+                                news: rows,
+                                meta: {
+                                    page,
+                                    perPage,
+                                    total,
+                                    totalPage: Math.ceil(total / perPage)
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+
+            const newsIds = data.news.map(item => item.id);
+            let likedNewsIds = new Set();
+
+            if (req.user_id && newsIds.length > 0) {
+                const likes = await NewsLikes.findAll({
+                    where: {
+                        user_id: req.user_id,
+                        news_id: { [Op.in]: newsIds }
+                    },
+                    attributes: ['news_id'],
+                    raw: true
+                });
+
+                likedNewsIds = new Set(likes.map(item => item.news_id));
+            }
+
+            const news = data.news.map(item => ({
+                ...item,
+                is_liked: likedNewsIds.has(item.id)
+            }));
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', {
+                news,
+                meta: data.meta
+            });
+        } catch (error) {
+            console.error('[GET_NEWS]', error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GET_NEWS = async (req, res) => {
+        try {
+            const page = Math.max(Number(req.query.page) || 1, 1);
+            const perPage = Math.min(
+                Math.max(Number(req.query.perPage) || 30, 1),
+                50
+            );
+
+            const offset = this.getOffset(page, perPage);
+            const type = Number(req.query.type || 0);
+
+            const where = {
+                status: 'APPROVED',
+                contain_sensitive_word: 0,
+                type: type ? type : { [Op.in]: [2, 3] }
+            };
+
+            /**
+             * Cache versioning
+             */
+            const version = (await this.redisHelper.getValue('news:version')) || '1';
+
+            const baseKey = `news:v${version}:${page}:${perPage}:${type}`;
+
+            const freshKey = `${baseKey}:fresh`;
+            const staleKey = `${baseKey}:stale`;
+            const lockKey = `${baseKey}:lock`;
+            const countKey = `news:v${version}:count:${type}`;
+
+            const freshTtl = type === 1 ? 60 : 300;
+            const staleTtl = freshTtl + 600;
+            const ttlWithJitter = freshTtl + Math.floor(Math.random() * 30);
+
+            let data = null;
+
+            /**
+             * 1. Fresh cache
+             */
+            const freshCached = await this.redisHelper.getValue(freshKey);
+
+            if (freshCached) {
+                data = JSON.parse(freshCached);
+            } else {
+                /**
+                 * 2. Stale cache
+                 */
+                const staleCached = await this.redisHelper.getValue(staleKey);
+
+                /**
+                 * 3. Distributed lock
+                 */
+                const lockValue = randomUUID();
+
+                const lockAcquired = await this.redisHelper.setLock(lockKey, lockValue, 5);
+
+                if (lockAcquired) {
+                    try {
+                        /**
+                         * Count cache
+                         */
+                        let total = await this.redisHelper.getValue(countKey);
+
+                        if (!total) {
+                            total = await News.count({ where });
+
+                            await this.redisHelper.setValue(countKey, total, 60);
+                        }
+
+                        total = Number(total);
+
+                        const rows = await News.findAll({
+                            where,
+                            attributes: [
+                                'id',
+                                'title',
+                                'subtitle',
+                                'file_url',
+                                'liked_count',
+                                'createdAt'
+                            ],
+                            order: [['id', 'DESC']],
+                            limit: perPage,
+                            offset,
+                            raw: true
+                        });
+
+                        data = {
+                            news: rows,
+                            meta: {
+                                page,
+                                perPage,
+                                total,
+                                totalPage: Math.ceil(
+                                    total / perPage
+                                )
+                            }
+                        };
+
+                        await Promise.all([
+                            this.redisHelper.setValue(freshKey, JSON.stringify(data), ttlWithJitter),
+                            this.redisHelper.setValue(staleKey, JSON.stringify(data), staleTtl)
+                        ]);
+                    } finally {
+                        await this.redisHelper.releaseLock(lockKey, lockValue);
+                    }
+                } else {
+                    /**
+                     * Another worker rebuilding cache
+                     */
+                    if (staleCached) {
+                        data = JSON.parse(staleCached);
+                    } else {
+                        /**
+                         * Retry fresh cache
+                         */
+                        for (let i = 0; i < 10; i++) {
+                            const retryCached = await this.redisHelper.getValue(freshKey);
+
+                            if (retryCached) {
+                                data = JSON.parse(retryCached);
+                                break;
+                            }
+
+                            await new Promise(resolve =>
+                                setTimeout(resolve, 100)
+                            );
+                        }
+
+                        /**
+                         * Absolute fallback
+                         */
+                        if (!data) {
+                            let total = await this.redisHelper.getValue(countKey);
+
+                            if (!total) {
+                                total = await News.count({ where });
+
+                                await this.redisHelper.setValue(countKey, total, 60);
+                            }
+
+                            total = Number(total);
+
+                            const rows = await News.findAll({
+                                where,
+                                attributes: [
+                                    'id',
+                                    'title',
+                                    'subtitle',
+                                    'file_url',
+                                    'liked_count',
+                                    'createdAt'
+                                ],
+                                order: [['id', 'DESC']],
+                                limit: perPage,
+                                offset,
+                                raw: true
+                            });
+
+                            data = {
+                                news: rows,
+                                meta: {
+                                    page,
+                                    perPage,
+                                    total,
+                                    totalPage: Math.ceil(
+                                        total / perPage
+                                    )
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Empty result
+             */
+            if (!data.news.length) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { news: [], meta: data.meta });
+            }
+
+            /**
+             * User likes
+             */
+            const newsIds = data.news.map(item => item.id);
+
+            let likedNewsIds = new Set();
+
+            if (req.user_id) {
+                const likes = await NewsLikes.findAll({
+                    where: {
+                        user_id: req.user_id,
+                        news_id: {
+                            [Op.in]: newsIds
+                        }
+                    },
+                    attributes: ['news_id'],
+                    raw: true
+                });
+
+                likedNewsIds = new Set(
+                    likes.map(item => item.news_id)
+                );
+            }
+
+            const news = data.news.map(item => ({
+                ...item,
+                is_liked: likedNewsIds.has(item.id)
+            }));
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { news, meta: data.meta });
         } catch (error) {
             console.error('[GET_NEWS]', error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
@@ -1107,6 +1477,8 @@ class Controller {
                 }
 
                 await t.commit();
+
+                await this.redisHelper.incrementValue('news:version');
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '发布成功', {});
             } catch (error) {
                 await t.rollback();

@@ -96,7 +96,7 @@ class AdminRoute extends express.Router {
         this.get('/masonic-package/earn-history', middleware.isLoggedIn('masonic-package-earn-history-list'), MasonicPackageCtrl.MASONIC_PACKAGE_EARN_HISTORY);
 
         let NewsController = require('../controllers/admins/NewsController');
-        let NewsCtrl = new NewsController();
+        let NewsCtrl = new NewsController(app);
         this.post('/oss/get-sign-url', FormValidator.get_oss_sign(), middleware.isLoggedIn(), NewsCtrl.GET_ALIOSS_SIGN);
         this.get('/news', middleware.isLoggedIn('news-list'), NewsCtrl.INDEX);
         this.post('/news/create', FormValidator.create_news(), middleware.isLoggedIn('news-add'), NewsCtrl.CREATE);

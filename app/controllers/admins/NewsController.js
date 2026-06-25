@@ -8,9 +8,10 @@ const path = require('path');
 const AliOSS = require('../../helpers/AliOSS');
 const { Op } = require('sequelize');
 const NewsReports = require('../../models/NewsReports');
+const RedisHelper = require('../../helpers/RedisHelper')
 
 class Controller {
-    constructor() {
+    constructor(app) {
         this.commonHelper = new CommonHelper();
         this.ResCode = this.commonHelper.ResCode;
         this.getOffset = this.commonHelper.getOffset;
@@ -19,6 +20,7 @@ class Controller {
         this.getRandomInt = (min, max) => {
             return Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min);
         }
+        this.redisHelper = new RedisHelper(app)
     }
 
     GET_ALIOSS_SIGN = async (req, res) => {
@@ -105,6 +107,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'News', 'create');
 
+            await this.redisHelper.incrementValue('news:version');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '添加成功', { id: news.id });
         } catch (error) {
             errLogger(`[News][CREATE]: ${error.stack}`);
@@ -131,6 +134,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'News', 'update');
 
+            await this.redisHelper.incrementValue('news:version');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', {});
         } catch (error) {
             errLogger(`[News][UPDATE]: ${error.stack}`);
@@ -295,6 +299,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'News', 'update');
 
+            await this.redisHelper.incrementValue('news:version');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {
             errLogger(`[News][UPDATE_STATUS]: ${error.stack}`);
@@ -353,6 +358,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'News', 'delete');
 
+            await this.redisHelper.incrementValue('news:version');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '删除成功', {});
         } catch (error) {
             errLogger(`[News][DELETE]: ${error.stack}`);
@@ -457,6 +463,8 @@ class Controller {
 
             // Log
             await this.adminLogger(req, 'NewsReports', 'update');
+
+            await this.redisHelper.incrementValue('news:version');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
 
         } catch (error) {

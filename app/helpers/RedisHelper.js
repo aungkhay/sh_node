@@ -21,6 +21,23 @@ class Helper {
         }
     }
 
+    releaseLock = async (key, value) => {
+        const script = `
+            if redis.call("GET", KEYS[1]) == ARGV[1]
+            then
+                return redis.call("DEL", KEYS[1])
+            else
+                return 0
+            end
+        `;
+
+        var newKey = key;
+        if (prefix) {
+            newKey = `${prefix}_${key}`;
+        }
+        return this.redis.eval(script, 1, newKey, value);
+    }
+
     setValue = async (key, value, expireInSec = 0) => {
         try {
             var newKey = key;

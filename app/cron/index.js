@@ -59,13 +59,15 @@ class CronJob {
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
         cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
-        // cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
         cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
         // Run every 10 second
         cron.schedule('*/10 * * * * *', this.RELEASE_MEETING_REWARD).start();
         // every 15th of month at 00:40 AM
         cron.schedule('40 0 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start();
+        // run every 1 AM
+        // cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
+        // cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -2704,10 +2706,11 @@ class CronJob {
 
     CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT = async () => {
         try {
+            const today = moment().format('YYYY-MM-DD');
             const packages = await GoldAppreciationPackageHistory.findAll({
                 where: {
                     return_date: {
-                        [Op.lte]: moment().toDate(),
+                        [Op.lte]: moment(today).toDate(),
                     },
                     is_returned_earn: 0,
                     reserve_earn: {
