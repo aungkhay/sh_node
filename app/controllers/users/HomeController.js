@@ -7875,7 +7875,8 @@ class Controller {
                         meeting_id: meeting_id,
                         meeting_code: meetingCode
                     },
-                    attributes: ['id'] 
+                    attributes: ['id'],
+                    useMaster: true
                 });
                 cachedRecord = existingRecord ? '1' : '0';
                 await this.redisHelper.setValue(cacheKey, cachedRecord, 3600); // cache for 1 hour
@@ -7899,7 +7900,8 @@ class Controller {
                             [Op.ne]: 0
                         },
                     },
-                    order: [['createdAt', 'DESC']]
+                    order: [['createdAt', 'DESC']],
+                    useMaster: true
                 });
                 if (meeting) {
                     await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
@@ -7929,7 +7931,7 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            const locked = await this.redisHelper.setLock(lockKey, 1, 1);
+            const locked = await this.redisHelper.setLock(lockKey, 1, 3);
             if (locked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
@@ -7938,7 +7940,7 @@ class Controller {
             if (meeting) {
                 meeting = JSON.parse(meeting);
             } else {
-                meeting = await Meeting.findByPk(req.params.id);
+                meeting = await Meeting.findByPk(req.params.id, { useMaster: true });
                 await this.redisHelper.setValue('active_meeting', JSON.stringify(meeting));
             }
             if (!meeting) {

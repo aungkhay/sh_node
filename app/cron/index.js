@@ -59,7 +59,7 @@ class CronJob {
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
         cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('* * * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
-        cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
+        // cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
         cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
         // Run every 10 second
         cron.schedule('*/10 * * * * *', this.RELEASE_MEETING_REWARD).start();

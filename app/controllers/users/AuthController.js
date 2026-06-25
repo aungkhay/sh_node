@@ -328,7 +328,7 @@ class Controller {
                         validedAt: { [Op.lte]: new Date() }
                     },
                 }) || 0;
-                await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 43200); // 12 hours cache
+                await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 86400); // 24 hours cache
             }
 
             let goldPrice = await this.redisHelper.getValue('latest_gold_price');
@@ -350,7 +350,7 @@ class Controller {
                         type: 1, // 个人黄金
                     },
                 }) || 0;
-                await this.redisHelper.setValue(`federal_gold_${userId}`, federalGold, 300); // 5 minutes cache
+                await this.redisHelper.setValue(`federal_gold_${userId}`, federalGold, 600); // 10 minutes cache
             }
 
             let goldCountInLetter = await this.redisHelper.getValue(`gold_count_in_letter_${userId}`);
@@ -360,6 +360,7 @@ class Controller {
                         is_used: 0,
                         gold_owner_id: userId
                     },
+                    useMaster: true
                 }) || 0;
                 await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60); // 1 minute cache
             }
