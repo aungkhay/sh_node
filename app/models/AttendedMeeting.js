@@ -64,7 +64,7 @@ AttendedMeeting.init({
         { fields: ['meeting_id'] },
         { fields: ['user_id'] },
         { fields: ['meeting_code'] },
-        { fields: ['user_id', 'meeting_id', 'meeting_code'], unique: true }
+        { fields: ['user_id', 'meeting_id', 'meeting_code'] }
     ]
 });
 
