@@ -269,10 +269,10 @@ class Controller {
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
-            // const redLocked = await this.redisHelper.setLock(lockKey, 1, 1);
-            // if (redLocked !== 'OK') {
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
-            // }
+            const redLocked = await this.redisHelper.setLock(lockKey, 1, 1);
+            if (redLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
 
             const userId = req.user_id;
             const user = await User.findByPk(userId, {
