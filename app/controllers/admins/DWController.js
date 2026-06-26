@@ -594,7 +594,6 @@ class Controller {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
-            const viewInferior = req.query.viewInferior || 0;
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
             const status = req.query.status || -1;
@@ -674,6 +673,7 @@ class Controller {
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
             const status = req.query.status || -1;
+            const isInternalAccount = req.query.isInternalAccount || 0;
 
             let condition = {}
             if (startTime && endTime) {
@@ -684,13 +684,18 @@ class Controller {
             if (Number(status) >= 0) {
                 condition.status = Number(status);
             }
+            const userCondition = {}
+            if (Number(isInternalAccount) > 0) {
+                userCondition.is_internal_account = Number(isInternalAccount);
+            }
 
             const { rows, count } = await Deposit.findAndCountAll({
                 include: [
                     {
                         model: User,
                         as: 'user',
-                        attributes: ['id', 'name', 'phone_number'],
+                        attributes: ['id', 'name', 'phone_number', 'is_internal_account'],
+                        where: userCondition
                     }
                 ],
                 where: condition,
