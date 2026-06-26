@@ -263,7 +263,7 @@ class Controller {
         }
     }
 
-    PROFILE = async (req, res) => {
+    PROFILE_OLD = async (req, res) => {
         const lockKey = `lock:profile:${req.user_id}`;
         try {
             /* ===============================
@@ -427,6 +427,194 @@ class Controller {
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
             if (!user.activedAt || user.activedAt < fiveMinutesAgo) {
                 await user.update({ activedAt: new Date, isActive: 1 });
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    PROFILE = async (req, res) => {
+        const lockKey = `lock:profile:${req.user_id}`;
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            const redLocked = await this.redisHelper.setLock(lockKey, 1, 1);
+            if (redLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const userId = req.user_id;
+
+            let [
+                user,
+                ranks,
+                goldCouponCount,
+                goldPrice,
+                federalGold,
+                goldCountInLetter,
+                boughtGoldPackageIds
+            ] = await Promise.all([
+                User.findByPk(userId, {
+                    include: [
+                        {
+                            model: Rank,
+                            as: 'rank',
+                            attributes: ['id', 'name', 'pic']
+                        },
+                        {
+                            model: UserKYC,
+                            as: 'kyc',
+                            attributes: ['status']
+                        },
+                        {
+                            model: PaymentMethod,
+                            as: 'payment_method',
+                            attributes: ['bank_status', 'alipay_status']
+                        }
+                    ],
+                    where: { status: 1 },
+                    attributes: [
+                        'id', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 
+                        'balance', 'referral_bonus', 'masonic_fund', 'address', 'address_status', 
+                        'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
+                        'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest',
+                        'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
+                        'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop', 'activedAt'
+                    ],
+                    useMaster: true
+                }),
+                this.redisHelper.getValue('ranks'),
+                this.redisHelper.getValue(`gold_coupon_count_${userId}`),
+                this.redisHelper.getValue('latest_gold_price'),
+                this.redisHelper.getValue(`federal_gold_${userId}`),
+                this.redisHelper.getValue(`gold_count_in_letter_${userId}`),
+                this.redisHelper.getValue(`bought_gold_gift_package_ids_${userId}`)
+            ])
+
+            // Calculate Rank Percentage
+            if(!ranks) {
+                ranks = await Rank.findAll({
+                    attributes: ['id', 'name', 'point', 'number_of_impeach'],
+                    order: [['id', 'ASC']]
+                });
+                await this.redisHelper.setValue('ranks', JSON.stringify(ranks));
+            } else {
+                ranks = JSON.parse(ranks);
+            }
+
+            // Gold Coupon Count
+            if (!goldCouponCount) {
+                goldCouponCount = await RewardRecord.sum('amount', {
+                    where: {
+                        user_id: userId,
+                        reward_id: 7,
+                        is_used: 0,
+                        validedAt: { [Op.lte]: new Date() }
+                    },
+                }) || 0;
+                await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 86400); // 24 hours cache
+            }
+
+            // Gold Price
+            if (!goldPrice) {
+                const latestGoldPrice = await GoldPrice.findOne({
+                    order: [['createdAt', 'DESC']],
+                    attributes: ['price']
+                });
+                goldPrice = latestGoldPrice ? latestGoldPrice.price : 0;
+                await this.redisHelper.setValue('latest_gold_price', goldPrice);
+            }
+
+            // Federal Gold
+            if (!federalGold) {
+                federalGold = await FederalReserveGoldPackageEarn.sum('amount', {
+                    where: {
+                        user_id: userId,
+                        type: 1, // 个人黄金
+                    },
+                }) || 0;
+                await this.redisHelper.setValue(`federal_gold_${userId}`, federalGold, 3600); // 1 hour cache
+            }
+
+            // Gold Count in Letter
+            if (!goldCountInLetter) {
+                goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
+                    where: {
+                        is_used: 0,
+                        gold_owner_id: userId
+                    },
+                    useMaster: true
+                }) || 0;
+                await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60); // 1 minute cache
+            }
+
+            let data = {
+                ... user.get({ plain: true }),
+                is_already_bind_payment_password: user.payment_password ? true : false,
+                can_impeach_count: 0,
+                next_rank_percentage: 0,
+                next_rank_point: 0,
+                gold_count_in_coupon: Number(goldCouponCount),
+                total_coupon_gold_price: Number(goldCouponCount) * Number(goldPrice),
+
+                gold_count_in_tajikstan: Number(goldCountInLetter),
+                total_tajikstan_gold_price: Number(goldCountInLetter) * Number(goldPrice),
+
+                federal_reserve_gold_count: Number(federalGold),
+                federal_reserve_gold_price: Number(federalGold) * Number(goldPrice),
+            }
+
+            delete data.payment_password;
+
+            const currentRankIndex = ranks.findIndex(r => r.id == user.rank_id);
+            const lastRank = ranks[ranks.length - 1];
+            let nextRankPoint = 0;
+            const nextRank = ranks.find(r => r?.point > ranks[currentRankIndex]?.point);
+            if (nextRank) {
+                nextRankPoint = nextRank.point;
+            } else {
+                nextRankPoint = lastRank.point;
+            }
+            data.next_rank_point = nextRankPoint;
+
+            const currentRank = ranks[currentRankIndex];
+            // const next_rank_percentage = (100 - (( (nextRankPoint - user.rank_point) / nextRankPoint) * 100)) || 0;
+            const next_rank_percentage = user.rank_point / nextRankPoint * 100 || 0;
+            if (next_rank_percentage >= 100) {
+                data.next_rank_percentage = 100;
+            } else {
+                data.next_rank_percentage = Number(parseFloat(next_rank_percentage).toFixed(0));
+            }
+            data.can_impeach_count = currentRank?.number_of_impeach;
+
+            // Check Gold Gift Package already bought
+            if (!boughtGoldPackageIds) {
+                // 588 | 1288
+                const goldGiftPackHistory = await GoldPackageHistory.findAll({ 
+                    where: { user_id: userId },
+                    attributes: [
+                        [Sequelize.fn('DISTINCT', Sequelize.col('package_id')), 'package_id'],
+                    ],
+                    raw: true,
+                });
+                const boughtPackageIds = goldGiftPackHistory.map(g => g.package_id);
+                await this.redisHelper.setValue(`bought_gold_gift_package_ids_${userId}`, JSON.stringify(boughtPackageIds), 86400); // 24 hours cache
+                boughtGoldPackageIds = boughtPackageIds;
+            } else {
+                boughtGoldPackageIds = JSON.parse(boughtGoldPackageIds);
+            }
+            data.bought_gold_gift_package_ids = boughtGoldPackageIds;
+
+            // Update Active if 5 minutes passed since last active
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            if (!user.activedAt || user.activedAt < fiveMinutesAgo) {
+                const QUEUE_KEY = 'QUEUE:USER_ACTIVE_STATUS_PROCESS';
+                await this.redisHelper.rPushValue(QUEUE_KEY, JSON.stringify({ user_id: userId, activedAt: new Date() }));
+                // await user.update({ activedAt: new Date(), isActive: 1 });
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);

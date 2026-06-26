@@ -68,6 +68,8 @@ class CronJob {
         // run every 1 AM
         // cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
         // cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
+        // Run every 1 minute
+        cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -3426,6 +3428,36 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RELEASE_MEETING_REWARD][User ID: ${userId}]: ${error.stack}`);
+        } finally {
+            await this.redisHelper.deleteKey(processingKey);
+        }
+    }
+
+    RELEASE_USER_ACTIVE_STATUS = async () => {
+        const processingKey = 'is_releasing_user_active_status';
+        try {
+            const isProcessing = await this.redisHelper.getValue(processingKey);
+            if (isProcessing) {
+                return;
+            }
+
+            await this.redisHelper.setValue(processingKey, 1);
+
+            while (true) {
+
+                const QUEUE_KEY = 'QUEUE:USER_ACTIVE_STATUS_PROCESS';
+                const item = await this.redisHelper.lPopValue(QUEUE_KEY);
+                if (!item) {
+                    break; 
+                    return;
+                }
+
+                const queue = JSON.parse(item);
+                const { user_id, activedAt } = queue;
+                await User.update({ isActive: 1, activedAt: activedAt }, { where: { id: user_id } });
+            }
+        } catch (error) {
+            errLogger(`[RELEASE_USER_ACTIVE_STATUS]: ${error.stack}`);
         } finally {
             await this.redisHelper.deleteKey(processingKey);
         }
