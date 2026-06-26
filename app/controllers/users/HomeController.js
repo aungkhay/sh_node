@@ -1186,30 +1186,30 @@ class Controller {
             /**
              * User likes
              */
-            const newsIds = data.news.map(item => item.id);
+            // const newsIds = data.news.map(item => item.id);
 
-            let likedNewsIds = new Set();
+            // let likedNewsIds = new Set();
 
-            if (req.user_id) {
-                const likes = await NewsLikes.findAll({
-                    where: {
-                        user_id: req.user_id,
-                        news_id: {
-                            [Op.in]: newsIds
-                        }
-                    },
-                    attributes: ['news_id'],
-                    raw: true,
-                });
+            // if (req.user_id) {
+            //     const likes = await NewsLikes.findAll({
+            //         where: {
+            //             user_id: req.user_id,
+            //             news_id: {
+            //                 [Op.in]: newsIds
+            //             }
+            //         },
+            //         attributes: ['news_id'],
+            //         raw: true,
+            //     });
 
-                likedNewsIds = new Set(
-                    likes.map(item => item.news_id)
-                );
-            }
+            //     likedNewsIds = new Set(
+            //         likes.map(item => item.news_id)
+            //     );
+            // }
 
             const news = data.news.map(item => ({
                 ...item,
-                is_liked: likedNewsIds.has(item.id)
+                is_liked: 0
             }));
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { news, meta: data.meta });
