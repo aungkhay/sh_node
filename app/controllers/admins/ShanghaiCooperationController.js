@@ -92,6 +92,7 @@ class Controller {
             await this.adminLogger(req, 'ShanghaiCooperation', 'create');
 
             await this.redisHelper.deleteKey('shanghai_cooperation_packages'); // clear cache
+            await this.redisHelper.deleteKey('free_shanghai_cooperation_packages'); // clear cache
             
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', {});
         } catch (error) {
@@ -122,6 +123,7 @@ class Controller {
             await this.adminLogger(req, 'ShanghaiCooperation', 'update');
 
             await this.redisHelper.deleteKey('shanghai_cooperation_packages'); // clear cache
+            await this.redisHelper.deleteKey('free_shanghai_cooperation_packages'); // clear cache
             
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {

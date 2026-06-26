@@ -6,6 +6,7 @@ const AliOSS = require('../../helpers/AliOSS');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const RedisHelper = require('../../helpers/RedisHelper');
 
 class Controller {
     constructor(app) {
@@ -14,6 +15,7 @@ class Controller {
         this.adminLogger = this.commonHelper.adminLogger;
         this.getOffset = this.commonHelper.getOffset;
         this.OSS = new AliOSS();
+        this.redisHelper = new RedisHelper(app);
     }
 
     INDEX = async (req, res) => {
@@ -112,6 +114,8 @@ class Controller {
 
             // Log
             await this.adminLogger(req, 'Banner', 'delete');
+
+            await this.redisHelper.deleteKey('home_banners');
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '删除成功', {});
         } catch (error) {

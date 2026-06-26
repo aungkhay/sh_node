@@ -105,6 +105,7 @@ class Controller {
             await this.adminLogger(req, 'GoldAppreciationPackage', 'create');
 
             await this.redisHelper.deleteKey('gold_appreciation_packages'); // clear cache
+            await this.redisHelper.deleteKey('free_gold_appreciation_packages'); // clear cache
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', newPackage);
 
@@ -150,6 +151,7 @@ class Controller {
             await this.adminLogger(req, 'GoldAppreciationPackage', 'update');
             
             await this.redisHelper.deleteKey('gold_appreciation_packages'); // clear cache
+            await this.redisHelper.deleteKey('free_gold_appreciation_packages'); // clear cache
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', pkg);
         } catch (error) {

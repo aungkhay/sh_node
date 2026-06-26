@@ -77,6 +77,8 @@ class Controller {
                 }, { transaction: t });
 
                 await t.commit();
+
+                await this.redisHelper.deleteKey(`gold_plan_check_in_history_${userId}`);
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '签到成功', {});
             } catch (error) {
                 await t.rollback();
@@ -92,10 +94,18 @@ class Controller {
     CHECK_IN_HISTORY = async (req, res) => {
         try {
             const userId = req.user_id;
-            let histories = await GoldPlanCheckIn.findAll({
-                where: { user_id: userId },
-                attributes: ['id', 'date', 'gold_count']
-            });
+
+            let histories = await this.redisHelper.getValue(`gold_plan_check_in_history_${userId}`);
+            if (histories) {
+                histories = JSON.parse(histories);
+            } else {
+                histories = await GoldPlanCheckIn.findAll({
+                    where: { user_id: userId },
+                    attributes: ['id', 'date', 'gold_count'],
+                    useMaster: true,
+                });
+                await this.redisHelper.setValue(`gold_plan_check_in_history_${userId}`, JSON.stringify(histories));
+            }
                 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', histories);
         } catch (error) {

@@ -3255,7 +3255,13 @@ class Controller {
 
     GET_BANNER = async (req, res) => {
         try {
-            const banners = await Banner.findAll({ attributes: ['id', 'pic'] });
+            let banners = await this.redisHelper.getValue('home_banners');
+            if (banners) {
+                banners = JSON.parse(banners);
+            } else {
+                banners = await Banner.findAll({ attributes: ['id', 'pic'], useMaster: true });
+                await this.redisHelper.setValue('home_banners', JSON.stringify(banners));
+            }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', banners)
         } catch (error) {
@@ -3790,24 +3796,29 @@ class Controller {
                 ] = await Promise.all([
                     User.findByPk(userId, {
                         attributes: ['id', 'gold', 'gold_interest'],
-                        raw: true
+                        raw: true,
+                        useMaster: true
                     }),
                     RewardRecord.sum('amount', {
-                        where: { reward_id: 7, user_id: userId, is_used: 0 }
+                        where: { reward_id: 7, user_id: userId, is_used: 0 },
+                        useMaster: true
                     }),
                     RewardRecord.count({
-                        where: { reward_id: 7, user_id: userId, is_used: 0 }
+                        where: { reward_id: 7, user_id: userId, is_used: 0 },
+                        useMaster: true
                     }),
                     GoldInterest.findOne({
                         where: { user_id: userId },
                         attributes: ['id', 'amount'],
                         order: [['id', 'DESC']],
-                        raw: true
+                        raw: true,
+                        useMaster: true
                     }),
                     GoldPrice.findOne({
                         attributes: ['price'],
                         order: [['id', 'DESC']],
-                        raw: true
+                        raw: true,
+                        useMaster: true
                     })
                 ]);
 
@@ -6365,11 +6376,17 @@ class Controller {
 
     FREE_SHANGHAI_COOPERATION = async (req, res) => {
         try {
-            const packages = await ShanghaiCooperation.findAll({
-                where: {
-                    can_new_registered_user_get_free: 1
-                }
-            });
+            let packages = await this.redisHelper.getValue('free_shanghai_cooperation_packages');
+            if (packages) {
+                packages = JSON.parse(packages);
+            } else {
+                packages = await ShanghaiCooperation.findAll({
+                    where: {
+                        can_new_registered_user_get_free: 1
+                    }
+                });
+                await this.redisHelper.setValue('free_shanghai_cooperation_packages', JSON.stringify(packages));
+            }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { packages });
         } catch (error) {
@@ -6998,6 +7015,7 @@ class Controller {
     AUTHORIZE_LETTERS = async (req, res) => {
         try {
             const userId = req.user_id;
+
             const letters = await AuthorizeLetter.findAll({
                 attributes: [
                     'id', 'title', 'content', 'price', 'can_buy', 'flag', 'createdAt',
@@ -7018,6 +7036,7 @@ class Controller {
                         )`), 'is_used'
                     ]
                 ],
+                useMaster: true,
                 order: [['createdAt', 'DESC']]
             });
 
@@ -7055,7 +7074,7 @@ class Controller {
             if (letterId == 1 && Number(user.have_reward_6) == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
             }
-            const letter = await AuthorizeLetter.findByPk(letterId);
+            const letter = await AuthorizeLetter.findByPk(letterId, { useMaster: true });
             if (!letter) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '授权书不存在', {});
             }
@@ -8793,11 +8812,17 @@ class Controller {
 
     FREE_GOLD_APPRECIATION_PACKAGE = async (req, res) => {
         try {
-            const packages = await GoldAppreciationPackage.findAll({
-                where: {
-                    can_new_registered_user_get_free: 1
-                }
-            });
+            let packages = await this.redisHelper.getValue('free_gold_appreciation_packages');
+            if (packages) {
+                packages = JSON.parse(packages);
+            } else {
+                packages = await GoldAppreciationPackage.findAll({
+                    where: {
+                        can_new_registered_user_get_free: 1
+                    }
+                });
+                await this.redisHelper.setValue('free_gold_appreciation_packages', JSON.stringify(packages));
+            }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { packages });
         } catch (error) {
