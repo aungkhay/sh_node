@@ -1065,7 +1065,7 @@ class Controller {
                         let total = await this.redisHelper.getValue(countKey);
 
                         if (!total) {
-                            total = await News.count({ where, useMaster: true });
+                            total = await News.count({ where });
 
                             await this.redisHelper.setValue(countKey, total, 60);
                         }
@@ -1086,7 +1086,6 @@ class Controller {
                             limit: perPage,
                             offset,
                             raw: true,
-                            useMaster: true
                         });
 
                         data = {
@@ -1138,7 +1137,7 @@ class Controller {
                             let total = await this.redisHelper.getValue(countKey);
 
                             if (!total) {
-                                total = await News.count({ where, useMaster: true });
+                                total = await News.count({ where });
 
                                 await this.redisHelper.setValue(countKey, total, 60);
                             }
@@ -1159,7 +1158,6 @@ class Controller {
                                 limit: perPage,
                                 offset,
                                 raw: true,
-                                useMaster: true
                             });
 
                             data = {
@@ -1202,7 +1200,6 @@ class Controller {
                     },
                     attributes: ['news_id'],
                     raw: true,
-                    useMaster: true
                 });
 
                 likedNewsIds = new Set(
@@ -2064,7 +2061,18 @@ class Controller {
     }
 
     GET_WELCOME_MESSAGE = async (req, res) => {
+        const lockKey = `WELCOME_MESSAGE_LOCK_${req.user_id}`;
+
         try {
+
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            const redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             let popup_announcement = await this.redisHelper.getValue('popup_announcement');
             let is_show_popup = Number(await this.redisHelper.getValue('is_show_popup') || 0);
             if (!popup_announcement) {
@@ -2125,7 +2133,7 @@ class Controller {
                     message: currentRank.welcome_message,
                     next_rank_level: nextRank ? nextRank.name : '已达到最高军衔'
                 }
-                await this.redisHelper.setValue(`WELCOME_MESSAGE_${req.user_id}`, JSON.stringify(obj), 600); // cache for 10 minutes
+                await this.redisHelper.setValue(`WELCOME_MESSAGE_${req.user_id}`, JSON.stringify(obj), 1800); // cache for 30 minutes
                 cachedMessage = obj;
             }
 
@@ -2140,7 +2148,7 @@ class Controller {
                     total_participant: Number(totalRegister * 111) + Number(participantCount) + 10300000 + 8000000,
                     total_retreiver: Number(totalRegister * 27) + Number(ReteriverCount) + 5050000 + 5000000,
                 }
-                await this.redisHelper.setValue(`masonic_fund_summary`, JSON.stringify(masonicFund), 600); // cache for 10 minutes
+                await this.redisHelper.setValue(`masonic_fund_summary`, JSON.stringify(masonicFund), 1800); // cache for 30 minutes
             }
 
             // get_free_product_type
