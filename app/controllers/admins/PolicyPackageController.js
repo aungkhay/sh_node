@@ -7,14 +7,16 @@ const { PolicyPackage, PolicyPackageHistory, User, PolicyPackageEarn, PolicyPack
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const AliOSS = require('../../helpers/AliOSS');
+const RedisHelper = require('../../helpers/RedisHelper');
 
 class Controller {
-    constructor() {
+    constructor(app) {
         this.commonHelper = new CommonHelper();
         this.ResCode = this.commonHelper.ResCode;
         this.getOffset = this.commonHelper.getOffset;
         this.adminLogger = this.commonHelper.adminLogger;
         this.OSS = new AliOSS();
+        this.redisHelper = new RedisHelper(app);
     }
 
     INDEX = async (req, res) => {
@@ -89,6 +91,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'PolicyPackage', 'create');
             
+            await this.redisHelper.deleteKey(`policy_packages`); // Clear cache
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', {});
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});   
@@ -117,6 +120,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'PolicyPackage', 'update');
 
+            await this.redisHelper.deleteKey(`policy_packages`); // Clear cache
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {
             errLogger(`[PolicyPackage][UPDATE]: ${error.stack}`);

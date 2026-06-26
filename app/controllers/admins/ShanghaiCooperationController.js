@@ -7,14 +7,16 @@ const { ShanghaiCooperation, ShanghaiCooperationHistory, User, ShanghaiCooperati
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const AliOSS = require('../../helpers/AliOSS');
+const RedisHelper = require('../../helpers/RedisHelper');
 
 class Controller {
-    constructor() {
+    constructor(app) {
         this.commonHelper = new CommonHelper();
         this.ResCode = this.commonHelper.ResCode;
         this.getOffset = this.commonHelper.getOffset;
         this.adminLogger = this.commonHelper.adminLogger;
         this.OSS = new AliOSS();
+        this.redisHelper = new RedisHelper(app);
     }
 
     INDEX = async (req, res) => {
@@ -88,6 +90,8 @@ class Controller {
 
             // Log
             await this.adminLogger(req, 'ShanghaiCooperation', 'create');
+
+            await this.redisHelper.deleteKey('shanghai_cooperation_packages'); // clear cache
             
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', {});
         } catch (error) {
@@ -117,6 +121,8 @@ class Controller {
             // Log
             await this.adminLogger(req, 'ShanghaiCooperation', 'update');
 
+            await this.redisHelper.deleteKey('shanghai_cooperation_packages'); // clear cache
+            
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {
             errLogger(`[ShanghaiCooperation][UPDATE]: ${error.stack}`);

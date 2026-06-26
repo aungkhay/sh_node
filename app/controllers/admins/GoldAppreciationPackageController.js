@@ -7,14 +7,16 @@ const { User, GoldAppreciationPackage, GoldAppreciationPackageHistory, db, GoldA
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const AliOSS = require('../../helpers/AliOSS');
+const RedisHelper = require('../../helpers/RedisHelper');
 
 class Controller {
-    constructor() {
+    constructor(app) {
         this.commonHelper = new CommonHelper();
         this.ResCode = this.commonHelper.ResCode;
         this.getOffset = this.commonHelper.getOffset;
         this.adminLogger = this.commonHelper.adminLogger;
         this.OSS = new AliOSS();
+        this.redisHelper = new RedisHelper(app);
         this.adminLogger = this.commonHelper.adminLogger;
     }
 
@@ -102,6 +104,8 @@ class Controller {
             // log
             await this.adminLogger(req, 'GoldAppreciationPackage', 'create');
 
+            await this.redisHelper.deleteKey('gold_appreciation_packages'); // clear cache
+
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', newPackage);
 
         } catch (error) {
@@ -144,6 +148,8 @@ class Controller {
 
             // log
             await this.adminLogger(req, 'GoldAppreciationPackage', 'update');
+            
+            await this.redisHelper.deleteKey('gold_appreciation_packages'); // clear cache
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', pkg);
         } catch (error) {

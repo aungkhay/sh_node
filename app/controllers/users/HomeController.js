@@ -5834,13 +5834,20 @@ class Controller {
 
     POLICY_PACKAGE = async (req, res) => {
         try {
-            const packages = await PolicyPackage.findAll({
-                where: {
-                    status: {
-                        [Op.ne]: 2
-                    }
-                },
-            });
+            let packages = await this.redisHelper.getValue('policy_packages');
+            if (packages) {
+                packages = JSON.parse(packages);
+            } else {
+                packages = await PolicyPackage.findAll({
+                    where: {
+                        status: {
+                            [Op.ne]: 2
+                        }
+                    },
+                    useMaster: true
+                });
+                await this.redisHelper.setValue('policy_packages', JSON.stringify(packages));
+            }
 
             let package_description = await this.redisHelper.getValue('policy_package_description');
             if (!package_description) {
@@ -6308,13 +6315,20 @@ class Controller {
 
     SHANGHAI_COOPERATION = async (req, res) => {
         try {
-            const packages = await ShanghaiCooperation.findAll({
-                where: {
-                    status: {
-                        [Op.ne]: 2
-                    }
-                },
-            });
+            let packages = await this.redisHelper.getValue('shanghai_cooperation_packages');
+            if (packages) {
+                packages = JSON.parse(packages);
+            } else {
+                packages = await ShanghaiCooperation.findAll({
+                    where: {
+                        status: {
+                            [Op.ne]: 2
+                        }
+                    },
+                    useMaster: true
+                });
+                await this.redisHelper.setValue('shanghai_cooperation_packages', JSON.stringify(packages));
+            }
 
             let package_description = await this.redisHelper.getValue('shanghai_cooperation_description');
             if (!package_description) {
@@ -8729,13 +8743,20 @@ class Controller {
 
     GOLD_APPRECIATION_PACKAGE = async (req, res) => {
         try {
-            const packages = await GoldAppreciationPackage.findAll({
-                where: {
-                    status: {
-                        [Op.ne]: 2
-                    }
-                },
-            });
+            let packages = await this.redisHelper.getValue('gold_appreciation_packages');
+            if (packages) {
+                packages = JSON.parse(packages);
+            } else {
+                packages = await GoldAppreciationPackage.findAll({
+                    where: {
+                        status: {
+                            [Op.ne]: 2
+                        }
+                    },
+                    useMaster: true
+                });
+                await this.redisHelper.setValue('gold_appreciation_packages', JSON.stringify(packages));
+            }
 
             let package_description = await this.redisHelper.getValue('gold_appreciation_package_description');
             if (!package_description) {
