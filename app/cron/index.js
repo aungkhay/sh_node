@@ -2710,7 +2710,7 @@ class CronJob {
             const packages = await GoldAppreciationPackageHistory.findAll({
                 where: {
                     return_date: {
-                        [Op.lte]: moment(today).toDate(),
+                        [Op.lt]: today,
                     },
                     is_returned_earn: 0,
                     reserve_earn: {

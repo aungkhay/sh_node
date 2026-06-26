@@ -1065,7 +1065,7 @@ class Controller {
                         let total = await this.redisHelper.getValue(countKey);
 
                         if (!total) {
-                            total = await News.count({ where });
+                            total = await News.count({ where, useMaster: true });
 
                             await this.redisHelper.setValue(countKey, total, 60);
                         }
@@ -1085,7 +1085,8 @@ class Controller {
                             order: [['id', 'DESC']],
                             limit: perPage,
                             offset,
-                            raw: true
+                            raw: true,
+                            useMaster: true
                         });
 
                         data = {
@@ -1137,7 +1138,7 @@ class Controller {
                             let total = await this.redisHelper.getValue(countKey);
 
                             if (!total) {
-                                total = await News.count({ where });
+                                total = await News.count({ where, useMaster: true });
 
                                 await this.redisHelper.setValue(countKey, total, 60);
                             }
@@ -1157,7 +1158,8 @@ class Controller {
                                 order: [['id', 'DESC']],
                                 limit: perPage,
                                 offset,
-                                raw: true
+                                raw: true,
+                                useMaster: true
                             });
 
                             data = {
@@ -1199,7 +1201,8 @@ class Controller {
                         }
                     },
                     attributes: ['news_id'],
-                    raw: true
+                    raw: true,
+                    useMaster: true
                 });
 
                 likedNewsIds = new Set(
