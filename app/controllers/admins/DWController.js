@@ -588,6 +588,144 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    BOSS_WITHDRAW_LIST = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const viewInferior = req.query.viewInferior || 0;
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
+            const status = req.query.status || -1;
+            const userId = req.user_id;
+            const isInternalAccount = req.query.isInternalAccount || 0;
+
+            let condition = {}
+            if (startTime && endTime) {
+                condition.createdAt = {
+                    [Op.between]: [startTime, endTime]
+                }
+            }
+            if (Number(status) >= 0) {
+                condition.status = Number(status);
+            }
+
+            let userCondition = {}
+            if (Number(isInternalAccount) > 0) {
+                userCondition.is_internal_account = Number(isInternalAccount);
+            }
+
+            const { rows, count } = await Withdraw.findAndCountAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        include: [
+                            {
+                                model: PaymentMethod,
+                                as: 'payment_method',
+                                attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name'],
+                            },
+                        ],
+                        where: userCondition,
+                        attributes: ['id', 'name', 'phone_number', 'is_internal_account'],
+                    }
+                ],
+                attributes: ['id','order_no', 'type', 'amount', 'handle_fee', 'status', 'description', 'createdAt'],
+                useMaster: true,
+                where: condition,
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset
+            });
+
+            const successWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1 }, useMaster: true });
+            const failedWithdrawAmount = await Withdraw.sum('amount', { where: { status: 2 }, useMaster: true });
+            const pendingWithdrawAmount = await Withdraw.sum('amount', { where: { status: 0 }, useMaster: true });
+
+            const data = {
+                withdraws: rows,
+                summary: {
+                    success: Number(successWithdrawAmount || 0),
+                    failed: Number(failedWithdrawAmount || 0),
+                    pending: Number(pendingWithdrawAmount || 0)
+                },
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BOSS_DEPOSIT_LIST = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
+            const status = req.query.status || -1;
+
+            let condition = {}
+            if (startTime && endTime) {
+                condition.createdAt = {
+                    [Op.between]: [startTime, endTime]
+                }
+            }
+            if (Number(status) >= 0) {
+                condition.status = Number(status);
+            }
+
+            const { rows, count } = await Deposit.findAndCountAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number'],
+                    }
+                ],
+                where: condition,
+                attributes: ['id','order_no', 'amount', 'type', 'amount', 'status', 'createdAt'],
+                useMaster: true,
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset
+            });
+
+            const successDepositAmount = await Deposit.sum('amount', { where: { status: 1 }, useMaster: true });
+            const failedDepositAmount = await Deposit.sum('amount', { where: { status: 2 }, useMaster: true });
+            const pendingDepositAmount = await Deposit.sum('amount', { where: { status: 0 }, useMaster: true });
+
+            const data = {
+                deposits: rows,
+                summary: {
+                    success: Number(successDepositAmount || 0),
+                    failed: Number(failedDepositAmount || 0),
+                    pending: Number(pendingDepositAmount || 0)
+                },
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller

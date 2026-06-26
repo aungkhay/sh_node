@@ -52,6 +52,9 @@ class AdminRoute extends express.Router {
         this.get('/export-withdraw', middleware.isLoggedIn('withdraw-management-export'), DWCtrl.EXPORT_WITHDRAW);
         this.post('/export-withdraw-by-phone_numbers', FormValidator.export_withdraw_by_phones(), middleware.isLoggedIn('withdraw-management-export'), DWCtrl.EXPORT_WITHDRAW_BY_PHONES);
         this.post('/import-withdraw', middleware.isLoggedIn('withdraw-management-import'), DWCtrl.IMPORT_WITHDRAW);
+        // Boss
+        this.get('/boss/withdraw-list', DWCtrl.BOSS_WITHDRAW_LIST);
+        this.get('/boss/deposit-list', DWCtrl.BOSS_DEPOSIT_LIST);
 
         let EarnController = require('../controllers/admins/EarnController');
         let EarnCtrl = new EarnController();
