@@ -1018,6 +1018,7 @@ class Controller {
                 contain_sensitive_word: 0,
                 type: type ? type : { [Op.in]: [2, 3] }
             };
+            const userMaster = req.user_id % 4 === 0; // 25% go to master DB, 75% go to read replica
 
             /**
              * Cache versioning
@@ -1065,7 +1066,7 @@ class Controller {
                         let total = await this.redisHelper.getValue(countKey);
 
                         if (!total) {
-                            total = await News.count({ where });
+                            total = await News.count({ where, useMaster: userMaster });
 
                             await this.redisHelper.setValue(countKey, total, 60);
                         }
@@ -1086,6 +1087,7 @@ class Controller {
                             limit: perPage,
                             offset,
                             raw: true,
+                            useMaster: userMaster
                         });
 
                         data = {
@@ -1137,7 +1139,7 @@ class Controller {
                             let total = await this.redisHelper.getValue(countKey);
 
                             if (!total) {
-                                total = await News.count({ where });
+                                total = await News.count({ where, useMaster: userMaster });
 
                                 await this.redisHelper.setValue(countKey, total, 60);
                             }
@@ -1158,6 +1160,7 @@ class Controller {
                                 limit: perPage,
                                 offset,
                                 raw: true,
+                                useMaster: userMaster
                             });
 
                             data = {
