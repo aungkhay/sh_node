@@ -9,19 +9,29 @@ const consoleLog = new winston.transports.Console();
 
 const getClientIP = (req) => {
     try {
-        var ip = req.headers['x-forwarded-for'] ||
-            req.ip ||
-            req.connection.remoteAddress ||
-            req.socket.remoteAddress ||
-            req.connection.socket.remoteAddress || '';
-        if (ip.indexOf(":") >= 0) {
-            ip = ip.split(':')[3]
+        let ip = req.headers['x-forwarded-for'] || req.ip || req.socket?.remoteAddress || '';
+
+        if (!ip) return '';
+
+        // remove square brackets if present
+        ip = String(ip).replace(/^\[|\]$/g, '');
+
+        // take first IP if comma-separated
+        ip = ip.split(',')[0].trim();
+
+        // normalize IPv4-mapped IPv6
+        if (ip.startsWith('::ffff:')) {
+            ip = ip.replace('::ffff:', '');
+        }
+
+        if (ip === '::1') {
+            ip = '127.0.0.1';
         }
         return ip;
-    } catch (e) {
-        return '0:0:0:0';
+    } catch {
+        return '';
     }
-}
+};
 
 function createRequestLogger() {
 

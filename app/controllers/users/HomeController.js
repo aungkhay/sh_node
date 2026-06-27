@@ -4835,7 +4835,7 @@ class Controller {
                 }
             }
             
-            const mPackage = await MasonicPackage.findByPk(req.params.id);
+            const mPackage = await MasonicPackage.findByPk(req.params.id, { useMaster: true });
             if (!mPackage) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
             }
@@ -4849,27 +4849,29 @@ class Controller {
             }
 
             if (mPackage.perchase_limit === 'DAILY' && mPackage.quantity_limit > 0) {
-                const history = await MasonicPackageHistory.findAll({
+                const historyCount = await MasonicPackageHistory.count({
                     where: {
                         user_id: req.user_id,
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         }
-                    }
+                    },
+                    useMaster: true
                 });
-                if (history.length >= mPackage.quantity_limit) {
+                if (historyCount >= mPackage.quantity_limit) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
                 }
             }
 
             if (mPackage.perchase_limit === 'TOTAL' && mPackage.quantity_limit > 0) {
-                const history = await MasonicPackageHistory.findAll({
+                const historyCount = await MasonicPackageHistory.count({
                     where: {
                         package_id: mPackage.id,
                         user_id: req.user_id
-                    }
+                    },
+                    useMaster: true
                 });
-                if (history.length >= mPackage.quantity_limit) {
+                if (historyCount >= mPackage.quantity_limit) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包已售罄', {});
                 }
             }
@@ -5907,6 +5909,7 @@ class Controller {
     BUY_POLICY_PACKAGE = async (req, res) => {
         const lockKey = `lock:buy-policy-package:${req.ip}`;
         let redisLocked = false; 
+        const PROCESSING_KEY = `policy_package_processing_${req.user_id}`;
 
         try {
             let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
@@ -5926,9 +5929,17 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
+            // processing status
+            const isProcessing = await this.redisHelper.getValue(PROCESSING_KEY);
+            if (isProcessing) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
+            }
+            await this.redisHelper.setValue(PROCESSING_KEY, 1);
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
@@ -5944,23 +5955,28 @@ class Controller {
                 const [start, end] = openPeriod.split('|');
                 const now = moment();
                 if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合贡献政策购买时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
                 }                 
                 if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合贡献政策购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
                 }
             }
             
             const policyPackage = await PolicyPackage.findByPk(req.params.id);
             if (!policyPackage) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
             }
 
             if (policyPackage.status === 2) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已下架', {});
             }
 
             if (policyPackage.status === 3) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
             }
 
@@ -5974,6 +5990,7 @@ class Controller {
                     }
                 });
                 if (history.length >= policyPackage.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
                 }
             }
@@ -5986,6 +6003,7 @@ class Controller {
                     }
                 });
                 if (history.length >= policyPackage.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包已售罄', {});
                 }
             }
@@ -6002,16 +6020,20 @@ class Controller {
                 useMaster: true
             });
             if (!user.kyc) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
             }
             if (user.kyc.status === 'DENIED') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
             }
             if (user.kyc.status === 'PENDING') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
             }
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
@@ -6023,6 +6045,7 @@ class Controller {
                 // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
             if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             }
 
@@ -6203,16 +6226,19 @@ class Controller {
                 }
 
                 await t.commit();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
 
             } catch (error) {
                 console.log(error);
                 await t.rollback();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买礼包失败', {}); 
             }
 
         } catch (error) {
             errLogger(`[BUY_POLICY_PACKAGE][${req.user_id}]: ${error.stack}`);
+            await this.redisHelper.deleteKey(PROCESSING_KEY);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
@@ -6409,6 +6435,7 @@ class Controller {
     BUY_SHANGHAI_COOPERATION = async (req, res) => {
         const lockKey = `lock:buy-shanghai-cooperation-package:${req.ip}`;
         let redisLocked = false; 
+        const PROCESSING_KEY = `shanghai_cooperation_package_processing_${req.user_id}`;
 
         try {
             let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
@@ -6428,9 +6455,17 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
+            // processing status
+            const isProcessing = await this.redisHelper.getValue(PROCESSING_KEY);
+            if (isProcessing) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
+            }
+            await this.redisHelper.setValue(PROCESSING_KEY, 1);
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
@@ -6446,48 +6481,57 @@ class Controller {
                 const [start, end] = openPeriod.split('|');
                 const now = moment();
                 if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上海合作组织时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
                 }                 
                 if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上海合作组织购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
                 }
             }
             
-            const scPkg = await ShanghaiCooperation.findByPk(req.params.id);
+            const scPkg = await ShanghaiCooperation.findByPk(req.params.id, { useMaster: true });
             if (!scPkg) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
             }
 
             if (scPkg.status === 2) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已下架', {});
             }
 
             if (scPkg.status === 3) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
             }
 
             if (scPkg.perchase_limit === 'DAILY' && scPkg.quantity_limit > 0) {
-                const history = await ShanghaiCooperationHistory.findAll({
+                const historyCount = await ShanghaiCooperationHistory.count({
                     where: {
                         user_id: req.user_id,
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         }
-                    }
+                    },
+                    useMaster: true
                 });
-                if (history.length >= scPkg.quantity_limit) {
+                if (historyCount >= scPkg.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
                 }
             }
 
             if (scPkg.perchase_limit === 'TOTAL' && scPkg.quantity_limit > 0) {
-                const history = await ShanghaiCooperationHistory.findAll({
+                const historyCount = await ShanghaiCooperationHistory.count({
                     where: {
                         package_id: scPkg.id,
                         user_id: req.user_id
-                    }
+                    },
+                    useMaster: true
                 });
-                if (history.length >= scPkg.quantity_limit) {
+                if (historyCount >= scPkg.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包已售罄', {});
                 }
             }
@@ -6504,16 +6548,20 @@ class Controller {
                 useMaster: true
             });
             if (!user.kyc) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
             }
             if (user.kyc.status === 'DENIED') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
             }
             if (user.kyc.status === 'PENDING') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
             }
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
@@ -6525,6 +6573,7 @@ class Controller {
                 // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
             if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             }
 
@@ -6676,16 +6725,20 @@ class Controller {
                 }
 
                 await t.commit();
+
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
 
             } catch (error) {
                 console.log(error);
                 await t.rollback();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买礼包失败', {}); 
             }
 
         } catch (error) {
             errLogger(`[BUY_SHANGHAI_COOPERATION][${req.user_id}]: ${error.stack}`);
+            await this.redisHelper.deleteKey(PROCESSING_KEY);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
@@ -8846,6 +8899,7 @@ class Controller {
 
         const lockKey = `lock:buy-gold-appreciation-package:${req.ip}`;
         let redisLocked = false;
+        const PROCESSING_KEY = `gold_appreciation_package_processing_${req.user_id}`
         try {
             let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
             if (!buyOnOff) {
@@ -8864,9 +8918,17 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
+            // processing status
+            const isProcessing = await this.redisHelper.getValue(PROCESSING_KEY);
+            if (isProcessing) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
+            }
+            await this.redisHelper.setValue(PROCESSING_KEY, 1);
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
@@ -8882,55 +8944,62 @@ class Controller {
                 const [start, end] = openPeriod.split('|');
                 const now = moment();
                 if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合黄金增值计划购买时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
                 }                 
                 if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合黄金增值计划购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
                 }
             }
             
-            const gPackage = await GoldAppreciationPackage.findByPk(req.params.id);
+            const gPackage = await GoldAppreciationPackage.findByPk(req.params.id, { useMaster: true });
             if (!gPackage) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
             }
 
             if (gPackage.status === 2) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已下架', {});
             }
 
             if (gPackage.status === 3) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
             }
 
             if (gPackage.purchase_limit === 'DAILY' && gPackage.quantity_limit > 0) {
-                const history = await GoldAppreciationPackageHistory.findAll({
+                const historyCount = await GoldAppreciationPackageHistory.count({
                     where: {
                         user_id: req.user_id,
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         },
                         price: { [Op.gt]: 0 },
+                        description: { [Op.ne]: '新注册用户福利' }
                     },
-                    attributes: ['id', 'description']
+                    useMaster: true
                 });
-                const buyCount = history.map(h => h.description).filter(d => d !== '新注册用户福利').length;
-                if (buyCount >= gPackage.quantity_limit) {
+                if (historyCount >= gPackage.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
                 }
             }
 
             if (gPackage.purchase_limit === 'TOTAL' && gPackage.quantity_limit > 0) {
-                const history = await GoldAppreciationPackageHistory.findAll({
+                const historyCount = await GoldAppreciationPackageHistory.count({
                     where: {
                         user_id: req.user_id,
                         package_id: gPackage.id,
                         price: { [Op.gt]: 0 },
+                        description: { [Op.ne]: '新注册用户福利' }
                     },
-                    attributes: ['id', 'description']
+                    useMaster: true
                 });
-                const historyCount = history.map(h => h.description).filter(d => d !== '新注册用户福利').length;
                 console.log(historyCount, gPackage.quantity_limit);
                 if (historyCount >= gPackage.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已经购买了该礼包', {});
                 }
             }
@@ -8947,16 +9016,20 @@ class Controller {
                 useMaster: true
             });
             if (!user.kyc) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
             }
             if (user.kyc.status === 'DENIED') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
             }
             if (user.kyc.status === 'PENDING') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
             }
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
@@ -8968,6 +9041,7 @@ class Controller {
                 // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
             if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             }
 
@@ -9136,15 +9210,18 @@ class Controller {
                 }
 
                 await t.commit();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
 
             } catch (error) {
                 console.log(error);
                 await t.rollback();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买礼包失败', {}); 
             }
         } catch (error) {
             errLogger(`[BUY_GOLD_APPRECIATION_PACKAGE][${req.user_id}]: ${error.stack}`);
+            await this.redisHelper.deleteKey(PROCESSING_KEY);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }
     }
@@ -9169,19 +9246,20 @@ class Controller {
             }
 
             const userId = req.user_id;
-            const existingFreePackage = await GoldAppreciationPackageHistory.findOne({
+            const existingFreePackage = await GoldAppreciationPackageHistory.count({
                 where: {
                     user_id: userId,
                     price: 0,
                     package_id: req.params.id,
                     description: '新注册用户福利'
-                }
+                },
+                useMaster: true
             });
-            if (existingFreePackage) {
+            if (existingFreePackage > 0) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过免费礼包', {});
             }
 
-            const gPackage = await GoldAppreciationPackage.findByPk(req.params.id);
+            const gPackage = await GoldAppreciationPackage.findByPk(req.params.id, { useMaster: true });
             if (gPackage.can_new_registered_user_get_free < 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该礼包不支持新注册用户免费领取', {});
             }
@@ -9193,7 +9271,8 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'createdAt']
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'createdAt'],
+                useMaster: true
             });
 
             let getTime = await this.redisHelper.getValue('gold_appreciation_package_get_free_time');
