@@ -2467,7 +2467,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status'],
                 },
-                attributes: ['id', 'relation', 'phone_number', 'reserve_fund', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password'],
+                attributes: ['id', 'relation', 'phone_number', 'reserve_fund', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date'],
                 useMaster: true
             });
 
@@ -2488,25 +2488,28 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
                 
-            if (!sender.is_withdraw_active_code_used && new Date(sender.createdAt) < new Date('2026-04-10')) {
+            // if (!sender.is_withdraw_active_code_used && new Date(sender.createdAt) < new Date('2026-04-10')) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请激活后再进行转账', {});
+                
+            //     // 未激活用户无法转出（储备金有使用记录就算激活）
+            //     const goldPackageHistoryCount = await GoldPackageHistory.count({
+            //         where: {
+            //             user_id: userId
+            //         }
+            //     });
+            //     const transferOutCount = await Transfer.count({
+            //         where: {
+            //             wallet_type: 1, // reserve fund
+            //             user_id: userId,
+            //         }
+            //     });
+                
+            //     if (!sender.is_withdraw_active_code_used || (goldPackageHistoryCount === 0 && transferOutCount === 0)) {
+            //         return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请激活后再进行转账', {});
+            //     }
+            // }
+            if (!user.initial_buy_product_date) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请激活后再进行转账', {});
-                
-                // 未激活用户无法转出（储备金有使用记录就算激活）
-                const goldPackageHistoryCount = await GoldPackageHistory.count({
-                    where: {
-                        user_id: userId
-                    }
-                });
-                const transferOutCount = await Transfer.count({
-                    where: {
-                        wallet_type: 1, // reserve fund
-                        user_id: userId,
-                    }
-                });
-                
-                if (!sender.is_withdraw_active_code_used || (goldPackageHistoryCount === 0 && transferOutCount === 0)) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请激活后再进行转账', {});
-                }
             }
 
             const receiver = await User.findOne({
