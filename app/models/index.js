@@ -443,7 +443,7 @@ GoldAppreciationPackage.hasMany(GoldAppreciationPackageEarn, { foreignKey: 'pack
 GoldAppreciationPackageEarn.belongsTo(GoldAppreciationPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
 
 // ========== GOLD_APPRECIATION_PACKAGE ↔️ GOLD_APPRECIATION_PACKAGE (1:N) ==========
-GoldAppreciationPackage.hasOne(GoldAppreciationPackage, { foreignKey: 'send_other_package_id', as: 'sent_packages' });
+GoldAppreciationPackage.hasOne(GoldAppreciationPackage, { foreignKey: 'send_other_package_id', as: 'send_package' });
 GoldAppreciationPackage.belongsTo(GoldAppreciationPackage, { foreignKey: 'send_other_package_id', as: 'original_package' });
 
 const models = {

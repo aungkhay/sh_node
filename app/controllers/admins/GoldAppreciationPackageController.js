@@ -25,7 +25,7 @@ class Controller {
             const packages = await GoldAppreciationPackage.findAll({
                 include: {
                     model: GoldAppreciationPackage,
-                    as: 'send_other_package',
+                    as: 'send_package',
                     attributes: ['id', 'product_name']
                 }
             });
