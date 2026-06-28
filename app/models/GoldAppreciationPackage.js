@@ -100,6 +100,12 @@ GoldAppreciationPackage.init({
         allowNull: true,
         comment: '购买本产品后赠送的其他产品ID, 仅在buy_one_get_quantity大于0时有效',
     },
+    give_fragment: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '是否赠送碎片',
+    },
     status: {
         type: DataTypes.INTEGER,
         allowNull: false,

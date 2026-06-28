@@ -89,7 +89,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { product_name, price, period, reserve_earn, release_reserve_earn_at, gold_appreciation_earn, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, is_send_other_package, send_other_package_id, can_new_registered_user_get_free } = req.body;
+            const { product_name, price, period, reserve_earn, release_reserve_earn_at, gold_appreciation_earn, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, is_send_other_package, send_other_package_id, give_fragment, can_new_registered_user_get_free } = req.body;
             const newPackage = await GoldAppreciationPackage.create({
                 product_name: product_name,
                 price: price,
@@ -105,6 +105,7 @@ class Controller {
                 buy_one_get_quantity: buy_one_get_quantity,
                 is_send_other_package: is_send_other_package,
                 send_other_package_id: send_other_package_id,
+                give_fragment: give_fragment,
                 can_new_registered_user_get_free: can_new_registered_user_get_free,
                 tag: req.body.tag ? req.body.tag.join('|') : '',
             });
@@ -136,7 +137,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
-            const { product_name, price, period, reserve_earn, release_reserve_earn_at, gold_appreciation_earn, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, is_send_other_package, send_other_package_id, status, can_new_registered_user_get_free } = req.body;
+            const { product_name, price, period, reserve_earn, release_reserve_earn_at, gold_appreciation_earn, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, is_send_other_package, send_other_package_id, give_fragment, status, can_new_registered_user_get_free } = req.body;
             await pkg.update({
                 product_name: product_name,
                 price: price,
@@ -152,6 +153,7 @@ class Controller {
                 buy_one_get_quantity: buy_one_get_quantity,
                 is_send_other_package: is_send_other_package,
                 send_other_package_id: send_other_package_id,
+                give_fragment: give_fragment,
                 status: status,
                 can_new_registered_user_get_free: can_new_registered_user_get_free,
                 tag: req.body.tag ? req.body.tag.join('|') : '',

@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn } = require('../../models');
+const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes, where } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -9177,6 +9177,15 @@ class Controller {
                             description: `PKG-${pkg.id}`
                         }, { transaction: t });
                     }
+                }
+
+                if (gPackage.give_fragment) {
+                    await GoldAppreciationPackageFragment.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: gPackage.id,
+                        package_history_id: pkgHistory[0].id,
+                    }, { transaction: t });
                 }
 
                 const bonusArr = [15, 7, 3];

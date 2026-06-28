@@ -80,6 +80,7 @@ const GoldAppreciationPackage = require('./GoldAppreciationPackage');
 const GoldAppreciationPackageHistory = require('./GoldAppreciationPackageHistory');
 const GoldAppreciationPackageBonuses = require('./GoldAppreciationPackageBonuses');
 const GoldAppreciationPackageEarn = require('./GoldAppreciationPackageEarn');
+const GoldAppreciationPackageFragment = require('./GoldAppreciationPackageFragment');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -446,6 +447,18 @@ GoldAppreciationPackageEarn.belongsTo(GoldAppreciationPackage, { foreignKey: 'pa
 GoldAppreciationPackage.hasOne(GoldAppreciationPackage, { foreignKey: 'send_other_package_id', as: 'send_package' });
 GoldAppreciationPackage.belongsTo(GoldAppreciationPackage, { foreignKey: 'send_other_package_id', as: 'original_package' });
 
+// ========== GOLD_APPRECIATION_PACKAGE ↔️ GOLD_APPRECIATION_PACKAGE_FRAGMENT (1:N) ==========
+GoldAppreciationPackage.hasMany(GoldAppreciationPackageFragment, { foreignKey: 'package_id', as: 'fragments', onDelete: 'CASCADE' });
+GoldAppreciationPackageFragment.belongsTo(GoldAppreciationPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== GOLD_APPRECIATION_PACKAGE_HISTORY ↔️ GOLD_APPRECIATION_PACKAGE_FRAGMENT (1:N) ==========
+GoldAppreciationPackageHistory.hasMany(GoldAppreciationPackageFragment, { foreignKey: 'package_history_id', as: 'fragments', onDelete: 'CASCADE' });
+GoldAppreciationPackageFragment.belongsTo(GoldAppreciationPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ GOLD_APPRECIATION_PACKAGE_FRAGMENT (1:N) ==========
+User.hasMany(GoldAppreciationPackageFragment, { foreignKey: 'user_id', as: 'gold_appreciation_package_fragments', onDelete: 'CASCADE' });
+GoldAppreciationPackageFragment.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -522,7 +535,8 @@ const models = {
     GoldAppreciationPackage,
     GoldAppreciationPackageHistory,
     GoldAppreciationPackageBonuses,
-    GoldAppreciationPackageEarn
+    GoldAppreciationPackageEarn,
+    GoldAppreciationPackageFragment
 };
 
 // Export models + db connection
