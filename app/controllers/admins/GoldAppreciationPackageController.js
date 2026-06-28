@@ -22,7 +22,13 @@ class Controller {
 
     INDEX = async (req, res) => {
         try {
-            const packages = await GoldAppreciationPackage.findAll({});
+            const packages = await GoldAppreciationPackage.findAll({
+                include: {
+                    model: GoldAppreciationPackage,
+                    as: 'send_other_package',
+                    attributes: ['id', 'product_name']
+                }
+            });
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', packages);
         } catch (err) {
