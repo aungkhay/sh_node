@@ -9094,20 +9094,47 @@ class Controller {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
                     for (let index = 0; index <= gPackage.buy_one_get_quantity; index++) {
-                        const obj = {
-                            relation: user.relation,
-                            user_id: user.id,
-                            package_id: gPackage.id,
-                            price: index == 0 ? gPackage.price : 0,
-                            reserve_earn: gPackage.reserve_earn,
-                            gold_appreciation_earn: gPackage.gold_appreciation_earn,
-                            period: gPackage.period,
-                            return_date: moment().add(gPackage.release_reserve_earn_at, 'days').toDate(),
-                            gold_appreciation_earn_count_remain: gPackage.period,
-                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                        let obj = null;
+
+                        // 购买本产品后赠送的其他产品ID
+                        if (index > 0 && gPackage.is_send_other_package && gPackage.send_other_package_id != gPackage.id) {
+                            const otherPackage = await GoldAppreciationPackage.findByPk(gPackage.send_other_package_id, { useMaster: true });
+                            if (!otherPackage) {
+                                await t.rollback();
+                                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '赠送的其他礼包不存在', {});
+                            }
+
+                            obj = {
+                                relation: user.relation,
+                                user_id: user.id,
+                                package_id: otherPackage.id,
+                                price: 0,
+                                reserve_earn: otherPackage.reserve_earn,
+                                gold_appreciation_earn: otherPackage.gold_appreciation_earn,
+                                period: otherPackage.period,
+                                return_date: moment().add(otherPackage.release_reserve_earn_at, 'days').toDate(),
+                                gold_appreciation_earn_count_remain: otherPackage.period,
+                                description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                            }
+                        } else {
+                            obj = {
+                                relation: user.relation,
+                                user_id: user.id,
+                                package_id: gPackage.id,
+                                price: index == 0 ? gPackage.price : 0,
+                                reserve_earn: gPackage.reserve_earn,
+                                gold_appreciation_earn: gPackage.gold_appreciation_earn,
+                                period: gPackage.period,
+                                return_date: moment().add(gPackage.release_reserve_earn_at, 'days').toDate(),
+                                gold_appreciation_earn_count_remain: gPackage.period,
+                                description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                            }
                         }
-                        const gPackageHistoryItem = await GoldAppreciationPackageHistory.create(obj, { transaction: t });
-                        pkgHistory.push(gPackageHistoryItem);
+                        if (obj) {
+                            const gPackageHistoryItem = await GoldAppreciationPackageHistory.create(obj, { transaction: t });
+                            pkgHistory.push(gPackageHistoryItem);
+                        }
                     }
                 } else {
                     const obj = {
