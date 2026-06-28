@@ -85,6 +85,17 @@ GoldAppreciationPackage.init({
         defaultValue: 0,
         comment: '买一赠一数量, 0表示不赠送',
     },
+    // is_send_other_package: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //     defaultValue: 0,
+    //     comment: '是否赠送其他产品, 仅在buy_one_get_quantity大于0时有效',
+    // },
+    // send_other_package_id: {
+    //     type: DataTypes.BIGINT,
+    //     allowNull: true,
+    //     comment: '购买本产品后赠送的其他产品ID, 仅在buy_one_get_quantity大于0时有效',
+    // },
     status: {
         type: DataTypes.INTEGER,
         allowNull: false,

@@ -1115,9 +1115,8 @@ class Controller {
             }
             // check createdAt is before 2026-04-10
             // if (!user.is_withdraw_active_code_used && new Date(user.createdAt) < new Date('2026-04-10')) {
-            if (!user.is_withdraw_active_code_used) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请您在个人中心-我的军职-当前军职中，查看上级联系方式，按提示添加联系人并登记后使用激活码恢复账户', {});
-            }
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请您在个人中心-我的军职-当前军职中，查看上级联系方式，按提示添加联系人并登记后使用激活码恢复账户', {});
+            // }
 
             if (Number(amount) < 50) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '最低提现金额为50', {});

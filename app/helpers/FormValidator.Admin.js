@@ -1020,6 +1020,14 @@ exports.create_gold_appreciation_package = () => {
         check('buy_one_get_quantity').optional({ checkFalsy: true })
             .isNumeric()
             .withMessage('买一赠一数量必须是数字'),
+        // is_send_other_package 是否赠送其他产品, 仅在buy_one_get_quantity大于0时有效
+        // check('is_send_other_package').optional({ checkFalsy: true })
+        //     .isIn([0, 1])
+        //     .withMessage('是否赠送其他产品值无效'),
+        // // send_other_package_id 购买本产品后赠送的其他产品ID, 仅在buy_one_get_quantity大于0时有效
+        // check('send_other_package_id').optional({ checkFalsy: true })
+        //     .isNumeric()
+        //     .withMessage('赠送的其他产品ID必须是数字'),
         // status 1-在售, 2-下架, 3-售罄
         check('status').not().isEmpty().withMessage('状态不能为空')
             .bail()

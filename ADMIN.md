@@ -1822,6 +1822,8 @@ const data = {
     quantity_limit: 0, // optional 限购数量
     total_quantity: 100, // 总发售数量
     buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    is_send_other_package: 0, // 是否赠送其他产品, 仅在buy_one_get_quantity大于0时有效
+    send_other_package_id: 1, // 购买本产品后赠送的其他产品ID, 仅在buy_one_get_quantity大于0时有效
     description: '',
     status: 1, // 1-在售, 2-下架, 3-售罄
     can_new_registered_user_get_free: 1, // 新注册用户是否可以免费领取 default 0
