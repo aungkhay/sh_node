@@ -2508,7 +2508,7 @@ class Controller {
             //         return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请激活后再进行转账', {});
             //     }
             // }
-            if (!user.initial_buy_product_date || (!sender.is_withdraw_active_code_used && new Date(sender.createdAt) < new Date('2026-04-10'))) {
+            if (!sender.initial_buy_product_date || (!sender.is_withdraw_active_code_used && new Date(sender.createdAt) < new Date('2026-04-10'))) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请激活后再进行转账', {});
             }
 
