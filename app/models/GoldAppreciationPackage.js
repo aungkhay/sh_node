@@ -85,6 +85,11 @@ GoldAppreciationPackage.init({
         defaultValue: 0,
         comment: '买一赠一数量, 0表示不赠送',
     },
+    ribbon_content: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: '产品标签内容',
+    },
     is_send_other_package: {
         type: DataTypes.INTEGER,
         allowNull: false,
