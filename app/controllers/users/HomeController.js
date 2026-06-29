@@ -8834,6 +8834,11 @@ class Controller {
                 packages = JSON.parse(packages);
             } else {
                 packages = await GoldAppreciationPackage.findAll({
+                    include: {
+                        model: GoldAppreciationPackage,
+                        as: 'send_package',
+                        attributes: ['id', 'product_name']
+                    },
                     where: {
                         status: {
                             [Op.ne]: 2
