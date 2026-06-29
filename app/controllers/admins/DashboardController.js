@@ -383,7 +383,7 @@ class Controller {
         }
     }
 
-    TODAY_ACTIVE_USER_COUNT = async (req, res) => {
+    TODAY_ACTIVE_USER_COUNT_ = async (req, res) => {
         try {
             const startDate = moment.utc().startOf("day").toDate();
             const endDate = moment.utc().add(1, "day").startOf("day").toDate();
@@ -492,6 +492,51 @@ class Controller {
                 today_active_user_count: todayNewActiveUserCount,
                 total_active_user_count: totalActiveUserSet.size,
             };
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, "成功", data);
+        } catch (error) {
+            console.log(error);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TODAY_ACTIVE_USER_COUNT = async (req, res) => {
+        try {
+            const todayNewActiveUserCount = await User.count({
+                where: {
+                    initial_buy_product_date: {
+                        [Op.between]: [
+                            moment.utc().startOf("day").toDate(),
+                            moment.utc().add(1, "day").startOf("day").toDate()
+                        ]
+                    }
+                }
+            });
+
+            const yesterdayActiveUserCount = await User.count({
+                where: {
+                    initial_buy_product_date: {
+                        [Op.between]: [
+                            moment.utc().subtract(1, "day").startOf("day").toDate(),
+                            moment.utc().startOf("day").toDate()
+                        ]
+                    }
+                }
+            });
+
+            const totalActiveUserCount = await User.count({
+                where: {
+                    initial_buy_product_date: {
+                        [Op.ne]: null
+                    }
+                }
+            });
+
+            const data = {
+                today_active_user_count: todayNewActiveUserCount,
+                yesterday_active_user_count: yesterdayActiveUserCount,
+                total_active_user_count: totalActiveUserCount,
+            }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, "成功", data);
         } catch (error) {
