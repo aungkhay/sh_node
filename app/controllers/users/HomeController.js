@@ -1018,7 +1018,7 @@ class Controller {
                 contain_sensitive_word: 0,
                 type: type ? type : { [Op.in]: [2, 3] }
             };
-            const userMaster = req.user_id % 4 === 0; // 25% go to master DB, 75% go to read replica
+            const userMaster = req.user_id % 3 === 0; // 33% go to master DB, 67% go to read replica
 
             /**
              * Cache versioning
