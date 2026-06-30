@@ -9696,6 +9696,7 @@ class Controller {
                         description: `PKG-${pkgHistory.id} | 兑换碎片`,
                     }, { transaction: t });
                 }
+                await this.redisHelper.deleteKey(fragmentKey);
                 
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '兑换碎片成功', {});
