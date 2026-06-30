@@ -9566,13 +9566,20 @@ class Controller {
                     'GoldAppreciationPackageFragment.package_id',
                     'package.product_name',
                 ],
-                order: [[col('goldAppreciationPackage.product_name'), 'ASC']],
+                order: [[col('package.product_name'), 'ASC']],
                 raw: true,
                 useMaster: true
             });
-            await this.redisHelper.setValue(fragmentKey, JSON.stringify(result));
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { fragments: result });
+            const formatted = result.map(f => ({
+                package_id: f.package_id,
+                product_name: f.product_name.replace('上合黄金', ''),
+                package_count: parseInt(f.package_count)
+            }));
+
+            await this.redisHelper.setValue(fragmentKey, JSON.stringify(formatted));
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { fragments: formatted });
         } catch (error) {
             errLogger(`[GOLD_APPRECIATION_PACKAGE_FRAGMENTS][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
@@ -9616,11 +9623,17 @@ class Controller {
                         'GoldAppreciationPackageFragment.package_id',
                         'package.product_name',
                     ],
-                    order: [[col('goldAppreciationPackage.product_name'), 'ASC']],
+                    order: [[col('package.product_name'), 'ASC']],
                     raw: true,
                     useMaster: true
                 });
-                await this.redisHelper.setValue(fragmentKey, JSON.stringify(fragments));
+                const formatted = fragments.map(f => ({
+                    package_id: f.package_id,
+                    product_name: f.product_name.replace('上合黄金', ''),
+                    package_count: parseInt(f.package_count)
+                }));
+                
+                await this.redisHelper.setValue(fragmentKey, JSON.stringify(formatted));
             }
             if (!fragments || fragments.length === 0) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '没有可兑换的碎片', {});
