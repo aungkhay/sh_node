@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
 const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment } = require('../../models');
-const { Op, literal, Sequelize, QueryTypes, where } = require('sequelize');
+const { Op, literal, Sequelize, QueryTypes, where, col, fn } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const Impeachment = require('../../models/Impeachment');
@@ -9191,6 +9191,8 @@ class Controller {
                         package_id: gPackage.id,
                         package_history_id: pkgHistory[0].id,
                     }, { transaction: t });
+                    const fragmentKey = `gold_appreciation_package_fragments_${user.id}`;
+                    await this.redisHelper.deleteKey(fragmentKey);
                 }
 
                 const bonusArr = [15, 7, 3];
@@ -9521,6 +9523,177 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
         } catch (error) {
             errLogger(`[GOLD_APPRECIATION_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    GOLD_APPRECIATION_PACKAGE_FRAGMENTS = async (req, res) => {
+        const lockKey = `lock:gold-appreciation-package-fragments:${req.ip}`;
+        let redisLocked = false;
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 2);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const fragmentKey = `gold_appreciation_package_fragments_${req.user_id}`;
+            let fragments = await this.redisHelper.getValue(fragmentKey);
+            if (fragments) {
+                fragments = JSON.parse(fragments);
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { fragments });
+            }
+
+            const userId = req.user_id;
+            const result = await GoldAppreciationPackageFragment.findAll({
+                attributes: [
+                    'package_id',
+                    [col('package.product_name'), 'product_name'],
+                    [fn('COUNT', col('GoldAppreciationPackageFragment.package_id')), 'package_count'],
+                ],
+                include: [
+                    {
+                        model: GoldAppreciationPackage,
+                        as: 'package',
+                        attributes: [],
+                        required: false,
+                    },
+                ],
+                where: { user_id: userId, is_used: 0 },
+                group: [
+                    'GoldAppreciationPackageFragment.package_id',
+                    'package.product_name',
+                ],
+                order: [[col('goldAppreciationPackage.product_name'), 'ASC']],
+                raw: true,
+                useMaster: true
+            });
+            await this.redisHelper.setValue(fragmentKey, JSON.stringify(result));
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { fragments: result });
+        } catch (error) {
+            errLogger(`[GOLD_APPRECIATION_PACKAGE_FRAGMENTS][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    EXCHANGE_GOLD_APPRECIATION_PACKAGE_FRAGMENT = async (req, res) => {
+        const lockKey = `lock:gold-appreciation-package-fragments-exchange:${req.ip}`;
+        let redisLocked = false;
+        const userId = req.user_id;
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 2);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const fragmentKey = `gold_appreciation_package_fragments_${userId}`;
+            let fragments = await this.redisHelper.getValue(fragmentKey);
+            if (fragments) {
+                fragments = JSON.parse(fragments);
+            } else {
+                fragments = await GoldAppreciationPackageFragment.findAll({
+                    attributes: [
+                        'package_id',
+                        [col('package.product_name'), 'product_name'],
+                        [fn('COUNT', col('GoldAppreciationPackageFragment.package_id')), 'package_count'],
+                    ],
+                    include: [
+                        {
+                            model: GoldAppreciationPackage,
+                            as: 'package',
+                            attributes: [],
+                            required: false,
+                        },
+                    ],
+                    where: { user_id: userId, is_used: 0 },
+                    group: [
+                        'GoldAppreciationPackageFragment.package_id',
+                        'package.product_name',
+                    ],
+                    order: [[col('goldAppreciationPackage.product_name'), 'ASC']],
+                    raw: true,
+                    useMaster: true
+                });
+                await this.redisHelper.setValue(fragmentKey, JSON.stringify(fragments));
+            }
+            if (!fragments || fragments.length === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '没有可兑换的碎片', {});
+            }
+            // each fragment must have count >= 1 and total fragment is 4
+            if (!fragments.every(f => f.package_count >= 1) || fragments.length < 4) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '碎片不足，无法兑换', {});
+            }
+
+            const packageIds = fragments.map(f => f.package_id);
+            const exchangePackage = await GoldAppreciationPackage.findOne({
+                where: { can_exchange_fragment: 1 },
+                order: [['id', 'ASC']],
+                useMaster: true
+            });
+            if (!exchangePackage) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '兑换礼包不存在! 请稍后再试', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                // update the oldest fragment of each package to is_used = 1
+                for (const packageId of packageIds) {
+                    const fragment = await GoldAppreciationPackageFragment.findOne({
+                        where: { user_id: userId, package_id: packageId, is_used: 0 },
+                        order: [['createdAt', 'ASC']],
+                        transaction: t,
+                    });
+                    if (!fragment) {
+                        await t.rollback();
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '碎片不足，无法兑换', {});
+                    }
+                    await fragment.update({ is_used: 1 }, { transaction: t });
+                }
+
+                // create a new GoldAppreciationPackageHistory for the first package in the list
+                const user = await User.findByPk(userId, { attributes: ['id', 'relation'], useMaster: true });
+                const pkgHistory = await GoldAppreciationPackageHistory.create({
+                    relation: user.relation,
+                    user_id: user.id,
+                    package_id: exchangePackage.id,
+                    price: 0,
+                    reserve_earn: exchangePackage.reserve_earn,
+                    gold_appreciation_earn: exchangePackage.gold_appreciation_earn,
+                    period: exchangePackage.period,
+                    return_date: moment().add(exchangePackage.release_reserve_earn_at, 'days').toDate(),
+                    gold_appreciation_earn_count_remain: exchangePackage.period,
+                    description: '兑换碎片',
+                }, { transaction: t });
+
+                if (exchangePackage.is_release_authorize_letter) {
+                    await AuthorizeLetterHistory.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        letter_id: 5,
+                        price: 0,
+                        gold_count: 1000,
+                        gold_owner_id: user.id,
+                        product_type: 7, // 黄金增值
+                        description: `PKG-${pkgHistory.id} | 兑换碎片`,
+                    }, { transaction: t });
+                }
+                
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '兑换碎片成功', {});
+
+            } catch (error) {
+                await t.rollback();
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '兑换碎片失败', {});
+            }
+
+        } catch (error) {
+            errLogger(`[EXCHANGE_GOLD_APPRECIATION_PACKAGE_FRAGMENTS][${userId}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

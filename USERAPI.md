@@ -949,4 +949,10 @@ const url = `${baseURL}/gold-appreciation-packages/earn-history`;
 
 // [GET] Bonuses History
 const url = `${baseURL}/gold-appreciation-packages/bonus-history`;
+
+// [GET] Gold Fragments
+const url = `${baseURL}/gold-appreciation-packages/fragments`;
+
+// [POST] Exchange Fragments
+const url = `${baseURL}/gold-appreciation-packages/fragments/exchange`;
 ```

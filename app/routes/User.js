@@ -123,6 +123,8 @@ class UserRoute extends express.Router {
         this.get('/gold-appreciation-packages/history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_HISTORY);
         this.get('/gold-appreciation-packages/earn-history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_EARN_HISTORY);
         this.get('/gold-appreciation-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_BONUS_HISTORY);
+        this.get('/gold-appreciation-packages/fragments', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_FRAGMENTS);
+        this.post('/gold-appreciation-packages/fragments/exchange', middleware.isLoggedIn, HomeCtrl.EXCHANGE_GOLD_APPRECIATION_PACKAGE_FRAGMENT);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

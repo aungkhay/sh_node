@@ -111,6 +111,12 @@ GoldAppreciationPackage.init({
         defaultValue: 0,
         comment: '是否赠送碎片',
     },
+    can_exchange_fragment: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '是否可以兑换碎片',
+    },
     status: {
         type: DataTypes.INTEGER,
         allowNull: false,
