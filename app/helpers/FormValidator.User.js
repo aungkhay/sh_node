@@ -200,11 +200,24 @@ exports.forgot_password = () => {
     return [
         check('phone', { msg: '手机号不能为空' }).not().isEmpty(),
         check('nrc_number', { msg: '身份证号不能为空' }).not().isEmpty(),
+        // check('new_password')
+        //     .not().isEmpty().withMessage('新密码不能为空')
+        //     .isLength({ min: 8 }).withMessage('密码长度至少为8个字符')
+        //     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/)
+        //     .withMessage('密码必须包含大写字母、小写字母、数字和特殊字符'),
         check('new_password')
             .not().isEmpty().withMessage('新密码不能为空')
-            .isLength({ min: 8 }).withMessage('密码长度至少为8个字符')
-            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/)
-            .withMessage('密码必须包含大写字母、小写字母、数字和特殊字符'),
+            .isLength({ min: 6 }).withMessage('新密码至少需要6个字符')
+            .custom(value => {
+                if (/^(111111|123123|123456)$/.test(value)) {
+                    throw new Error('新密码太简单，请使用更复杂的密码');
+                }
+                // 必须包含英文 或 符号
+                if (!/[A-Za-z]/.test(value) && !/[^A-Za-z0-9]/.test(value)) {
+                    throw new Error('新密码必须包含英文或符号');
+                }
+                return true;
+            }),
         check('uuid', { msg: 'UUID_REQUIRED' }).not().isEmpty(),
         check('verification_code', { msg: '验证码不能为空' }).not().isEmpty()
     ];
