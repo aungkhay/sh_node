@@ -722,9 +722,14 @@ class Controller {
                 await this.redisHelper.deleteKey(uuid);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '账号未实名认证', {});
             }
-            if (user.kyc.nrc_number != nrc_number) {
-                await this.redisHelper.deleteKey(uuid);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '身份证号不正确', {});
+            // if (user.kyc.nrc_number != nrc_number) {
+            //     await this.redisHelper.deleteKey(uuid);
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '身份证号不正确', {});
+            // }
+            if (!user.kyc.nrc_number.endsWith(nrc_number)) {
+                // await this.redisHelper.deleteKey(uuid);
+                const nrcError = { field: 'nrc_number', msg: '身份证后六位不正确' };
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [nrcError]);
             }
 
             const encNewPassword = encrypt(PASS_PREFIX + new_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
