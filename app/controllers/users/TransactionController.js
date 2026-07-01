@@ -56,6 +56,7 @@ class Controller {
                 '20': 'SUCCESS', // echpayzhifu
                 '21': 'success', // mzhifu1
                 '22': 'success', // xpayzhifu2
+                '23': 'success', // xpayzhifu3
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -365,6 +366,7 @@ class Controller {
                 case 'xpayzhifu':
                 case 'xpayzhifu1':
                 case 'xpayzhifu2':
+                case 'xpayzhifu3':
                     // doc say: 收到通知本身已经代表支付成功，没有成功不会有回调
                     status = 1;
                     resMsg = 'success';
@@ -698,6 +700,7 @@ class Controller {
                     break;
                 case 'xpayzhifu1':
                 case 'xpayzhifu2':
+                case 'xpayzhifu3':
                     payload = await this.merchantController.XPAYZHIFU1(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
@@ -738,7 +741,7 @@ class Controller {
                     response = await axios.post(url, formData.toString(), {
                         headers: headers
                     });
-                } else if (['xpayzhifu', 'xpayzhifu1', 'xpayzhifu2'].includes(channel.deposit_merchant.app_code)) { 
+                } else if (['xpayzhifu', 'xpayzhifu1', 'xpayzhifu2', 'xpayzhifu3'].includes(channel.deposit_merchant.app_code)) { 
                     const url = channel.deposit_merchant.api + '?sign=' + payload.sign;
                     delete payload.sign;
                     response = await axios.post(url, payload, {
@@ -853,6 +856,7 @@ class Controller {
                 case 'xpayzhifu':
                 case 'xpayzhifu1':
                 case 'xpayzhifu2':
+                case 'xpayzhifu3':
                     if (resData.errcode >= 0) {
                         const decoded = Buffer.from(resData?.data, 'base64').toString('utf8');
                         console.log(decoded);
@@ -2429,6 +2433,7 @@ class Controller {
     TRANSFER_BALANCE = async (req, res) => {
         const lockKey = `lock:transfer_balance:${req.user_id}`;
         let redisLocked = false;
+        const PROCESSING_KEY = `transfer_balance_processing:${req.user_id}`;
         try {
 
             let canTransfer = await this.redisHelper.getValue(`balance_transfer_on_off`);
@@ -2448,9 +2453,16 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
+            const isProcessing = await this.redisHelper.getValue(PROCESSING_KEY);
+            if (isProcessing) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '正在处理上一次转账，请稍后再试', {});
+            }
+            await this.redisHelper.setValue(PROCESSING_KEY);
+
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
             if (!err.isEmpty()) {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
@@ -2472,19 +2484,23 @@ class Controller {
             });
 
             if (!sender.kyc || sender.kyc.status !== 'APPROVED') {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请实名认证后再进行转账', {});
             }
 
             if (!sender.can_withdraw) {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
 
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== sender.payment_password) {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
             if (parseFloat(amount) > parseFloat(sender.reserve_fund)) {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
                 
@@ -2509,6 +2525,7 @@ class Controller {
             //     }
             // }
             if (!sender.initial_buy_product_date) {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请激活后再进行转账', {});
             }
 
@@ -2523,12 +2540,15 @@ class Controller {
             });
 
             if (!receiver) {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未找到收款账号', {});
             }
             if (receiver.id === sender.id) {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不能转账给自己', {});
             }
             if (!receiver.kyc || receiver.kyc.status !== 'APPROVED') {
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '收款账号未实名认证', {});
             }
 
@@ -2576,14 +2596,16 @@ class Controller {
                 await receiver.increment({ reserve_fund: amount }, { transaction: t });
 
                 await t.commit();
-
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '转账成功', {});
             } catch (error) {
                 errLogger(`[TRANSFER_BALANCE][${req.user_id}]: ${error.stack}`);
                 await t.rollback();
+                await this.redisHelper.delValue(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, this.ResCode.DB_ERROR.msg, {});
             }
         } catch (error) {
+            await this.redisHelper.delValue(PROCESSING_KEY);
             errLogger(`[TRANSFER_BALANCE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
