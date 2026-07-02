@@ -9148,7 +9148,7 @@ class Controller {
                             pkgHistory.push(gPackageHistoryItem);
                             
                             fragmentPackages = fragmentPackages.map(fp => {
-                                if (fp.package_id === obj.package_id) {
+                                if (fp.package_id === obj.package_id && fp.package_history_id === null) {
                                     fp.package_history_id = gPackageHistoryItem.id;
                                 }
                                 return fp;
