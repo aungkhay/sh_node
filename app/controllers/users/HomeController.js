@@ -9095,6 +9095,7 @@ class Controller {
                 await user.update(updates, { transaction: t });
 
                 const pkgHistory = [];
+                let otherPackage = null;
                 if (gPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
@@ -9103,7 +9104,7 @@ class Controller {
 
                         // 购买本产品后赠送的其他产品ID
                         if (index > 0 && gPackage.is_send_other_package && gPackage.send_other_package_id != gPackage.id) {
-                            const otherPackage = await GoldAppreciationPackage.findByPk(gPackage.send_other_package_id, { useMaster: true });
+                            otherPackage = await GoldAppreciationPackage.findByPk(gPackage.send_other_package_id, { useMaster: true });
                             if (!otherPackage) {
                                 await t.rollback();
                                 await this.redisHelper.deleteKey(PROCESSING_KEY);
@@ -9184,13 +9185,25 @@ class Controller {
                     }
                 }
 
+                const fragments = [];
                 if (gPackage.give_fragment) {
-                    await GoldAppreciationPackageFragment.create({
+                    fragments.push({
                         user_id: user.id,
                         relation: user.relation,
                         package_id: gPackage.id,
                         package_history_id: pkgHistory[0].id,
-                    }, { transaction: t });
+                    });
+                }
+                if (otherPackage && otherPackage.give_fragment) {
+                    fragments.push({
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: otherPackage.id,
+                        package_history_id: pkgHistory[1].id,
+                    });
+                }
+                if (fragments.length > 0) {
+                    await GoldAppreciationPackageFragment.bulkCreate(fragments, { transaction: t });
                     const fragmentKey = `gold_appreciation_package_fragments_${user.id}`;
                     await this.redisHelper.deleteKey(fragmentKey);
                 }
