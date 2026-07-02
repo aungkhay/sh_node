@@ -482,7 +482,7 @@ class Controller {
                 amount: Number(amount).toFixed(2),
                 order_no: orderNo,
                 ts: Math.floor(Date.now() / 1000),
-                typ_id: 2, // 开发测试时填写1,其他类型业务提供
+                typ_id: channel.merchant_channel, 
                 notify: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
             }
             const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
