@@ -2435,6 +2435,13 @@ class Controller {
         let redisLocked = false;
         const PROCESSING_KEY = `transfer_balance_processing:${req.user_id}`;
         try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 5);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
 
             let canTransfer = await this.redisHelper.getValue(`balance_transfer_on_off`);
             if (!canTransfer) {
@@ -2443,14 +2450,6 @@ class Controller {
             }
             if (Number(canTransfer) === 0) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
-            }
-
-            /* ===============================
-            * REDIS LOCK (ANTI FAST-CLICK)
-            * =============================== */
-            redisLocked = await this.redisHelper.setLock(lockKey, 1);
-            if (redisLocked !== 'OK') {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
             const isProcessing = await this.redisHelper.getValue(PROCESSING_KEY);
@@ -2499,7 +2498,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
-            if (parseFloat(amount) > parseFloat(sender.reserve_fund)) {
+            if (Number(amount) > Number(sender.reserve_fund)) {
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
@@ -2608,6 +2607,10 @@ class Controller {
             await this.redisHelper.deleteKey(PROCESSING_KEY);
             errLogger(`[TRANSFER_BALANCE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        } finally {
+            if (redisLocked === 'OK') {
+                await this.redisHelper.releaseLock(lockKey);
+            }
         }
     }
 
