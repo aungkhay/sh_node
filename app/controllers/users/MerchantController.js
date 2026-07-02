@@ -474,6 +474,27 @@ class Controller {
         }
     }
 
+    HUOJIANZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                app_id: channel.deposit_merchant.app_id,
+                amount: Number(amount).toFixed(2),
+                order_no: orderNo,
+                ts: Math.floor(Date.now() / 1000),
+                typ_id: 2, // 开发测试时填写1,其他类型业务提供
+                notify: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+            }
+            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            body.sign = sign.toLowerCase();
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[HUOJIANZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
+
     ECPAYZHIFU = async (channel, amount, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();

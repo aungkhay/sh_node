@@ -57,6 +57,7 @@ class Controller {
                 '21': 'success', // mzhifu1
                 '22': 'success', // xpayzhifu2
                 '23': 'success', // xpayzhifu3
+                '24': 'success', // huojianzhifu
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -425,7 +426,14 @@ class Controller {
                         status = 0;
                     }
                     break;
-                    
+
+                case 'huojianzhifu':
+                    if (reqBody.status === 2) {
+                        status = 1;
+                    } else {
+                        status = 0;
+                    }
+                    break;
                 default:
                     break;
             }
@@ -716,6 +724,10 @@ class Controller {
                     payload = await this.merchantController.ECPAYZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'huojianzhifu':
+                    payload = await this.merchantController.HUOJIANZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
                 default:
                     break;
             }
@@ -882,6 +894,13 @@ class Controller {
                         redirectUrl = resData?.rechargeUrl;
                         success = true;
                     }
+                    break;
+                case 'huojianzhifu':
+                    if (resData.code == 0) {
+                        redirectUrl = resData?.payload;
+                        success = true;
+                    }
+                    break;
                 default:
                     break;
             }

@@ -16,7 +16,7 @@ class UserRoute extends express.Router {
         this.get('/profile', middleware.isLoggedIn, AuthCtrl.PROFILE);
         this.post('/logout', middleware.isLoggedIn, AuthCtrl.LOGOUT);
         this.post('/modify-password', FormValidator.modify_password(), middleware.isLoggedIn, AuthCtrl.MODIFY_PASSWORD);
-        this.post('/forgot-password', FormValidator.forgot_password(), AuthCtrl.FORGOT_PASSWORD);
+        // this.post('/forgot-password', FormValidator.forgot_password(), AuthCtrl.FORGOT_PASSWORD);
         this.post('/bind-payment-password', FormValidator.bind_payment_password(), middleware.isLoggedIn, AuthCtrl.BIND_PAYMENT_PASSWORD);
 
         let HomeController = require('../controllers/users/HomeController');
