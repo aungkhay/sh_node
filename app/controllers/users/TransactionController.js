@@ -2610,7 +2610,20 @@ class Controller {
                     description: `来源 ${sender.phone_number}`
                 }, { transaction: t });
 
-                await sender.increment({ reserve_fund: -amount }, { transaction: t });
+                // await sender.increment({ reserve_fund: -amount }, { transaction: t });
+                const [updatedRows] = await User.update({ 
+                    reserve_fund: Sequelize.literal(`reserve_fund - ${amount}`) },
+                    {
+                        where: {
+                            id: sender.id,
+                            reserve_fund: { [Op.gt]: amount }
+                        },
+                        transaction: t
+                    }
+                );
+                if (updatedRows === 0) {
+                    throw new Error('[TRANSFER_BALANCE]: Insufficient funds');
+                }
                 await receiver.increment({ reserve_fund: amount }, { transaction: t });
 
                 await t.commit();
