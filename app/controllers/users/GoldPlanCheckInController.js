@@ -31,13 +31,14 @@ class Controller {
             
             const userId = req.user_id;
             const today = moment().format('YYYY-MM-DD');
-            const existingCheckIn = await GoldPlanCheckIn.findOne({
+            const existingCheckInCount = await GoldPlanCheckIn.count({
                 where: {
                     user_id: userId,
                     date: today
-                }
+                },
+                useMaster: true
             });
-            if (existingCheckIn) {
+            if (existingCheckInCount > 0) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
             }
             const user = await User.findByPk(userId, { 
@@ -46,7 +47,8 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id']
                 },
-                attributes: ['id', 'relation'] 
+                attributes: ['id', 'relation'] ,
+                useMaster: true
             });
             if (!user || !user.kyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
