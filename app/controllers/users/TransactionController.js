@@ -2616,7 +2616,7 @@ class Controller {
                     {
                         where: {
                             id: sender.id,
-                            reserve_fund: { [Op.gt]: amount }
+                            reserve_fund: { [Op.gt]: 0 }
                         },
                         transaction: t
                     }
