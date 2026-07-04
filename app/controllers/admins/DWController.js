@@ -639,9 +639,9 @@ class Controller {
                 offset: offset
             });
 
-            const successWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1 }, useMaster: true });
-            const failedWithdrawAmount = await Withdraw.sum('amount', { where: { status: 2 }, useMaster: true });
-            const pendingWithdrawAmount = await Withdraw.sum('amount', { where: { status: 0 }, useMaster: true });
+            const successWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1, ...condition }, useMaster: true });
+            const failedWithdrawAmount = await Withdraw.sum('amount', { where: { status: 2, ...condition }, useMaster: true });
+            const pendingWithdrawAmount = await Withdraw.sum('amount', { where: { status: 0, ...condition }, useMaster: true });
 
             const data = {
                 withdraws: rows,
@@ -706,9 +706,9 @@ class Controller {
                 offset: offset
             });
 
-            const successDepositAmount = await Deposit.sum('amount', { where: { status: 1 }, useMaster: true });
-            const failedDepositAmount = await Deposit.sum('amount', { where: { status: 2 }, useMaster: true });
-            const pendingDepositAmount = await Deposit.sum('amount', { where: { status: 0 }, useMaster: true });
+            const successDepositAmount = await Deposit.sum('amount', { where: { status: 1, ...condition }, useMaster: true });
+            const failedDepositAmount = await Deposit.sum('amount', { where: { status: 2, ...condition }, useMaster: true });
+            const pendingDepositAmount = await Deposit.sum('amount', { where: { status: 0, ...condition }, useMaster: true });
 
             const data = {
                 deposits: rows,
