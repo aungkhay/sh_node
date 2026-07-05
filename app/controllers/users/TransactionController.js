@@ -921,27 +921,35 @@ class Controller {
                 await this.redisHelper.decrementValue(redisKey);
                 const merchantCount = await this.redisHelper.getValue(redisKey);
                 if (merchantCount <= 0) {
-                    const currentMethodMerchants = await this.redisHelper.getValue(`method_${channel.payment_method}_merchants`);
-                    if (currentMethodMerchants) {
-                        let merchantIds = JSON.parse(currentMethodMerchants);
-                        // remove first item and push to end of array
-                        merchantIds.shift();
-                        merchantIds.push(channel.deposit_merchant_id);
-                        await this.redisHelper.setValue(redisKey, 20);
-                        await this.redisHelper.setValue(`method_${channel.payment_method}_merchants`, JSON.stringify(merchantIds));
-                    }
+                    await this.MOVE_CHANNEL_TO_END(channel.payment_method, channel.deposit_merchant_id);
                 }
             }
 
             if (success) {
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', redirectUrl ? { redirectUrl, expiredTime } : data);
             } else {
+                await this.MOVE_CHANNEL_TO_END(channel.payment_method, channel.deposit_merchant_id);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '失败，请稍后再试', {});    
             }
         } catch (error) {
             console.log(error)
             errLogger(`[DEPOSIT][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    MOVE_CHANNEL_TO_END = async (method_id, deposit_merchant_id) => {
+        try {
+            const currentMethodMerchants = await this.redisHelper.getValue(`method_${method_id}_merchants`);
+            if (currentMethodMerchants) {
+                let merchantIds = JSON.parse(currentMethodMerchants);
+                merchantIds = merchantIds.filter(id => id !== deposit_merchant_id);
+                merchantIds.push(deposit_merchant_id);
+                await this.redisHelper.setValue(`method_${method_id}_merchants`, JSON.stringify(merchantIds));
+            }
+        } catch (error) {
+            console.log(error);
+            errLogger(`[MOVE_CHANNEL_TO_END][${method_id}][${deposit_merchant_id}]: ${error.stack}`);
         }
     }
 
