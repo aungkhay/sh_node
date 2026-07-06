@@ -146,6 +146,7 @@ class UserRoute extends express.Router {
         this.post('/payment-method/:type/upload', middleware.isLoggedIn, UserCtrl.UPLOAD_PAYMENT_METHOD);
         this.post('/payment-method/bind-bank', FormValidator.bind_bank(), middleware.isLoggedIn, UserCtrl.BIND_BANK);
         this.post('/payment-method/bind-alipay', FormValidator.bind_alipay(), middleware.isLoggedIn, UserCtrl.BIND_ALIPAY);
+        this.post('/payment-method/bind-fenxiang', FormValidator.bind_fenxiang(), middleware.isLoggedIn, UserCtrl.BIND_FENXIANG);
         this.get('/payment-method/info', middleware.isLoggedIn, UserCtrl.PAYMENT_METHOD_INFO);
         this.post('/bind-address', FormValidator.bind_address(), middleware.isLoggedIn, UserCtrl.BIND_ADDRESS);
         this.post('/upload-profile-picture', middleware.isLoggedIn, UserCtrl.UPLOAD_PROFILE_PICTURE);
@@ -162,8 +163,8 @@ class UserRoute extends express.Router {
         this.post('/withdraw-callback/:orderNo/:merchantId/:userId', TxnCtl.WITHDRAW_CALLBACK);
         this.get('/withdraw-channels/:method_id', middleware.isLoggedIn, TxnCtl.GET_WITHDRAW_CHANNELS);
         this.get('/withdraw-methods', middleware.isLoggedIn, TxnCtl.WITHDRAW_METHOD);
-        this.post('/withdraw', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW_OLD);
-        this.post('/withdraw-by-third-party', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW);
+        this.post('/withdraw', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW_V1);
+        this.post('/withdraw-by-third-party', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW_V2);
         this.get('/withdraw-history', middleware.isLoggedIn, TxnCtl.WITHDRAW_HISTORY);
         this.post('/transfer-balance-to-reserve-fund', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE_TO_RESERVE_FUND);
         // this.post('/transfer-referral-bonus-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_REFERRAL_BONUS_TO_BALANCE);

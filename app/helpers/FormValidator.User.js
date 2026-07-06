@@ -152,6 +152,15 @@ exports.bind_alipay = () => {
     ];
 }
 
+exports.bind_fenxiang = () => {
+    return [
+        check('fenxiang_account_name', { msg: '分享生活姓名不能为空' }).not().isEmpty(),   
+        check('fenxiang_account_number', { msg: '分享生活账号不能为空' }).not().isEmpty(),
+        check('fenxiang_qr_code_pic', { msg: '请上传分享生活收款码截图' }).not().isEmpty(),
+        check('fenxiang_home_page_screenshot', { msg: '请上传分享生活首页截图' }).not().isEmpty(),
+    ];
+}
+
 exports.bind_address = () => {
     // ^
     // ([\u4e00-\u9fa5]{1,10}省)?          # optional province (e.g., 广东省)
@@ -257,8 +266,8 @@ exports.withdraw = () => {
             .withMessage('最低提现金额为50'),
         check('withdrawBy').not().isEmpty().withMessage('提现方式不能为空')
             .bail()
-            .isIn(['BANK', 'ALIPAY'])
-            .withMessage('提现方式无效，只能是 BANK 或 ALIPAY'),
+            .isIn(['BANK', 'ALIPAY', 'SHARE_LIFE'])
+            .withMessage('提现方式无效，只能是 BANK、ALIPAY 或 SHARE_LIFE'),
         check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
     ]
 }

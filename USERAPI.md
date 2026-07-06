@@ -287,8 +287,17 @@ const data = {
     ali_home_page_screenshot: ""
 }
 
+// [POST] Bind Fenxiang
+const url = `${baseURL}/payment-method/bind-fenxiang`;
+const data = {
+    fenxiang_account_name: "AA",
+    fenxiang_account_number: "13914725800",
+    fenxiang_qr_code_pic: "", 
+    fenxiang_home_page_screenshot: ""
+}
+
 // [POST] Upload
-const type = 'bank_card_pic | ali_qr_code_pic | ali_home_page_screenshot';
+const type = 'bank_card_pic | ali_qr_code_pic | ali_home_page_screenshot | fenxiang_qr_code_pic | fenxiang_home_page_screenshot';
 const url = `${baseURL}/payment-method/${type}/upload`;
 const formData = new FormData();
 formData.append('image', file, file.name.toLocaleLowerCase());

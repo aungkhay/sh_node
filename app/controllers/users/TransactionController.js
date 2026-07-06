@@ -1074,7 +1074,7 @@ class Controller {
         }
     }
 
-    WITHDRAW_OLD = async (req, res) => {
+    WITHDRAW_V1 = async (req, res) => {
         const lockKey = `lock:withdraw:${req.user_id}`;
         let redisLocked = false;
 
@@ -1092,6 +1092,12 @@ class Controller {
             // if (day === 0 || day === 6) {
             //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在工作日进行提现提交', {});
             // }
+
+            // only accept BANK and ALIPAY
+            const withdrawBy = req.body.withdrawBy;
+            if (withdrawBy !== 'BANK' && withdrawBy !== 'ALIPAY') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不支持的提现方式', {});
+            }
 
             const can_withdraw = await this.redisHelper.getValue('can_withdraw');
             if (!can_withdraw || Number(can_withdraw) != 1) {
@@ -1128,7 +1134,6 @@ class Controller {
 
             const userId = req.user_id;
             const amount = parseFloat(req.body.amount);
-            const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY | SHARE_LIFE
             const paymentPassword = req.body.payment_password;
             const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
@@ -1279,7 +1284,7 @@ class Controller {
         }
     }
 
-    WITHDRAW = async (req, res) => {
+    WITHDRAW_V2 = async (req, res) => {
         const lockKey = `lock:withdraw:${req.user_id}`;
         let redisLocked = false;
 
@@ -1297,6 +1302,12 @@ class Controller {
             // if (day === 0 || day === 6) {
             //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请在工作日进行提现提交', {});
             // }
+            
+            // ONLY accept SHARE_LIFE
+            const withdrawBy = req.body.withdrawBy;
+            if (withdrawBy !== 'SHARE_LIFE') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不支持的提现方式', {});
+            }
 
             const can_withdraw = await this.redisHelper.getValue('can_withdraw');
             if (!can_withdraw || Number(can_withdraw) != 1) {
@@ -1333,7 +1344,6 @@ class Controller {
 
             const userId = req.user_id;
             const amount = parseFloat(req.body.amount);
-            const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY | SHARE_LIFE
             let channelId = req.body.channel_id;
             const paymentPassword = req.body.payment_password;
             // const order_no = await this.commonHelper.generateWithdrawOrderNo();

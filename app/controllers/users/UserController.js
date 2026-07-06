@@ -533,7 +533,7 @@ class Controller {
     UPLOAD_PAYMENT_METHOD = async (req, res) => {
         try {
             const type = req.params.type;
-            if (!['bank_card_pic', 'ali_qr_code_pic', 'ali_home_page_screenshot'].includes(type)) {
+            if (!['bank_card_pic', 'ali_qr_code_pic', 'ali_home_page_screenshot', 'fenxiang_qr_code_pic', 'fenxiang_home_page_screenshot'].includes(type)) {
                 const recaptchaError = { field: 'type', msg: '类型不正确' };
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, [recaptchaError]);
             }
@@ -542,7 +542,7 @@ class Controller {
 
             const method = await PaymentMethod.findOne({
                 where: { user_id: userId },
-                attributes: ['id', 'bank_card_pic', 'ali_qr_code_pic', 'ali_home_page_screenshot', 'bank_status', 'alipay_status']
+                attributes: ['id', 'bank_card_pic', 'ali_qr_code_pic', 'ali_home_page_screenshot', 'fenxiang_qr_code_pic', 'fenxiang_home_page_screenshot', 'bank_status', 'alipay_status', 'fenxiang_status']
             })
             if (method) {
                 if (type == 'bank_card_pic') {
@@ -559,6 +559,14 @@ class Controller {
                     }
                     if (method.alipay_status === 'APPROVED') {
                         return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付宝已通过', {});
+                    }
+                }
+                if (type == 'fenxiang_qr_code_pic' || type == 'fenxiang_home_page_screenshot') {
+                    if (method.fenxiang_status === 'PENDING') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '分享生活审核中', {});
+                    }
+                    if (method.fenxiang_status === 'APPROVED') {
+                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '分享生活已通过', {});
                     }
                 }
             }
@@ -697,6 +705,55 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '绑定支付宝成功', {});
         } catch (error) {
             errLogger(`[BIND_ALI_PAY]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BIND_FENXIANG = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { fenxiang_account_name, fenxiang_account_number, fenxiang_qr_code_pic, fenxiang_home_page_screenshot } = req.body;
+            const userId = req.user_id;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: PaymentMethod,
+                    as: 'payment_method',
+                    attributes: ['fenxiang_status']
+                },
+                attributes: ['id', 'relation']
+            });
+            if (user.payment_method) {
+                if (user.payment_method.fenxiang_status === 'PENDING') {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '分享生活审核中', {});
+                }
+                if (user.payment_method.fenxiang_status == 'APPROVED') {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '分享生活已通过', {});
+                }
+            }
+            const obj = {
+                fenxiang_account_name: fenxiang_account_name,
+                fenxiang_account_number: fenxiang_account_number,
+                fenxiang_qr_code_pic: fenxiang_qr_code_pic,
+                fenxiang_home_page_screenshot: fenxiang_home_page_screenshot,
+                fenxiang_status: 'APPROVED'
+            }
+            let method = await PaymentMethod.findOne({ where: { user_id: userId }, attributes: ['id'] });
+            if (!method) {
+                method = await PaymentMethod.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    ...obj
+                });
+            } else {
+                await method.update(obj);
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '绑定分享生活成功', {});
+        } catch (error) {
+            errLogger(`[BIND_FENXIANG]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

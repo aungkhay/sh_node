@@ -473,7 +473,7 @@ class Controller {
                         {
                             model: PaymentMethod,
                             as: 'payment_method',
-                            attributes: ['bank_status', 'alipay_status']
+                            attributes: ['bank_status', 'alipay_status', 'fenxiang_status']
                         }
                     ],
                     where: { status: 1 },

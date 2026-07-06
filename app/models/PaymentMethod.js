@@ -69,6 +69,22 @@ PaymentMethod.init({
         type: DataTypes.STRING,
         allowNull: true, // URL or file path
     },
+    fenxiang_account_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    fenxiang_account_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    fenxiang_qr_code_pic: {
+        type: DataTypes.STRING,
+        allowNull: true, // URL or file path
+    },
+    fenxiang_home_page_screenshot: {
+        type: DataTypes.STRING,
+        allowNull: true, // URL or file path
+    },
     bank_status: {
         type: DataTypes.ENUM('NORMAL', 'PENDING', 'APPROVED', 'DENIED'),
         allowNull: false,
@@ -79,11 +95,20 @@ PaymentMethod.init({
         allowNull: false,
         defaultValue: 'NORMAL',
     },
+    fenxiang_status: {
+        type: DataTypes.ENUM('NORMAL', 'PENDING', 'APPROVED', 'DENIED'),
+        allowNull: false,
+        defaultValue: 'NORMAL',
+    },
     bank_remark: {
         type: DataTypes.STRING,
         allowNull: true,
     },
     ali_remark: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    fenxiang_remark: {
         type: DataTypes.STRING,
         allowNull: true,
     },
