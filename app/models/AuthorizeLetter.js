@@ -52,6 +52,18 @@ AuthorizeLetter.init({
         defaultValue: 1,
         comment: '0: Disabled, 1: Enabled',
     },
+    period: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: 'Validity period in days',
+    },
+    show_hide: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1,
+        comment: '0: Hide, 1: Show',
+    },
 }, {
     sequelize,
     modelName: 'AuthorizeLetter',

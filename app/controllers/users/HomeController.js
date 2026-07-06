@@ -7103,6 +7103,9 @@ class Controller {
                         )`), 'is_used'
                     ]
                 ],
+                where: {
+                    show_hide: 1
+                },
                 useMaster: true,
                 order: [['createdAt', 'DESC']]
             });
@@ -7142,7 +7145,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
             }
             const letter = await AuthorizeLetter.findByPk(letterId, { useMaster: true });
-            if (!letter) {
+            if (!letter || letter.show_hide == 0) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '授权书不存在', {});
             }
             if (letter.can_buy == 0) {
@@ -7193,6 +7196,191 @@ class Controller {
             }
         } catch (error) {
             errLogger(`[BUY_AUTHORIZATION_LETTER][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    MEMBER_STATE_LETTER = async (req, res) => {
+        try {
+            let letter = await this.redisHelper.getValue('member_state_letter');
+            if (letter) {
+                letter = JSON.parse(letter);
+            } else {
+                letter = await AuthorizeLetter.findByPk(7, { 
+                    attributes: ['id', 'title', 'content', 'price', 'period'],
+                    useMaster: true 
+                });
+                if (!letter) {
+                    return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '会员状态授权书不存在', {});
+                }
+                await this.redisHelper.setValue('member_state_letter', JSON.stringify(letter));
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', letter);
+        } catch (error) {
+            errLogger(`[MEMBER_STATE_LETTER][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    BUY_MEMBER_STATE_LETTER = async (req, res) => {
+        const lockKey = `lock:buy-member-state-letter:${req.ip}`;
+        let redisLocked = false;
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 2);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const userId = req.user_id;
+            const payment_password = req.body.payment_password;
+
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'payment_password'], useMaster: true });
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+
+            let letter = await this.redisHelper.getValue('member_state_letter');
+            if (letter) {
+                letter = JSON.parse(letter);
+            } else {
+                letter = await AuthorizeLetter.findByPk(7, { attributes: ['id', 'title', 'content', 'price', 'period'], useMaster: true });
+                if (!letter) {
+                    return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '会员状态授权书不存在', {});
+                }
+                await this.redisHelper.setValue('member_state_letter', JSON.stringify(letter));
+            }
+            if (Number(user.reserve_fund) < Number(letter.price)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `储备金不足`, {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 1,
+                    model: 'AuthorizeLetterHistory',
+                    type: `购买${letter.title}`,
+                    amount: letter.price,
+                    before_amount: Number(user.reserve_fund),
+                    after_amount: Number(user.reserve_fund) - Number(letter.price),
+                    flow_status: 'OUT',
+                }, { transaction: t });
+
+                const letters = await AuthorizeLetter.findAll({
+                    where: {
+                        id: {
+                            [Op.lt]: 7
+                        }
+                    },
+                });
+                const letterArr = [
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        letter_id: letter.id,
+                        price: letter.price,
+                        gold_count: letter.gold_count,
+                        gold_owner_id: user.id,
+                        description: `购买${letter.title}`,
+                        finished_date: letter.period ? moment().add(letter.period, 'days').toDate() : null
+                    }
+                ]
+                for (const l of letters) {
+                    letterArr.push({
+                        user_id: user.id,
+                        relation: user.relation,
+                        letter_id: l.id,
+                        price: 0,
+                        gold_count: l.gold_count,
+                        gold_owner_id: user.id,
+                        description: `购买${letter.title}, 增送${l.title}`,
+                    });
+                }
+                if (letterArr.length > 0) {
+                    await AuthorizeLetterHistory.bulkCreate(letterArr, { transaction: t });
+                }
+
+                await user.update({ reserve_fund: Number(user.reserve_fund) - Number(letter.price) }, { transaction: t });
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+            } catch (error) {
+                errLogger(`[BUY_MEMBER_STATE_LETTER][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '购买失败', {});
+            }
+        } catch (error) {
+            errLogger(`[BUY_MEMBER_STATE_LETTER][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    USE_MEMBER_STATE_LETTER = async (req, res) => {
+        const lockKey = `lock:exchange-authorize-letter:${req.ip}`;
+        let redisLocked = false;
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 2);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            const userId = req.user_id;
+            const letters = await AuthorizeLetterHistory.findAll({
+                attributes: [
+                    'letter_id',
+                    [Sequelize.fn('COUNT', Sequelize.col('letter_id')), 'count'],
+                ],
+                where: {
+                    letter_id: {
+                        [Op.in]: [1, 2, 3, 4, 5, 6]
+                    },
+                    user_id: userId,
+                    is_used: 0,
+                },
+                group: ['letter_id'],
+                order: [['letter_id', 'ASC']]
+            });
+            if (!letters || letters.length < 6) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您未集齐上合慈协六国授权书，请集齐后合并使用', {});
+            }
+
+            // use one letter for each letter_id
+            const t = await db.transaction();
+            try {
+                for (const letter of letters) {
+                    await AuthorizeLetterHistory.update(
+                        { is_used: 1 },
+                        {
+                            where: {
+                                letter_id: letter.letter_id,
+                                user_id: userId,
+                                is_used: 0
+                            },
+                            limit: 1,
+                            transaction: t
+                        }
+                    )
+                }
+
+                await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '您已使用六国授权书，等待周期结束释放所有的共济基金至可提余额', {});
+            } catch (error) {
+                errLogger(`[USER_MEMBER_STATE_LETTER][${req.user_id}]: ${error.stack}`);
+                await t.rollback();
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '使用授权书失败', {});
+            }
+        } catch (error) {
+            errLogger(`[USER_MEMBER_STATE_LETTER][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

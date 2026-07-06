@@ -83,6 +83,10 @@ AuthorizeLetterHistory.init({
         type: DataTypes.STRING,
         allowNull: true,
     },
+    finished_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,

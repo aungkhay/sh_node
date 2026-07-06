@@ -927,6 +927,15 @@ const url = `${baseURL}/authorization-letters/${letterId}/transfer`;
 const data = {
     receiver_phone: ''
 }
+
+// [GET] Member State Letter
+const url = `${baseURL}/member-state-letter`;
+
+// [POST] Buy Member State Letter
+const url = `${baseURL}/member-state-letter/buy`;
+
+// [POST] Use Member State Letter
+const url = `${baseURL}/member-state-letter/user`;
 ```
 
 ### 黄金增值计划

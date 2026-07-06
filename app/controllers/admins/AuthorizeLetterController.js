@@ -6,6 +6,7 @@ const { Op } = require('sequelize');
 const AliOSS = require('../../helpers/AliOSS');
 const multer = require('multer');
 const path = require('path');
+const RedisHelper = require('../../helpers/RedisHelper');
 
 class Controller {
     constructor (app) {
@@ -13,6 +14,7 @@ class Controller {
         this.ResCode = this.commonHelper.ResCode;
         this.OSS = new AliOSS();
         this.getOffset = this.commonHelper.getOffset;
+        this.redisHelper = new RedisHelper(app);
     }
 
     INDEX = async (req, res) => {
@@ -95,6 +97,7 @@ class Controller {
                 status,
             });
 
+            await this.redisHelper.deleteValue('member_state_letter');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
