@@ -707,6 +707,7 @@ class Controller {
                 offset: offset
             });
 
+            delete condition.status;
             const successDepositAmount = await Deposit.sum('amount', { where: { status: 1, ...condition }, useMaster: true });
             const failedDepositAmount = await Deposit.sum('amount', { where: { status: 2, ...condition }, useMaster: true });
             const pendingDepositAmount = await Deposit.sum('amount', { where: { status: 0, ...condition }, useMaster: true });
