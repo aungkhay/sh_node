@@ -639,6 +639,7 @@ class Controller {
                 offset: offset
             });
 
+            delete condition.status;
             const successWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1, ...condition }, useMaster: true });
             const failedWithdrawAmount = await Withdraw.sum('amount', { where: { status: 2, ...condition }, useMaster: true });
             const pendingWithdrawAmount = await Withdraw.sum('amount', { where: { status: 0, ...condition }, useMaster: true });
