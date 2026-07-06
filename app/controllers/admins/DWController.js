@@ -274,7 +274,7 @@ class Controller {
                             {
                                 model: PaymentMethod,
                                 as: 'payment_method',
-                                attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name'],
+                                attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name', 'fenxiang_account_name', 'fenxiang_account_number'],
                                 where: bankCardCondition
                             },
                             

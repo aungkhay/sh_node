@@ -156,8 +156,6 @@ exports.bind_fenxiang = () => {
     return [
         check('fenxiang_account_name', { msg: '分享生活姓名不能为空' }).not().isEmpty(),   
         check('fenxiang_account_number', { msg: '分享生活账号不能为空' }).not().isEmpty(),
-        // check('fenxiang_qr_code_pic', { msg: '请上传分享生活收款码截图' }).not().isEmpty(),
-        // check('fenxiang_home_page_screenshot', { msg: '请上传分享生活首页截图' }).not().isEmpty(),
     ];
 }
 
