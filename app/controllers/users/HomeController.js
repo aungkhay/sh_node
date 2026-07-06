@@ -7356,9 +7356,11 @@ class Controller {
             // use one letter for each letter_id
             const t = await db.transaction();
             try {
+                const now = new Date();
+                const groupNumber = `${userId}-${now.getTime()}`;
                 for (const letter of letters) {
                     await AuthorizeLetterHistory.update(
-                        { is_used: 1 },
+                        { is_used: 1, is_group_used: 1, group_number: groupNumber, used_at: now },
                         {
                             where: {
                                 letter_id: letter.letter_id,
@@ -7399,7 +7401,7 @@ class Controller {
                     attributes: ['id', 'title']
                 },
                 where: { user_id: userId },
-                attributes: ['id', 'price', 'gold_count', 'is_used', 'createdAt'],
+                attributes: ['id', 'price', 'gold_count', 'is_used', 'is_group_used', 'used_at', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,

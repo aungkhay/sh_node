@@ -74,6 +74,19 @@ AuthorizeLetterHistory.init({
         allowNull: false,
         defaultValue: 0,
     },
+    is_group_used: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    group_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    used_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
     product_type: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
