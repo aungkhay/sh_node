@@ -161,7 +161,9 @@ class UserRoute extends express.Router {
 
         this.post('/withdraw-callback/:orderNo/:merchantId/:userId', TxnCtl.WITHDRAW_CALLBACK);
         this.get('/withdraw-channels/:method_id', middleware.isLoggedIn, TxnCtl.GET_WITHDRAW_CHANNELS);
+        this.get('/withdraw-methods', middleware.isLoggedIn, TxnCtl.WITHDRAW_METHOD);
         this.post('/withdraw', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW_OLD);
+        this.post('/withdraw-by-third-party', FormValidator.withdraw(), middleware.isLoggedIn, TxnCtl.WITHDRAW);
         this.get('/withdraw-history', middleware.isLoggedIn, TxnCtl.WITHDRAW_HISTORY);
         this.post('/transfer-balance-to-reserve-fund', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE_TO_RESERVE_FUND);
         // this.post('/transfer-referral-bonus-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_REFERRAL_BONUS_TO_BALANCE);

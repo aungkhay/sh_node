@@ -945,6 +945,8 @@ class Controller {
                 let merchantIds = JSON.parse(currentMethodMerchants);
                 merchantIds = merchantIds.filter(id => id !== deposit_merchant_id);
                 merchantIds.push(deposit_merchant_id);
+                // reset to 20 for the moved merchant
+                await this.redisHelper.setValue(`method_${method_id}_merchants_${deposit_merchant_id}`, 20);
                 await this.redisHelper.setValue(`method_${method_id}_merchants`, JSON.stringify(merchantIds));
             }
         } catch (error) {
@@ -1050,6 +1052,28 @@ class Controller {
         }
     }
 
+    WITHDRAW_METHOD = async (req, res) => {
+        try {
+            const withdrawMethods = await this.redisHelper.getValue('withdraw_methods');
+            if (withdrawMethods) {
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, JSON.parse(withdrawMethods));
+            } 
+
+            const methods = [
+                { method: 'BANK', name: '银行卡', api: '/withdraw' },
+                { method: 'ALIPAY', name: '支付宝', api: '/withdraw' },
+                { method: 'SHARE_LIFE', name: '分享生活', api: '/withdraw-by-third-party' },
+            ]
+
+            await this.redisHelper.setValue('withdraw_methods', JSON.stringify(methods));
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, this.ResCode.SUCCESS.msg, methods);
+        } catch (error) {
+            errLogger(`[WITHDRAW_METHOD]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     WITHDRAW_OLD = async (req, res) => {
         const lockKey = `lock:withdraw:${req.user_id}`;
         let redisLocked = false;
@@ -1104,7 +1128,7 @@ class Controller {
 
             const userId = req.user_id;
             const amount = parseFloat(req.body.amount);
-            const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY
+            const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY | SHARE_LIFE
             const paymentPassword = req.body.payment_password;
             const order_no = await this.commonHelper.generateWithdrawOrderNo();
 
@@ -1309,7 +1333,7 @@ class Controller {
 
             const userId = req.user_id;
             const amount = parseFloat(req.body.amount);
-            const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY
+            const withdrawBy = req.body.withdrawBy; // BANK | ALIPAY | SHARE_LIFE
             let channelId = req.body.channel_id;
             const paymentPassword = req.body.payment_password;
             // const order_no = await this.commonHelper.generateWithdrawOrderNo();
@@ -1466,15 +1490,7 @@ class Controller {
                 await this.redisHelper.decrementValue(redisKey);
                 const merchantCount = await this.redisHelper.getValue(redisKey);
                 if (merchantCount <= 0) {
-                    const currentMethodMerchants = await this.redisHelper.getValue(`method_${channel.withdraw_method}_withdraw_merchants`);
-                    if (currentMethodMerchants) {
-                        let merchantIds = JSON.parse(currentMethodMerchants);
-                        // remove first item and push to end of array
-                        merchantIds.shift();
-                        merchantIds.push(channel.withdraw_merchant_id);
-                        await this.redisHelper.setValue(redisKey, 20);
-                        await this.redisHelper.setValue(`method_${channel.withdraw_method}_withdraw_merchants`, JSON.stringify(merchantIds));
-                    }
+                    await this.MOVE_WITHDRAW_CHANNEL_TO_END(channel.withdraw_method, channel.withdraw_merchant_id);
                 }
             } else {
                 orderNo = await this.commonHelper.generateWithdrawOrderNo();
@@ -1515,11 +1531,28 @@ class Controller {
             } catch (error) {
                 errLogger(`[WITHDRAW][${req.user_id}]: ${error.stack}`);
                 await t.rollback();
+                await this.MOVE_WITHDRAW_CHANNEL_TO_END(withdrawMethod, channelId);
                 return MyResponse(res, this.ResCode.DB_ERROR.code, false, this.ResCode.DB_ERROR.msg, {});
             }
         } catch (error) {
             errLogger(`[WITHDRAW][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    MOVE_WITHDRAW_CHANNEL_TO_END = async (method_id, withdraw_merchant_id) => {
+        try {
+            const currentMethodMerchants = await this.redisHelper.getValue(`method_${method_id}_withdraw_merchants`);
+            if (currentMethodMerchants) {
+                let merchantIds = JSON.parse(currentMethodMerchants);
+                merchantIds = merchantIds.filter(id => id !== withdraw_merchant_id);
+                merchantIds.push(withdraw_merchant_id);
+                await this.redisHelper.setValue(`method_${method_id}_withdraw_merchants_${withdraw_merchant_id}`, 20);
+                await this.redisHelper.setValue(`method_${method_id}_withdraw_merchants`, JSON.stringify(merchantIds));
+            }
+        } catch (error) {
+            console.log(error);
+            errLogger(`[MOVE_WITHDRAW_CHANNEL_TO_END][${method_id}][${withdraw_merchant_id}]: ${error.stack}`);
         }
     }
 

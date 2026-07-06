@@ -44,7 +44,7 @@ Withdraw.init({
         unique: true
     },
     type: {
-        type: DataTypes.ENUM('BANK', 'ALIPAY'),
+        type: DataTypes.ENUM('BANK', 'ALIPAY', 'SHARE_LIFE'),
         allowNull: false,
     },
     user_id: {
