@@ -292,8 +292,8 @@ const url = `${baseURL}/payment-method/bind-fenxiang`;
 const data = {
     fenxiang_account_name: "AA",
     fenxiang_account_number: "13914725800",
-    fenxiang_qr_code_pic: "", 
-    fenxiang_home_page_screenshot: ""
+    // fenxiang_qr_code_pic: "", 
+    // fenxiang_home_page_screenshot: ""
 }
 
 // [POST] Upload
