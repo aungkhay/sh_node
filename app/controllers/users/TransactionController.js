@@ -1062,7 +1062,7 @@ class Controller {
             const methods = [
                 { method: 'BANK', name: '银行卡', api: '/withdraw' },
                 { method: 'ALIPAY', name: '支付宝', api: '/withdraw' },
-                { method: 'SHARE_LIFE', name: '分享生活', api: '/withdraw-by-third-party' },
+                { method: 'SHARE_LIFE', name: '分享生活', api: '/withdraw' },
             ]
 
             await this.redisHelper.setValue('withdraw_methods', JSON.stringify(methods));
@@ -1095,9 +1095,9 @@ class Controller {
 
             // only accept BANK and ALIPAY
             const withdrawBy = req.body.withdrawBy;
-            if (withdrawBy !== 'BANK' && withdrawBy !== 'ALIPAY') {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不支持的提现方式', {});
-            }
+            // if (withdrawBy !== 'BANK' && withdrawBy !== 'ALIPAY') {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '不支持的提现方式', {});
+            // }
 
             const can_withdraw = await this.redisHelper.getValue('can_withdraw');
             if (!can_withdraw || Number(can_withdraw) != 1) {
@@ -1141,7 +1141,7 @@ class Controller {
                 include: {
                     model: PaymentMethod,
                     as: 'payment_method',
-                    attributes: ['id', 'bank_card_number', 'bank_card_name', 'bank_card_phone_number', 'open_bank_name', 'ali_account_name', 'ali_account_number']
+                    attributes: ['id', 'bank_card_number', 'bank_card_name', 'bank_card_phone_number', 'open_bank_name', 'ali_account_name', 'ali_account_number', 'fenxiang_account_name', 'fenxiang_account_number']
                 },
                 attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date'],
                 useMaster: true
@@ -1163,6 +1163,11 @@ class Controller {
             if (withdrawBy === 'ALIPAY') {
                 if (!user.payment_method.ali_account_number || !user.payment_method.ali_account_name) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定支付宝信息', {});
+                }
+            }
+            if (withdrawBy === 'SHARE_LIFE') {
+                if (!user.payment_method.fenxiang_account_number || !user.payment_method.fenxiang_account_name) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定分享生活信息', {});
                 }
             }
 
@@ -1352,7 +1357,7 @@ class Controller {
                 include: {
                     model: PaymentMethod,
                     as: 'payment_method',
-                    attributes: ['id', 'bank_card_number', 'bank_card_name', 'bank_card_phone_number', 'open_bank_name', 'ali_account_name', 'ali_account_number']
+                    attributes: ['id', 'bank_card_number', 'bank_card_name', 'bank_card_phone_number', 'open_bank_name', 'ali_account_name', 'ali_account_number', 'fenxiang_account_name', 'fenxiang_account_number']
                 },
                 attributes: ['id', 'balance', 'relation', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date'],
             });
@@ -1369,6 +1374,11 @@ class Controller {
             if (withdrawBy === 'ALIPAY') {
                 if (!user.payment_method.ali_account_number || !user.payment_method.ali_account_name) {
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定支付宝信息', {});
+                }
+            }
+            if (withdrawBy === 'SHARE_LIFE') {
+                if (!user.payment_method.fenxiang_account_number || !user.payment_method.fenxiang_account_name) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定分享生活信息', {});
                 }
             }
 
@@ -1397,114 +1407,114 @@ class Controller {
 
             let orderNo = null;
             let merchantId = null;
-            const withdrawMethod = withdrawBy === 'BANK' ? 1 : 2;
+            const methods = {
+                'BANK': 1,
+                'ALIPAY': 2,
+                'SHARE_LIFE': 3
+            }
+            const withdrawMethod = methods[withdrawBy];
 
-            if (withdrawMethod === 1) {
-                // Get Channel
-                const channel = await WithdrawMerchantChannel.findOne({
-                    include: {
-                        model: WithdrawMerchant,
-                        as: 'withdraw_merchant',
-                    },
-                    // where: { id: req.params.channel_id, status: 1, withdraw_method: withdrawMethod },
-                    where: { id: channelId || 1, status: 1, withdraw_method: withdrawMethod },
-                });
-                
-                if (!channel || !channel.withdraw_merchant) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现通道无效', {});
+            // Get Channel
+            const channel = await WithdrawMerchantChannel.findOne({
+                include: {
+                    model: WithdrawMerchant,
+                    as: 'withdraw_merchant',
+                },
+                // where: { id: req.params.channel_id, status: 1, withdraw_method: withdrawMethod },
+                where: { id: channelId || 1, status: 1, withdraw_method: withdrawMethod },
+            });
+            
+            if (!channel || !channel.withdraw_merchant) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现通道无效', {});
+            }
+            if (channel.withdraw_merchant.remain_count <= 0) {
+                // move channel to last of the list in redis
+                const currentMethodMerchants = await this.redisHelper.getValue(`method_${withdrawMethod}_withdraw_merchants`);
+                if (currentMethodMerchants) {
+                    let merchantIds = JSON.parse(currentMethodMerchants);
+                    // remove first item and push to end of array
+                    merchantIds.shift();
+                    merchantIds.push(channel.withdraw_merchant_id);
+                    await this.redisHelper.setValue(`method_${withdrawMethod}_withdraw_merchants_${channel.withdraw_merchant_id}`, 20);
+                    await this.redisHelper.setValue(`method_${withdrawMethod}_withdraw_merchants`, JSON.stringify(merchantIds));
                 }
-                if (channel.withdraw_merchant.remain_count <= 0) {
-                    // move channel to last of the list in redis
-                    const currentMethodMerchants = await this.redisHelper.getValue(`method_${withdrawMethod}_withdraw_merchants`);
-                    if (currentMethodMerchants) {
-                        let merchantIds = JSON.parse(currentMethodMerchants);
-                        // remove first item and push to end of array
-                        merchantIds.shift();
-                        merchantIds.push(channel.withdraw_merchant_id);
-                        await this.redisHelper.setValue(`method_${withdrawMethod}_withdraw_merchants_${channel.withdraw_merchant_id}`, 20);
-                        await this.redisHelper.setValue(`method_${withdrawMethod}_withdraw_merchants`, JSON.stringify(merchantIds));
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '当前提现通道繁忙，请稍后再试', {});
+            }
+
+            channelId = channel.id;
+
+            if (parseFloat(channel.min_amount) > 0) {
+                if (amount < parseFloat(channel.min_amount)) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最低提现金额为${channel.min_amount}`, {});
+                }
+            }
+            if (parseFloat(channel.max_amount) > 0) {
+                if (amount > parseFloat(channel.max_amount)) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最高提现金额为${channel.max_amount}`, {});
+                }
+            }
+
+            let payload = null;
+            let headers = { "Content-Type": "application/x-www-form-urlencoded" }
+            const requestAmount = Number(amount) - Number(handle_fee);
+            switch (channel.withdraw_merchant.app_code) {
+                case 'xpay360':
+                    payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, userId, user.payment_method, withdrawBy);
+                    headers = { "Content-Type": "application/json" }
+                    break;
+            
+                default:
+                    break;
+            }
+            if (!payload) {
+                return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, '生成提现订单失败，请稍后再试', {});
+            }
+
+            orderNo = payload.orderNo;
+            delete payload.orderNo;
+            console.log(headers);
+
+            let response = null;
+            try {
+                if (channel.withdraw_merchant.app_code === 'xpay360') {
+                    const url = channel.withdraw_merchant.api + '?sign=' + payload.sign;
+                    console.log(payload.sign);
+                    delete payload.sign;
+                    console.log(payload);
+                    response = await axios.post(url, payload, {
+                        headers: headers
+                    });
+                }
+            } catch (error) {
+                console.log(error);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {}); 
+            }
+
+            console.log(response?.data);
+            if (!response || response.status !== 200) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});
+            }
+
+            let success = false;
+            switch (channel.withdraw_merchant.app_code) {
+                case 'xpay360':
+                    if (response.data.errcode >= 0) {
+                        success = true;
                     }
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '当前提现通道繁忙，请稍后再试', {});
-                }
+                    break;
+                default:
+                    break;
+            }
 
-                channelId = channel.id;
+            if (!success) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});    
+            }
 
-                if (parseFloat(channel.min_amount) > 0) {
-                    if (amount < parseFloat(channel.min_amount)) {
-                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最低提现金额为${channel.min_amount}`, {});
-                    }
-                }
-                if (parseFloat(channel.max_amount) > 0) {
-                    if (amount > parseFloat(channel.max_amount)) {
-                        return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `最高提现金额为${channel.max_amount}`, {});
-                    }
-                }
-
-                let payload = null;
-                let headers = { "Content-Type": "application/x-www-form-urlencoded" }
-                const requestAmount = Number(amount) - Number(handle_fee);
-                switch (channel.withdraw_merchant.app_code) {
-                    case 'xpay360':
-                        payload = await this.merchantController.XPAY360DAIFU(channel, requestAmount, userId, user.payment_method, withdrawBy);
-                        headers = { "Content-Type": "application/json" }
-                        break;
-                
-                    default:
-                        break;
-                }
-                if (!payload) {
-                    return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, '生成提现订单失败，请稍后再试', {});
-                }
-
-                orderNo = payload.orderNo;
-                delete payload.orderNo;
-                console.log(headers);
-
-                let response = null;
-                try {
-                    if (channel.withdraw_merchant.app_code === 'xpay360') {
-                        const url = channel.withdraw_merchant.api + '?sign=' + payload.sign;
-                        console.log(payload.sign);
-                        delete payload.sign;
-                        console.log(payload);
-                        response = await axios.post(url, payload, {
-                            headers: headers
-                        });
-                    }
-                } catch (error) {
-                    console.log(error);
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {}); 
-                }
-
-                console.log(response?.data);
-                if (!response || response.status !== 200) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});
-                }
-
-                let success = false;
-                switch (channel.withdraw_merchant.app_code) {
-                    case 'xpay360':
-                        if (response.data.errcode >= 0) {
-                            success = true;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-
-                if (!success) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '提现失败，请稍后再试', {});    
-                }
-
-                const redisKey = `method_${channel.withdraw_method}_withdraw_merchants_${channel.withdraw_merchant_id}`;
-                await this.redisHelper.decrementValue(redisKey);
-                const merchantCount = await this.redisHelper.getValue(redisKey);
-                if (merchantCount <= 0) {
-                    await this.MOVE_WITHDRAW_CHANNEL_TO_END(channel.withdraw_method, channel.withdraw_merchant_id);
-                }
-            } else {
-                orderNo = await this.commonHelper.generateWithdrawOrderNo();
-                channelId = null;
+            const redisKey = `method_${channel.withdraw_method}_withdraw_merchants_${channel.withdraw_merchant_id}`;
+            await this.redisHelper.decrementValue(redisKey);
+            const merchantCount = await this.redisHelper.getValue(redisKey);
+            if (merchantCount <= 0) {
+                await this.MOVE_WITHDRAW_CHANNEL_TO_END(channel.withdraw_method, channel.withdraw_merchant_id);
             }
 
             const t = await db.transaction();

@@ -532,6 +532,19 @@ class Controller {
 
     XPAY360DAIFU = async (channel, amount, userId, paymentMethod, withdrawBy, orderNo) => {
         try {
+            let name = '';
+            let account = '';
+            if (withdrawBy === 'BANK') {
+                name = paymentMethod.bank_card_name;
+                account = paymentMethod.bank_card_number;
+            } else if (withdrawBy === 'ALIPAY') {
+                name = paymentMethod.ali_account_name;
+                account = paymentMethod.ali_account_number;
+            } else if (withdrawBy === 'SHARE_LIFE') {
+                name = paymentMethod.fenxiang_account_name;
+                account = paymentMethod.fenxiang_account_number;
+            }
+
             const body = {
                 mid: channel.withdraw_merchant.app_id,
                 orderid: orderNo,
@@ -541,9 +554,9 @@ class Controller {
                 callback_url: `${process.env.CALLBACK_DOMAIN}/api/withdraw-callback/${orderNo}/${channel.withdraw_merchant.id}/${userId}`,
                 result_url: `${process.env.CALLBACK_DOMAIN}/api/withdraw-callback/${orderNo}/${channel.withdraw_merchant.id}/${userId}`,
                 payout: {
-                    outtype: withdrawBy.toLowerCase(), // bank | alipay
-                    name: withdrawBy === 'BANK' ? paymentMethod.bank_card_name : paymentMethod.ali_account_name,
-                    account: withdrawBy === 'BANK' ? paymentMethod.bank_card_number : paymentMethod.ali_account_number,
+                    outtype: withdrawBy.toLowerCase(), // bank | alipay | share_life
+                    name: name,
+                    account: account,
                 }
             }
 

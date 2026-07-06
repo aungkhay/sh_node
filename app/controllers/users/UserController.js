@@ -767,6 +767,9 @@ class Controller {
                     'ali_qr_code_pic',
                     'ali_home_page_screenshot',
                     'alipay_status',
+                    'fenxiang_account_name',
+                    'fenxiang_account_number',
+                    'fenxiang_status'
                 ]
             });
 
