@@ -7349,29 +7349,57 @@ class Controller {
                 group: ['letter_id'],
                 order: [['letter_id', 'ASC']]
             });
+
             if (!letters || letters.length < 6) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您未集齐上合慈协六国授权书，请集齐后合并使用', {});
             }
 
-            // use one letter for each letter_id
+            const conditions = { user_id: userId, is_used: 0 };
+            const [letter1, letter2, letter3, letter4, letter5, letter6] = await Promise.all([
+                AuthorizeLetterHistory.findOne({
+                    where: { ...conditions, letter_id: 1 },
+                    attributes: ['id'],
+                    order: [['createdAt', 'DESC']],
+                }),
+                AuthorizeLetterHistory.findOne({
+                    where: { ...conditions, letter_id: 2 },
+                    attributes: ['id'],
+                    order: [['createdAt', 'DESC']],
+                }),
+                AuthorizeLetterHistory.findOne({
+                    where: { ...conditions, letter_id: 3 },
+                    attributes: ['id'],
+                    order: [['createdAt', 'DESC']],
+                }),
+                AuthorizeLetterHistory.findOne({
+                    where: { ...conditions, letter_id: 4 },
+                    attributes: ['id'],
+                    order: [['createdAt', 'DESC']],
+                }),
+                AuthorizeLetterHistory.findOne({
+                    where: { ...conditions, letter_id: 5 },
+                    attributes: ['id'],
+                    order: [['createdAt', 'DESC']],
+                }),
+                AuthorizeLetterHistory.findOne({
+                    where: { ...conditions, letter_id: 6 },
+                    attributes: ['id'],
+                    order: [['createdAt', 'DESC']],
+                })
+            ]);
+
             const t = await db.transaction();
             try {
                 const now = new Date();
                 const groupNumber = `${userId}-${now.getTime()}`;
-                for (const letter of letters) {
-                    await AuthorizeLetterHistory.update(
-                        { is_used: 1, is_group_used: 1, group_number: groupNumber, used_at: now },
-                        {
-                            where: {
-                                letter_id: letter.letter_id,
-                                user_id: userId,
-                                is_used: 0
-                            },
-                            limit: 1,
-                            transaction: t
-                        }
-                    )
-                }
+                const updateObj = { is_used: 1, is_group_used: 1, group_number: groupNumber, used_at: now }
+
+                await letter1.update(updateObj, { transaction: t });
+                await letter2.update(updateObj, { transaction: t });
+                await letter3.update(updateObj, { transaction: t });
+                await letter4.update(updateObj, { transaction: t });
+                await letter5.update(updateObj, { transaction: t });
+                await letter6.update(updateObj, { transaction: t });
 
                 await t.commit();
 

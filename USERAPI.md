@@ -935,7 +935,7 @@ const url = `${baseURL}/member-state-letter`;
 const url = `${baseURL}/member-state-letter/buy`;
 
 // [POST] Use Member State Letter
-const url = `${baseURL}/member-state-letter/user`;
+const url = `${baseURL}/member-state-letter/use`;
 ```
 
 ### 黄金增值计划

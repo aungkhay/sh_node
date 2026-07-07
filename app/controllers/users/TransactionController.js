@@ -2558,7 +2558,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status'],
                 },
-                attributes: ['id', 'relation', 'phone_number', 'reserve_fund', 'can_withdraw', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date'],
+                attributes: ['id', 'relation', 'phone_number', 'reserve_fund', 'can_withdraw', 'can_transfer', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date'],
                 useMaster: true
             });
 
@@ -2570,6 +2570,11 @@ class Controller {
             if (!sender.can_withdraw) {
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
+            }
+
+            if (!sender.can_transfer) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有转账权限! 请联系官方', {});
             }
 
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);

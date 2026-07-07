@@ -277,6 +277,10 @@ User.init({
         type: DataTypes.TINYINT,
         defaultValue: 1,
     },
+    can_transfer: {
+        type: DataTypes.TINYINT,
+        defaultValue: 1,
+    },
     withdraw_active_code: {
         type: DataTypes.STRING,
         allowNull: true,    
