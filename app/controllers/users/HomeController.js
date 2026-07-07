@@ -7202,6 +7202,7 @@ class Controller {
 
     MEMBER_STATE_LETTER = async (req, res) => {
         try {
+            const userId = req.user_id;
             let letter = await this.redisHelper.getValue('member_state_letter');
             if (letter) {
                 letter = JSON.parse(letter);
@@ -7216,7 +7217,23 @@ class Controller {
                 await this.redisHelper.setValue('member_state_letter', JSON.stringify(letter));
             }
 
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', letter);
+            const letterCount = await AuthorizeLetterHistory.findAll({
+                attributes: [
+                    'letter_id',
+                    [Sequelize.fn('COUNT', Sequelize.col('letter_id')), 'count'],
+                ],
+                where: {
+                    letter_id: {
+                        [Op.in]: [1, 2, 3, 4, 5, 6]
+                    },
+                    user_id: userId,
+                    is_used: 0,
+                },
+                group: ['letter_id'],
+                order: [['letter_id', 'ASC']]
+            });
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取成功', { letter, letterCount });
         } catch (error) {
             errLogger(`[MEMBER_STATE_LETTER][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
@@ -7288,7 +7305,7 @@ class Controller {
                         gold_count: letter.gold_count,
                         gold_owner_id: user.id,
                         description: `购买${letter.title}`,
-                        finished_date: letter.period ? moment().add(letter.period, 'days').toDate() : null
+                        finished_date: letter.period ? moment().add(letter.period, 'days').format('YYYY-MM-DD HH:mm:ss') : null
                     }
                 ]
                 for (const l of letters) {
@@ -7392,7 +7409,7 @@ class Controller {
             try {
                 const now = new Date();
                 const groupNumber = `${userId}-${now.getTime()}`;
-                const updateObj = { is_used: 1, is_group_used: 1, group_number: groupNumber, used_at: now }
+                const updateObj = { is_used: 1, is_group_used: 1, group_number: groupNumber, used_at: moment().format('YYYY-MM-DD HH:mm:ss') };
 
                 await letter1.update(updateObj, { transaction: t });
                 await letter2.update(updateObj, { transaction: t });
