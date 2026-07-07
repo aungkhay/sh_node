@@ -7229,6 +7229,7 @@ class Controller {
                     user_id: userId,
                     is_used: 0,
                 },
+                useMaster: true,
                 group: ['letter_id'],
                 order: [['letter_id', 'ASC']]
             });

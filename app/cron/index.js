@@ -4844,6 +4844,58 @@ class CronJob {
             errLogger(`[RECALL_GOLD_APPRECIATION_PACKAGE]: ${error.stack}`); 
         }
     }
+
+    EXPORT_BALANCE_TRANSFER = async () => {
+        try {
+            const records = await BalanceTransfer.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'from',
+                        attributes: ['id', 'name', 'phone_number', 'is_internal_account'],
+                    },
+                    {
+                        model: User,
+                        as: 'to',
+                        attributes: ['id', 'name', 'phone_number', 'is_internal_account']
+                    }
+                ],
+                attributes: ['id', 'amount', 'createdAt'],
+                where: {
+                    [Op.or]: [
+                        { '$from.is_internal_account$': 1 },
+                        { '$to.is_internal_account$': 1 }
+                    ]
+                },
+            });
+
+            const list = [];
+            for (const record of records) {
+                list.push({
+                    "转账ID": record.id,
+                    "发送者ID": record.from ? record.from.id : '',
+                    "发送者姓名": record.from ? record.from.name : '',
+                    "发送者手机号": record.from ? record.from.phone_number : '',
+                    "发送者是否内部账户": record.from ? (record.from.is_internal_account ? '是' : '否') : '',
+                    "接收者ID": record.to ? record.to.id : '',
+                    "接收者姓名": record.to ? record.to.name : '',
+                    "接收者手机号": record.to ? record.to.phone_number : '',
+                    "接收者是否内部账户": record.to ? (record.to.is_internal_account ? '是' : '否') : '',
+                    "转账金额": Number(record.amount),
+                    "转账时间": record.createdAt ? moment(record.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                });
+            }
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Balance Transfer Records');
+            xlsx.writeFile(workbook1, 'balance_transfer_records_export.xlsx');
+            console.log(`Export completed. File saved as balance_transfer_records_export.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_BALANCE_TRANSFER]: ${error.stack}`); 
+        }
+    }
 }
 
 module.exports = CronJob;
