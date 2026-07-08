@@ -487,6 +487,10 @@ PersonalReservePackageEarn.belongsTo(PersonalReservePackageHistory, { foreignKey
 PersonalReservePackage.hasMany(PersonalReservePackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
 PersonalReservePackageEarn.belongsTo(PersonalReservePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
 
+// ========== PERSONAL_RESERVE_PACKAGE_HISTORY ↔️ PERSONAL_RESERVE_PACKAGE_BONUSES (1:N) ==========
+PersonalReservePackageHistory.hasMany(PersonalReservePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+PersonalReservePackageBonuses.belongsTo(PersonalReservePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
