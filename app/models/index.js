@@ -81,6 +81,10 @@ const GoldAppreciationPackageHistory = require('./GoldAppreciationPackageHistory
 const GoldAppreciationPackageBonuses = require('./GoldAppreciationPackageBonuses');
 const GoldAppreciationPackageEarn = require('./GoldAppreciationPackageEarn');
 const GoldAppreciationPackageFragment = require('./GoldAppreciationPackageFragment');
+const PersonalReservePackage = require('./PersonalReservePackage');
+const PersonalReservePackageHistory = require('./PersonalReservePackageHistory');
+const PersonalReservePackageBonuses = require('./PersonalReservePackageBonuses');
+const PersonalReservePackageEarn = require('./PersonalReservePackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -458,6 +462,31 @@ GoldAppreciationPackageFragment.belongsTo(GoldAppreciationPackageHistory, { fore
 User.hasMany(GoldAppreciationPackageFragment, { foreignKey: 'user_id', as: 'gold_appreciation_package_fragments', onDelete: 'CASCADE' });
 GoldAppreciationPackageFragment.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== PERSONAL_RESERVE_PACKAGE ↔️ PERSONAL_RESERVE_PACKAGE_HISTORY (1:N) ==========
+PersonalReservePackage.hasMany(PersonalReservePackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+PersonalReservePackageHistory.belongsTo(PersonalReservePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ PERSONAL_RESERVE_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(PersonalReservePackageHistory, { foreignKey: 'user_id', as: 'personal_reserve_package_histories', onDelete: 'CASCADE' });
+PersonalReservePackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ PERSONAL_RESERVE_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(PersonalReservePackageBonuses, { foreignKey: 'user_id', as: 'personal_reserve_package_bonuses', onDelete: 'CASCADE' });
+PersonalReservePackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+PersonalReservePackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ PERSONAL_RESERVE_PACKAGE_EARN (1:N) ==========
+User.hasMany(PersonalReservePackageEarn, { foreignKey: 'user_id', as: 'personal_reserve_package_earn', onDelete: 'CASCADE' });
+PersonalReservePackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== PERSONAL_RESERVE_PACKAGE_HISTORY ↔️ PERSONAL_RESERVE_PACKAGE_EARN (1:N) ==========
+PersonalReservePackageHistory.hasMany(PersonalReservePackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+PersonalReservePackageEarn.belongsTo(PersonalReservePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== PERSONAL_RESERVE_PACKAGE ↔️ PERSONAL_RESERVE_PACKAGE_EARN (1:N) ==========
+PersonalReservePackage.hasMany(PersonalReservePackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+PersonalReservePackageEarn.belongsTo(PersonalReservePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -535,7 +564,11 @@ const models = {
     GoldAppreciationPackageHistory,
     GoldAppreciationPackageBonuses,
     GoldAppreciationPackageEarn,
-    GoldAppreciationPackageFragment
+    GoldAppreciationPackageFragment,
+    PersonalReservePackage,
+    PersonalReservePackageHistory,
+    PersonalReservePackageBonuses,
+    PersonalReservePackageEarn
 };
 
 // Export models + db connection

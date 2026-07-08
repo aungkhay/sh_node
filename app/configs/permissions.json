@@ -137,6 +137,13 @@
     { "model": "黄金增值", "title": "推荐奖励记录", "name": "gold-appreciation-package-bonus-history-list" },
     { "model": "黄金增值", "title": "收益记录", "name": "gold-appreciation-package-earn-history-list" },
 
+    { "model": "上合个人储备计划", "title": "产品列表", "name": "personal-reserve-package-list" },
+    { "model": "上合个人储备计划", "title": "创建", "name": "personal-reserve-package-create" },
+    { "model": "上合个人储备计划", "title": "编辑", "name": "personal-reserve-package-update" },
+    { "model": "上合个人储备计划", "title": "购买记录", "name": "personal-reserve-package-history-list" },
+    { "model": "上合个人储备计划", "title": "推荐奖励记录", "name": "personal-reserve-package-bonus-history-list" },
+    { "model": "上合个人储备计划", "title": "收益记录", "name": "personal-reserve-package-earn-history-list" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 

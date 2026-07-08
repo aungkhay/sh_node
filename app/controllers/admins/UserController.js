@@ -210,6 +210,7 @@ class Controller {
             const phone = req.query.phone || '';
             const bank_status = req.query.bank_status || '';
             const alipay_status = req.query.alipay_status || '';
+            const fenxiang_status = req.query.fenxiang_status || '';
             const startTime = req.query.startTime;
             const endTime = req.query.endTime;
             const userId = req.user_id || 1;
@@ -230,6 +231,9 @@ class Controller {
             }
             if (alipay_status) {
                 condition.alipay_status = alipay_status;
+            }
+            if (fenxiang_status) {
+                condition.fenxiang_status = fenxiang_status;
             }
             if (startTime && endTime) {
                 condition.createdAt = {
@@ -268,6 +272,7 @@ class Controller {
                     AND p.${columnName} != ''
                     ${bank_status ? `AND p.bank_status = ${bank_status}` : ''}
                     ${alipay_status ? `AND p.alipay_status = ${alipay_status}` : ''}
+                    ${fenxiang_status ? `AND p.fenxiang_status = ${fenxiang_status}` : ''}
                     ${startTime && endTime ? `AND p.createdAt BETWEEN '${startTime}' AND '${endTime}'` : ''}
                     ${userId != 1 ? `AND u.relation LIKE (SELECT CONCAT(relation, '%') FROM users WHERE id = ${userId})` : ''}
                     ${phone ? `AND u.phone_number = '${phone}'` : ''}
@@ -287,6 +292,7 @@ class Controller {
                         AND ${columnName} != ''
                         ${bank_status ? `AND bank_status = ${bank_status}` : ''}
                         ${alipay_status ? `AND alipay_status = ${alipay_status}` : ''}
+                        ${fenxiang_status ? `AND fenxiang_status = ${fenxiang_status}` : ''}
                         ${startTime && endTime ? `AND createdAt BETWEEN '${startTime}' AND '${endTime}'` : ''}
                         ${userId != 1 ? `AND user_id IN (SELECT id FROM users WHERE relation LIKE (SELECT CONCAT(relation, '%') FROM users WHERE id = ${userId}))` : ''}
                         ${phone ? `AND user_id IN (SELECT id FROM users WHERE phone_number = '${phone}')` : ''}

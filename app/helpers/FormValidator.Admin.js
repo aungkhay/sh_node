@@ -1054,3 +1054,66 @@ exports.create_gold_appreciation_package = () => {
             .withMessage('标签必须是数组')
     ]
 }
+
+exports.create_personal_reserve_package = () => {
+    return [
+        check('product_name', { msg: '产品名称不能为空' }).not().isEmpty(),
+        check('price').not().isEmpty().withMessage('价格不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('价格必须是数字'),
+        check('period').not().isEmpty().withMessage('周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('周期必须是正整数'),
+        // reserve_earn 储备收益
+        check('reserve_earn').not().isEmpty().withMessage('储备收益不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('储备收益必须是数字'),
+        check('release_earn_count').not().isEmpty().withMessage('发放次数不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('发放次数必须是数字'),
+        // release_personal_gold_rate 个人黄金释放比例
+        check('release_personal_gold_rate').not().isEmpty().withMessage('个人黄金释放比例不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('个人黄金释放比例必须是数字'),
+        // is_release_authorize_letter (0, 1)
+        check('is_release_authorize_letter').not().isEmpty().withMessage('是否发放授权书不能为空')
+            .bail()
+            .isIn([0, 1])
+            .withMessage('是否发放授权书值无效'),
+        // perchase_limit 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+        check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
+            .bail()
+            .isIn(['NONE', 'DAILY', 'TOTAL'])
+            .withMessage('购买限制无效'),
+        // quantity_limit 限购数量
+        check('quantity_limit').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('限购数量必须是数字'),
+        // total_quantity
+        check('total_quantity').not().isEmpty().withMessage('总数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('总数量必须是数字'),
+        // buy_one_get_quantity 
+        check('buy_one_get_quantity').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('买一赠一数量必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+        check('can_new_registered_user_get_free').optional({ checkFalsy: true })
+            .isIn([0, 1])
+            .withMessage('新注册用户是否可以免费领取无效'),
+        // tag optional => array ['NEW', 'HOT', 'RECOMMENDED']
+        check('tag')
+            .optional({ checkFalsy: true })
+            .isArray({ min: 1 })
+            .withMessage('标签必须是数组')
+    ]
+}

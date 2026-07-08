@@ -329,6 +329,17 @@ class AdminRoute extends express.Router {
         this.get('/gold-appreciation-packages/history', middleware.isLoggedIn('gold-appreciation-package-history-list'), GoldAppreciationPackageCtrl.PACKAGE_HISTORY);
         this.get('/gold-appreciation-packages/bonus-history', middleware.isLoggedIn('gold-appreciation-package-bonus-history-list'), GoldAppreciationPackageCtrl.BONUSES_HISTORY);
         this.get('/gold-appreciation-packages/earn-history', middleware.isLoggedIn('gold-appreciation-package-earn-history-list'), GoldAppreciationPackageCtrl.EARN_HISTORY);
+        
+        // Personal Reserve Package
+        let PersonalReservePackageController = require('../controllers/admins/PersonalReservePackageController');
+        let PersonalReservePackageCtrl = new PersonalReservePackageController(app);
+        this.get('/personal-reserve-packages', middleware.isLoggedIn('personal-reserve-package-list'), PersonalReservePackageCtrl.INDEX);
+        this.post('/personal-reserve-packages/create', FormValidator.create_personal_reserve_package(), middleware.isLoggedIn('personal-reserve-package-create'), PersonalReservePackageCtrl.CREATE);
+        this.post('/personal-reserve-packages/:id/update', FormValidator.create_personal_reserve_package(), middleware.isLoggedIn('personal-reserve-package-update'), PersonalReservePackageCtrl.UPDATE);
+        this.post('/personal-reserve-packages/:id/upload', middleware.isLoggedIn('personal-reserve-package-create,personal-reserve-package-update'), PersonalReservePackageCtrl.UPLOAD);
+        this.get('/personal-reserve-packages/history', middleware.isLoggedIn('personal-reserve-package-history-list'), PersonalReservePackageCtrl.PACKAGE_HISTORY);
+        this.get('/personal-reserve-packages/bonus-history', middleware.isLoggedIn('personal-reserve-package-bonus-history-list'), PersonalReservePackageCtrl.BONUSES_HISTORY);
+        this.get('/personal-reserve-packages/earn-history', middleware.isLoggedIn('personal-reserve-package-earn-history-list'), PersonalReservePackageCtrl.EARN_HISTORY);
 
         // Meeting
         let MeetingController = require('../controllers/admins/MeetingController');

@@ -1880,3 +1880,72 @@ const params = {
     endTime: ''
 }
 ```
+
+### 上合个人储备计划
+``` js
+// [GET] Package List
+const url = `${baseURL}/personal-reserve-packages`;
+
+// [POST] CREATE | UPDATE
+const url = `${baseURL}/personal-reserve-packages/create`;
+const url = `${baseURL}/personal-reserve-packages/${pkgID}/update`;
+const data = {
+    product_name: '',
+    price: 0,
+    period: 90,
+    reserve_earn: 1000, // 战略储备金
+    release_earn_count: 1, // 发放次数
+    release_personal_gold_rate: 10, // 个人黄金释放比例
+    gold_appreciation_earn_count: 20, // 发放黄金增值金数量
+    is_release_authorize_letter: 1, // 是否发放授权书
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    description: '',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+    can_new_registered_user_get_free: 1, // 新注册用户是否可以免费领取 default 0
+}
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/personal-reserve-packages/${packageId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [GET] Package History
+const url = `${baseURL}/personal-reserve-packages/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: '',
+    is_internal_account: 0,
+    is_returned: 1, // 1 => 战略储备金返还 | 2 => 本金返还
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/personal-reserve-packages/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/personal-reserve-packages/earn-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+```
