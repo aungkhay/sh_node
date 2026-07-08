@@ -7351,6 +7351,11 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used'] });
+            if (user.is_group_letter_used == 1) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已使用过六国授权书，无法重复使用', {});
+            }
+
             const userId = req.user_id;
             const letters = await AuthorizeLetterHistory.findAll({
                 attributes: [
