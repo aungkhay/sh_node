@@ -7418,6 +7418,7 @@ class Controller {
                 await letter4.update(updateObj, { transaction: t });
                 await letter5.update(updateObj, { transaction: t });
                 await letter6.update(updateObj, { transaction: t });
+                await User.update({ is_group_letter_used: 1 }, { where: { id: userId }, transaction: t });
 
                 await t.commit();
 

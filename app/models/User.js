@@ -289,6 +289,11 @@ User.init({
         type: DataTypes.TINYINT,
         defaultValue: 0,
     },
+    is_group_letter_used: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+        comment: '是否合并使用授权书'
+    },
     initial_buy_product_date: {
         type: DataTypes.DATE,
         allowNull: true,
