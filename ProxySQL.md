@@ -79,8 +79,16 @@ VALUES ('app_user', 'app_password', 10, 1, 1);
 
 ## 6. Add read/write rule
 ```sql
+-- INSERT INTO mysql_query_rules(rule_id, active, match_digest, destination_hostgroup, apply)
+-- VALUES (1, 1, '^SELECT.*', 20, 1);
+
+-- DELETE FROM mysql_query_rules;
+
 INSERT INTO mysql_query_rules(rule_id, active, match_digest, destination_hostgroup, apply)
-VALUES (1, 1, '^SELECT.*', 20, 1);
+VALUES (1, 1, '^SELECT.*FOR UPDATE$', 10, 1),(2, 1, '^SELECT.*', 20, 1);
+
+INSERT INTO mysql_replication_hostgroups(writer_hostgroup, reader_hostgroup, comment)
+VALUES (10, 20, 'MySQL replication');
 ```
 
 ## 7. Load and save
@@ -97,7 +105,21 @@ SAVE MYSQL QUERY RULES TO DISK;
 
 ## 8. Test ProxySQL
 ```bash
-mysql -u app_user -papp_password -h 127.0.0.1 -P 6033
+SELECT hostgroup_id, hostname, port, status, weight
+FROM mysql_servers
+ORDER BY hostgroup_id, hostname;
+
+SELECT hostgroup_id, hostname, port, status
+FROM runtime_mysql_servers
+ORDER BY hostgroup_id, hostname;
+
+SELECT rule_id, active, match_digest, destination_hostgroup, apply
+FROM mysql_query_rules;
+
+SELECT username, default_hostgroup, transaction_persistent, active
+FROM mysql_users;
+
+mysql -u app_user -papp_password -h 192.168.100.20 -P 6033
 ```
 
 ## 9. Update Sequelize

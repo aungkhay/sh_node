@@ -8,17 +8,21 @@ let dbUser = null;
 let dbPass = null;
 let dbHost = null;
 let dbPort = null;
+
 let isProduction = Number(env.IS_PRODUCTION || 0) == 1;
+let isProxySQLEnabled = Number(env.IS_PROXYSQL_ENABLED || 0) == 1;
+
 console.log('=== IS_PRODUCTION ===', isProduction);
-if (isProduction) {
-    dbUser = env.DB_USER_PROD;
-    dbPass = env.DB_PASS_PROD;
-} else {
-    dbUser = env.DB_USER;
-    dbPass = env.DB_PASS;
-    dbHost = env.DB_HOST;
-    dbPort = env.DB_PORT;
-}
+console.log('=== IS_PROXYSQL_ENABLED ===', isProxySQLEnabled);
+// if (isProduction) {
+//     dbUser = env.DB_USER_PROD;
+//     dbPass = env.DB_PASS_PROD;
+// } else {
+//     dbUser = env.DB_USER;
+//     dbPass = env.DB_PASS;
+//     dbHost = env.DB_HOST;
+//     dbPort = env.DB_PORT;
+// }
 
 const replication = {
     write: {
@@ -78,12 +82,35 @@ const opitons = {
     }
 }
 
-if (isProduction) {
-    opitons.replication = replication;
+// if (isProduction) {
+//     opitons.replication = replication;
+// } else {
+//     opitons.host = dbHost;
+//     opitons.port = dbPort;
+// }
+if (isProxySQLEnabled) {
+    dbUser = env.DB_PROXYSQL_USER;
+    dbPass = env.DB_PROXYSQL_PASS;
+    dbHost = env.DB_PROXYSQL_HOST;
+    dbPort = Number(env.DB_PROXYSQL_PORT);
+
+    options.host = dbHost;
+    options.port = dbPort;
+} else if (isProduction) {
+    dbUser = env.DB_USER_PROD;
+    dbPass = env.DB_PASS_PROD;
+
+    options.replication = replication;
 } else {
-    opitons.host = dbHost;
-    opitons.port = dbPort;
+    dbUser = env.DB_USER;
+    dbPass = env.DB_PASS;
+    dbHost = env.DB_HOST;
+    dbPort = Number(env.DB_PORT);
+
+    options.host = dbHost;
+    options.port = dbPort;
 }
+
 
 const db = new Sequelize(env[`DB_NAME`], dbUser, dbPass, opitons);
 module.exports = db;
