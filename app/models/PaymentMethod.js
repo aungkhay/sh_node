@@ -77,14 +77,6 @@ PaymentMethod.init({
         type: DataTypes.STRING,
         allowNull: true,
     },
-    fenxiang_qr_code_pic: {
-        type: DataTypes.STRING,
-        allowNull: true, // URL or file path
-    },
-    fenxiang_home_page_screenshot: {
-        type: DataTypes.STRING,
-        allowNull: true, // URL or file path
-    },
     bank_status: {
         type: DataTypes.ENUM('NORMAL', 'PENDING', 'APPROVED', 'DENIED'),
         allowNull: false,
