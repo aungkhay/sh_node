@@ -6144,17 +6144,20 @@ class Controller {
                 if (policyPackage.is_release_authorize_letter) {
                     for (let index = 0; index < pkgHistory.length; index++) {
                         const pkg = pkgHistory[index];
-                        // await RewardRecord.create({
+                        // await AuthorizeLetterHistory.create({
                         //     user_id: user.id,
                         //     relation: user.relation,
-                        //     reward_id: 13, // 上合组织乌兹别克斯坦区授权书
-                        //     amount: 1,
-                        //     from_where: `PKG-${pkg.id}`
+                        //     letter_id: 4,
+                        //     price: 0,
+                        //     gold_count: 1000,
+                        //     gold_owner_id: user.id,
+                        //     product_type: 4, // 贡献
+                        //     description: `PKG-${pkg.id}`
                         // }, { transaction: t });
                         await AuthorizeLetterHistory.create({
                             user_id: user.id,
                             relation: user.relation,
-                            letter_id: 4,
+                            letter_id: 1,
                             price: 0,
                             gold_count: 1000,
                             gold_owner_id: user.id,
