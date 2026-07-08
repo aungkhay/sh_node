@@ -1153,6 +1153,28 @@ class Controller {
         }
     }
 
+    UPDATE_FENXIANG = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+            const { fenxiang_account_name, fenxiang_account_number } = req.body;
+            const bank = await PaymentMethod.findByPk(req.params.id, { attributes: ['id'] });
+            if (!bank) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
+            }
+            await bank.update({ fenxiang_account_name, fenxiang_account_number });
+            // Log
+            await this.adminLogger(req, 'PaymentMethod', 'update');
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
+        } catch (error) {
+            errLogger(`[PaymentMethod][UPDATE_FENXIANG]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     UPLOAD_PAYMENT_METHOD_OSS_SIGN = async (req, res) => {
         try {
             const err = validationResult(req);

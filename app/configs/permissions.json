@@ -40,6 +40,7 @@
     { "model": "银行卡认证", "title": "查看银行卡详情", "name": "bankcard-view-detail" },
     { "model": "银行卡认证", "title": "修改银行卡", "name": "bankcard-update" },
     { "model": "银行卡认证", "title": "修改支付宝", "name": "alipay-update" },
+    { "model": "银行卡认证", "title": "修改分享生活", "name": "fenxiang-update" },
     { "model": "银行卡认证", "title": "修改银行卡认证状态", "name": "bankcard-status-update" },
     { "model": "银行卡认证", "title": "修改支付宝认证状态", "name": "alipay-status-update" },
 

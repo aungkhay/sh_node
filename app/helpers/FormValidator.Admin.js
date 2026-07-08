@@ -542,6 +542,13 @@ exports.update_alipay = () => {
     ];
 }
 
+exports.update_fenxiang = () => {
+    return [
+        check('fenxiang_account_name', { msg: '分享生活姓名不能为空' }).not().isEmpty(),   
+        check('fenxiang_account_number', { msg: '分享生活账号不能为空' }).not().isEmpty(),
+    ];
+}
+
 exports.verify_kyc = () => {
     return [
         check('nrc_name', { msg: '姓名不能为空' }).not().isEmpty(),

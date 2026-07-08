@@ -201,6 +201,7 @@ class AdminRoute extends express.Router {
         this.post('/payment-methods/:id/update-pic-link', FormValidator.update_payment_method_pic_link(), middleware.isLoggedIn(), UserCtrl.UPDATE_PAYMENT_METHOD_PIC_LINK);
         this.post('/payment-methods/:id/update-bank', FormValidator.update_bank(), middleware.isLoggedIn('bankcard-update'), UserCtrl.UPDATE_BANK);
         this.post('/payment-methods/:id/update-alipay', FormValidator.update_alipay(), middleware.isLoggedIn('alipay-update'), UserCtrl.UPDATE_ALIPAY);
+        this.post('/payment-methods/:id/update-fenxiang', FormValidator.update_fenxiang(), middleware.isLoggedIn('fenxiang-update'), UserCtrl.UPDATE_FENXIANG);
         this.post('/payment-methods/:id/update-bank-status', FormValidator.update_kyc_status(), middleware.isLoggedIn('bankcard-status-update'), UserCtrl.UPDATE_BANK_STATUS);
         this.post('/payment-methods/:id/update-alipay-status', FormValidator.update_kyc_status(), middleware.isLoggedIn('alipay-status-update'), UserCtrl.UPDATE_ALI_STATUS);
         // Set Roles

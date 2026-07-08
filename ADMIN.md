@@ -889,6 +889,13 @@ const data = {
     ali_account_number: ''
 }
 
+// [POST] Update Fenxiang
+const url = `${baseURL}/payment-methods/${Id}/update-fenxiang`;
+const data = {
+    fenxiang_account_name: '',
+    fenxiang_account_number: ''
+}
+
 // [POST] Get payment method oss sign url
 const url = `${baseURL}/payment-methods/get-sign-url`;
 const data = {
