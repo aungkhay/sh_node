@@ -47,7 +47,7 @@ const replication = {
         // you can add more slaves here
     ]
 }
-const opitons = {
+const options = {
     dialect: 'mysql',
     // benchmark: true,
     timezone: '+08:00', 
@@ -112,5 +112,5 @@ if (isProxySQLEnabled) {
 }
 
 
-const db = new Sequelize(env[`DB_NAME`], dbUser, dbPass, opitons);
+const db = new Sequelize(env[`DB_NAME`], dbUser, dbPass, options);
 module.exports = db;
