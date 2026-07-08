@@ -130,6 +130,12 @@ class UserRoute extends express.Router {
         this.get('/gold-appreciation-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_BONUS_HISTORY);
         this.get('/gold-appreciation-packages/fragments', middleware.isLoggedIn, HomeCtrl.GOLD_APPRECIATION_PACKAGE_FRAGMENTS);
         this.post('/gold-appreciation-packages/fragments/exchange', middleware.isLoggedIn, HomeCtrl.EXCHANGE_GOLD_APPRECIATION_PACKAGE_FRAGMENT);
+        // Personal Reserve Plan Routes
+        this.get('/personal-reserve-packages', middleware.isLoggedIn, HomeCtrl.PERSONAL_RESERVE_PACKAGE);
+        this.post('/personal-reserve-packages/:id/buy', FormValidator.buy_personal_reserve_package(), middleware.isLoggedIn, HomeCtrl.BUY_PERSONAL_RESERVE_PACKAGE);
+        this.get('/personal-reserve-packages/history', middleware.isLoggedIn, HomeCtrl.PERSONAL_RESERVE_PACKAGE_HISTORY);
+        this.get('/personal-reserve-packages/earn-history', middleware.isLoggedIn, HomeCtrl.PERSONAL_RESERVE_PACKAGE_EARN_HISTORY);
+        this.get('/personal-reserve-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.PERSONAL_RESERVE_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

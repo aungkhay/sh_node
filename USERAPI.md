@@ -974,3 +974,25 @@ const url = `${baseURL}/gold-appreciation-packages/fragments`;
 // [POST] Exchange Fragments
 const url = `${baseURL}/gold-appreciation-packages/fragments/exchange`;
 ```
+
+### 上合个人储备计划
+```js
+// [GET] Packages
+const url = `${baseURL}/personal-reserve-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/personal-reserve-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/personal-reserve-packages/history`;
+
+// [GET] Earn History
+// type: 0-储备现金, 1-个人黄金兑换值, 2-储备费(本金)
+const url = `${baseURL}/personal-reserve-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/personal-reserve-packages/bonus-history`;
+```

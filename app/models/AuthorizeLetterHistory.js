@@ -90,7 +90,7 @@ AuthorizeLetterHistory.init({
     product_type: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
-        comment: '1-红包雨, 2-黄金礼包, 3-终身授权, 4-贡献, 5-联储, 6-纪念币, 7-黄金增值, 8-其他',
+        comment: '1-红包雨, 2-黄金礼包, 3-终身授权, 4-贡献, 5-联储, 6-纪念币, 7-黄金增值, 8-个人储备计划',
     },
     transfer_remark: {
         type: DataTypes.STRING,

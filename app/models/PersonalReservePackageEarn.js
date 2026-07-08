@@ -50,7 +50,7 @@ PersonalReservePackageEarn.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
-        comment: '类型: 0-储备现金, 1-10%个人黄金, 2-储备费(本金)',
+        comment: '类型: 0-储备现金, 1-个人黄金(ex-rate), 2-储备费(本金)',
     },
     description: {
         type: DataTypes.STRING,

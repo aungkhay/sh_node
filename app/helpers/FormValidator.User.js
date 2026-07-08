@@ -385,6 +385,12 @@ exports.buy_gold_appreciation_package = () => {
     ]
 }
 
+exports.buy_personal_reserve_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
 exports.transfer_authorize_letter = () => {
     return [
         check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty(),

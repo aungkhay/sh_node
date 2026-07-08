@@ -105,7 +105,6 @@ class Controller {
             await this.adminLogger(req, 'PersonalReservePackage', 'create');
 
             await this.redisHelper.deleteKey('personal_reserve_packages'); // clear cache
-            await this.redisHelper.deleteKey('free_personal_reserve_packages'); // clear cache
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', newPackage);
 
@@ -150,7 +149,6 @@ class Controller {
             await this.adminLogger(req, 'PersonalReservePackage', 'update');
             
             await this.redisHelper.deleteKey('personal_reserve_packages'); // clear cache
-            await this.redisHelper.deleteKey('free_personal_reserve_packages'); // clear cache
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', pkg);
         } catch (error) {

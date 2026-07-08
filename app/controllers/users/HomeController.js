@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment } = require('../../models');
+const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes, where, col, fn } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -8709,6 +8709,17 @@ class Controller {
                 FROM gold_appreciation_package_history gpph
                 LEFT JOIN gold_appreciation_packages gpp ON gpp.id = gpph.package_id
                 WHERE gpph.user_id = :userId
+
+                UNION ALL
+
+                SELECT
+                    '个人储备计划' AS type,
+                    prp.product_name AS product_name,
+                    prph.price AS price,
+                    prph.createdAt AS createdAt
+                FROM personal_reserve_package_history prph
+                LEFT JOIN personal_reserve_packages prp ON prp.id = prph.package_id
+                WHERE prph.user_id = :userId
             `;
 
             const dataQuery = `
@@ -8875,6 +8886,25 @@ class Controller {
                 LEFT JOIN gold_appreciation_package_history gapph ON gapph.id = gappe.package_history_id
                 LEFT JOIN gold_appreciation_packages gapp ON gapp.id = gappe.package_id
                 WHERE gappe.user_id = :userId
+
+                UNION ALL
+
+                SELECT
+                    '个人储备计划' AS type,
+                    COALESCE(prph.price, 0) AS product_price,
+                    COALESCE(prp.product_name, '') AS product_name,
+                    prpe.amount AS amount,
+                    CASE
+                        WHEN prpe.type = 0 THEN '储备现金'
+                        WHEN prpe.type = 1 THEN '个人黄金兑换值'
+                        WHEN prpe.type = 2 THEN '储备费'
+                        ELSE ''
+                    END AS description,
+                    prpe.createdAt AS createdAt
+                FROM personal_reserve_package_earn prpe
+                LEFT JOIN personal_reserve_package_history prph ON prph.id = prpe.package_history_id
+                LEFT JOIN personal_reserve_packages prp ON prp.id = prpe.package_id
+                WHERE prpe.user_id = :userId
             `;
 
             const dataQuery = `
@@ -9008,6 +9038,16 @@ class Controller {
                     COALESCE(gappb.description, '') AS description
                 FROM gold_appreciation_package_bonuses gappb
                 WHERE gappb.user_id = :userId
+
+                UNION ALL
+
+                SELECT
+                    '个人储备计划' AS type,
+                    prpb.amount AS amount,
+                    prpb.createdAt AS createdAt,
+                    COALESCE(prpb.description, '') AS description
+                FROM personal_reserve_package_bonuses prpb
+                WHERE prpb.user_id = :userId
             `;
 
             const dataQuery = `
@@ -9297,8 +9337,8 @@ class Controller {
                         relation: user.relation,
                         user_id: userId,
                         wallet_type: 1,
-                        model: 'FederalReserveGoldPackageHistory',
-                        type: `购买联储黄金礼包`,
+                        model: 'GoldAppreciationPackageHistory',
+                        type: `购买上合黄金增值计划`,
                         amount: reserveAmount,
                         before_amount: Number(user.reserve_fund),
                         after_amount: Number(user.reserve_fund) - reserveAmount,
@@ -9967,6 +10007,531 @@ class Controller {
 
         } catch (error) {
             errLogger(`[EXCHANGE_GOLD_APPRECIATION_PACKAGE_FRAGMENTS][${userId}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    PERSONAL_RESERVE_PACKAGE = async (req, res) => {
+        try {
+            let packages = await this.redisHelper.getValue('personal_reserve_packages');
+            if (packages) {
+                packages = JSON.parse(packages);
+            } else {
+                packages = await PersonalReservePackage.findAll({
+                    where: {
+                        status: {
+                            [Op.ne]: 2
+                        }
+                    },
+                    useMaster: true
+                });
+                await this.redisHelper.setValue('personal_reserve_packages', JSON.stringify(packages));
+            }
+
+            let package_description = await this.redisHelper.getValue('personal_reserve_package_description');
+            if (!package_description) {
+                const conf = await Config.findOne({ where: { type: 'personal_reserve_package_description' } });
+                package_description = conf ? conf.val : '';
+                await this.redisHelper.setValue('personal_reserve_package_description', package_description);
+            }
+            let package_period = await this.redisHelper.getValue('personal_reserve_package_period');
+            if (!package_period) {
+                const conf = await Config.findOne({ where: { type: 'personal_reserve_package_period' } });
+                package_period = conf ? conf.val : '';
+                await this.redisHelper.setValue('personal_reserve_package_period', package_period);
+            }
+            let release_qty = await this.redisHelper.getValue('personal_reserve_package_daily_release_qty');
+            if (!release_qty) {
+                const conf = await Config.findOne({ where: { type: 'personal_reserve_package_daily_release_qty' } });
+                release_qty = conf ? conf.val : '';
+                await this.redisHelper.setValue('personal_reserve_package_daily_release_qty', release_qty);
+            }
+
+            const data = {
+                package_description: package_description,
+                package_period: package_period,
+                release_qty: release_qty,
+                packages: packages
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[PERSONAL_RESERVE_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    BUY_PERSONAL_RESERVE_PACKAGE = async (req, res) => {
+
+        const lockKey = `lock:buy-personal-reserve-package:${req.ip}`;
+        let redisLocked = false;
+        const PROCESSING_KEY = `personal_reserve_package_processing_${req.user_id}`
+        try {
+            let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
+            if (!buyOnOff) {
+                const conf = await Config.findOne({ where: { type: 'buy_product_on_off' }, attributes: ['val'] });
+                buyOnOff = conf ? Number(conf.val) : 0;
+            }
+            if (Number(buyOnOff) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+            
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            // processing status
+            const isProcessing = await this.redisHelper.getValue(PROCESSING_KEY);
+            if (isProcessing) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
+            }
+            await this.redisHelper.setValue(PROCESSING_KEY, 1);
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            let openPeriod = await this.redisHelper.getValue('personal_reserve_package_period');
+            if (!openPeriod) {
+                const conf = await Config.findOne({ where: { type: 'personal_reserve_package_period' } });
+                if (conf) {
+                    openPeriod = conf.val;
+                    await this.redisHelper.setValue('personal_reserve_package_period', openPeriod);
+                }
+            }
+            if (openPeriod) {
+                const [start, end] = openPeriod.split('|');
+                const now = moment();
+                if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合个人储备计划购买时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
+                }                 
+                if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合个人储备计划购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
+                }
+            }
+            
+            const gPackage = await PersonalReservePackage.findByPk(req.params.id, { useMaster: true });
+            if (!gPackage) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '礼包不存在', {});
+            }
+
+            if (gPackage.status === 2) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已下架', {});
+            }
+
+            if (gPackage.status === 3) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
+            }
+
+            if (gPackage.purchase_limit === 'DAILY' && gPackage.quantity_limit > 0) {
+                const historyCount = await PersonalReservePackageHistory.count({
+                    where: {
+                        user_id: req.user_id,
+                        createdAt: {
+                            [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
+                        },
+                        price: { [Op.gt]: 0 },
+                        description: { [Op.ne]: '新注册用户福利' }
+                    },
+                    useMaster: true
+                });
+                if (historyCount >= gPackage.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
+                }
+            }
+
+            if (gPackage.purchase_limit === 'TOTAL' && gPackage.quantity_limit > 0) {
+                const historyCount = await PersonalReservePackageHistory.count({
+                    where: {
+                        user_id: req.user_id,
+                        package_id: gPackage.id,
+                        price: { [Op.gt]: 0 },
+                        description: { [Op.ne]: '新注册用户福利' }
+                    },
+                    useMaster: true
+                });
+                console.log(historyCount, gPackage.quantity_limit);
+                if (historyCount >= gPackage.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已经购买了该礼包', {});
+                }
+            }
+
+            const userId = req.user_id;
+            const payment_password = req.body.payment_password;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date'],
+                useMaster: true
+            });
+            if (!user.kyc) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+
+            let reserveAmount = gPackage.price;
+            let balanceAmount = 0;
+            if (Number(user.reserve_fund) < gPackage.price) {
+                balanceAmount = gPackage.price - Number(user.reserve_fund);
+                reserveAmount = Number(user.reserve_fund);
+                // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+            if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                if (reserveAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'PersonalReservePackageHistory',
+                        type: `购买联储黄金礼包`,
+                        amount: reserveAmount,
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: Number(user.reserve_fund) - reserveAmount,
+                        flow_status: 'OUT',
+                        description: `${gPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
+                    }, { transaction: t });
+                }
+
+                if (balanceAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'PersonalReservePackageHistory',
+                        type: `购买上合个人储备计划`,
+                        amount: balanceAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) - balanceAmount,
+                        flow_status: 'OUT',
+                        description: `${gPackage.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
+
+                const updates = {
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount
+                };
+                if (!user.initial_buy_product_date) {
+                    updates.initial_buy_product_date = new Date();
+                }
+                await user.update(updates, { transaction: t });
+
+                const pkgHistory = [];
+                const isMonday = moment().isoWeekday() === 1; // Monday is 1
+                const isTuesday = moment().isoWeekday() === 2; // Tuesday is
+                const isWednesday = moment().isoWeekday() === 3; // Wednesday is 3
+                const isThursday = moment().isoWeekday() === 4; // Thursday is 4
+                const isFriday = moment().isoWeekday() === 5; // Friday is 5
+                const isSaturday = moment().isoWeekday() === 6; // Saturday is 6
+                const isSunday = moment().isoWeekday() === 7; // Sunday is 7
+
+                let return_start_date;
+                const dateFormat = 'YYYY-MM-DD HH:mm:ss';
+                if (isMonday) {
+                    // next thursday
+                    return_start_date = moment().add(3, 'days').format(dateFormat);
+                } else if (isTuesday) {
+                    // next friday
+                    return_start_date = moment().add(3, 'days').format(dateFormat);
+                } else if (isWednesday) {
+                    // next monday
+                    return_start_date = moment().add(5, 'days').format(dateFormat);
+                } else if (isThursday) {
+                    // next tuesday
+                    return_start_date = moment().add(4, 'days').format(dateFormat);
+                } else if (isFriday) {
+                    // next wednesday
+                    return_start_date = moment().add(5, 'days').format(dateFormat);
+                } else if (isSaturday) {
+                    // next wednesday
+                    return_start_date = moment().add(4, 'days').format(dateFormat);
+                } else if (isSunday) {
+                    // next wednesday
+                    return_start_date = moment().add(3, 'days').format(dateFormat);
+                }
+
+                if (gPackage.buy_one_get_quantity > 0) {
+                    const randomNumber = this.commonHelper.randomNumber(6);
+
+                    for (let index = 0; index <= gPackage.buy_one_get_quantity; index++) {
+                        const obj = {
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: gPackage.id,
+                            price: index == 0 ? gPackage.price : 0,
+                            reserve_earn: gPackage.reserve_earn,
+                            release_earn_count: gPackage.release_earn_count,
+                            release_personal_gold_rate: gPackage.release_personal_gold_rate,
+                            return_start_date: return_start_date,
+                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                        }
+
+                        const pkgHistoryItem = await PersonalReservePackageHistory.create(obj, { transaction: t });
+                        pkgHistory.push(pkgHistoryItem);
+                    }
+                } else {
+                    const obj = {
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: gPackage.id,
+                        price: gPackage.price,
+                        reserve_earn: gPackage.reserve_earn,
+                        release_earn_count: gPackage.release_earn_count,
+                        release_personal_gold_rate: gPackage.release_personal_gold_rate,
+                        return_start_date: return_start_date,
+                    }
+                    const pkgHistoryItem = await PersonalReservePackageHistory.create(obj, { transaction: t });
+                    pkgHistory.push(pkgHistoryItem);
+                }
+
+                await gPackage.increment({ total_quantity: -1 }, { transaction: t });
+                if (gPackage.total_quantity - 1 <= 0) {
+                    await gPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+
+                if (gPackage.is_release_authorize_letter) {
+                    for (const pkg of pkgHistory) {
+                        await AuthorizeLetterHistory.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            letter_id: 5,
+                            price: 0,
+                            gold_count: 1000,
+                            gold_owner_id: user.id,
+                            product_type: 8, // 个人储备计划
+                            description: `PKG-${pkg.id}`
+                        }, { transaction: t });
+                    }
+                }
+
+                const bonusArr = [15, 7, 3];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
+                commonLogger(`[BUY_PERSONAL_RESERVE_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_PERSONAL_RESERVE_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type', 'balance'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                const cashFlows = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(gPackage.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[BUY_PERSONAL_RESERVE_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+
+                    cashFlows.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        wallet_type: 2,
+                        model: 'PersonalReservePackageBonuses',
+                        type: `下级购买个人储备计划奖励`,
+                        amount: bonus,
+                        before_amount: Number(upLevelUser.balance),
+                        after_amount: Number(upLevelUser.balance) + Number(bonus),
+                        flow_status: 'IN',
+                        description: `${gPackage.product_name}`
+                    });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: pkgHistory[0].id
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await PersonalReservePackageBonuses.bulkCreate(bonuses, { transaction: t });
+                    await CashFlow.bulkCreate(cashFlows, { transaction: t });
+                }
+
+                await t.commit();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买个人储备计划失败', {}); 
+            }
+        } catch (error) {
+            errLogger(`[BUY_PERSONAL_RESERVE_PACKAGE][${req.user_id}]: ${error.stack}`);
+            await this.redisHelper.deleteKey(PROCESSING_KEY);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    PERSONAL_RESERVE_PACKAGE_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+
+            const { rows, count } = await PersonalReservePackageHistory.findAndCountAll({
+                include: {
+                    model: PersonalReservePackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
+                where: { 
+                    user_id: userId,
+                },
+                attributes: ['id', 'price', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[PERSONAL_RESERVE_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    PERSONAL_RESERVE_PACKAGE_EARN_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await PersonalReservePackageEarn.findAndCountAll({
+                include: [
+                    {
+                        model: PersonalReservePackageHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'price'],
+                    },
+                    {
+                        model: PersonalReservePackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    }
+                ],
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'type', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[PERSONAL_RESERVE_PACKAGE_EARN_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    PERSONAL_RESERVE_PACKAGE_BONUS_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await PersonalReservePackageBonuses.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                bonuses: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[PERSONAL_RESERVE_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
