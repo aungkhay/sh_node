@@ -3016,6 +3016,7 @@ class CronJob {
                         });
                         updateObj.is_returned_personal_gold = 1;
                         updateObj.return_personal_gold_date = now;
+                        updateObj.return_personal_gold_in_amount = goldInAmount;
                     }
 
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
