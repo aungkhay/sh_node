@@ -3532,7 +3532,7 @@ class Controller {
                         },
                         is_used: 0,
                     },
-                    attributes: ['id', 'amount', 'validedAt'],
+                    attributes: ['id', 'amount', 'validedAt', 'is_moved_to_total_gold_count'],
                     transaction: t
                 });
 
@@ -3541,6 +3541,9 @@ class Controller {
                 }
                 if (new Date(rewardRecord.validedAt) > new Date()) {
                     throw new Error('未到兑换实体黄金时间！请耐心等待');
+                }
+                if (rewardRecord.is_moved_to_total_gold_count) {
+                    throw new Error('黄金券已兑换过实体黄金');
                 }
                 const user = await User.findByPk(userId, { 
                     attributes: ['id', 'gold'],
@@ -3603,7 +3606,7 @@ class Controller {
                         }, 
                         is_used: 0 
                     },
-                    attributes: ['id', 'amount', 'validedAt'],
+                    attributes: ['id', 'amount', 'validedAt', 'is_moved_to_total_gold_count'],
                     transaction: t
                 });
 
@@ -3612,6 +3615,9 @@ class Controller {
                 }
                 if (new Date(rewardRecord.validedAt) > new Date()) {
                     throw new Error('未到提取时间！请耐心等待');
+                }
+                if (rewardRecord.is_moved_to_total_gold_count) {
+                    throw new Error('黄金券已兑换过实体黄金');
                 }
 
                 const amount = new Decimal(rewardRecord.amount * goldPrice.reserve_price)
