@@ -1,6 +1,6 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage } = require('../models');
-const { Op, fn, col, literal } = require('sequelize');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn } = require('../models');
+const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
 const axios = require('axios');
@@ -70,6 +70,8 @@ class CronJob {
         // cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
         // Run every 1 minute
         cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
+        // run every 00:50
+        cron.schedule('40 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -2885,6 +2887,149 @@ class CronJob {
         }
     }
 
+    CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT = async () => {
+        try {
+            const goldPrice = await GoldPrice.findOne({
+                order: [['createdAt', 'DESC']],
+            });
+            if (!goldPrice) {
+                return;
+            }
+
+            const packages = await PersonalReservePackageHistory.findAll({
+                where: {
+                    return_start_date: {
+                        [Op.lte]: moment().format('YYYY-MM-DD'),
+                    },
+                    is_returned_earn: 0,
+                    is_returned_price: 0,
+                    is_returned_personal_gold: 0
+                },
+            });
+            
+            for (const pack of packages) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) {
+                        continue;
+                    }
+
+                    const letter = await AuthorizeLetterHistory.findOne({
+                        where: {
+                            user_id: pack.user_id,
+                            letter_id: 8, // 个人储备计划
+                            description: `PKG-${pack.id}`,
+                        },
+                        attributes: ['id', 'gold_count'],
+                    });
+                    if (!letter) {
+                        continue;
+                    }
+
+                    const goldGram = new Decimal(letter.gold_count * pack.release_personal_gold_rate).times(0.01).toNumber();
+                    const remainGoldInLetter = letter.gold_count - goldGram;
+                    const reserveEarn = Number(pack.reserve_earn);
+                    const originPrice = Number(pack.price);
+                    const goldInAmount = goldGram * goldPrice.reserve_price;
+
+                    const earns = [];
+                    const cashflows = [];
+                    const updateObj = {};
+                    const now = new Date();
+                    
+                    if (reserveEarn > 0) {
+                        earns.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: reserveEarn,
+                            type: 0, // 0-储备现金
+                        });
+                        cashflows.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划收益返还',
+                            amount: reserveEarn,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + reserveEarn,
+                            flow_status: 'IN',
+                            description: `储备现金返还`,
+                        });
+                        updateObj.is_returned_earn = 1;
+                        updateObj.return_earn_date = now;
+                    }
+                    if (originPrice > 0) {
+                        earns.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: originPrice,
+                            type: 2, // 2-储备费(本金)
+                        });
+                        cashflows.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划本金返还',
+                            amount: originPrice,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + originPrice,
+                            flow_status: 'IN',
+                            description: `储备费返还`,
+                        });
+                        updateObj.is_returned_price = 1;
+                        updateObj.return_price_date = now;
+                    }
+                    if (goldInAmount > 0) {
+                        earns.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            package_id: pack.package_id,
+                            package_history_id: pack.id,
+                            amount: goldInAmount,
+                            type: 1, // 1-个人黄金(ex-rate)
+                        });
+                        cashflows.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划个人黄金返还',
+                            amount: goldInAmount,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + goldInAmount,
+                            flow_status: 'IN',
+                            description: `个人黄金返还`,
+                        });
+                        updateObj.is_returned_personal_gold = 1;
+                        updateObj.return_personal_gold_date = now;
+                    }
+
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+                    await PersonalReservePackageEarn.bulkCreate(earns, { transaction: t });
+                    await user.increment({ balance: reserveEarn + originPrice + goldInAmount }, { transaction: t });
+                    await pack.update(updateObj, { transaction: t });
+                    await letter.update({ gold_count: remainGoldInLetter }, { transaction: t });
+
+                    await t.commit();
+
+                    commonLogger(`[CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT][UID: ${pack.user_id}][HID: ${pack.id}]: Released ${reserveEarn + originPrice + goldInAmount} from personal reserve package to balance.`);
+                } catch (error) {
+                    errLogger(`[CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT]: ${error.stack}`); 
+        }
+    }
+
     // Not Cron
     RELEASE_FEDERAL_RESERVE_FUND_TO_BALANCE = async () => {
         try {
@@ -4671,7 +4816,8 @@ class CronJob {
             errLogger(`[DELETE_SHANGHAI_COOPERATION]: ${error.stack}`);
         }
     }
-
+ 
+    // NOT CRON
     EXPORT_NEW_CASH_FLOWS = async () => {
         try {
             const rows = await CashFlow.findAll({
@@ -4716,6 +4862,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     TO_SUBSTRACT = async () => {
         try {
             const xlsx = require('xlsx');
@@ -4763,6 +4910,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     RECALL_GOLD_APPRECIATION_PACKAGE = async () => {
         try {
             const ids = [
@@ -4845,6 +4993,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     EXPORT_BALANCE_TRANSFER = async () => {
         try {
             const records = await BalanceTransfer.findAll({

@@ -92,6 +92,23 @@ PersonalReservePackageHistory.init({
         defaultValue: 0,
         comment: '个人黄金释放比例',
     },
+    is_returned_personal_gold: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已返还个人黄金',
+    },
+    return_personal_gold_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '实际返还个人黄金日期',
+    },
+    return_personal_gold_in_amount: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '返还个人黄金数量',
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,
