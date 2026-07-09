@@ -10322,7 +10322,7 @@ class Controller {
                         reserve_earn: gPackage.reserve_earn,
                         release_earn_count: gPackage.release_earn_count,
                         release_personal_gold_rate: gPackage.release_personal_gold_rate,
-                        return_start_date: return_start_date,
+                        return_start_date: return_start_date + ' 00:00:00',
                     }
                     const pkgHistoryItem = await PersonalReservePackageHistory.create(obj, { transaction: t });
                     pkgHistory.push(pkgHistoryItem);
