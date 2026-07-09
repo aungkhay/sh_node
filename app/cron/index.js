@@ -2905,6 +2905,7 @@ class CronJob {
                     is_returned_price: 0,
                     is_returned_personal_gold: 0
                 },
+                order: [['createdAt', 'ASC']],
             });
             
             for (const pack of packages) {
