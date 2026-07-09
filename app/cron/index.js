@@ -5102,7 +5102,8 @@ class CronJob {
             const letters = await AuthorizeLetterHistory.findAll({
                 where: {
                     is_moved_to_total_gold_count: 0,
-                    gold_count: { [Op.gt]: 0 }
+                    gold_count: { [Op.gt]: 0 },
+                    is_used: 0
                 },
                 attributes: ['id', 'user_id', 'gold_count']
             });
