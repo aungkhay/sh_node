@@ -5072,7 +5072,7 @@ class CronJob {
                         await t.rollback();
                         continue;
                     }
-                    await user.increment({ total_gold_count: record.amount }, { transaction: t });
+                    await user.increment({ total_gold_count: Number(record.amount) }, { transaction: t });
                     await record.update({ is_moved_to_total_gold_count: 1 }, { transaction: t });
                     await t.commit();
                     console.log(`Moved ${record.amount} valid coupon to total gold count for User ID ${user.id}.`);
@@ -5116,7 +5116,7 @@ class CronJob {
                         await t.rollback();
                         continue;
                     }
-                    await user.increment({ total_gold_count: letter.gold_count }, { transaction: t });
+                    await user.increment({ total_gold_count: Number(letter.gold_count) }, { transaction: t });
                     await letter.update({ is_moved_to_total_gold_count: 1 }, { transaction: t });
                     await t.commit();
                     console.log(`Moved ${letter.gold_count} authorize letter gold to total gold count for User ID ${user.id}.`);
