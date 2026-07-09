@@ -5003,6 +5003,7 @@ class Controller {
                 }
 
                 if (mPackage.is_release_authorize_letter) {
+                    let goldCount = 0;
                     for (let index = 0; index < pkgHistory.length; index++) {
                         const pkg = pkgHistory[index];
                         // await RewardRecord.create({
@@ -5022,7 +5023,9 @@ class Controller {
                             product_type: 3, // 终身授权
                             description: `PKG-${pkg.id}`
                         }, { transaction: t });
+                        goldCount += 1000;
                     }
+                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
                 }
 
                 await mPackage.increment({ total_quantity: -pkgHistory.length }, { transaction: t });
@@ -5488,6 +5491,7 @@ class Controller {
                 }
 
                 if (fPackage.is_release_authorize_letter) {
+                    let goldCount = 0;
                     for (const pkg of pkgHistory) {
                         // await RewardRecord.create({
                         //     user_id: user.id,
@@ -5506,7 +5510,9 @@ class Controller {
                             product_type: 5, // 联储
                             description: `PKG-${pkg.id}`
                         }, { transaction: t });
+                        goldCount += 1000;
                     }
+                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
                 }
 
                 const bonusArr = [15, 7, 3];
@@ -5719,6 +5725,7 @@ class Controller {
                         product_type: 5, // 联储
                         description: `PKG-${pkgHistory.id}`
                     }, { transaction: t });
+                    await user.increment({ total_gold_count: 1000 }, { transaction: t });
                 }
 
                 await t.commit();
@@ -6142,6 +6149,7 @@ class Controller {
                 // }
 
                 if (policyPackage.is_release_authorize_letter) {
+                    let goldCount = 0;
                     for (let index = 0; index < pkgHistory.length; index++) {
                         const pkg = pkgHistory[index];
                         // await AuthorizeLetterHistory.create({
@@ -6164,7 +6172,9 @@ class Controller {
                             product_type: 4, // 贡献
                             description: `PKG-${pkg.id}`
                         }, { transaction: t });
+                        goldCount += 1000;
                     }
+                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
                 }
 
                 await policyPackage.increment({ total_quantity: -pkgHistory.length }, { transaction: t });
@@ -7137,7 +7147,7 @@ class Controller {
             const userId = req.user_id;
             const { payment_password } = req.body;
 
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6', 'payment_password'], useMaster: true });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6', 'payment_password', 'total_gold_count'], useMaster: true });
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
@@ -7172,7 +7182,10 @@ class Controller {
                     flow_status: 'OUT',
                 }, { transaction: t });
 
-                const updateObj = { reserve_fund: Number(user.reserve_fund) - Number(letter.price) };
+                const updateObj = { 
+                    reserve_fund: Number(user.reserve_fund) - Number(letter.price),
+                    total_gold_count: Number(user.total_gold_count) + Number(letter.gold_count)
+                };
                 if (letter.id == 1) {
                     updateObj.have_reward_6 = 1;
                     updateObj.reward_6_from_where = 2;
@@ -9466,6 +9479,7 @@ class Controller {
                 }
 
                 if (gPackage.is_release_authorize_letter) {
+                    let goldCount = 0;
                     for (const pkg of pkgHistory) {
                         // await RewardRecord.create({
                         //     user_id: user.id,
@@ -9484,7 +9498,9 @@ class Controller {
                             product_type: 7, // 黄金增值
                             description: `PKG-${pkg.id}`
                         }, { transaction: t });
+                        goldCount += 1000;
                     }
+                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
                 }
 
                 const fragments = [];
@@ -9699,6 +9715,7 @@ class Controller {
                         product_type: 7, // 黄金增值
                         description: `PKG-${pkgHistory.id}`
                     }, { transaction: t });
+                    await user.increment({ total_gold_count: 1000 }, { transaction: t });
                 }
 
                 await t.commit();
@@ -10002,6 +10019,7 @@ class Controller {
                         product_type: 7, // 黄金增值
                         description: `PKG-${pkgHistory.id} | 兑换碎片`,
                     }, { transaction: t });
+                    await user.increment({ total_gold_count: 1000 }, { transaction: t });
                 }
                 await this.redisHelper.deleteKey(fragmentKey);
                 
@@ -10334,6 +10352,7 @@ class Controller {
                 }
 
                 if (gPackage.is_release_authorize_letter) {
+                    let goldCount = 0;
                     for (const pkg of pkgHistory) {
                         await AuthorizeLetterHistory.create({
                             user_id: user.id,
@@ -10345,7 +10364,9 @@ class Controller {
                             product_type: 8, // 个人储备计划
                             description: `PKG-${pkg.id}`
                         }, { transaction: t });
+                        goldCount += 1000;
                     }
+                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
                 }
 
                 const bonusArr = [15, 7, 3];

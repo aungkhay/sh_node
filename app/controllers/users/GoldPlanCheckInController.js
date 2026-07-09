@@ -47,7 +47,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id']
                 },
-                attributes: ['id', 'relation'] ,
+                attributes: ['id', 'relation', 'total_gold_count'],
                 useMaster: true
             });
             if (!user || !user.kyc) {

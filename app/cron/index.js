@@ -72,6 +72,8 @@ class CronJob {
         cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
         // run every 00:50
         cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
+        // Run every 5 minutes
+        // cron.schedule('*/5 * * * *', this.MOVE_VALID_COUPON_TO_TOTAL_GOLD_COUNT).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -2911,25 +2913,12 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count'], transaction: t });
                     if (!user) {
                         continue;
                     }
 
-                    const letter = await AuthorizeLetterHistory.findOne({
-                        where: {
-                            user_id: pack.user_id,
-                            letter_id: 8, // 个人储备计划
-                            description: `PKG-${pack.id}`,
-                        },
-                        attributes: ['id', 'gold_count'],
-                    });
-                    if (!letter) {
-                        continue;
-                    }
-
-                    const goldGram = new Decimal(letter.gold_count * pack.release_personal_gold_rate).times(0.01).toNumber();
-                    const remainGoldInLetter = letter.gold_count - goldGram;
+                    const goldGram = new Decimal(Number(user.total_gold_count) * Number(pack.release_personal_gold_rate)).times(0.01).toNumber();
                     const reserveEarn = Number(pack.reserve_earn);
                     const originPrice = Number(pack.price);
                     const goldInAmount = goldGram * goldPrice.reserve_price;
@@ -3022,10 +3011,8 @@ class CronJob {
 
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await PersonalReservePackageEarn.bulkCreate(earns, { transaction: t });
-                    await user.increment({ balance: reserveEarn + originPrice + goldInAmount }, { transaction: t });
+                    await user.increment({ balance: reserveEarn + originPrice + goldInAmount, total_gold_count: -goldGram }, { transaction: t });
                     await pack.update(updateObj, { transaction: t });
-                    const letterDesc = `PKG-${pack.id} | 个人黄金返还 - 释放${goldGram.toFixed(4)}克黄金`;
-                    await letter.update({ gold_count: remainGoldInLetter, description: letterDesc }, { transaction: t });
 
                     await t.commit();
 
@@ -5053,6 +5040,96 @@ class CronJob {
             console.log(`Export completed. File saved as balance_transfer_records_export.xlsx`);
         } catch (error) {
             errLogger(`[EXPORT_BALANCE_TRANSFER]: ${error.stack}`); 
+        }
+    }
+
+    MOVE_VALID_COUPON_TO_TOTAL_GOLD_COUNT = async () => {
+        try {
+            const PROCESS_KEY = 'is_moving_valid_coupon_to_total_gold_count';
+            const isProcessing = await this.redisHelper.getValue(PROCESS_KEY);
+            if (isProcessing) {
+                console.log('Another process is already moving valid coupons to total gold count. Exiting...');
+                return;
+            }
+            await this.redisHelper.setValue(PROCESS_KEY, 1);
+
+            const records = await RewardRecord.findAll({
+                where: {
+                    reward_id: 7,
+                    validedAt: { [Op.lte]: new Date() },
+                    is_used: 0,
+                    is_moved_to_total_gold_count: 0
+                },
+                attributes: ['id', 'user_id', 'amount']
+            });
+
+            for (const record of records) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(record.user_id, { attributes: ['id', 'total_gold_count'], transaction: t });
+                    if (!user) {
+                        console.log(`User ID ${record.user_id} not found. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+                    await user.increment({ total_gold_count: record.amount }, { transaction: t });
+                    await record.update({ is_moved_to_total_gold_count: 1 }, { transaction: t });
+                    await t.commit();
+                    console.log(`Moved ${record.amount} valid coupon to total gold count for User ID ${user.id}.`);
+                } catch (error) {
+                    await t.rollback();
+                    console.log(`Error moving valid coupon to total gold count for RewardRecord ID ${record.id}: ${error.message}`);
+                }
+            }
+            console.log('Completed moving valid coupons to total gold count.');
+            await this.redisHelper.deleteValue(PROCESS_KEY);
+        } catch (error) {
+            errLogger(`[MOVE_VALID_COUPON_TO_TOTAL_GOLD_COUNT]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    MOVE_AUTHORIZE_LETTER_GOLD_TO_TOTAL_GOLD_COUNT = async () => {
+        try {
+            const PROCESS_KEY = 'is_moving_authorize_letter_gold_to_total_gold_count';
+            const isProcessing = await this.redisHelper.getValue(PROCESS_KEY);
+            if (isProcessing) {
+                console.log('Another process is already moving authorize letter gold to total gold count. Exiting...');
+                return;
+            }
+            await this.redisHelper.setValue(PROCESS_KEY, 1);
+
+            const letters = await AuthorizeLetterHistory.findAll({
+                where: {
+                    is_moved_to_total_gold_count: 0,
+                    gold_count: { [Op.gt]: 0 }
+                },
+                attributes: ['id', 'user_id', 'gold_count']
+            });
+
+            for (const letter of letters) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(letter.user_id, { attributes: ['id', 'total_gold_count'], transaction: t });
+                    if (!user) {
+                        console.log(`User ID ${letter.user_id} not found. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+                    await user.increment({ total_gold_count: letter.gold_count }, { transaction: t });
+                    await letter.update({ is_moved_to_total_gold_count: 1 }, { transaction: t });
+                    await t.commit();
+                    console.log(`Moved ${letter.gold_count} authorize letter gold to total gold count for User ID ${user.id}.`);
+                } catch (error) {
+                    await t.rollback();
+                    console.log(`Error moving authorize letter gold to total gold count for AuthorizeLetterHistory ID ${letter.id}: ${error.message}`);
+                }
+            }
+
+            console.log('Completed moving authorize letter gold to total gold count.');
+            await this.redisHelper.deleteValue(PROCESS_KEY);
+        } catch (error) {
+            errLogger(`[MOVE_AUTHORIZE_LETTER_GOLD_TO_TOTAL_GOLD_COUNT]: ${error.stack}`);
         }
     }
 }

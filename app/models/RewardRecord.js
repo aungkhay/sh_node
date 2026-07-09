@@ -85,6 +85,11 @@ RewardRecord.init({
         defaultValue: 0,
         comment: '1: 签到 2: 补签'
     },
+    is_moved_to_total_gold_count: {
+        type: DataTypes.TINYINT,
+        defaultValue: 0,
+        comment: '0 => No | 1 => Yes'
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,

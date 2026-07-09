@@ -171,6 +171,12 @@ User.init({
         defaultValue: 0,
         comment: '黄金利息'
     },
+    total_gold_count: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '总黄金数'
+    },
     address: {
         type: DataTypes.STRING,
         allowNull: true,

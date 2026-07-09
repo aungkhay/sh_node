@@ -452,10 +452,8 @@ class Controller {
             let [
                 user,
                 ranks,
-                goldCouponCount,
                 goldPrice,
                 federalGold,
-                goldCountInLetter,
                 boughtGoldPackageIds
             ] = await Promise.all([
                 User.findByPk(userId, {
@@ -481,17 +479,15 @@ class Controller {
                         'id', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 
                         'balance', 'referral_bonus', 'masonic_fund', 'address', 'address_status', 
                         'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
-                        'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest',
+                        'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest', 'total_gold_count',
                         'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
                         'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop', 'activedAt'
                     ],
                     useMaster: true
                 }),
                 this.redisHelper.getValue('ranks'),
-                this.redisHelper.getValue(`gold_coupon_count_${userId}`),
                 this.redisHelper.getValue('latest_gold_price'),
                 this.redisHelper.getValue(`federal_gold_${userId}`),
-                this.redisHelper.getValue(`gold_count_in_letter_${userId}`),
                 this.redisHelper.getValue(`bought_gold_gift_package_ids_${userId}`)
             ])
 
@@ -504,19 +500,6 @@ class Controller {
                 await this.redisHelper.setValue('ranks', JSON.stringify(ranks));
             } else {
                 ranks = JSON.parse(ranks);
-            }
-
-            // Gold Coupon Count
-            if (!goldCouponCount) {
-                goldCouponCount = await RewardRecord.sum('amount', {
-                    where: {
-                        user_id: userId,
-                        reward_id: 7,
-                        is_used: 0,
-                        validedAt: { [Op.lte]: new Date() }
-                    },
-                }) || 0;
-                await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 86400); // 24 hours cache
             }
 
             // Gold Price
@@ -540,16 +523,31 @@ class Controller {
                 await this.redisHelper.setValue(`federal_gold_${userId}`, federalGold, 3600); // 1 hour cache
             }
 
-            // Gold Count in Letter
-            if (!goldCountInLetter) {
-                goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
-                    where: {
-                        is_used: 0,
-                        gold_owner_id: userId
-                    },
-                    useMaster: true
-                }) || 0;
-                await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60); // 1 minute cache
+            let total_gold_count = Number(user.total_gold_count);
+            if (total_gold_count <= 0) {
+                
+                // Gold Coupon Count
+                // const goldCouponCount = await RewardRecord.sum('amount', {
+                //     where: {
+                //         user_id: userId,
+                //         reward_id: 7,
+                //         is_used: 0,
+                //         validedAt: { [Op.lte]: new Date() }
+                //     },
+                // }) || 0;
+                // total_gold_count += Number(goldCouponCount);
+
+                // Gold Count in Letter
+                // const goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
+                //     where: {
+                //         is_used: 0,
+                //         gold_owner_id: userId
+                //     },
+                //     useMaster: true
+                // }) || 0;
+                // total_gold_count += Number(goldCountInLetter);
+
+                // await user.update({ total_gold_count: total_gold_count });
             }
 
             let data = {
@@ -558,11 +556,11 @@ class Controller {
                 can_impeach_count: 0,
                 next_rank_percentage: 0,
                 next_rank_point: 0,
-                gold_count_in_coupon: Number(goldCouponCount),
-                total_coupon_gold_price: Number(goldCouponCount) * Number(goldPrice),
+                gold_count_in_coupon: 0,
+                total_coupon_gold_price: 0,
 
-                gold_count_in_tajikstan: Number(goldCountInLetter),
-                total_tajikstan_gold_price: Number(goldCountInLetter) * Number(goldPrice),
+                gold_count_in_tajikstan: total_gold_count,
+                total_tajikstan_gold_price: total_gold_count * Number(goldPrice),
 
                 federal_reserve_gold_count: Number(federalGold),
                 federal_reserve_gold_price: Number(federalGold) * Number(goldPrice),
