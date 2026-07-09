@@ -5082,7 +5082,7 @@ class CronJob {
                 }
             }
             console.log('Completed moving valid coupons to total gold count.');
-            await this.redisHelper.deleteValue(PROCESS_KEY);
+            await this.redisHelper.deleteKey(PROCESS_KEY);
         } catch (error) {
             errLogger(`[MOVE_VALID_COUPON_TO_TOTAL_GOLD_COUNT]: ${error.stack}`);
         }
@@ -5127,7 +5127,7 @@ class CronJob {
             }
 
             console.log('Completed moving authorize letter gold to total gold count.');
-            await this.redisHelper.deleteValue(PROCESS_KEY);
+            await this.redisHelper.deleteKey(PROCESS_KEY);
         } catch (error) {
             errLogger(`[MOVE_AUTHORIZE_LETTER_GOLD_TO_TOTAL_GOLD_COUNT]: ${error.stack}`);
         }
