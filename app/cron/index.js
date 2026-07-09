@@ -71,7 +71,7 @@ class CronJob {
         // Run every 1 minute
         cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
         // run every 00:50
-        cron.schedule('40 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
+        cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -2978,8 +2978,8 @@ class CronJob {
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划本金返还',
                             amount: originPrice,
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + originPrice,
+                            before_amount: user.balance + reserveEarn,
+                            after_amount: Number(user.balance) + reserveEarn + originPrice,
                             flow_status: 'IN',
                             description: `储备费返还`,
                         });
@@ -3002,8 +3002,8 @@ class CronJob {
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划个人黄金返还',
                             amount: goldInAmount,
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + goldInAmount,
+                            before_amount: user.balance + reserveEarn + originPrice,
+                            after_amount: Number(user.balance) + reserveEarn + originPrice + goldInAmount,
                             flow_status: 'IN',
                             description: `个人黄金返还`,
                         });
@@ -3015,7 +3015,8 @@ class CronJob {
                     await PersonalReservePackageEarn.bulkCreate(earns, { transaction: t });
                     await user.increment({ balance: reserveEarn + originPrice + goldInAmount }, { transaction: t });
                     await pack.update(updateObj, { transaction: t });
-                    await letter.update({ gold_count: remainGoldInLetter }, { transaction: t });
+                    const letterDesc = `PKG-${pack.id} | 个人黄金返还 - 释放${goldGram.toFixed(4)}克黄金`;
+                    await letter.update({ gold_count: remainGoldInLetter, description: letterDesc }, { transaction: t });
 
                     await t.commit();
 
