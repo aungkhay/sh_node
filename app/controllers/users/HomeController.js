@@ -10329,7 +10329,7 @@ class Controller {
                             price: index == 0 ? gPackage.price : 0,
                             reserve_earn: gPackage.reserve_earn,
                             release_earn_count: gPackage.release_earn_count,
-                            release_personal_gold_rate: gPackage.release_personal_gold_rate,
+                            release_personal_gold_rate: index == 0 ? gPackage.release_personal_gold_rate * (gPackage.buy_one_get_quantity + 1) : 0,
                             return_start_date: return_start_date + ' 00:00:00',
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
