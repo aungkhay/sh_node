@@ -2937,8 +2937,11 @@ class CronJob {
                     const cashflows = [];
                     const updateObj = {};
                     const now = new Date();
+                    let beforeAmount = Number(user.balance);
+                    let afterAmount = Number(user.balance);
                     
                     if (reserveEarn > 0) {
+                        afterAmount += reserveEarn;
                         earns.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -2954,8 +2957,8 @@ class CronJob {
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划收益返还',
                             amount: reserveEarn,
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + reserveEarn,
+                            before_amount: beforeAmount,
+                            after_amount: afterAmount,
                             flow_status: 'IN',
                             description: `储备现金返还`,
                         });
@@ -2963,6 +2966,8 @@ class CronJob {
                         updateObj.return_earn_date = now;
                     }
                     if (originPrice > 0) {
+                        beforeAmount = afterAmount;
+                        afterAmount += originPrice;
                         earns.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -2978,8 +2983,8 @@ class CronJob {
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划本金返还',
                             amount: originPrice,
-                            before_amount: Number(user.balance) + reserveEarn,
-                            after_amount: Number(user.balance) + reserveEarn + originPrice,
+                            before_amount: beforeAmount,
+                            after_amount: afterAmount,
                             flow_status: 'IN',
                             description: `储备费返还`,
                         });
@@ -2987,6 +2992,8 @@ class CronJob {
                         updateObj.return_price_date = now;
                     }
                     if (goldInAmount > 0) {
+                        beforeAmount = afterAmount;
+                        afterAmount += goldInAmount;
                         earns.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -3002,8 +3009,8 @@ class CronJob {
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划个人黄金返还',
                             amount: goldInAmount,
-                            before_amount: Number(user.balance) + reserveEarn + originPrice,
-                            after_amount: Number(user.balance) + reserveEarn + originPrice + goldInAmount,
+                            before_amount: beforeAmount,
+                            after_amount: afterAmount,
                             flow_status: 'IN',
                             description: `个人黄金返还`,
                         });
