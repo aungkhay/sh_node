@@ -7278,7 +7278,7 @@ class Controller {
             const userId = req.user_id;
             const payment_password = req.body.payment_password;
 
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'payment_password'], useMaster: true });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'payment_password', 'total_gold_count'], useMaster: true });
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
@@ -7331,6 +7331,7 @@ class Controller {
                         finished_date: letter.period ? moment().add(letter.period, 'days').format('YYYY-MM-DD HH:mm:ss') : null
                     }
                 ]
+                let goldCount = Number(user.total_gold_count);
                 for (const l of letters) {
                     letterArr.push({
                         user_id: user.id,
@@ -7341,12 +7342,13 @@ class Controller {
                         gold_owner_id: user.id,
                         description: `购买${letter.title}, 增送${l.title}`,
                     });
+                    goldCount += Number(l.gold_count);
                 }
                 if (letterArr.length > 0) {
                     await AuthorizeLetterHistory.bulkCreate(letterArr, { transaction: t });
                 }
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - Number(letter.price) }, { transaction: t });
+                await user.update({ reserve_fund: Number(user.reserve_fund) - Number(letter.price), total_gold_count: goldCount }, { transaction: t });
 
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
@@ -7373,7 +7375,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
-            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used'] });
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count'] });
             if (user.is_group_letter_used == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已使用过六国授权书，无法重复使用', {});
             }
@@ -7445,7 +7447,8 @@ class Controller {
                 await letter4.update(updateObj, { transaction: t });
                 await letter5.update(updateObj, { transaction: t });
                 await letter6.update(updateObj, { transaction: t });
-                await User.update({ is_group_letter_used: 1 }, { where: { id: userId }, transaction: t });
+                let goldCount = Number(user.total_gold_count) - 6000;
+                await User.update({ is_group_letter_used: 1, total_gold_count: goldCount }, { where: { id: userId }, transaction: t });
 
                 await t.commit();
 
