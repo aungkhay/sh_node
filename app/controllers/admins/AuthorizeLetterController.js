@@ -97,7 +97,7 @@ class Controller {
                 status,
             });
 
-            await this.redisHelper.deleteValue('member_state_letter');
+            await this.redisHelper.deleteKey('member_state_letter');
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
