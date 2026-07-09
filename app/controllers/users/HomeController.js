@@ -10282,7 +10282,7 @@ class Controller {
                     return_start_date = moment().add(5, 'days').format(dateFormat);
                 } else if (isThursday) {
                     // next tuesday
-                    return_start_date = moment().add(4, 'days').format(dateFormat);
+                    return_start_date = moment().add(5, 'days').format(dateFormat);
                 } else if (isFriday) {
                     // next wednesday
                     return_start_date = moment().add(5, 'days').format(dateFormat);
