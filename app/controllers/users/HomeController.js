@@ -9526,9 +9526,9 @@ class Controller {
                 }
                 if (fragments.length > 0) {
                     await GoldAppreciationPackageFragment.bulkCreate(fragments, { transaction: t });
-                    const fragmentKey = `gold_appreciation_package_fragments_${user.id}`;
-                    await this.redisHelper.deleteKey(fragmentKey);
                 }
+                const fragmentKey = `gold_appreciation_package_fragments_${user.id}`;
+                await this.redisHelper.deleteKey(fragmentKey);
 
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
