@@ -83,7 +83,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { product_name, price, period, reserve_earn, release_earn_count, release_personal_gold_rate, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, can_new_registered_user_get_free } = req.body;
+            const { product_name, price, period, reserve_earn, release_earn_count, release_personal_gold_rate, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, can_new_registered_user_get_free, status } = req.body;
             const newPackage = await PersonalReservePackage.create({
                 product_name: product_name,
                 price: price,
@@ -99,6 +99,7 @@ class Controller {
                 buy_one_get_quantity: buy_one_get_quantity,
                 can_new_registered_user_get_free: can_new_registered_user_get_free,
                 tag: req.body.tag ? req.body.tag.join('|') : '',
+                status: status
             });
 
             // log
@@ -127,7 +128,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '未找到信息', {});
             }
 
-            const { product_name, price, period, reserve_earn, release_earn_count, release_personal_gold_rate, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, can_new_registered_user_get_free } = req.body;
+            const { product_name, price, period, reserve_earn, release_earn_count, release_personal_gold_rate, is_release_authorize_letter, purchase_limit, quantity_limit, total_quantity, description, buy_one_get_quantity, can_new_registered_user_get_free, status } = req.body;
             await pkg.update({
                 product_name: product_name,
                 price: price,
@@ -143,6 +144,7 @@ class Controller {
                 buy_one_get_quantity: buy_one_get_quantity,
                 can_new_registered_user_get_free: can_new_registered_user_get_free,
                 tag: req.body.tag ? req.body.tag.join('|') : '',
+                status: status
             });
 
             // log
