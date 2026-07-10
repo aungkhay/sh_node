@@ -3,7 +3,7 @@ const CommonHelper = require('../../helpers/CommonHelper');
 const { Op } = require('sequelize');
 const multer = require('multer');
 const path = require('path');
-const { User, GoldAppreciationPackage, GoldAppreciationPackageHistory, db, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, CashFlow } = require('../../models');
+const { User, GoldAppreciationPackage, GoldAppreciationPackageHistory, db, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, CashFlow, GoldAppreciationPackageFragment } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const AliOSS = require('../../helpers/AliOSS');
@@ -411,6 +411,72 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             errLogger(`[GoldAppreciationPackage][EARN_HISTORY]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    FRAGMENT_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+            const phone = req.query.phone;
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
+
+            let condition = {}
+            if (userId != 1) {
+                const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
+                condition.relation = { [Op.like]: `${me.relation}/%` }
+            }
+            let userCondition = {};
+            if (phone) {
+                userCondition.phone_number = phone;
+            }
+            if (startTime && endTime) {
+                condition.createdAt = { [Op.between]: [startTime, endTime] }
+            }
+
+            const { rows, count } = await GoldAppreciationPackageFragment.findAndCountAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number'],
+                        where: userCondition
+                    },
+                    {
+                        model: GoldAppreciationPackageHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'price']
+                    },
+                    {
+                        model: GoldAppreciationPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    }
+                ],
+                attributes: ['id', 'is_used', 'createdAt', 'updatedAt'],
+                where: condition,
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset
+            });
+
+            const data = {
+                fragments: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[GoldAppreciationPackage][FRAGMENT_HISTORY]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

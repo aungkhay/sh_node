@@ -329,6 +329,7 @@ class AdminRoute extends express.Router {
         this.get('/gold-appreciation-packages/history', middleware.isLoggedIn('gold-appreciation-package-history-list'), GoldAppreciationPackageCtrl.PACKAGE_HISTORY);
         this.get('/gold-appreciation-packages/bonus-history', middleware.isLoggedIn('gold-appreciation-package-bonus-history-list'), GoldAppreciationPackageCtrl.BONUSES_HISTORY);
         this.get('/gold-appreciation-packages/earn-history', middleware.isLoggedIn('gold-appreciation-package-earn-history-list'), GoldAppreciationPackageCtrl.EARN_HISTORY);
+        this.get('/gold-appreciation-packages/fragment-history', middleware.isLoggedIn('gold-appreciation-package-history-list'), GoldAppreciationPackageCtrl.FRAGMENT_HISTORY);
         
         // Personal Reserve Package
         let PersonalReservePackageController = require('../controllers/admins/PersonalReservePackageController');
