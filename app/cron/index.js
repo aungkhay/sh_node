@@ -5043,96 +5043,90 @@ class CronJob {
         }
     }
 
-    MOVE_VALID_COUPON_TO_TOTAL_GOLD_COUNT = async () => {
+    SUM_GOLD_COUNT_IN_COUPON = async () => {
         try {
-            const PROCESS_KEY = 'is_moving_valid_coupon_to_total_gold_count';
-            const isProcessing = await this.redisHelper.getValue(PROCESS_KEY);
-            if (isProcessing) {
-                console.log('Another process is already moving valid coupons to total gold count. Exiting...');
-                return;
-            }
-            await this.redisHelper.setValue(PROCESS_KEY, 1);
-
-            const records = await RewardRecord.findAll({
-                where: {
-                    reward_id: 7,
-                    validedAt: { [Op.lte]: new Date() },
-                    is_used: 0,
-                    is_moved_to_total_gold_count: 0
-                },
-                attributes: ['id', 'user_id', 'amount']
+            const users = await User.findAll({
+                attributes: ['id', 'total_gold_count_in_coupon'],
+                order: [['id', 'ASC']]
             });
 
-            for (const record of records) {
-                const t = await db.transaction();
-                try {
-                    const user = await User.findByPk(record.user_id, { attributes: ['id', 'total_gold_count'], transaction: t });
-                    if (!user) {
-                        console.log(`User ID ${record.user_id} not found. Skipping...`);
-                        await t.rollback();
-                        continue;
-                    }
-                    await user.increment({ total_gold_count: Number(record.amount) }, { transaction: t });
-                    await record.update({ is_moved_to_total_gold_count: 1 }, { transaction: t });
-                    await t.commit();
-                    console.log(`Moved ${record.amount} valid coupon to total gold count for User ID ${user.id}.`);
-                } catch (error) {
-                    await t.rollback();
-                    console.log(`Error moving valid coupon to total gold count for RewardRecord ID ${record.id}: ${error.message}`);
-                }
-            }
-            console.log('Completed moving valid coupons to total gold count.');
-            await this.redisHelper.deleteKey(PROCESS_KEY);
-        } catch (error) {
-            errLogger(`[MOVE_VALID_COUPON_TO_TOTAL_GOLD_COUNT]: ${error.stack}`);
-        }
-    }
-
-    // NOT CRON
-    MOVE_AUTHORIZE_LETTER_GOLD_TO_TOTAL_GOLD_COUNT = async () => {
-        try {
-            const PROCESS_KEY = 'is_moving_authorize_letter_gold_to_total_gold_count';
-            const isProcessing = await this.redisHelper.getValue(PROCESS_KEY);
-            if (isProcessing) {
-                console.log('Another process is already moving authorize letter gold to total gold count. Exiting...');
-                return;
-            }
-            await this.redisHelper.setValue(PROCESS_KEY, 1);
-
-            const letters = await AuthorizeLetterHistory.findAll({
-                where: {
+            for (const user of users) {
+                const where = {
+                    user_id: user.id,
                     is_moved_to_total_gold_count: 0,
-                    gold_count: { [Op.gt]: 0 },
-                    is_used: 0
-                },
-                attributes: ['id', 'user_id', 'gold_count']
-            });
-
-            for (const letter of letters) {
-                const t = await db.transaction();
-                try {
-                    const user = await User.findByPk(letter.user_id, { attributes: ['id', 'total_gold_count'], transaction: t });
-                    if (!user) {
-                        console.log(`User ID ${letter.user_id} not found. Skipping...`);
-                        await t.rollback();
-                        continue;
+                    is_used: 0,
+                    reward_id: 7,
+                    validedAt: {
+                        [Op.between]: ['2026-01-10 04:00:00', '2026-07-12 00:00:00']
                     }
-                    await user.increment({ total_gold_count: Number(letter.gold_count) }, { transaction: t });
-                    await letter.update({ is_moved_to_total_gold_count: 1 }, { transaction: t });
-                    await t.commit();
-                    console.log(`Moved ${letter.gold_count} authorize letter gold to total gold count for User ID ${user.id}.`);
-                } catch (error) {
-                    await t.rollback();
-                    console.log(`Error moving authorize letter gold to total gold count for AuthorizeLetterHistory ID ${letter.id}: ${error.message}`);
+                };
+                const totalGoldCount = await RewardRecord.sum('amount', { where });
+                if (totalGoldCount > 0) {
+                    const t = await db.transaction();
+                    try {
+                        const totalGoldInCoupon = Number(user.total_gold_count_in_coupon) + Number(totalGoldCount);
+                        await User.update(
+                            { total_gold_count_in_coupon: totalGoldInCoupon },
+                            { where: { id: user.id }, transaction: t }
+                        );
+                        await RewardRecord.update(
+                            { is_moved_to_total_gold_count: 1 },
+                            { where, transaction: t }
+                        );
+                        await t.commit();
+                        console.log(`[SUM_GOLD_COUNT_IN_COUPON][USER_ID: ${user.id}]: Moved ${totalGoldCount} to total_gold_count_in_coupon`);
+                    } catch (error) {
+                        await t.rollback();
+                        errLogger(`[SUM_GOLD_COUNT_IN_COUPON][USER_ID: ${user.id}]: ${error.stack}`);
+                    }
                 }
             }
-
-            console.log('Completed moving authorize letter gold to total gold count.');
-            await this.redisHelper.deleteKey(PROCESS_KEY);
         } catch (error) {
-            errLogger(`[MOVE_AUTHORIZE_LETTER_GOLD_TO_TOTAL_GOLD_COUNT]: ${error.stack}`);
+            errLogger(`[SUM_GOLD_COUNT_IN_COUPON]: ${error.stack}`);
         }
     }
+
+    SUM_GOLD_COUNT_IN_LETTER = async () => {
+        try {
+            const users = await User.findAll({
+                attributes: ['id', 'total_gold_count_in_letter'],
+                order: [['id', 'ASC']]
+            });
+            for (const user of users) {
+                const where = {
+                    gold_owner_id: user.id,
+                    is_used: 0,
+                    is_moved_to_total_gold_count: 0,
+                    createdAt: {
+                        [Op.between]: ['2026-01-10 04:00:00', '2026-07-12 00:00:00']
+                    }
+                };
+                const totalGoldCount = await AuthorizeLetterHistory.sum('gold_count', { where: where });
+                if (totalGoldCount > 0) {
+                    const t = await db.transaction();
+                    try {
+                        const totalGoldInLetter = Number(user.total_gold_count_in_letter) + Number(totalGoldCount);
+                        await User.update(
+                            { total_gold_count_in_letter: totalGoldInLetter },
+                            { where: { id: user.id }, transaction: t }
+                        );
+                        await AuthorizeLetterHistory.update(
+                            { is_moved_to_total_gold_count: 1 },
+                            { where: where, transaction: t }
+                        );
+                        await t.commit();
+                        console.log(`[SUM_GOLD_COUNT_IN_LETTER][USER_ID: ${user.id}]: Moved ${totalGoldCount} to total_gold_count_in_letter`);
+                    } catch (error) {
+                        await t.rollback();
+                        errLogger(`[SUM_GOLD_COUNT_IN_LETTER][USER_ID: ${user.id}]: ${error.stack}`);
+                    }
+                }
+            }
+        } catch (error) {
+            errLogger(`[SUM_GOLD_COUNT_IN_LETTER]: ${error.stack}`);
+        }
+    }
+
 }
 
 module.exports = CronJob;

@@ -177,6 +177,18 @@ User.init({
         defaultValue: 0,
         comment: '总黄金数'
     },
+    total_gold_count_in_letter: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '总黄金数(授权书)'
+    },
+    total_gold_count_in_coupon: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '总黄金数(黄金券)'
+    },
     address: {
         type: DataTypes.STRING,
         allowNull: true,
