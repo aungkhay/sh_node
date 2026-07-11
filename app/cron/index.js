@@ -5127,6 +5127,42 @@ class CronJob {
         }
     }
 
+    CHECK_VALIDED_COUPON = async () => {
+        try {
+            const records = await RewardRecord.findAll({
+                where: {
+                    reward_id: 7,
+                    is_used: 0,
+                    validedAt: {
+                        [Op.lt]: new Date()
+                    },
+                    is_moved_to_total_gold_count: 0
+                },
+                attributes: ['id', 'user_id', 'amount']
+            });
+
+            for (const record of records) {
+                const t = await db.transaction();
+                try {
+                    await User.increment(
+                        { total_gold_count: record.amount },
+                        { where: { id: record.user_id }, transaction: t }
+                    );
+                    await RewardRecord.update(
+                        { is_moved_to_total_gold_count: 1 },
+                        { where: { id: record.id }, transaction: t }
+                    );
+                    await t.commit();
+                    console.log(`[CHECK_VALIDED_COUPON][REWARD_RECORD_ID: ${record.id}]: Moved ${record.amount} to total_gold_count for User ID ${record.user_id}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[CHECK_VALIDED_COUPON][REWARD_RECORD_ID: ${record.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[CHECK_VALIDED_COUPON]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
