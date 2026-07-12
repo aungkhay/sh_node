@@ -47,10 +47,18 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id']
                 },
-                attributes: ['id', 'relation', 'total_gold_count'],
+                attributes: ['id', 'relation'],
                 useMaster: true
             });
-            if (!user || !user.kyc) {
+            const userKyc = await UserKYC.findOne({
+                where: {
+                    user_id: userId,
+                    status: 'APPROVED'
+                },
+                attributes: ['id'],
+                useMaster: true
+            });
+            if (!userKyc) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
             }
 
