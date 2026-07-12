@@ -7376,9 +7376,22 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
-            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count'] });
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'reserve_fund'] });
             if (user.is_group_letter_used == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已使用过六国授权书，无法重复使用', {});
+            }
+
+            const amount = req.body.amount;
+            const payment_password = req.body.payment_password;
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+            if (Number(user.total_gold_count) < 6000) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您的共济基金不足6000，无法使用六国授权书', {});
+            }
+            if (Number(user.reserve_fund) < Number(amount)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足，无法使用六国授权书', {});
             }
 
             const userId = req.user_id;
@@ -7451,7 +7464,8 @@ class Controller {
                 await letter5.update(updateObj, { transaction: t });
                 await letter6.update(updateObj, { transaction: t });
                 let goldCount = Number(user.total_gold_count) - 6000;
-                await User.update({ is_group_letter_used: 1, total_gold_count: goldCount }, { where: { id: userId }, transaction: t });
+                let reserveFund = Number(user.reserve_fund) - Number(amount);
+                await User.update({ is_group_letter_used: 1, total_gold_count: goldCount, reserve_fund: reserveFund }, { where: { id: userId }, transaction: t });
 
                 await t.commit();
 
