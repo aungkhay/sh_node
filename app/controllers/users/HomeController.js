@@ -10383,7 +10383,7 @@ class Controller {
                         await AuthorizeLetterHistory.create({
                             user_id: user.id,
                             relation: user.relation,
-                            letter_id: 8,
+                            letter_id: 6,
                             price: 0,
                             gold_count: 1000,
                             gold_owner_id: user.id,
