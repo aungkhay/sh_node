@@ -31,16 +31,16 @@ class Controller {
             
             const userId = req.user_id;
             const today = moment().format('YYYY-MM-DD');
-            const existingCheckInCount = await GoldPlanCheckIn.count({
-                where: {
-                    user_id: userId,
-                    date: today
-                },
-                useMaster: true
-            });
-            if (existingCheckInCount > 0) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
-            }
+            // const existingCheckInCount = await GoldPlanCheckIn.count({
+            //     where: {
+            //         user_id: userId,
+            //         date: today
+            //     },
+            //     useMaster: true
+            // });
+            // if (existingCheckInCount > 0) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
+            // }
             const user = await User.findByPk(userId, { 
                 include: {
                     model: UserKYC,
@@ -84,6 +84,11 @@ class Controller {
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '签到成功', {});
             } catch (error) {
                 await t.rollback();
+
+                if (error.name === 'SequelizeUniqueConstraintError') {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
+                }
+                
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '签到失败', {});
             }
 

@@ -72,8 +72,8 @@ class CronJob {
         cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
         // run every 00:50
         cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
-        // Run every 5 minutes
-        // cron.schedule('*/5 * * * *', this.MOVE_VALID_COUPON_TO_TOTAL_GOLD_COUNT).start();
+        // Run every hour
+        // cron.schedule('0 * * * *', this.CHECK_VALIDED_COUPON).start();
     }
 
     PAY_ALLOWANCE = async () => {
