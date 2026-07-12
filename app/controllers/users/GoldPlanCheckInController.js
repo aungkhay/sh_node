@@ -52,6 +52,7 @@ class Controller {
                     date: today
                 },
                 attributes: ['id'],
+                useMaster: true
             });
             if (existingCheckIn) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
