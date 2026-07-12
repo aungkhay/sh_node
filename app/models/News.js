@@ -86,6 +86,7 @@ News.init({
     indexes: [
         { fields: ['relation'] },
         { fields: ['type'] },
+        { fields: ['deletedAt', 'status', 'contain_sensitive_word', 'type', 'id'] }
     ]
 });
 

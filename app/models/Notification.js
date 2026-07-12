@@ -60,6 +60,10 @@ Notification.init({
         {
             name: 'idx_notifications_deleted_at',
             fields: ['deletedAt']
+        },
+        {
+            name: 'idx_notifications_deleted_type_id',
+            fields: ['deletedAt', 'type', 'id']
         }
     ]
 });
