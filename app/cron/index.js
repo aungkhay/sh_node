@@ -73,7 +73,7 @@ class CronJob {
         // run every 00:50
         cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
         // Run every hour
-        // cron.schedule('0 * * * *', this.CHECK_VALIDED_COUPON).start();
+        cron.schedule('0 2-23 * * *', this.CHECK_VALIDED_COUPON).start();
     }
 
     PAY_ALLOWANCE = async () => {

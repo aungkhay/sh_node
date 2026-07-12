@@ -7524,6 +7524,8 @@ class Controller {
 
         try {
 
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂未开放转赠', {});
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
