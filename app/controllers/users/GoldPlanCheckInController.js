@@ -28,9 +28,14 @@ class Controller {
             if (redisLocked !== 'OK') {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
-            
             const userId = req.user_id;
             const today = moment().format('YYYY-MM-DD');
+
+            const existKey = `gold_plan_check_in_${userId}_${today}`;
+            const isCheckedIn = await this.redisHelper.getValue(existKey);
+            if (isCheckedIn) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
+            }
             // const existingCheckInCount = await GoldPlanCheckIn.count({
             //     where: {
             //         user_id: userId,
@@ -41,12 +46,18 @@ class Controller {
             // if (existingCheckInCount > 0) {
             //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
             // }
-            const user = await User.findByPk(userId, { 
-                include: {
-                    model: UserKYC,
-                    as: 'kyc',
-                    attributes: ['id']
+            const existingCheckIn = await GoldPlanCheckIn.findOne({
+                where: {
+                    user_id: userId,
+                    date: today
                 },
+                attributes: ['id'],
+            });
+            if (existingCheckIn) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
+            }
+
+            const user = await User.findByPk(userId, { 
                 attributes: ['id', 'relation'],
                 useMaster: true
             });
@@ -89,6 +100,7 @@ class Controller {
                 await t.commit();
 
                 await this.redisHelper.deleteKey(`gold_plan_check_in_history_${userId}`);
+                await this.redisHelper.setValue(existKey, '1', 24 * 60 * 60); // Set key to expire in 24 hours
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '签到成功', {});
             } catch (error) {
                 await t.rollback();
@@ -103,6 +115,10 @@ class Controller {
         } catch (error) {
             errLogger(`[GoldPlanCheckIn][CHECK_IN]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        } finally {
+            if (redisLocked === 'OK') {
+                await this.redisHelper.releaseLock(lockKey);
+            }
         }
     }
 

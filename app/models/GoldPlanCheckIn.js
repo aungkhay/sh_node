@@ -46,10 +46,7 @@ GoldPlanCheckIn.init({
     indexes: [
         { fields: ['relation'] },
         { fields: ['createdAt'] },
-        { 
-            unique: true, 
-            fields: ['user_id', 'date'] 
-        },
+        { fields: ['user_id', 'date'] },
     ]
 })
 
