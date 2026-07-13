@@ -5179,6 +5179,52 @@ class CronJob {
             errLogger(`[CHECK_VALIDED_COUPON]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    EXPORT_TODAY_CASH_FLOWS = async () => {
+        try {
+            const todayStart = moment().startOf('day').toDate();
+            const todayEnd = moment().endOf('day').toDate();
+
+            const cashFlows = await CashFlow.findAll({
+                include: {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: {
+                    createdAt: {
+                        [Op.between]: [todayStart, todayEnd]
+                    }
+                },
+                attributes: ['id', 'wallet_type', 'type', 'amount', 'before_amount', 'after_amount', 'flow_status', 'description', 'createdAt'],
+            });
+
+            const list = cashFlows.map(flow => ({
+                "流水ID": flow.id,
+                "用户ID": flow.user ? flow.user.id : '',
+                "姓名": flow.user ? flow.user.name : '',
+                "手机号": flow.user ? flow.user.phone_number : '',
+                "钱包类型": flow.wallet_type == 1 ? '储备金' : '余额',
+                "类型": flow.type,
+                "金额": Number(flow.amount),
+                "变动前金额": Number(flow.before_amount),
+                "变动后金额": Number(flow.after_amount),
+                "流水状态": flow.flow_status === 'IN' ? '收入' : '支出',
+                "描述": flow.description,
+                "创建时间": flow.createdAt ? moment(flow.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+            }));
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Today Cash Flows');
+            xlsx.writeFile(workbook1, 'today_cash_flows_export.xlsx');
+
+        } catch (error) {
+            errLogger(`[EXPORT_TODAY_CASH_FLOWS]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
