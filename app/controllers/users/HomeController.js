@@ -8801,7 +8801,7 @@ class Controller {
                 FROM (
                     ${unionQuery}
                 ) AS merged
-                ORDER BY createdAt DESC, type, history_id DESC    
+                ORDER BY createdAt DESC, history_id DESC    
                 LIMIT :pageSize OFFSET :offset
             `;
 

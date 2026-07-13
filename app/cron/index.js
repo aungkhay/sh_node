@@ -71,7 +71,7 @@ class CronJob {
         // Run every 1 minute
         cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
         // run every 00:50
-        cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
+        // cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
         // Run every hour
         cron.schedule('0 2-23 * * *', this.CHECK_VALIDED_COUPON).start();
     }
