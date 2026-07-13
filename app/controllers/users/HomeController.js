@@ -5027,7 +5027,8 @@ class Controller {
                             gold_count: 1000,
                             gold_owner_id: user.id,
                             product_type: 3, // 终身授权
-                            description: `PKG-${pkg.id}`
+                            description: `PKG-${pkg.id}`,
+                            is_moved_to_total_gold_count: 1
                         }, { transaction: t });
                         goldCount += 1000;
                     }
@@ -5514,7 +5515,8 @@ class Controller {
                             gold_count: 1000,
                             gold_owner_id: user.id,
                             product_type: 5, // 联储
-                            description: `PKG-${pkg.id}`
+                            description: `PKG-${pkg.id}`,
+                            is_moved_to_total_gold_count: 1
                         }, { transaction: t });
                         goldCount += 1000;
                     }
@@ -5729,7 +5731,8 @@ class Controller {
                         gold_count: 1000,
                         gold_owner_id: user.id,
                         product_type: 5, // 联储
-                        description: `PKG-${pkgHistory.id}`
+                        description: `PKG-${pkgHistory.id}`,
+                        is_moved_to_total_gold_count: 1
                     }, { transaction: t });
                     await user.increment({ total_gold_count_in_letter: 1000 }, { transaction: t });
                 }
@@ -6176,7 +6179,8 @@ class Controller {
                             gold_count: 1000,
                             gold_owner_id: user.id,
                             product_type: 4, // 贡献
-                            description: `PKG-${pkg.id}`
+                            description: `PKG-${pkg.id}`,
+                            is_moved_to_total_gold_count: 1
                         }, { transaction: t });
                         goldCount += 1000;
                     }
@@ -7206,6 +7210,7 @@ class Controller {
                     gold_count: letter.gold_count,
                     gold_owner_id: user.id,
                     description: `购买${letter.title}`,
+                    is_moved_to_total_gold_count: 1
                 }
                 await AuthorizeLetterHistory.create(obj, { transaction: t });
 
@@ -9549,7 +9554,8 @@ class Controller {
                             gold_count: 1000,
                             gold_owner_id: user.id,
                             product_type: 7, // 黄金增值
-                            description: `PKG-${pkg.id}`
+                            description: `PKG-${pkg.id}`,
+                            is_moved_to_total_gold_count: 1
                         }, { transaction: t });
                         goldCount += 1000;
                     }
@@ -9766,7 +9772,8 @@ class Controller {
                         gold_count: 1000,
                         gold_owner_id: user.id,
                         product_type: 7, // 黄金增值
-                        description: `PKG-${pkgHistory.id}`
+                        description: `PKG-${pkgHistory.id}`,
+                        is_moved_to_total_gold_count: 1
                     }, { transaction: t });
                     await user.increment({ total_gold_count_in_letter: 1000 }, { transaction: t });
                 }
@@ -10071,6 +10078,7 @@ class Controller {
                         gold_owner_id: user.id,
                         product_type: 7, // 黄金增值
                         description: `PKG-${pkgHistory.id} | 兑换碎片`,
+                        is_moved_to_total_gold_count: 1
                     }, { transaction: t });
                     await user.increment({ total_gold_count_in_letter: 1000 }, { transaction: t });
                 }
@@ -10415,7 +10423,8 @@ class Controller {
                             gold_count: 1000,
                             gold_owner_id: user.id,
                             product_type: 8, // 个人储备计划
-                            description: `PKG-${pkg.id}`
+                            description: `PKG-${pkg.id}`,
+                            is_moved_to_total_gold_count: 1
                         }, { transaction: t });
                         goldCount += 1000;
                     }
