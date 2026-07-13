@@ -452,7 +452,7 @@ class Controller {
             let [
                 user,
                 ranks,
-                // goldCouponCount,
+                goldCouponCount,
                 goldPrice,
                 federalGold,
                 // goldCountInLetter,
@@ -488,7 +488,7 @@ class Controller {
                     useMaster: true
                 }),
                 this.redisHelper.getValue('ranks'),
-                // this.redisHelper.getValue(`gold_coupon_count_${userId}`),
+                this.redisHelper.getValue(`gold_coupon_count_${userId}`),
                 this.redisHelper.getValue('latest_gold_price'),
                 this.redisHelper.getValue(`federal_gold_${userId}`),
                 // this.redisHelper.getValue(`gold_count_in_letter_${userId}`),
@@ -527,17 +527,17 @@ class Controller {
                 await this.redisHelper.setValue(`federal_gold_${userId}`, federalGold, 3600); // 1 hour cache
             }
 
-            // if (!goldCouponCount) {
-            //     goldCouponCount = await RewardRecord.sum('amount', {
-            //         where: {
-            //             user_id: userId,
-            //             reward_id: 7,
-            //             is_used: 0,
-            //             validedAt: { [Op.lte]: new Date() }
-            //         },
-            //     }) || 0;
-            //     await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 86400); // 24 hours cache
-            // }
+            if (!goldCouponCount) {
+                goldCouponCount = await RewardRecord.sum('amount', {
+                    where: {
+                        user_id: userId,
+                        reward_id: 7,
+                        is_used: 0,
+                        validedAt: { [Op.lte]: new Date() }
+                    },
+                }) || 0;
+                await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 86400); // 24 hours cache
+            }
 
             // if (!goldCountInLetter) {
             //     goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
@@ -583,8 +583,8 @@ class Controller {
                 can_impeach_count: 0,
                 next_rank_percentage: 0,
                 next_rank_point: 0,
-                gold_count_in_coupon: 0,
-                total_coupon_gold_price: 0,
+                gold_count_in_coupon: goldCouponCount,
+                total_coupon_gold_price: Number(goldCouponCount) * Number(goldPrice),
 
                 gold_count_in_tajikstan: total_gold_count,
                 total_tajikstan_gold_price: total_gold_count * Number(goldPrice),
