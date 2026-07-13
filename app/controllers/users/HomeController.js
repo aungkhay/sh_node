@@ -5031,7 +5031,7 @@ class Controller {
                         }, { transaction: t });
                         goldCount += 1000;
                     }
-                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: goldCount }, { transaction: t });
                 }
 
                 await mPackage.increment({ total_quantity: -pkgHistory.length }, { transaction: t });
@@ -5518,7 +5518,7 @@ class Controller {
                         }, { transaction: t });
                         goldCount += 1000;
                     }
-                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: goldCount }, { transaction: t });
                 }
 
                 const bonusArr = [15, 7, 3];
@@ -5731,7 +5731,7 @@ class Controller {
                         product_type: 5, // 联储
                         description: `PKG-${pkgHistory.id}`
                     }, { transaction: t });
-                    await user.increment({ total_gold_count: 1000 }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: 1000 }, { transaction: t });
                 }
 
                 await t.commit();
@@ -6180,7 +6180,7 @@ class Controller {
                         }, { transaction: t });
                         goldCount += 1000;
                     }
-                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: goldCount }, { transaction: t });
                 }
 
                 await policyPackage.increment({ total_quantity: -pkgHistory.length }, { transaction: t });
@@ -7153,7 +7153,7 @@ class Controller {
             const userId = req.user_id;
             const { payment_password } = req.body;
 
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6', 'payment_password', 'total_gold_count'], useMaster: true });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'have_reward_6', 'payment_password', 'total_gold_count_in_letter'], useMaster: true });
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
@@ -7190,7 +7190,7 @@ class Controller {
 
                 const updateObj = { 
                     reserve_fund: Number(user.reserve_fund) - Number(letter.price),
-                    total_gold_count: Number(user.total_gold_count) + Number(letter.gold_count)
+                    total_gold_count_in_letter: Number(user.total_gold_count_in_letter) + Number(letter.gold_count)
                 };
                 if (letter.id == 1) {
                     updateObj.have_reward_6 = 1;
@@ -7376,18 +7376,18 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
-            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'reserve_fund'] });
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'payment_password', 'reserve_fund'] });
             if (user.is_group_letter_used == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已使用过六国授权书，无法重复使用', {});
             }
 
-            const amount = req.body.amount;
+            const amount = 5000;
             const payment_password = req.body.payment_password;
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
-            if (Number(user.total_gold_count) < 6000) {
+            if (Number(user.total_gold_count_in_letter) + Number(user.total_gold_count_in_coupon) < 6000) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您的共济基金不足6000，无法使用六国授权书', {});
             }
             if (Number(user.reserve_fund) < Number(amount)) {
@@ -7407,7 +7407,6 @@ class Controller {
                     user_id: userId,
                     is_used: 0,
                     is_moved_to_total_gold_count: 0
-
                 },
                 group: ['letter_id'],
                 order: [['letter_id', 'ASC']]
@@ -7463,9 +7462,28 @@ class Controller {
                 await letter4.update(updateObj, { transaction: t });
                 await letter5.update(updateObj, { transaction: t });
                 await letter6.update(updateObj, { transaction: t });
-                let goldCount = Number(user.total_gold_count) - 6000;
+
+                // 合并扣除黄金克数
+                let subCouponCount = 0;
+                if (Number(user.total_gold_count_in_coupon) >= 6000) {
+                    subCouponCount = 6000;
+                } else {
+                    subCouponCount = Number(user.total_gold_count_in_coupon);
+                }
+                let subLetterCount = 6000 - subCouponCount;
+
+                let remainingCouponCount = Number(user.total_gold_count_in_coupon) - subCouponCount;
+                let remainingLetterCount = Number(user.total_gold_count_in_letter) - subLetterCount;
+
                 let reserveFund = Number(user.reserve_fund) - Number(amount);
-                await User.update({ is_group_letter_used: 1, total_gold_count: goldCount, reserve_fund: reserveFund }, { where: { id: userId }, transaction: t });
+                let usedGoldCount = Number(user.total_gold_count) + 6000;
+                await User.update({ 
+                    is_group_letter_used: 1, 
+                    total_gold_count_in_letter: remainingLetterCount, 
+                    total_gold_count_in_coupon: remainingCouponCount, 
+                    total_gold_count: usedGoldCount,
+                    reserve_fund: reserveFund 
+                }, { where: { id: userId }, transaction: t });
 
                 await t.commit();
 
@@ -8694,6 +8712,7 @@ class Controller {
 
             const unionQuery = `
                 SELECT 
+                    gph.id AS history_id,
                     '黄金礼包' AS type,
                     CASE
                         WHEN gph.package_id = 1 THEN '和衷联储黄金初级礼包 588元'
@@ -8707,6 +8726,7 @@ class Controller {
                 UNION ALL
 
                 SELECT
+                    mph.id AS history_id,
                     '终身授权' AS type,
                     mp.product_name AS product_name,
                     mph.price AS price,
@@ -8718,6 +8738,7 @@ class Controller {
                 UNION ALL
 
                 SELECT
+                    pph.id AS history_id,
                     '贡献' AS type,
                     pp.product_name AS product_name,
                     pph.price AS price,
@@ -8729,6 +8750,7 @@ class Controller {
                 UNION ALL
 
                 SELECT
+                    frh.id AS history_id,
                     '联储' AS type,
                     frgp.product_name AS product_name,
                     frh.price AS price,
@@ -8740,6 +8762,7 @@ class Controller {
                 UNION ALL
 
                 SELECT
+                    sch.id AS history_id,
                     '纪念币' AS type,
                     sc.product_name AS product_name,
                     sch.price AS price,
@@ -8751,6 +8774,7 @@ class Controller {
                 UNION ALL
 
                 SELECT
+                    gpph.id AS history_id,
                     '黄金增值' AS type,
                     gpp.product_name AS product_name,
                     gpph.price AS price,
@@ -8762,6 +8786,7 @@ class Controller {
                 UNION ALL
 
                 SELECT
+                    prph.id AS history_id,
                     '个人储备计划' AS type,
                     prp.product_name AS product_name,
                     prph.price AS price,
@@ -8776,7 +8801,7 @@ class Controller {
                 FROM (
                     ${unionQuery}
                 ) AS merged
-                ORDER BY createdAt DESC
+                ORDER BY createdAt DESC, type, history_id DESC    
                 LIMIT :pageSize OFFSET :offset
             `;
 
@@ -9528,7 +9553,7 @@ class Controller {
                         }, { transaction: t });
                         goldCount += 1000;
                     }
-                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: goldCount }, { transaction: t });
                 }
 
                 const fragments = [];
@@ -9743,7 +9768,7 @@ class Controller {
                         product_type: 7, // 黄金增值
                         description: `PKG-${pkgHistory.id}`
                     }, { transaction: t });
-                    await user.increment({ total_gold_count: 1000 }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: 1000 }, { transaction: t });
                 }
 
                 await t.commit();
@@ -10047,7 +10072,7 @@ class Controller {
                         product_type: 7, // 黄金增值
                         description: `PKG-${pkgHistory.id} | 兑换碎片`,
                     }, { transaction: t });
-                    await user.increment({ total_gold_count: 1000 }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: 1000 }, { transaction: t });
                 }
                 await this.redisHelper.deleteKey(fragmentKey);
                 
@@ -10394,7 +10419,7 @@ class Controller {
                         }, { transaction: t });
                         goldCount += 1000;
                     }
-                    await user.increment({ total_gold_count: goldCount }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: goldCount }, { transaction: t });
                 }
 
                 const bonusArr = [15, 7, 3];

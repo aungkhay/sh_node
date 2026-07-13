@@ -481,7 +481,8 @@ class Controller {
                         'id', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 
                         'balance', 'referral_bonus', 'masonic_fund', 'address', 'address_status', 
                         'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
-                        'political_vetting_status', 'rank_id', 'rank_point', 'gold', 'gold_interest', 'total_gold_count',
+                        'political_vetting_status', 'rank_id', 'rank_point', 
+                        'gold', 'gold_interest', 'total_gold_count_in_coupon', 'total_gold_count_in_letter',
                         'can_join_spring_event', 'have_reward_6', 'can_withdraw', 'repurchase_fund',
                         'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'can_get_red_envelop', 'activedAt'
                     ],
@@ -550,33 +551,6 @@ class Controller {
                 await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60);
             }
             
-            let total_gold_count = Number(user.total_gold_count);
-            // if (total_gold_count <= 0) {
-                
-                // Gold Coupon Count
-                // const goldCouponCount = await RewardRecord.sum('amount', {
-                //     where: {
-                //         user_id: userId,
-                //         reward_id: 7,
-                //         is_used: 0,
-                //         validedAt: { [Op.lte]: new Date() }
-                //     },
-                // }) || 0;
-                // total_gold_count += Number(goldCouponCount);
-
-                // Gold Count in Letter
-                // const goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
-                //     where: {
-                //         is_used: 0,
-                //         gold_owner_id: userId
-                //     },
-                //     useMaster: true
-                // }) || 0;
-                // total_gold_count += Number(goldCountInLetter);
-
-                // await user.update({ total_gold_count: total_gold_count });
-            // }
-
             let data = {
                 ... user.get({ plain: true }),
                 is_already_bind_payment_password: user.payment_password ? true : false,

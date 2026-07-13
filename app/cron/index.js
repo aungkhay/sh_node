@@ -2913,12 +2913,13 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter'], transaction: t });
                     if (!user) {
                         continue;
                     }
 
-                    const goldGram = new Decimal(Number(user.total_gold_count) * Number(pack.release_personal_gold_rate)).times(0.01).toNumber();
+                    const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter);
+                    const goldGram = new Decimal(ownGoldGram * Number(pack.release_personal_gold_rate)).times(0.01).toNumber();
                     const reserveEarn = Number(pack.reserve_earn);
                     const originPrice = Number(pack.price);
                     const goldInAmount = goldGram * goldPrice.reserve_price;
@@ -3011,7 +3012,22 @@ class CronJob {
 
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await PersonalReservePackageEarn.bulkCreate(earns, { transaction: t });
-                    await user.increment({ balance: reserveEarn + originPrice + goldInAmount, total_gold_count: -goldGram }, { transaction: t });
+
+                    // 合并扣除黄金克数
+                    let subCouponCount = 0;
+                    if (Number(user.total_gold_count_in_coupon) >= goldGram) {
+                        subCouponCount = goldGram;
+                    } else {
+                        subCouponCount = Number(user.total_gold_count_in_coupon);
+                    }
+                    let subLetterCount = goldGram - subCouponCount;
+                    let usedGoldCount = Number(user.total_gold_count) + goldGram;
+                    await user.increment({ 
+                        balance: reserveEarn + originPrice + goldInAmount, 
+                        total_gold_count_in_coupon: -subCouponCount, 
+                        total_gold_count_in_letter: -subLetterCount,
+                        total_gold_count: usedGoldCount
+                    }, { transaction: t });
                     await pack.update(updateObj, { transaction: t });
 
                     await t.commit();
@@ -5145,7 +5161,7 @@ class CronJob {
                 const t = await db.transaction();
                 try {
                     await User.increment(
-                        { total_gold_count: record.amount },
+                        { total_gold_count_in_coupon: record.amount },
                         { where: { id: record.user_id }, transaction: t }
                     );
                     await RewardRecord.update(
@@ -5153,7 +5169,7 @@ class CronJob {
                         { where: { id: record.id }, transaction: t }
                     );
                     await t.commit();
-                    console.log(`[CHECK_VALIDED_COUPON][REWARD_RECORD_ID: ${record.id}]: Moved ${record.amount} to total_gold_count for User ID ${record.user_id}`);
+                    console.log(`[CHECK_VALIDED_COUPON][REWARD_RECORD_ID: ${record.id}]: Moved ${record.amount} to total_gold_count_in_coupon for User ID ${record.user_id}`);
                 } catch (error) {
                     await t.rollback();
                     errLogger(`[CHECK_VALIDED_COUPON][REWARD_RECORD_ID: ${record.id}]: ${error.stack}`);
