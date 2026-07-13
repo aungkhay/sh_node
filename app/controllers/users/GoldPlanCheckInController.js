@@ -36,27 +36,27 @@ class Controller {
             if (isCheckedIn) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
             }
-            // const existingCheckInCount = await GoldPlanCheckIn.count({
-            //     where: {
-            //         user_id: userId,
-            //         date: today
-            //     },
-            //     useMaster: true
-            // });
-            // if (existingCheckInCount > 0) {
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
-            // }
-            const existingCheckIn = await GoldPlanCheckIn.findOne({
+            const existingCheckInCount = await GoldPlanCheckIn.count({
                 where: {
                     user_id: userId,
                     date: today
                 },
-                attributes: ['id'],
                 useMaster: true
             });
-            if (existingCheckIn) {
+            if (existingCheckInCount > 0) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
             }
+            // const existingCheckIn = await GoldPlanCheckIn.findOne({
+            //     where: {
+            //         user_id: userId,
+            //         date: today
+            //     },
+            //     attributes: ['id'],
+            //     useMaster: true
+            // });
+            // if (existingCheckIn) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
+            // }
 
             const user = await User.findByPk(userId, { 
                 attributes: ['id', 'relation'],

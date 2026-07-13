@@ -144,6 +144,11 @@ RewardRecord.init({
             name: 'idx_createdAt_user_id',
             fields: ['createdAt', 'user_id'],
             using: 'BTREE'
+        },
+        {
+            name: 'idx_reward_records_reward_used_moved_valided',
+            fields: ['reward_id', 'is_used', 'is_moved_to_total_gold_count', 'validedAt'],
+            using: 'BTREE'
         }
     ]
 });
