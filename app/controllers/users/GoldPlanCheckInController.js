@@ -31,11 +31,11 @@ class Controller {
             const userId = req.user_id;
             const today = moment().format('YYYY-MM-DD');
 
-            const existKey = `gold_plan_check_in_${userId}_${today}`;
-            const isCheckedIn = await this.redisHelper.getValue(existKey);
-            if (isCheckedIn) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
-            }
+            // const existKey = `gold_plan_check_in_${userId}_${today}`;
+            // const isCheckedIn = await this.redisHelper.getValue(existKey);
+            // if (isCheckedIn) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已签到', {});
+            // }
             const existingCheckInCount = await GoldPlanCheckIn.count({
                 where: {
                     user_id: userId,
@@ -101,7 +101,7 @@ class Controller {
                 await t.commit();
 
                 await this.redisHelper.deleteKey(`gold_plan_check_in_history_${userId}`);
-                await this.redisHelper.setValue(existKey, '1', 24 * 60 * 60); // Set key to expire in 24 hours
+                // await this.redisHelper.setValue(existKey, '1', 24 * 60 * 60); // Set key to expire in 24 hours
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '签到成功', {});
             } catch (error) {
                 await t.rollback();
