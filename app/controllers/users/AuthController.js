@@ -455,7 +455,7 @@ class Controller {
                 goldCouponCount,
                 goldPrice,
                 federalGold,
-                // goldCountInLetter,
+                goldCountInLetter,
                 boughtGoldPackageIds
             ] = await Promise.all([
                 User.findByPk(userId, {
@@ -491,7 +491,7 @@ class Controller {
                 this.redisHelper.getValue(`gold_coupon_count_${userId}`),
                 this.redisHelper.getValue('latest_gold_price'),
                 this.redisHelper.getValue(`federal_gold_${userId}`),
-                // this.redisHelper.getValue(`gold_count_in_letter_${userId}`),
+                this.redisHelper.getValue(`gold_count_in_letter_${userId}`),
                 this.redisHelper.getValue(`bought_gold_gift_package_ids_${userId}`)
             ])
 
@@ -539,16 +539,16 @@ class Controller {
                 await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 86400); // 24 hours cache
             }
 
-            // if (!goldCountInLetter) {
-            //     goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
-            //         where: {
-            //             is_used: 0,
-            //             gold_owner_id: userId
-            //         },
-            //         useMaster: true
-            //     }) || 0;
-            //     await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60);
-            // }
+            if (!goldCountInLetter) {
+                goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
+                    where: {
+                        is_used: 0,
+                        gold_owner_id: userId
+                    },
+                    useMaster: true
+                }) || 0;
+                await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60);
+            }
             
             let total_gold_count = Number(user.total_gold_count);
             // if (total_gold_count <= 0) {
@@ -586,8 +586,8 @@ class Controller {
                 gold_count_in_coupon: goldCouponCount,
                 total_coupon_gold_price: Number(goldCouponCount) * Number(goldPrice),
 
-                gold_count_in_tajikstan: total_gold_count,
-                total_tajikstan_gold_price: total_gold_count * Number(goldPrice),
+                gold_count_in_tajikstan: goldCountInLetter,
+                total_tajikstan_gold_price: Number(goldCountInLetter) * Number(goldPrice),
 
                 federal_reserve_gold_count: Number(federalGold),
                 federal_reserve_gold_price: Number(federalGold) * Number(goldPrice),
