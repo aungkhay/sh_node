@@ -10702,6 +10702,7 @@ class Controller {
                 });
 
                 let totalEarn = 0;
+                let totalGoldGram = 0;
                 if (gPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
@@ -10734,9 +10735,9 @@ class Controller {
                             obj.is_returned_personal_gold = 1;
                             obj.return_personal_gold_date = new Date();
 
-                            const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter) + (1000 * (gPackage.buy_one_get_quantity + 1)); // 1000 is the authorize letter gold count (prepaid)
-                            goldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate)).times(0.01).toNumber();
-                            goldInAmount = goldGram * goldPrice.reserve_price;
+                            const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter) + 1000; // 1000 is the authorize letter gold count (prepaid)
+                            totalGoldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate)).times(0.01).toNumber();
+                            goldInAmount = totalGoldGram * goldPrice.reserve_price;
                             obj.return_personal_gold_in_amount = goldInAmount;
                         }
 
@@ -10796,13 +10797,13 @@ class Controller {
                             totalEarn += Number(gPackage.price);
 
                             let subCouponCount = 0;
-                            if (Number(user.total_gold_count_in_coupon) >= goldGram) {
-                                subCouponCount = goldGram;
+                            if (Number(user.total_gold_count_in_coupon) >= totalGoldGram) {
+                                subCouponCount = totalGoldGram;
                             } else {
                                 subCouponCount = Number(user.total_gold_count_in_coupon);
                             }
-                            let subLetterCount = goldGram - subCouponCount;
-                            let usedGoldCount = Number(user.total_gold_count) + goldGram;
+                            let subLetterCount = totalGoldGram - subCouponCount;
+                            let usedGoldCount = Number(user.total_gold_count) + totalGoldGram;
                             userUpdates.total_gold_count_in_coupon = Number(user.total_gold_count_in_coupon) - subCouponCount;
                             userUpdates.total_gold_count_in_letter = Number(user.total_gold_count_in_letter) - subLetterCount;
                             userUpdates.total_gold_count = usedGoldCount;
@@ -10854,21 +10855,21 @@ class Controller {
                     }
 
                     const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter) + 1000; // 1000 is the authorize letter gold count (prepaid)
-                    const goldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate)).times(0.01).toNumber();
-                    const goldInAmount = goldGram * goldPrice.reserve_price;
+                    totalGoldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate)).times(0.01).toNumber();
+                    const goldInAmount = totalGoldGram * goldPrice.reserve_price;
                     obj.return_personal_gold_in_amount = goldInAmount;
 
                     const pkgHistoryItem = await PersonalReservePackageHistory.create(obj, { transaction: t });
                     pkgHistory.push(pkgHistoryItem);
 
                     let subCouponCount = 0;
-                    if (Number(user.total_gold_count_in_coupon) >= goldGram) {
-                        subCouponCount = goldGram;
+                    if (Number(user.total_gold_count_in_coupon) >= totalGoldGram) {
+                        subCouponCount = totalGoldGram;
                     } else {
                         subCouponCount = Number(user.total_gold_count_in_coupon);
                     }
-                    let subLetterCount = goldGram - subCouponCount;
-                    let usedGoldCount = Number(user.total_gold_count) + goldGram;
+                    let subLetterCount = totalGoldGram - subCouponCount;
+                    let usedGoldCount = Number(user.total_gold_count) + totalGoldGram;
                     userUpdates.total_gold_count_in_coupon = Number(user.total_gold_count_in_coupon) - subCouponCount;
                     userUpdates.total_gold_count_in_letter = Number(user.total_gold_count_in_letter) - subLetterCount;
                     userUpdates.total_gold_count = usedGoldCount;
@@ -10967,7 +10968,7 @@ class Controller {
                         }, { transaction: t });
                         goldCount += 1000;
                     }
-                    await user.increment({ total_gold_count_in_letter: goldCount }, { transaction: t });
+                    await user.increment({ total_gold_count_in_letter: goldCount - totalGoldGram }, { transaction: t });
                 }
 
                 const bonusArr = [15, 7, 3];
