@@ -9465,9 +9465,10 @@ class Controller {
                 if (gPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
+                    let beforeAmount = Number(user.balance);
+                    
                     for (let index = 0; index <= gPackage.buy_one_get_quantity; index++) {
                         let obj = null;
-                        let beforeAmount = Number(user.balance);
 
                         // 购买本产品后赠送的其他产品ID
                         if (index > 0 && gPackage.is_send_other_package && gPackage.send_other_package_id != gPackage.id) {
