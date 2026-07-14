@@ -10735,8 +10735,9 @@ class Controller {
                             obj.is_returned_personal_gold = 1;
                             obj.return_personal_gold_date = new Date();
 
-                            const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter) + 1000; // 1000 is the authorize letter gold count (prepaid)
-                            totalGoldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate)).times(0.01).toNumber();
+                            const qty = gPackage.buy_one_get_quantity + 1; // 1 + 1 = 2
+                            const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter) + (1000 * qty); // 1000 is the authorize letter gold count (prepaid)
+                            totalGoldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate) * qty).times(0.01).toNumber();
                             goldInAmount = totalGoldGram * goldPrice.reserve_price;
                             obj.return_personal_gold_in_amount = goldInAmount;
                         }
@@ -10944,16 +10945,13 @@ class Controller {
                     totalEarn += Number(gPackage.reserve_earn) + Number(gPackage.price) + Number(goldInAmount);
                 }
 
-                userUpdates.balance = Number(user.balance) + Number(totalEarn);
-                await user.update(userUpdates, { transaction: t });
-
                 await gPackage.increment({ total_quantity: -1 }, { transaction: t });
                 if (gPackage.total_quantity - 1 <= 0) {
                     await gPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
                 }
 
+                let letterGoldCount = 0;
                 if (gPackage.is_release_authorize_letter) {
-                    let goldCount = 0;
                     for (const pkg of pkgHistory) {
                         await AuthorizeLetterHistory.create({
                             user_id: user.id,
@@ -10966,10 +10964,12 @@ class Controller {
                             description: `PKG-${pkg.id}`,
                             is_moved_to_total_gold_count: 1
                         }, { transaction: t });
-                        goldCount += 1000;
                     }
-                    await user.increment({ total_gold_count_in_letter: goldCount - totalGoldGram }, { transaction: t });
+                    letterGoldCount = 1000 * pkgHistory.length;
                 }
+                userUpdates.balance = Number(user.balance) + Number(totalEarn);
+                userUpdates.total_gold_count_in_letter = Number(user.total_gold_count_in_letter) + letterGoldCount - totalGoldGram;
+                await user.update(userUpdates, { transaction: t });
 
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
