@@ -2707,6 +2707,8 @@ class CronJob {
                     }
 
                     await t.commit();
+
+                    console.log(`[CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN] User ID: ${pack.user_id}, Package ID: ${pack.package_id}, Added Balance: ${addBalance}`);
                 } catch (error) {
                     errLogger(`[CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN][Transaction Error]: ${error.stack}`);
                     await t.rollback();
