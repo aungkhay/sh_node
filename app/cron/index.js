@@ -58,13 +58,13 @@ class CronJob {
         // Run at 30th minute of every hour
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
         cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
-        cron.schedule('* * * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
+        cron.schedule('40 0 * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start();
         // cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
         cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
         // Run every 10 second
         cron.schedule('*/10 * * * * *', this.RELEASE_MEETING_REWARD).start();
         // every 15th of month at 00:40 AM
-        cron.schedule('40 0 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start();
+        // cron.schedule('40 0 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start();
         // run every 1 AM
         // cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
         // cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
@@ -2921,6 +2921,8 @@ class CronJob {
                 order: [['createdAt', 'ASC']],
             });
             
+            let totalReleasedGoldCount = 0;
+            let totalReleasedGoldAmount = 0;
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
@@ -2934,6 +2936,8 @@ class CronJob {
                     const reserveEarn = Number(pack.reserve_earn);
                     const originPrice = Number(pack.price);
                     const goldInAmount = goldGram * goldPrice.reserve_price;
+                    totalReleasedGoldAmount += goldInAmount;
+                    totalReleasedGoldCount += goldGram;
 
                     const earns = [];
                     const cashflows = [];
@@ -3049,6 +3053,8 @@ class CronJob {
                     await t.rollback();
                 }
             }
+
+            commonLogger(`[CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT]: Total released gold count: ${totalReleasedGoldCount}, Total released gold amount: ${totalReleasedGoldAmount}`);
         } catch (error) {
             errLogger(`[CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT]: ${error.stack}`); 
         }
