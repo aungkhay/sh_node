@@ -10721,6 +10721,71 @@ class Controller {
                     userUpdates.total_gold_count_in_letter = Number(user.total_gold_count_in_letter) - subLetterCount;
                     userUpdates.total_gold_count = usedGoldCount;
 
+                    const earns = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: gPackage.id,
+                            package_history_id: pkgHistoryItem.id,
+                            amount: gPackage.reserve_earn,
+                            type: 0, // 0-储备现金
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: gPackage.id,
+                            package_history_id: pkgHistoryItem.id,
+                            amount: gPackage.price,
+                            type: 2, // 2-储备费(本金)
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: gPackage.id,
+                            package_history_id: pkgHistoryItem.id,
+                            amount: goldInAmount,
+                            type: 1, // 1-个人黄金(ex-rate)
+                        }
+                    ];
+                    const earnCashFlows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划收益返还',
+                            amount: gPackage.reserve_earn,
+                            before_amount: Number(user.balance),
+                            after_amount: Number(user.balance) + Number(gPackage.reserve_earn),
+                            flow_status: 'IN',
+                            description: `储备现金返还`,
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划收益返还',
+                            amount: gPackage.price,
+                            before_amount: Number(user.balance) + Number(gPackage.reserve_earn),
+                            after_amount: Number(user.balance) + Number(gPackage.reserve_earn) + Number(gPackage.price),
+                            flow_status: 'IN',
+                            description: `储备费返还`,
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划收益返还',
+                            amount: goldInAmount,
+                            before_amount: Number(user.balance) + Number(gPackage.reserve_earn) + Number(gPackage.price),
+                            after_amount: Number(user.balance) + Number(gPackage.reserve_earn) + Number(gPackage.price) + Number(goldInAmount),
+                            flow_status: 'IN',
+                            description: `个人黄金返还`,
+                        }
+                    ];
+
                     totalEarn += Number(gPackage.reserve_earn) + Number(gPackage.price) + Number(goldInAmount);
                 }
 
