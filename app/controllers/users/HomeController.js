@@ -7395,9 +7395,9 @@ class Controller {
             if (encryptedPaymentPassword !== user.payment_password) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
-            if (Number(user.total_gold_count_in_letter) + Number(user.total_gold_count_in_coupon) < 6000) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您的黄金克数不足6000，无法使用六国授权书', {});
-            }
+            // if (Number(user.total_gold_count_in_letter) + Number(user.total_gold_count_in_coupon) < 6000) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您的黄金克数不足6000，无法使用六国授权书', {});
+            // }
             if (Number(user.reserve_fund) < Number(amount)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足，无法使用六国授权书', {});
             }
@@ -7472,20 +7472,20 @@ class Controller {
                 await letter6.update(updateObj, { transaction: t });
 
                 // 合并扣除黄金克数
-                let subCouponCount = 0;
-                if (Number(user.total_gold_count_in_coupon) >= 6000) {
-                    subCouponCount = 6000;
-                } else {
-                    subCouponCount = Number(user.total_gold_count_in_coupon);
-                }
-                let subLetterCount = 6000 - subCouponCount;
+                // let subCouponCount = 0;
+                // if (Number(user.total_gold_count_in_coupon) >= 6000) {
+                //     subCouponCount = 6000;
+                // } else {
+                //     subCouponCount = Number(user.total_gold_count_in_coupon);
+                // }
+                // let subLetterCount = 6000 - subCouponCount;
 
-                let remainingCouponCount = Number(user.total_gold_count_in_coupon) - subCouponCount;
-                let remainingLetterCount = Number(user.total_gold_count_in_letter) - subLetterCount;
+                // let remainingCouponCount = Number(user.total_gold_count_in_coupon) - subCouponCount;
+                // let remainingLetterCount = Number(user.total_gold_count_in_letter) - subLetterCount;
 
-                let usedGoldCount = Number(user.total_gold_count) + 6000;
-                let remainReserveFund = Number(user.reserve_fund) - Number(amount);
-                let remainBalance = Number(user.balance) + Number(user.masonic_fund);
+                // let usedGoldCount = Number(user.total_gold_count) + 6000;
+                // let remainReserveFund = Number(user.reserve_fund) - Number(amount);
+                // let remainBalance = Number(user.balance) + Number(user.masonic_fund);
 
                 const cashflows = [
                     {
@@ -7516,9 +7516,9 @@ class Controller {
 
                 await User.update({ 
                     is_group_letter_used: 1, 
-                    total_gold_count_in_letter: remainingLetterCount, 
-                    total_gold_count_in_coupon: remainingCouponCount, 
-                    total_gold_count: usedGoldCount,
+                    // total_gold_count_in_letter: remainingLetterCount, 
+                    // total_gold_count_in_coupon: remainingCouponCount, 
+                    // total_gold_count: usedGoldCount,
                     reserve_fund: remainReserveFund,
                     balance: remainBalance,
                     masonic_fund: 0
