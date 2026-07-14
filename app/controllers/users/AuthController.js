@@ -560,8 +560,8 @@ class Controller {
                 gold_count_in_coupon: Number(user.total_gold_count_in_coupon),
                 total_coupon_gold_price: Number(user.total_gold_count_in_coupon) * Number(goldPrice),
 
-                gold_count_in_tajikstan: Number(user.total_gold_count_in_tajikstan),
-                total_tajikstan_gold_price: Number(user.total_gold_count_in_tajikstan) * Number(goldPrice),
+                gold_count_in_tajikstan: Number(user.total_gold_count_in_letter),
+                total_tajikstan_gold_price: Number(user.total_gold_count_in_letter) * Number(goldPrice),
 
                 federal_reserve_gold_count: Number(federalGold),
                 federal_reserve_gold_price: Number(federalGold) * Number(goldPrice),
