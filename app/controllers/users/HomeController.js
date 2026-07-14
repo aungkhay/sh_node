@@ -10785,6 +10785,8 @@ class Controller {
                             description: `个人黄金返还`,
                         }
                     ];
+                    await PersonalReservePackageEarn.bulkCreate(earns, { transaction: t });
+                    await CashFlow.bulkCreate(earnCashFlows, { transaction: t });
 
                     totalEarn += Number(gPackage.reserve_earn) + Number(gPackage.price) + Number(goldInAmount);
                 }
