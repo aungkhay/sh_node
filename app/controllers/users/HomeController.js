@@ -7414,7 +7414,7 @@ class Controller {
                     },
                     user_id: userId,
                     is_used: 0,
-                    is_moved_to_total_gold_count: 0
+                    // is_moved_to_total_gold_count: 0
                 },
                 group: ['letter_id'],
                 order: [['letter_id', 'ASC']]
