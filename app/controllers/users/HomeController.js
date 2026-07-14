@@ -9515,8 +9515,8 @@ class Controller {
                             obj.gold_appreciation_earn_count_remain -= 1; // because of release 黄金增值金
                             obj.is_returned_earn = 1; // because of release 战略储备金
                             obj.return_earn_date = new Date(); // because of release 战略储备金
-                            obj.is_returned_price = 1; // because of release 本金返还
-                            obj.return_price_date = new Date(); // because of release 本金返还
+                            obj.is_returned_price = obj.price > 0 ? 1 : 0; // because of release 本金返还
+                            obj.return_price_date = obj.price > 0 ? new Date() : null; // because of release 本金返还
 
                             const gPackageHistoryItem = await GoldAppreciationPackageHistory.create(obj, { transaction: t });
                             pkgHistory.push(gPackageHistoryItem);
@@ -9549,17 +9549,8 @@ class Controller {
                                     amount: gPackage.reserve_earn,
                                     type: 1, // 1-战略储备金
                                 },
-                                {
-                                    user_id: user.id,
-                                    relation: user.relation,
-                                    package_id: gPackage.id,
-                                    package_history_id: gPackageHistoryItem.id,
-                                    amount: Number(gPackage.price),
-                                    type: 2, // 2-本金返还
-                                }
                             ];
-                            await GoldAppreciationPackageEarn.bulkCreate(earns, { transaction: t });
-
+                           
                             const earnCashflows = [
                                 {
                                     user_id: user.id,
@@ -9583,7 +9574,21 @@ class Controller {
                                     after_amount: beforeAmount + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
                                     flow_status: 'IN',
                                 },
-                                {
+                            ];
+
+                            beforeAmount += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
+                            totalEarn += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
+
+                            if (obj.price > 0) {
+                                earns.push({
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    package_id: gPackage.id,
+                                    package_history_id: gPackageHistoryItem.id,
+                                    amount: Number(gPackage.price),
+                                    type: 2, // 2-本金返还
+                                });
+                                earnCashflows.push({
                                     user_id: user.id,
                                     relation: user.relation,
                                     wallet_type: 2,
@@ -9593,11 +9598,13 @@ class Controller {
                                     before_amount: beforeAmount + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
                                     after_amount: beforeAmount + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn) + Number(gPackage.price),
                                     flow_status: 'IN',
-                                }
-                            ];
+                                });
+                                beforeAmount += Number(gPackage.price);
+                                totalEarn += Number(gPackage.price);
+                            }
+
+                            await GoldAppreciationPackageEarn.bulkCreate(earns, { transaction: t });
                             await CashFlow.bulkCreate(earnCashflows, { transaction: t });
-                            beforeAmount += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn) + Number(gPackage.price);
-                            totalEarn += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn) + Number(gPackage.price);
                         }
                     }
                 } else {
