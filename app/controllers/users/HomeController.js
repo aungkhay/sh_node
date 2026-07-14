@@ -10612,7 +10612,7 @@ class Controller {
                             obj.is_returned_personal_gold = 1;
                             obj.return_personal_gold_date = new Date();
 
-                            const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter) + 1000; // 1000 is the authorize letter gold count (prepaid)
+                            const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter) + (1000 * (gPackage.buy_one_get_quantity + 1)); // 1000 is the authorize letter gold count (prepaid)
                             goldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate)).times(0.01).toNumber();
                             goldInAmount = goldGram * goldPrice.reserve_price;
                             obj.return_personal_gold_in_amount = goldInAmount;
