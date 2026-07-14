@@ -7484,8 +7484,8 @@ class Controller {
                 // let remainingLetterCount = Number(user.total_gold_count_in_letter) - subLetterCount;
 
                 // let usedGoldCount = Number(user.total_gold_count) + 6000;
-                // let remainReserveFund = Number(user.reserve_fund) - Number(amount);
-                // let remainBalance = Number(user.balance) + Number(user.masonic_fund);
+                let remainReserveFund = Number(user.reserve_fund) - Number(amount);
+                let remainBalance = Number(user.balance) + Number(user.masonic_fund);
 
                 const cashflows = [
                     {
