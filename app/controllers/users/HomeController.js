@@ -7526,7 +7526,7 @@ class Controller {
 
                 await t.commit();
 
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '您已使用六国授权书，等待周期结束释放所有的共济基金至可提余额', {});
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '您已合并使用成功，恭喜您完成共济基金下发，共济基金已全额下发至您的可用余额，您可以在个人余额查看', {});
             } catch (error) {
                 errLogger(`[USER_MEMBER_STATE_LETTER][${req.user_id}]: ${error.stack}`);
                 await t.rollback();
