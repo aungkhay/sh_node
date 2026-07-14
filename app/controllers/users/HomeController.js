@@ -8840,7 +8840,7 @@ class Controller {
                 FROM (
                     ${unionQuery}
                 ) AS merged
-                ORDER BY createdAt DESC, history_id DESC    
+                ORDER BY createdAt DESC, type DESC, history_id DESC
                 LIMIT :pageSize OFFSET :offset
             `;
 
@@ -9936,6 +9936,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
+            const goldPrice = await GoldPrice.findOne({
+                order: [['createdAt', 'DESC']],
+            });
+
             const t = await db.transaction();
             try {
                 const [pkgHistory, created] = await GoldAppreciationPackageHistory.findOrCreate({
@@ -9954,7 +9958,9 @@ class Controller {
                         gold_appreciation_earn: gPackage.gold_appreciation_earn,
                         period: gPackage.period,
                         return_date: moment().add(gPackage.release_reserve_earn_at, 'days').toDate(),
-                        gold_appreciation_earn_count_remain: gPackage.period,
+                        gold_appreciation_earn_count_remain: gPackage.period - 1, // because of release 黄金增值金 -1
+                        is_returned_earn: 1, // because of release 战略储备金
+                        return_earn_date: new Date(), // because of release 战略储备金
                         description: '新注册用户福利'
                     },
                     transaction: t
@@ -9964,6 +9970,55 @@ class Controller {
                     await t.rollback();
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过免费礼包', {});
                 }
+
+                const goldGram = Number(gPackage.gold_appreciation_earn) / Number(goldPrice.reserve_price);
+                const earns = [
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: gPackage.id,
+                        package_history_id: pkgHistory.id,
+                        amount: gPackage.gold_appreciation_earn,
+                        type: 0, // 0-黄金增值金
+                        description: `转换${goldGram.toFixed(4)}克黄金`,
+                    },
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: gPackage.id,
+                        package_history_id: pkgHistory.id,
+                        amount: gPackage.reserve_earn,
+                        type: 1, // 1-战略储备金
+                    },
+                ];
+
+                const earnCashflows = [
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'GoldAppreciationPackageEarn',
+                        type: '黄金增值金返还',
+                        amount: gPackage.gold_appreciation_earn,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                        flow_status: 'IN',
+                    },
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'GoldAppreciationPackageEarn',
+                        type: '黄金增值计划战略储备金返还',
+                        amount: gPackage.reserve_earn,
+                        before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                        after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                        flow_status: 'IN',
+                        description: `黄金增值计划战略储备金返还${gPackage.reserve_earn}`,
+                    }
+                ];
+                await GoldAppreciationPackageEarn.bulkCreate(earns, { transaction: t });
+                await CashFlow.bulkCreate(earnCashflows, { transaction: t });
 
                 if (gPackage.is_release_authorize_letter) {
                     await AuthorizeLetterHistory.create({
@@ -9977,8 +10032,14 @@ class Controller {
                         description: `PKG-${pkgHistory.id}`,
                         is_moved_to_total_gold_count: 1
                     }, { transaction: t });
-                    await user.increment({ total_gold_count_in_letter: 1000 }, { transaction: t });
                 }
+                const incrementObj = {
+                    balance: Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn)
+                }
+                if (gPackage.is_release_authorize_letter) {
+                    incrementObj.total_gold_count_in_letter = 1000 - goldGram;
+                }
+                await user.increment(incrementObj, { transaction: t });
 
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '免费领取成功', {});
@@ -10239,6 +10300,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '兑换礼包不存在! 请稍后再试', {});
             }
 
+            const goldPrice = await GoldPrice.findOne({
+                order: [['createdAt', 'DESC']],
+            });
+
             const t = await db.transaction();
             try {
                 // update the oldest fragment of each package to is_used = 1
@@ -10256,7 +10321,7 @@ class Controller {
                 }
 
                 // create a new GoldAppreciationPackageHistory for the first package in the list
-                const user = await User.findByPk(userId, { attributes: ['id', 'relation'], useMaster: true });
+                const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'balance'], useMaster: true });
                 const pkgHistory = await GoldAppreciationPackageHistory.create({
                     relation: user.relation,
                     user_id: user.id,
@@ -10266,9 +10331,59 @@ class Controller {
                     gold_appreciation_earn: exchangePackage.gold_appreciation_earn,
                     period: exchangePackage.period,
                     return_date: moment().add(exchangePackage.release_reserve_earn_at, 'days').toDate(),
-                    gold_appreciation_earn_count_remain: exchangePackage.period,
+                    gold_appreciation_earn_count_remain: exchangePackage.period - 1, // because of release 黄金增值金 -1
+                    is_returned_earn: 1, // because of release 战略储备金
+                    return_earn_date: new Date(), // because of release 战略储备金
                     description: '兑换碎片',
                 }, { transaction: t });
+
+                const goldGram = Number(exchangePackage.gold_appreciation_earn) / Number(goldPrice.reserve_price);
+                const earns = [
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: exchangePackage.id,
+                        package_history_id: pkgHistory.id,
+                        amount: exchangePackage.gold_appreciation_earn,
+                        type: 0, // 0-黄金增值金
+                        description: `转换${goldGram.toFixed(4)}克黄金`,
+                    },
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: exchangePackage.id,
+                        package_history_id: pkgHistory.id,
+                        amount: exchangePackage.reserve_earn,
+                        type: 1, // 1-战略储备金
+                    },
+                ];
+                const earnCashflows = [
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'GoldAppreciationPackageEarn',
+                        type: '黄金增值金返还',
+                        amount: exchangePackage.gold_appreciation_earn,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + Number(exchangePackage.gold_appreciation_earn),
+                        flow_status: 'IN',
+                    },
+                    {
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'GoldAppreciationPackageEarn',
+                        type: '黄金增值计划战略储备金返还',
+                        amount: exchangePackage.reserve_earn,
+                        before_amount: Number(user.balance) + Number(exchangePackage.gold_appreciation_earn),
+                        after_amount: Number(user.balance) + Number(exchangePackage.gold_appreciation_earn) + Number(exchangePackage.reserve_earn),
+                        flow_status: 'IN',
+                        description: `黄金增值计划战略储备金返还${exchangePackage.reserve_earn}`,
+                    }
+                ];
+                await GoldAppreciationPackageEarn.bulkCreate(earns, { transaction: t });
+                await CashFlow.bulkCreate(earnCashflows, { transaction: t });
 
                 if (exchangePackage.is_release_authorize_letter) {
                     await AuthorizeLetterHistory.create({
@@ -10282,8 +10397,15 @@ class Controller {
                         description: `PKG-${pkgHistory.id} | 兑换碎片`,
                         is_moved_to_total_gold_count: 1
                     }, { transaction: t });
-                    await user.increment({ total_gold_count_in_letter: 1000 }, { transaction: t });
                 }
+
+                const incrementObj = {
+                    balance: Number(exchangePackage.gold_appreciation_earn) + Number(exchangePackage.reserve_earn)
+                };
+                if (exchangePackage.is_release_authorize_letter) {
+                    incrementObj.total_gold_count_in_letter = 1000 - goldGram; 
+                }
+                await user.increment(incrementObj, { transaction: t });
                 await this.redisHelper.deleteKey(fragmentKey);
                 
                 await t.commit();
