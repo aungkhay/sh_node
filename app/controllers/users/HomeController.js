@@ -9413,6 +9413,10 @@ class Controller {
             //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             // }
 
+            const goldPrice = await GoldPrice.findOne({
+                order: [['createdAt', 'DESC']],
+            });
+
             const t = await db.transaction();
             try {
                 if (reserveAmount > 0) {
@@ -9456,6 +9460,7 @@ class Controller {
 
                 const pkgHistory = [];
                 let fragmentPackages = [];
+                let goldGrams = {};
                 if (gPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
@@ -9504,6 +9509,10 @@ class Controller {
                             }
                         }
                         if (obj) {
+                            obj.gold_appreciation_earn_count_remain -= 1; // because of release 黄金增值金
+                            obj.is_returned_earn = 1; // because of release 战略储备金
+                            obj.return_earn_date = new Date(); // because of release 战略储备金
+
                             const gPackageHistoryItem = await GoldAppreciationPackageHistory.create(obj, { transaction: t });
                             pkgHistory.push(gPackageHistoryItem);
                             
@@ -9513,6 +9522,57 @@ class Controller {
                                 }
                                 return fp;
                             });
+
+                            // 黄金增值金 | 战略储备金 (release immediately)
+                            const goldGram = Number(gPackage.gold_appreciation_earn) / Number(goldPrice.reserve_price);
+                            goldGrams[gPackageHistoryItem.id] = goldGram;
+                            const earns = [
+                                {
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    package_id: gPackage.id,
+                                    package_history_id: gPackageHistoryItem.id,
+                                    amount: gPackage.gold_appreciation_earn,
+                                    type: 0, // 0-黄金增值金
+                                    description: `转换${goldGram.toFixed(4)}克黄金`,
+                                },
+                                {
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    package_id: gPackage.id,
+                                    package_history_id: gPackageHistoryItem.id,
+                                    amount: gPackage.reserve_earn,
+                                    type: 1, // 1-战略储备金
+                                }
+                            ];
+                            await GoldAppreciationPackageEarn.bulkCreate(earns, { transaction: t });
+
+                            const earnCashflows = [
+                                {
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    wallet_type: 2,
+                                    model: 'GoldAppreciationPackageEarn',
+                                    type: '黄金增值金返还',
+                                    amount: gPackage.gold_appreciation_earn,
+                                    before_amount: user.balance,
+                                    after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                                    flow_status: 'IN',
+                                },
+                                {
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    wallet_type: 2,
+                                    model: 'GoldAppreciationPackageEarn',
+                                    type: '黄金增值计划战略储备金返还',
+                                    amount: gPackage.reserve_earn,
+                                    before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                                    after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                                    flow_status: 'IN',
+                                    description: `黄金增值计划战略储备金返还${gPackage.reserve_earn}`,
+                                }
+                            ];
+                            await CashFlow.bulkCreate(earnCashflows, { transaction: t });
                         }
                     }
                 } else {
@@ -9525,7 +9585,9 @@ class Controller {
                         gold_appreciation_earn: gPackage.gold_appreciation_earn,
                         period: gPackage.period,
                         return_date: moment().add(gPackage.release_reserve_earn_at, 'days').toDate(),
-                        gold_appreciation_earn_count_remain: gPackage.period,
+                        gold_appreciation_earn_count_remain: gPackage.period - 1, // because of release 黄金增值金 -1
+                        is_returned_earn: 1, // because of release 战略储备金
+                        return_earn_date: new Date(), // because of release 战略储备金
                     }
                     const gPackageHistoryItem = await GoldAppreciationPackageHistory.create(obj, { transaction: t });
                     pkgHistory.push(gPackageHistoryItem);
@@ -9533,6 +9595,57 @@ class Controller {
                     if (gPackage.give_fragment) {
                         fragmentPackages.push({ package_id: gPackage.id, package_history_id: gPackageHistoryItem.id });
                     }
+
+                    // 黄金增值金 | 战略储备金 (release immediately)
+                    const goldGram = Number(gPackage.gold_appreciation_earn) / Number(goldPrice.reserve_price);
+                    goldGrams[gPackageHistoryItem.id] = goldGram;
+                    const earns = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: gPackage.id,
+                            package_history_id: gPackageHistoryItem.id,
+                            amount: gPackage.gold_appreciation_earn,
+                            type: 0, // 0-黄金增值金
+                            description: `转换${goldGram.toFixed(4)}克黄金`,
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: gPackage.id,
+                            package_history_id: gPackageHistoryItem.id,
+                            amount: gPackage.reserve_earn,
+                            type: 1, // 1-战略储备金
+                        }
+                    ];
+                    await GoldAppreciationPackageEarn.bulkCreate(earns, { transaction: t });
+
+                    const earnCashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldAppreciationPackageEarn',
+                            type: '黄金增值金返还',
+                            amount: gPackage.gold_appreciation_earn,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                            flow_status: 'IN',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldAppreciationPackageEarn',
+                            type: '黄金增值计划战略储备金返还',
+                            amount: gPackage.reserve_earn,
+                            before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                            after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                            flow_status: 'IN',
+                            description: `黄金增值计划战略储备金返还${gPackage.reserve_earn}`,
+                        }
+                    ];
+                    await CashFlow.bulkCreate(earnCashflows, { transaction: t });
                 }
 
                 await gPackage.increment({ total_quantity: -1 }, { transaction: t });
@@ -9555,13 +9668,13 @@ class Controller {
                             relation: user.relation,
                             letter_id: 5,
                             price: 0,
-                            gold_count: 1000,
+                            gold_count: 1000 - goldGrams[pkg.id],
                             gold_owner_id: user.id,
                             product_type: 7, // 黄金增值
                             description: `PKG-${pkg.id}`,
                             is_moved_to_total_gold_count: 1
                         }, { transaction: t });
-                        goldCount += 1000;
+                        goldCount += 1000 - goldGrams[pkg.id];
                     }
                     await user.increment({ total_gold_count_in_letter: goldCount }, { transaction: t });
                 }
