@@ -2615,7 +2615,7 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count_in_letter'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2657,17 +2657,19 @@ class CronJob {
 
                     // 0 - 黄金增值金
                     const goldGram = Number(pack.gold_appreciation_earn) / Number(goldPrice.reserve_price);
-                    const letterHistory = await AuthorizeLetterHistory.findOne({
-                        where: {
-                            user_id: pack.user_id,
-                            letter_id: 5, // 黄金增值金授权书
-                            gold_count: {
-                                [Op.gte]: goldGram,
-                            },
-                        },
-                    });
-                    if (letterHistory && goldGram > 0) {
-                        await letterHistory.increment({ gold_count: -goldGram }, { transaction: t });
+                    // const letterHistory = await AuthorizeLetterHistory.findOne({
+                    //     where: {
+                    //         user_id: pack.user_id,
+                    //         letter_id: 5, // 黄金增值金授权书
+                    //         gold_count: {
+                    //             [Op.gte]: goldGram,
+                    //         },
+                    //     },
+                    // });
+                    let substractGoldGram = 0;
+                    if (goldGram > 0) {
+                        substractGoldGram = goldGram;
+                        // await letterHistory.increment({ gold_count: -goldGram }, { transaction: t });
                         await GoldAppreciationPackageEarn.create({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -2695,7 +2697,12 @@ class CronJob {
                     }
                     
                     if (addBalance > 0) {
-                        await user.increment({ balance: addBalance }, { transaction: t });
+                        let incrementObj = { balance: addBalance };
+                        if (substractGoldGram > 0) {
+                            incrementObj.total_gold_count_in_letter = -substractGoldGram;
+                            incrementObj.total_gold_count = substractGoldGram;
+                        }
+                        await user.increment(incrementObj, { transaction: t });
                         await pack.update(updateObj, { transaction: t });
                     }
 
