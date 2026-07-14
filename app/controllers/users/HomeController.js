@@ -9467,6 +9467,7 @@ class Controller {
 
                     for (let index = 0; index <= gPackage.buy_one_get_quantity; index++) {
                         let obj = null;
+                        let beforeAmount = Number(user.balance);
 
                         // 购买本产品后赠送的其他产品ID
                         if (index > 0 && gPackage.is_send_other_package && gPackage.send_other_package_id != gPackage.id) {
@@ -9556,8 +9557,8 @@ class Controller {
                                     model: 'GoldAppreciationPackageEarn',
                                     type: '黄金增值金返还',
                                     amount: gPackage.gold_appreciation_earn,
-                                    before_amount: user.balance,
-                                    after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                                    before_amount: beforeAmount,
+                                    after_amount: beforeAmount + Number(gPackage.gold_appreciation_earn),
                                     flow_status: 'IN',
                                 },
                                 {
@@ -9567,13 +9568,14 @@ class Controller {
                                     model: 'GoldAppreciationPackageEarn',
                                     type: '黄金增值计划战略储备金返还',
                                     amount: gPackage.reserve_earn,
-                                    before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
-                                    after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                                    before_amount: beforeAmount + Number(gPackage.gold_appreciation_earn),
+                                    after_amount: beforeAmount + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
                                     flow_status: 'IN',
                                     // description: `黄金增值计划战略储备金返还${Number(gPackage.reserve_earn)}`,
                                 }
                             ];
                             await CashFlow.bulkCreate(earnCashflows, { transaction: t });
+                            beforeAmount += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
                             totalEarn += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
                         }
                     }
