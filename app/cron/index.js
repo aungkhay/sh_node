@@ -2888,6 +2888,8 @@ class CronJob {
                     }
 
                     await t.commit();
+
+                    console.log(`[CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT] User ID: ${pack.user_id}, Package ID: ${pack.package_id}, Added Balance: ${exchangeValue + originalPrice}`);
                 } catch (error) {
                     errLogger(`[CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT][Transaction Error]: ${error.stack}`);
                     await t.rollback();
