@@ -270,9 +270,9 @@ class Controller {
                         ON p.${columnName} = d.${columnName}
                     WHERE p.${columnName} IS NOT NULL
                     AND p.${columnName} != ''
-                    ${bank_status ? `AND p.bank_status = ${bank_status}` : ''}
-                    ${alipay_status ? `AND p.alipay_status = ${alipay_status}` : ''}
-                    ${fenxiang_status ? `AND p.fenxiang_status = ${fenxiang_status}` : ''}
+                    ${bank_status ? `AND p.bank_status = '${bank_status}'` : ''}
+                    ${alipay_status ? `AND p.alipay_status = '${alipay_status}'` : ''}
+                    ${fenxiang_status ? `AND p.fenxiang_status = '${fenxiang_status}'` : ''}
                     ${startTime && endTime ? `AND p.createdAt BETWEEN '${startTime}' AND '${endTime}'` : ''}
                     ${userId != 1 ? `AND u.relation LIKE (SELECT CONCAT(relation, '%') FROM users WHERE id = ${userId})` : ''}
                     ${phone ? `AND u.phone_number = '${phone}'` : ''}
@@ -290,9 +290,9 @@ class Controller {
                         FROM user_payment_methods
                         WHERE ${columnName} IS NOT NULL
                         AND ${columnName} != ''
-                        ${bank_status ? `AND bank_status = ${bank_status}` : ''}
-                        ${alipay_status ? `AND alipay_status = ${alipay_status}` : ''}
-                        ${fenxiang_status ? `AND fenxiang_status = ${fenxiang_status}` : ''}
+                        ${bank_status ? `AND bank_status = '${bank_status}'` : ''}
+                        ${alipay_status ? `AND alipay_status = '${alipay_status}'` : ''}
+                        ${fenxiang_status ? `AND fenxiang_status = '${fenxiang_status}'` : ''}
                         ${startTime && endTime ? `AND createdAt BETWEEN '${startTime}' AND '${endTime}'` : ''}
                         ${userId != 1 ? `AND user_id IN (SELECT id FROM users WHERE relation LIKE (SELECT CONCAT(relation, '%') FROM users WHERE id = ${userId}))` : ''}
                         ${phone ? `AND user_id IN (SELECT id FROM users WHERE phone_number = '${phone}')` : ''}
