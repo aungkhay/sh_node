@@ -452,10 +452,10 @@ class Controller {
             let [
                 user,
                 ranks,
-                goldCouponCount,
-                goldPrice,
+                // goldCouponCount,
+                goldPrice, 
                 federalGold,
-                goldCountInLetter,
+                // goldCountInLetter,
                 boughtGoldPackageIds
             ] = await Promise.all([
                 User.findByPk(userId, {
@@ -528,28 +528,28 @@ class Controller {
                 await this.redisHelper.setValue(`federal_gold_${userId}`, federalGold, 3600); // 1 hour cache
             }
 
-            if (!goldCouponCount) {
-                goldCouponCount = await RewardRecord.sum('amount', {
-                    where: {
-                        user_id: userId,
-                        reward_id: 7,
-                        is_used: 0,
-                        validedAt: { [Op.lte]: new Date() }
-                    },
-                }) || 0;
-                await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 86400); // 24 hours cache
-            }
+            // if (!goldCouponCount) {
+            //     goldCouponCount = await RewardRecord.sum('amount', {
+            //         where: {
+            //             user_id: userId,
+            //             reward_id: 7,
+            //             is_used: 0,
+            //             validedAt: { [Op.lte]: new Date() }
+            //         },
+            //     }) || 0;
+            //     await this.redisHelper.setValue(`gold_coupon_count_${userId}`, goldCouponCount, 86400); // 24 hours cache
+            // }
 
-            if (!goldCountInLetter) {
-                goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
-                    where: {
-                        is_used: 0,
-                        gold_owner_id: userId
-                    },
-                    useMaster: true
-                }) || 0;
-                await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60);
-            }
+            // if (!goldCountInLetter) {
+            //     goldCountInLetter = await AuthorizeLetterHistory.sum('gold_count', {
+            //         where: {
+            //             is_used: 0,
+            //             gold_owner_id: userId
+            //         },
+            //         useMaster: true
+            //     }) || 0;
+            //     await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60);
+            // }
             
             let data = {
                 ... user.get({ plain: true }),
@@ -557,11 +557,11 @@ class Controller {
                 can_impeach_count: 0,
                 next_rank_percentage: 0,
                 next_rank_point: 0,
-                gold_count_in_coupon: Number(goldCouponCount),
-                total_coupon_gold_price: Number(goldCouponCount) * Number(goldPrice),
+                gold_count_in_coupon: Number(user.total_gold_count_in_coupon),
+                total_coupon_gold_price: Number(user.total_gold_count_in_coupon) * Number(user.gold_price),
 
-                gold_count_in_tajikstan: Number(goldCountInLetter),
-                total_tajikstan_gold_price: Number(goldCountInLetter) * Number(goldPrice),
+                gold_count_in_tajikstan: Number(user.total_gold_count_in_tajikstan),
+                total_tajikstan_gold_price: Number(user.total_gold_count_in_tajikstan) * Number(user.gold_price),
 
                 federal_reserve_gold_count: Number(federalGold),
                 federal_reserve_gold_price: Number(federalGold) * Number(goldPrice),
