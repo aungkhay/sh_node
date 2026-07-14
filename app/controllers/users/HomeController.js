@@ -7255,7 +7255,7 @@ class Controller {
                     },
                     user_id: userId,
                     is_used: 0,
-                    is_moved_to_total_gold_count: 0
+                    // is_moved_to_total_gold_count: 0
                 },
                 useMaster: true,
                 group: ['letter_id'],
@@ -7393,7 +7393,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
             if (Number(user.total_gold_count_in_letter) + Number(user.total_gold_count_in_coupon) < 6000) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您的共济基金不足6000，无法使用六国授权书', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您的黄金克数不足6000，无法使用六国授权书', {});
             }
             if (Number(user.reserve_fund) < Number(amount)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足，无法使用六国授权书', {});
