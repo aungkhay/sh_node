@@ -9456,11 +9456,12 @@ class Controller {
                 if (!user.initial_buy_product_date) {
                     updates.initial_buy_product_date = new Date();
                 }
-                await user.update(updates, { transaction: t });
+                // await user.update(updates, { transaction: t });
 
                 const pkgHistory = [];
                 let fragmentPackages = [];
                 let goldGrams = {};
+                let totalEarn = 0;
                 if (gPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
@@ -9573,6 +9574,7 @@ class Controller {
                                 }
                             ];
                             await CashFlow.bulkCreate(earnCashflows, { transaction: t });
+                            totalEarn += Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
                         }
                     }
                 } else {
@@ -9646,8 +9648,12 @@ class Controller {
                         }
                     ];
                     await CashFlow.bulkCreate(earnCashflows, { transaction: t });
+                    totalEarn += Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
                 }
 
+                updates.balance = totalEarn;
+                await user.update(updates, { transaction: t });
+                
                 await gPackage.increment({ total_quantity: -1 }, { transaction: t });
                 if (gPackage.total_quantity - 1 <= 0) {
                     await gPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
