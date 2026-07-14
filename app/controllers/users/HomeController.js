@@ -7339,17 +7339,19 @@ class Controller {
                 ]
                 let goldCount = Number(user.total_gold_count_in_letter);
                 for (const l of letters) {
-                    letterArr.push({
-                        user_id: user.id,
-                        relation: user.relation,
-                        letter_id: l.id,
-                        price: 0,
-                        gold_count: l.gold_count,
-                        gold_owner_id: user.id,
-                        description: `购买${letter.title}, 增送${l.title}`,
-                        is_moved_to_total_gold_count: 1,
-                    });
-                    goldCount += Number(l.gold_count);
+                    if (l.gold_count > 0) {
+                        letterArr.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            letter_id: l.id,
+                            price: 0,
+                            gold_count: l.gold_count,
+                            gold_owner_id: user.id,
+                            description: `购买${letter.title}, 增送${l.title}`,
+                            is_moved_to_total_gold_count: 1,
+                        });
+                        goldCount += Number(l.gold_count);
+                    }
                 }
                 if (letterArr.length > 0) {
                     await AuthorizeLetterHistory.bulkCreate(letterArr, { transaction: t });
