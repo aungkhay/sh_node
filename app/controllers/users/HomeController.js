@@ -9570,11 +9570,11 @@ class Controller {
                                     before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
                                     after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
                                     flow_status: 'IN',
-                                    description: `黄金增值计划战略储备金返还${gPackage.reserve_earn}`,
+                                    // description: `黄金增值计划战略储备金返还${Number(gPackage.reserve_earn)}`,
                                 }
                             ];
                             await CashFlow.bulkCreate(earnCashflows, { transaction: t });
-                            totalEarn += Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
+                            totalEarn += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
                         }
                     }
                 } else {
@@ -9648,12 +9648,12 @@ class Controller {
                         }
                     ];
                     await CashFlow.bulkCreate(earnCashflows, { transaction: t });
-                    totalEarn += Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
+                    totalEarn += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
                 }
 
-                updates.balance = totalEarn;
+                updates.balance = Number(user.balance) + totalEarn;
                 await user.update(updates, { transaction: t });
-                
+
                 await gPackage.increment({ total_quantity: -1 }, { transaction: t });
                 if (gPackage.total_quantity - 1 <= 0) {
                     await gPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
@@ -9703,8 +9703,8 @@ class Controller {
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
                 const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
-                commonLogger(`[BUY_FEDERAL_RESERVE_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
-                commonLogger(`[BUY_FEDERAL_RESERVE_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+                commonLogger(`[BUY_GOLD_APPRECIATION_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_GOLD_APPRECIATION_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
 
                 const upLevelUsers = await User.findAll({
                     where: {
