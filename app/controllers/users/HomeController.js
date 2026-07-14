@@ -10437,7 +10437,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date'],
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date', 'total_gold_count_in_letter', 'total_gold_count_in_coupon', 'total_gold_count'],
                 useMaster: true
             });
             if (!user.kyc) {
@@ -10502,14 +10502,14 @@ class Controller {
                     }, { transaction: t });
                 }
 
-                const updates = {
+                const userUpdates = {
                     reserve_fund: Number(user.reserve_fund) - reserveAmount,
                     balance: Number(user.balance) - balanceAmount
                 };
                 if (!user.initial_buy_product_date) {
-                    updates.initial_buy_product_date = new Date();
+                    userUpdates.initial_buy_product_date = new Date();
                 }
-                await user.update(updates, { transaction: t });
+                // await user.update(userUpdates, { transaction: t });
 
                 const pkgHistory = [];
                 const isMonday = moment().isoWeekday() === 1; // Monday is 1
@@ -10545,8 +10545,15 @@ class Controller {
                     return_start_date = moment().add(3, 'days').format(dateFormat);
                 }
 
+                const goldPrice = await GoldPrice.findOne({
+                    order: [['createdAt', 'DESC']],
+                });
+
+                let totalEarn = 0;
                 if (gPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
+
+                    let beforeAmount = Number(user.balance);
 
                     for (let index = 0; index <= gPackage.buy_one_get_quantity; index++) {
                         const obj = {
@@ -10561,8 +10568,120 @@ class Controller {
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
 
+                        // Release earn immediately
+                        obj.return_start_date = new Date();
+                        obj.is_returned_earn = 1;
+                        obj.return_earn_date = new Date();
+
+                        let goldGram = 0;
+                        let goldInAmount = 0;
+
+                        if (index == 0) {
+                            obj.is_returned_price = 1;
+                            obj.return_price_date = new Date();
+                            obj.is_returned_personal_gold = 1;
+                            obj.return_personal_gold_date = new Date();
+
+                            const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter);
+                            goldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate)).times(0.01).toNumber();
+                            goldInAmount = goldGram * goldPrice.reserve_price;
+                            obj.return_personal_gold_in_amount = goldInAmount;
+                        }
+
                         const pkgHistoryItem = await PersonalReservePackageHistory.create(obj, { transaction: t });
                         pkgHistory.push(pkgHistoryItem);
+
+                        const earns = [
+                            {
+                                user_id: user.id,
+                                relation: user.relation,
+                                package_id: gPackage.id,
+                                package_history_id: pkgHistoryItem.id,
+                                amount: gPackage.reserve_earn,
+                                type: 0, // 0-储备现金
+                            }
+                        ];
+                        const earnCashFlows = [
+                            {
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'PersonalReservePackageEarn',
+                                type: '上合个人储备计划收益返还',
+                                amount: gPackage.reserve_earn,
+                                before_amount: beforeAmount,
+                                after_amount: Number(beforeAmount) + Number(gPackage.reserve_earn),
+                                flow_status: 'IN',
+                                description: `储备现金返还`,
+                            }
+                        ];
+                        beforeAmount += Number(gPackage.reserve_earn);
+                        totalEarn += Number(gPackage.reserve_earn);
+
+                        if (index == 0) {
+                            earns.push({
+                                user_id: user.id,
+                                relation: user.relation,
+                                package_id: gPackage.id,
+                                package_history_id: pkgHistoryItem.id,
+                                amount: gPackage.price,
+                                type: 2, // 2-储备费(本金)
+                            });
+                            earnCashFlows.push({
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'PersonalReservePackageEarn',
+                                type: '上合个人储备计划收益返还',
+                                amount: gPackage.price,
+                                before_amount: Number(beforeAmount),
+                                after_amount: Number(beforeAmount) + Number(gPackage.price),
+                                flow_status: 'IN',
+                                description: `储备费返还`,
+                            });
+
+                            beforeAmount += Number(gPackage.price);
+                            totalEarn += Number(gPackage.price);
+
+                            let subCouponCount = 0;
+                            if (Number(user.total_gold_count_in_coupon) >= goldGram) {
+                                subCouponCount = goldGram;
+                            } else {
+                                subCouponCount = Number(user.total_gold_count_in_coupon);
+                            }
+                            let subLetterCount = goldGram - subCouponCount;
+                            let usedGoldCount = Number(user.total_gold_count) + goldGram;
+                            userUpdates.total_gold_count_in_coupon = Number(user.total_gold_count_in_coupon) - subCouponCount;
+                            userUpdates.total_gold_count_in_letter = Number(user.total_gold_count_in_letter) - subLetterCount;
+                            userUpdates.total_gold_count = usedGoldCount;
+
+                            earns.push({
+                                user_id: user.id,
+                                relation: user.relation,
+                                package_id: gPackage.id,
+                                package_history_id: pkgHistoryItem.id,
+                                amount: goldInAmount,
+                                type: 1, // 1-个人黄金(ex-rate)
+                            });
+                            earnCashFlows.push({
+                                user_id: user.id,
+                                relation: user.relation,
+                                wallet_type: 2,
+                                model: 'PersonalReservePackageEarn',
+                                type: '上合个人储备计划收益返还',
+                                amount: goldInAmount,
+                                before_amount: beforeAmount,
+                                after_amount: Number(beforeAmount) + Number(goldInAmount),
+                                flow_status: 'IN',
+                                description: `个人黄金返还`,
+                            });
+
+                            beforeAmount += Number(goldInAmount);
+                            totalEarn += Number(goldInAmount);
+                        }
+
+                        await PersonalReservePackageEarn.bulkCreate(earns, { transaction: t });
+                        await CashFlow.bulkCreate(earnCashFlows, { transaction: t });
                     }
                 } else {
                     const obj = {
@@ -10574,10 +10693,39 @@ class Controller {
                         release_earn_count: gPackage.release_earn_count,
                         release_personal_gold_rate: gPackage.release_personal_gold_rate,
                         return_start_date: return_start_date + ' 00:00:00',
+                        is_returned_earn: 1,
+                        return_earn_date: new Date(),
+                        is_returned_price: 1,
+                        return_price_date: new Date(),
+                        is_returned_personal_gold: 1,
+                        return_personal_gold_date: new Date(),
                     }
+
+                    const ownGoldGram = Number(user.total_gold_count_in_coupon) + Number(user.total_gold_count_in_letter);
+                    const goldGram = new Decimal(ownGoldGram * Number(gPackage.release_personal_gold_rate)).times(0.01).toNumber();
+                    const goldInAmount = goldGram * goldPrice.reserve_price;
+                    obj.return_personal_gold_in_amount = goldInAmount;
+
                     const pkgHistoryItem = await PersonalReservePackageHistory.create(obj, { transaction: t });
                     pkgHistory.push(pkgHistoryItem);
+
+                    let subCouponCount = 0;
+                    if (Number(user.total_gold_count_in_coupon) >= goldGram) {
+                        subCouponCount = goldGram;
+                    } else {
+                        subCouponCount = Number(user.total_gold_count_in_coupon);
+                    }
+                    let subLetterCount = goldGram - subCouponCount;
+                    let usedGoldCount = Number(user.total_gold_count) + goldGram;
+                    userUpdates.total_gold_count_in_coupon = Number(user.total_gold_count_in_coupon) - subCouponCount;
+                    userUpdates.total_gold_count_in_letter = Number(user.total_gold_count_in_letter) - subLetterCount;
+                    userUpdates.total_gold_count = usedGoldCount;
+
+                    totalEarn += Number(gPackage.reserve_earn) + Number(gPackage.price) + Number(goldInAmount);
                 }
+
+                userUpdates.balance = Number(user.balance) + Number(totalEarn);
+                await user.update(userUpdates, { transaction: t });
 
                 await gPackage.increment({ total_quantity: -1 }, { transaction: t });
                 if (gPackage.total_quantity - 1 <= 0) {
