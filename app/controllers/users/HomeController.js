@@ -7284,7 +7284,7 @@ class Controller {
             const userId = req.user_id;
             const payment_password = req.body.payment_password;
 
-            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'payment_password', 'total_gold_count'], useMaster: true });
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund', 'payment_password', 'total_gold_count', 'total_gold_count_in_letter'], useMaster: true });
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== user.payment_password) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
@@ -7337,7 +7337,7 @@ class Controller {
                         finished_date: letter.period ? moment().add(letter.period, 'days').format('YYYY-MM-DD HH:mm:ss') : null
                     }
                 ]
-                let goldCount = Number(user.total_gold_count);
+                let goldCount = Number(user.total_gold_count_in_letter);
                 for (const l of letters) {
                     letterArr.push({
                         user_id: user.id,
@@ -7347,6 +7347,7 @@ class Controller {
                         gold_count: l.gold_count,
                         gold_owner_id: user.id,
                         description: `购买${letter.title}, 增送${l.title}`,
+                        is_moved_to_total_gold_count: 1,
                     });
                     goldCount += Number(l.gold_count);
                 }
@@ -7354,7 +7355,7 @@ class Controller {
                     await AuthorizeLetterHistory.bulkCreate(letterArr, { transaction: t });
                 }
 
-                await user.update({ reserve_fund: Number(user.reserve_fund) - Number(letter.price), total_gold_count: goldCount }, { transaction: t });
+                await user.update({ reserve_fund: Number(user.reserve_fund) - Number(letter.price), total_gold_count_in_letter: goldCount }, { transaction: t });
 
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
