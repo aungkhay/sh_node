@@ -9753,7 +9753,7 @@ class Controller {
                             relation: user.relation,
                             letter_id: 5,
                             price: 0,
-                            gold_count: 1000 - goldGrams[pkg.id],
+                            gold_count: 1000,
                             gold_owner_id: user.id,
                             product_type: 7, // 黄金增值
                             description: `PKG-${pkg.id}`,
