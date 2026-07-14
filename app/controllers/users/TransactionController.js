@@ -1611,7 +1611,7 @@ class Controller {
         let redisLocked = false;
 
         try {
-            // return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂未开放', {});
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '为确保数据的准确性，暂时关闭划转功能', {});
 
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
