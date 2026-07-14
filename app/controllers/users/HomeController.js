@@ -7487,17 +7487,32 @@ class Controller {
                 let remainReserveFund = Number(user.reserve_fund) - Number(amount);
                 let remainBalance = Number(user.balance) + Number(user.masonic_fund);
 
-                await CashFlow.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    wallet_type: 2,
-                    model: 'AuthorizeLetterHistory',
-                    type: `使用六国授权书`,
-                    amount: Number(user.masonic_fund),
-                    before_amount: Number(user.balance),
-                    after_amount: remainBalance,
-                    description: `释放共济基金:${Number(user.masonic_fund)}至可提余额`,
-                }, { transaction: t });
+                const cashflows = [
+                    {
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'AuthorizeLetterHistory',
+                        type: `使用六国授权书`,
+                        amount: Number(amount),
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: remainReserveFund,
+                        flow_status: 'OUT',
+                    },
+                    {
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'AuthorizeLetterHistory',
+                        type: `使用六国授权书`,
+                        amount: Number(user.masonic_fund),
+                        before_amount: Number(user.balance),
+                        after_amount: remainBalance,
+                        flow_status: 'IN',
+                        description: `释放共济基金:${Number(user.masonic_fund)}至可提余额`,
+                    }
+                ];
+                await CashFlow.bulkCreate(cashflows, { transaction: t });
 
                 await User.update({ 
                     is_group_letter_used: 1, 
