@@ -5307,6 +5307,107 @@ class CronJob {
             errLogger(`[EXPORT_TODAY_DUPLICATE_WITHDRAWALS]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    GIVE_GOLD_APPR_EARN = async () => {
+        try {
+            const rows = await GoldAppreciationPackageHistory.findAll({
+                include: {
+                    model: GoldAppreciationPackage,
+                    as: 'package',
+                    attributes: ['id', 'gold_appreciation_earn', 'reserve_earn'],
+                },
+                where: {
+                    is_returned_earn: 0,
+                    description: '新注册用户福利',
+                    createdAt: {
+                        [Op.gte]: '2026-07-15 04:30:00'
+                    }
+                },
+            });
+            const goldPrice = await GoldPrice.findOne({
+                order: [['createdAt', 'DESC']],
+            });
+
+            for (const row of rows) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance'] });
+                    if (!user) {
+                        console.log(`User ID ${row.user_id} not found. Skipping...`);
+                        continue;
+                    }
+                    const gPackage = row.package;
+                    const goldGram = Number(gPackage.gold_appreciation_earn) / Number(goldPrice.reserve_price);
+                    const earns = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: gPackage.id,
+                            package_history_id: row.id,
+                            amount: gPackage.gold_appreciation_earn,
+                            type: 0, // 0-黄金增值金
+                            description: `转换${goldGram.toFixed(4)}克黄金`,
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            package_id: gPackage.id,
+                            package_history_id: row.id,
+                            amount: gPackage.reserve_earn,
+                            type: 1, // 1-战略储备金
+                        },
+                    ];
+    
+                    const earnCashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldAppreciationPackageEarn',
+                            type: '黄金增值金返还',
+                            amount: gPackage.gold_appreciation_earn,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                            flow_status: 'IN',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2,
+                            model: 'GoldAppreciationPackageEarn',
+                            type: '黄金增值计划战略储备金返还',
+                            amount: gPackage.reserve_earn,
+                            before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                            after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                            flow_status: 'IN',
+                            description: `黄金增值计划战略储备金返还${gPackage.reserve_earn}`,
+                        }
+                    ];
+                    await GoldAppreciationPackageEarn.bulkCreate(earns, { transaction: t });
+                    await CashFlow.bulkCreate(earnCashflows, { transaction: t });
+
+                    await user.increment({ 
+                        balance: Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                        total_gold_count_in_letter: -goldGram
+                    }, { transaction: t });
+                    await row.update({ 
+                        is_returned_earn: 1,
+                        return_earn_date: new Date(),
+                        gold_appreciation_earn_count_remain: 179
+                    }, { transaction: t });
+                    await t.commit();
+                    console.log(`[GIVE_GOLD_APPR_EARN][HISTORY_ID: ${row.id}]: Returned earn to User ID ${user.id}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[GIVE_GOLD_APPR_EARN][HISTORY_ID: ${row.id}]: ${error.stack}`);
+                }
+            }
+
+        } catch (error) {
+            errLogger(`[GIVE_GOLD_APPR_EARN]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;

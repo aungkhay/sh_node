@@ -5953,7 +5953,7 @@ class Controller {
             if (isProcessing) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
             }
-            await this.redisHelper.setValue(PROCESSING_KEY, 1);
+            await this.redisHelper.setValue(PROCESSING_KEY, 1, 120); // 2 minutes
 
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
@@ -6486,7 +6486,7 @@ class Controller {
             if (isProcessing) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
             }
-            await this.redisHelper.setValue(PROCESSING_KEY, 1);
+            await this.redisHelper.setValue(PROCESSING_KEY, 1, 120); // 2 minutes
 
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
@@ -9321,7 +9321,7 @@ class Controller {
             if (isProcessing) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
             }
-            await this.redisHelper.setValue(PROCESSING_KEY, 1);
+            await this.redisHelper.setValue(PROCESSING_KEY, 1, 120); // 2 minutes
 
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
@@ -10500,7 +10500,7 @@ class Controller {
             if (isProcessing) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
             }
-            await this.redisHelper.setValue(PROCESSING_KEY, 1);
+            await this.redisHelper.setValue(PROCESSING_KEY, 1, 120); // 2 minutes
 
             const err = validationResult(req);
             const errors = this.commonHelper.validateForm(err);
