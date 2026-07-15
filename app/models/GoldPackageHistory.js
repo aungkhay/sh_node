@@ -51,6 +51,11 @@ GoldPackageHistory.init({
         allowNull: false,
         defaultValue: 0
     },
+    is_returned_rate: {
+        type: DataTypes.TINYINT,
+        allowNull: false,
+        defaultValue: 0
+    },
     validUntil: {
         type: DataTypes.DATE,
         allowNull: true

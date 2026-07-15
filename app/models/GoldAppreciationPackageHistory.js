@@ -126,6 +126,11 @@ GoldAppreciationPackageHistory.init({
             name: 'idx_description',
             fields: ['description'],
             using: 'BTREE'
+        },
+        {
+            name: 'idx_createdAt',
+            fields: ['createdAt'],
+            using: 'BTREE'
         }
     ]
 })

@@ -5408,6 +5408,60 @@ class CronJob {
             errLogger(`[GIVE_GOLD_APPR_EARN]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    RETURN_GOLD_PACKAGE_RATE = async () => {
+        try {
+            const rows = await GoldPackageHistory.findAll({
+                attributes: ['id', 'user_id', 'return_rate', 'price', 'package_id'],
+                where: {
+                    is_returned_rate: 0,
+                }
+            });
+
+            for (const row of rows) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance'] });
+                    if (!user) {
+                        console.log(`User ID ${row.user_id} not found. Skipping...`);
+                        continue;
+                    }
+                    const rate = Number(row.return_rate.split('-')[1]); // 4826-5324
+                    await GoldPackageReturn.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: row.package_id,
+                        package_history_id: row.id,
+                        amount: rate,
+                        description: `联合储备收益`,
+                    }, { transaction: t });
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: user.id,
+                        wallet_type: 2,
+                        model: 'GoldPackageHistory',
+                        type: '联合储备收益',
+                        amount: rate,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + rate,
+                        flow_status: 'IN',
+                    }, { transaction: t });
+                    await user.increment({ balance: rate }, { transaction: t });
+                    await row.update({ is_returned_rate: 1 }, { transaction: t });
+                    await t.commit();
+                    console.log(`[RETURN_GOLD_PACKAGE_RATE][HISTORY_ID: ${row.id}]: Returned rate to User ID ${user.id}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RETURN_GOLD_PACKAGE_RATE][HISTORY_ID: ${row.id}]: ${error.stack}`);
+                }
+            }
+
+            console.log(`[RETURN_GOLD_PACKAGE_RATE]: Processed ${rows.length} records.`);
+        } catch (error) {
+            errLogger(`[RETURN_GOLD_PACKAGE_RATE]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
