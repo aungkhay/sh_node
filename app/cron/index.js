@@ -5242,6 +5242,71 @@ class CronJob {
             errLogger(`[EXPORT_TODAY_CASH_FLOWS]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    EXPORT_TODAY_DUPLICATE_WITHDRAWALS = async () => {
+        try {
+            const todayStart = moment().startOf('day').toDate();
+            const todayEnd = moment().endOf('day').toDate();
+
+            const rows = await Withdraw.findAll({
+                attributes: [
+                    'user_id',
+                    [fn('COUNT', col('*')), 'withdraw_count'],
+                ],
+                where: {
+                    createdAt: {
+                        [Op.between]: [todayStart, todayEnd]
+                    }
+                },
+                group: ['user_id'],
+                having: literal('COUNT(*) > 1'),
+                raw: true,
+            });
+
+            const list = [];
+            for (const row of rows) {
+                const withdraws = await Withdraw.findAll({
+                    include: {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number']
+                    },
+                    where: {
+                        user_id: row.user_id,
+                        createdAt: {
+                            [Op.between]: [todayStart, todayEnd]
+                        }
+                    },
+                    order: [['createdAt', 'ASC']],
+                    attributes: ['id', 'order_no', 'amount', 'handle_fee', 'before_amount', 'after_amount', 'status', 'createdAt'],
+                });
+                for (const withdraw of withdraws) {
+                    list.push({
+                        "用户ID": withdraw.user ? withdraw.user.id : '',
+                        "姓名": withdraw.user ? withdraw.user.name : '',
+                        "手机号": withdraw.user ? withdraw.user.phone_number : '',
+                        "提现ID": withdraw.id,
+                        "订单号": withdraw.order_no,
+                        "提现金额": Number(withdraw.amount),
+                        "手续费": Number(withdraw.handle_fee),
+                        "提现前金额": Number(withdraw.before_amount),
+                        "提现后金额": Number(withdraw.after_amount),
+                        "提现状态": withdraw.status === 'PENDING' ? '待处理' : withdraw.status === 'APPROVED' ? '已完成' : '已拒绝',
+                        "创建时间": withdraw.createdAt ? moment(withdraw.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                    });
+                }
+            }
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Today Duplicate Withdrawals');
+            xlsx.writeFile(workbook1, 'today_duplicate_withdrawals_export.xlsx');
+
+        } catch (error) {
+            errLogger(`[EXPORT_TODAY_DUPLICATE_WITHDRAWALS]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
