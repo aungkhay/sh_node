@@ -5292,7 +5292,7 @@ class CronJob {
                         "手续费": Number(withdraw.handle_fee),
                         "提现前金额": Number(withdraw.before_amount),
                         "提现后金额": Number(withdraw.after_amount),
-                        "提现状态": withdraw.status === 'PENDING' ? '待处理' : withdraw.status === 'APPROVED' ? '已完成' : '已拒绝',
+                        "提现状态": withdraw.status === 0 ? '待处理' : withdraw.status === 1 ? '已完成' : '已拒绝',
                         "创建时间": withdraw.createdAt ? moment(withdraw.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
                     });
                 }
