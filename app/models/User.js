@@ -317,6 +317,24 @@ User.init({
         allowNull: true,
         comment: '首次购买时间'
     },
+    total_assets: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '总资产'
+    },
+    total_assets_earn: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '累计收益'
+    },
+    daily_product_earn: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '产品收益 (clear after calculate)'
+    },
     google_2fa_secret: {
         type: DataTypes.STRING,
         allowNull: true,

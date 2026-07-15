@@ -85,6 +85,7 @@ const PersonalReservePackage = require('./PersonalReservePackage');
 const PersonalReservePackageHistory = require('./PersonalReservePackageHistory');
 const PersonalReservePackageBonuses = require('./PersonalReservePackageBonuses');
 const PersonalReservePackageEarn = require('./PersonalReservePackageEarn');
+const AssetEarnHistory = require('./AssetEarnHistory');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -491,6 +492,10 @@ PersonalReservePackageEarn.belongsTo(PersonalReservePackage, { foreignKey: 'pack
 PersonalReservePackageHistory.hasMany(PersonalReservePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
 PersonalReservePackageBonuses.belongsTo(PersonalReservePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ ASSET_EARN_HISTORY (1:N) ==========
+User.hasMany(AssetEarnHistory, { foreignKey: 'user_id', as: 'asset_earn_histories', onDelete: 'CASCADE' });
+AssetEarnHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -572,7 +577,8 @@ const models = {
     PersonalReservePackage,
     PersonalReservePackageHistory,
     PersonalReservePackageBonuses,
-    PersonalReservePackageEarn
+    PersonalReservePackageEarn,
+    AssetEarnHistory
 };
 
 // Export models + db connection

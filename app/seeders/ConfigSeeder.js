@@ -324,7 +324,35 @@ module.exports = async () => {
             val: '1',
             description: '0 - 关闭 | 1 - 开启',
             data_type: 'boolean'
-        }
+        },
+        {
+            type: 'personal_reserve_package_description',
+            title: '上合个人储备计划 - 描述',
+            val: '-',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'personal_reserve_package_period',
+            title: '上合个人储备计划 - 申报时间',
+            val: '2026-07-10 00:00:00|2026-07-12 00:00:00',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'personal_reserve_package_daily_release_qty',
+            title: '上合个人储备计划 - 每日发放数量',
+            val: '300000',
+            description: '-',
+            data_type: 'integer'
+        },
+        {
+            type: 'is_asset_treasure_active',
+            title: '资产宝是否开关',
+            val: '0',
+            description: '0 - 关闭 | 1 - 开启',
+            data_type: 'boolean'
+        },
     ];
 
     const count = await Config.count();

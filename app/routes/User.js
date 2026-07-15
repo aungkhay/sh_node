@@ -145,6 +145,9 @@ class UserRoute extends express.Router {
         this.get('/all-product-history', middleware.isLoggedIn, HomeCtrl.ALL_PRODUCT_HISTORY);
         this.get('/all-product-earn-history', middleware.isLoggedIn, HomeCtrl.ALL_PRODUCT_EARNING_HISTORY);
         this.get('/all-product-bonus-history', middleware.isLoggedIn, HomeCtrl.ALL_PRODUCT_BONUS_HISTORY);
+        // Asset Earn History
+        this.get('/assets/earn-history', middleware.isLoggedIn, HomeCtrl.ASSET_EARN_HISTORY);
+        this.get('/assets/earn-summary', middleware.isLoggedIn, HomeCtrl.ASSET_SUMMARY);
 
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);

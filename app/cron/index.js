@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory } = require('../models');
 const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -5460,6 +5460,51 @@ class CronJob {
             console.log(`[RETURN_GOLD_PACKAGE_RATE]: Processed ${rows.length} records.`);
         } catch (error) {
             errLogger(`[RETURN_GOLD_PACKAGE_RATE]: ${error.stack}`);
+        }
+    }
+
+    CALCULATE_ASSET_EARN = async () => {
+        try {
+            const users = await User.findAll({
+                where: {
+                    total_assets: {
+                        [Op.gt]: 0
+                    }
+                },
+                attributes: ['id', 'relation', 'total_assets', 'total_assets_earn', 'daily_product_earn'],
+            });
+
+            for (const user of users) {
+                const t = await db.transaction();
+                try {
+                    const dailyEarn = Number(user.total_assets) * 0.0518 / 365; // 5.18% annualized rate
+                    const newTotalAssets = Number(user.total_assets) + dailyEarn;
+                    const newTotalAssetsEarn = Number(user.total_assets_earn) + dailyEarn;
+
+                    await AssetEarnHistory.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        total_assets: Number(user.total_assets),
+                        daily_product_earn: Number(user.daily_product_earn),
+                        amount: dailyEarn,
+                    }, { transaction: t });
+
+                    await user.update({
+                        total_assets: newTotalAssets,
+                        total_assets_earn: newTotalAssetsEarn,
+                        daily_product_earn: 0,
+                    }, { transaction: t });
+
+                    await t.commit();
+                    console.log(`[CALCULATE_ASSET_EARN][USER_ID: ${user.id}]: Daily earn calculated and updated.`);
+
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[CALCULATE_ASSET_EARN][USER_ID: ${user.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[CALCULATE_ASSET_EARN]: ${error.stack}`);
         }
     }
 }
