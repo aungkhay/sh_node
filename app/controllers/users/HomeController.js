@@ -11228,7 +11228,7 @@ class Controller {
                 total_assets_earn: Number(user.total_assets_earn),
                 daily_earn: Number(dailyEarn)
             }
-            await this.redisHelper.setValue(`ASSET_SUMMARY_${userId}`, JSON.stringify(data), 300); // cache for 5 minutes
+            await this.redisHelper.setValue(`ASSET_SUMMARY_${userId}`, JSON.stringify(data), 120); // cache for 2 minutes
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
