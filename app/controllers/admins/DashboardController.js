@@ -88,6 +88,8 @@ class Controller {
             const internalUserReserveFund = await User.sum('reserve_fund', { where: { type: 2, is_internal_account: 1 } });
             const normalUserBalance = await User.sum('balance', { where: { type: 2, is_internal_account: 0 } });
             const internalUserBalance = await User.sum('balance', { where: { type: 2, is_internal_account: 1 } });
+            const normalUserTotalAssets = await User.sum('total_assets', { where: { type: 2, is_internal_account: 0 } });
+            const internalUserTotalAssets = await User.sum('total_assets', { where: { type: 2, is_internal_account: 1 } });
 
             const data = {
                 today_deposit_amount: todayDepositAmount ? Number(todayDepositAmount) : 0,
@@ -109,7 +111,9 @@ class Controller {
                 normal_user_reserve_fund: normalUserReserveFund ? Number(normalUserReserveFund) : 0,
                 internal_user_reserve_fund: internalUserReserveFund ? Number(internalUserReserveFund) : 0,
                 normal_user_balance: normalUserBalance ? Number(normalUserBalance) : 0,
-                internal_user_balance: internalUserBalance ? Number(internalUserBalance) : 0
+                internal_user_balance: internalUserBalance ? Number(internalUserBalance) : 0,
+                normal_user_total_assets: normalUserTotalAssets ? Number(normalUserTotalAssets) : 0,
+                internal_user_total_assets: internalUserTotalAssets ? Number(internalUserTotalAssets) : 0
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
