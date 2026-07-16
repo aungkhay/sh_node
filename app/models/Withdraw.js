@@ -109,6 +109,14 @@ Withdraw.init({
         { 
             name: 'idx_withdraw_user_id_createdAt',
             fields: ['user_id', 'createdAt']
+        },
+        {
+            name: 'idx_withdraw_user_id_createdAt_deletedAt',
+            fields: ['user_id', 'createdAt', 'deletedAt']
+        },
+        {
+            name: 'idx_withdraw_createdAt_deletedAt',
+            fields: ['createdAt', 'deletedAt']
         }
     ]
 });

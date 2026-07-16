@@ -18,6 +18,26 @@ class CronJob {
             return Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min);
         }
         this.merchantController = new MerchantController();
+
+        this.is_asset_treasure_active = async () => {
+            try {
+                let isActive = await this.redisHelper.getValue('is_asset_treasure_active');
+                if (!isActive) {
+                    const config = await Config.findOne({
+                        where: { type: 'is_asset_treasure_active' },
+                        attributes: ['val']
+                    });
+                    if (config) {
+                        await this.redisHelper.setValue('is_asset_treasure_active', config.val);
+                    }
+                    isActive = config ? config.val : 0;
+                }
+                return Number(isActive) === 1;
+            } catch (error) {
+                errLogger('Error checking if asset treasure is active:' + error.stack);
+                return false;
+            }
+        }
     }
 
     START = () => {
@@ -30,7 +50,7 @@ class CronJob {
         // Every day at 6:00 AM
         cron.schedule('0 6 * * *', this.GET_GOLD_PRICE).start();
         // Every 6 hours
-        cron.schedule('0 */6 * * *', this.RESET_ACTIVE).start();
+        // cron.schedule('0 */6 * * *', this.RESET_ACTIVE).start();
         // Runs every day at midnight
         cron.schedule('0 0 * * *', this.RESET_REWARD_COUNT).start();
         cron.schedule('0 0 * * *', this.EARN_INTEREST).start();
@@ -38,7 +58,7 @@ class CronJob {
         cron.schedule('0 0 * * *', this.RESET_CAN_GET_RED_ENVELOPE).start();
         // Run at 23:30 every day
         cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
-        cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
+        // cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
         cron.schedule('20 0 * * *', this.GIVE_MASONIC_BONUS).start();
         cron.schedule('30 0 * * *', this.GIVE_POLICY_PACKAGE_EARN).start();
         // Every 10 minutes
@@ -71,7 +91,7 @@ class CronJob {
         // Run every 1 minute
         cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
         // run every 00:50
-        // cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
+        cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
         // Run every hour
         cron.schedule('0 2-23 * * *', this.CHECK_VALIDED_COUPON).start();
     }
@@ -1571,6 +1591,8 @@ class CronJob {
                 }
             });
 
+            const isAssetActive = await this.is_asset_treasure_active();
+
             for (let pack of packages) {
                 // daily_earn is can be get on the next day after the package is bought, so only give bonus when createdAt is before today
                 // if (moment(pack.createdAt).isAfter(moment().startOf('day'))) {
@@ -1579,8 +1601,9 @@ class CronJob {
 
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation', 'total_assets'], transaction: t });
                     if (!user) {
+                        await t.rollback();
                         continue;
                     }
                     // const dailyReward = new Decimal(Number(pack.price))
@@ -1614,27 +1637,34 @@ class CronJob {
                     //     continue;
                     // }
 
-                    
+                    const dailyEarn = Number(pack.daily_earn);
+                    const walletType = isAssetActive ? 3 : 2; // 3 for asset treasure, 2 for balance
+                    const walletColumn = isAssetActive ? 'total_assets' : 'balance';
                     await MasonicPackageEarn.create({
                         user_id: user.id,
                         relation: user.relation,
                         package_id: pack.package_id,
                         package_history_id: pack.id,
-                        amount: pack.daily_earn,
+                        amount: dailyEarn,
                         description: '共计资金礼包每日收益',
                     }, { transaction: t });
                     await CashFlow.create({
                         user_id: user.id,
                         relation: user.relation,
-                        wallet_type: 2,
+                        wallet_type: walletType,
                         model: 'MasonicPackageEarn',
                         type: '上合终身授权计划收益',
-                        amount: pack.daily_earn,
-                        before_amount: user.balance,
-                        after_amount: Number(user.balance) + Number(pack.daily_earn),
+                        amount: dailyEarn,
+                        before_amount: user[walletColumn],
+                        after_amount: Number(user[walletColumn]) + Number(dailyEarn),
                         flow_status: 'IN'
                     }, { transaction: t });
-                    await user.increment({ balance: pack.daily_earn }, { transaction: t });
+
+                    let incrementFields = { [walletColumn]: dailyEarn };
+                    if (isAssetActive) {
+                        incrementFields.daily_product_earn = dailyEarn;
+                    }
+                    await user.increment(incrementFields, { transaction: t });
 
                     await t.commit();
 
@@ -2485,10 +2515,14 @@ class CronJob {
                 attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn', 'personal_gold', 'is_returned_earn', 'is_returned_personal_gold', 'is_returned_price', 'is_returned_masonic_fund']
             });
 
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3-资产宝, 2-余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
+
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2573,17 +2607,22 @@ class CronJob {
                         await CashFlow.create({
                             user_id: pack.user_id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'FederalReserveGoldPackageEarn',
                             type: '联储备黄金礼包返还',
                             amount: reserveEarn + originalPrice,
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + reserveEarn + originalPrice,
+                            before_amount: user[walletColumn],
+                            after_amount: Number(user[walletColumn]) + reserveEarn + originalPrice,
                             flow_status: 'IN',
                             description: desc,
                         }, { transaction: t });
 
-                        await user.increment({ balance: reserveEarn + originalPrice }, { transaction: t });
+                        let incrementFields = { [walletColumn]: reserveEarn + originalPrice };
+                        if (isAssetActive) {
+                            incrementFields.daily_product_earn = reserveEarn + originalPrice;
+                        }
+
+                        await user.increment(incrementFields, { transaction: t });
                     }
 
                     await t.commit();
@@ -2612,10 +2651,14 @@ class CronJob {
                 order: [['createdAt', 'DESC']],
             });
 
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3-资产宝, 2-余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
+
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count_in_letter'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count_in_letter', 'total_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2642,12 +2685,12 @@ class CronJob {
                         await CashFlow.create({
                             user_id: pack.user_id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'GoldAppreciationPackageEarn',
                             type: '黄金增值计划本金返还',
                             amount: Number(pack.price),
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + Number(pack.price),
+                            before_amount: user[walletColumn],
+                            after_amount: Number(user[walletColumn]) + Number(pack.price),
                             flow_status: 'IN',
                             description: `黄金增值计划本金返还${pack.price}`,
                         }, { transaction: t });
@@ -2683,12 +2726,12 @@ class CronJob {
                         await CashFlow.create({
                             user_id: pack.user_id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'GoldAppreciationPackageEarn',
                             type: '黄金增值金返还',
                             amount: pack.gold_appreciation_earn,
-                            before_amount: user.balance + addBalance,
-                            after_amount: Number(user.balance) + Number(pack.gold_appreciation_earn) + addBalance,
+                            before_amount: user[walletColumn] + addBalance,
+                            after_amount: Number(user[walletColumn]) + Number(pack.gold_appreciation_earn) + addBalance,
                             flow_status: 'IN',
                         }, { transaction: t });
 
@@ -2697,12 +2740,16 @@ class CronJob {
                     }
                     
                     if (addBalance > 0) {
-                        let incrementObj = { balance: addBalance };
+                        let incrementFields = {};
+                        incrementFields[walletColumn] = addBalance;
                         if (substractGoldGram > 0) {
-                            incrementObj.total_gold_count_in_letter = -substractGoldGram;
-                            incrementObj.total_gold_count = substractGoldGram;
+                            incrementFields.total_gold_count_in_letter = -substractGoldGram;
+                            incrementFields.total_gold_count = substractGoldGram;
                         }
-                        await user.increment(incrementObj, { transaction: t });
+                        if (isAssetActive) {
+                            incrementFields.daily_product_earn = addBalance;
+                        }
+                        await user.increment(incrementFields, { transaction: t });
                         await pack.update(updateObj, { transaction: t });
                     }
 
@@ -2735,10 +2782,14 @@ class CronJob {
                 attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn']
             });
 
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3-资产宝, 2-余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
+
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2762,17 +2813,21 @@ class CronJob {
                         await CashFlow.create({
                             user_id: pack.user_id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'GoldAppreciationPackageEarn',
                             type: '黄金增值计划战略储备金返还',
                             amount: reserveEarn,
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + reserveEarn,
+                            before_amount: user[walletColumn],
+                            after_amount: Number(user[walletColumn]) + reserveEarn,
                             flow_status: 'IN',
                             description: `黄金增值计划战略储备金返还${reserveEarn}`,
                         }, { transaction: t });
 
-                        await user.increment({ balance: reserveEarn }, { transaction: t });
+                        let incremntFields = { [walletColumn]: reserveEarn };
+                        if (isAssetActive) {
+                            incremntFields.daily_product_earn = reserveEarn;
+                        }
+                        await user.increment(incremntFields, { transaction: t });
                     }
                     await t.commit();
 
@@ -2799,10 +2854,14 @@ class CronJob {
                 attributes: ['id', 'user_id', 'package_id', 'price', 'masonic_fund', 'exchange_value', 'is_returned_price', 'is_returned_masonic_fund', 'is_returned_exchange_value']
             });
 
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3-资产宝, 2-余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
+
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2874,17 +2933,21 @@ class CronJob {
                         await CashFlow.create({
                             user_id: pack.user_id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'ShanghaiCooperationEarn',
                             type: '上海合作组织收益返还',
                             amount: exchangeValue + originalPrice,
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + exchangeValue + originalPrice,
+                            before_amount: user[walletColumn],
+                            after_amount: Number(user[walletColumn]) + exchangeValue + originalPrice,
                             flow_status: 'IN',
                             description: desc,
                         }, { transaction: t });
 
-                        await user.increment({ balance: exchangeValue + originalPrice }, { transaction: t });
+                        let incrementFields = { [walletColumn]: exchangeValue + originalPrice };
+                        if (isAssetActive) {
+                            incrementFields.daily_product_earn = exchangeValue + originalPrice;
+                        }
+                        await user.increment(incrementFields, { transaction: t });
                     }
 
                     await t.commit();
@@ -2920,13 +2983,17 @@ class CronJob {
                 },
                 order: [['createdAt', 'ASC']],
             });
+
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2;
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
             
             let totalReleasedGoldCount = 0;
             let totalReleasedGoldAmount = 0;
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'total_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2943,8 +3010,8 @@ class CronJob {
                     const cashflows = [];
                     const updateObj = {};
                     const now = new Date();
-                    let beforeAmount = Number(user.balance);
-                    let afterAmount = Number(user.balance);
+                    let beforeAmount = Number(user[walletColumn]);
+                    let afterAmount = Number(user[walletColumn]);
                     
                     if (reserveEarn > 0) {
                         afterAmount += reserveEarn;
@@ -2959,7 +3026,7 @@ class CronJob {
                         cashflows.push({
                             user_id: pack.user_id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划收益返还',
                             amount: reserveEarn,
@@ -2985,7 +3052,7 @@ class CronJob {
                         cashflows.push({
                             user_id: pack.user_id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划收益返还',
                             amount: originPrice,
@@ -3011,7 +3078,7 @@ class CronJob {
                         cashflows.push({
                             user_id: pack.user_id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划收益返还',
                             amount: goldInAmount,
@@ -3037,12 +3104,18 @@ class CronJob {
                     }
                     let subLetterCount = goldGram - subCouponCount;
                     let usedGoldCount = Number(user.total_gold_count) + goldGram;
-                    await user.increment({ 
-                        balance: reserveEarn + originPrice + goldInAmount, 
+
+                    let incrementFields = {
+                        [walletColumn]: reserveEarn + originPrice + goldInAmount, 
                         total_gold_count_in_coupon: -subCouponCount, 
                         total_gold_count_in_letter: -subLetterCount,
                         total_gold_count: usedGoldCount
-                    }, { transaction: t });
+                    }
+                    if (isAssetActive) {
+                        incrementFields.daily_product_earn = reserveEarn + originPrice + goldInAmount;
+                    }
+
+                    await user.increment(incrementFields, { transaction: t });
                     await pack.update(updateObj, { transaction: t });
 
                     await t.commit();
@@ -3127,11 +3200,16 @@ class CronJob {
                 }
             });
 
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3-资产宝, 2-余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
+
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation', 'total_assets'], transaction: t });
                     if (!user) {
+                        await t.rollback();
                         continue;
                     }
                     
@@ -3144,16 +3222,20 @@ class CronJob {
                             await CashFlow.create({
                                 user_id: user.id,
                                 relation: user.relation,
-                                wallet_type: 2,
+                                wallet_type: walletType,
                                 model: 'PolicyPackageEarn',
                                 type: '上合贡献政策收益',
                                 amount: dailyEarn + Number(pack.price),
-                                before_amount: user.balance,
-                                after_amount: Number(user.balance) + dailyEarn + Number(pack.price),
+                                before_amount: user[walletColumn],
+                                after_amount: Number(user[walletColumn]) + dailyEarn + Number(pack.price),
                                 flow_status: 'IN'
                             }, { transaction: t });
 
-                            await user.increment({ balance: dailyEarn + Number(pack.price)}, { transaction: t });
+                            let incrementFields = { [walletColumn]: dailyEarn + Number(pack.price) };
+                            if (isAssetActive) {
+                                incrementFields.daily_product_earn = dailyEarn;
+                            }
+                            await user.increment(incrementFields, { transaction: t });
 
                             await PolicyPackageEarn.create({
                                 user_id: pack.user_id,
@@ -3198,16 +3280,20 @@ class CronJob {
                             await CashFlow.create({
                                 user_id: user.id,
                                 relation: user.relation,
-                                wallet_type: 2,
+                                wallet_type: walletType,
                                 model: 'PolicyPackageEarn',
                                 type: '上合贡献政策收益',
                                 amount: dailyEarn,
-                                before_amount: user.balance,
-                                after_amount: Number(user.balance) + dailyEarn,
+                                before_amount: user[walletColumn],
+                                after_amount: Number(user[walletColumn]) + dailyEarn,
                                 flow_status: 'IN'
                             }, { transaction: t });
 
-                            await user.increment({ balance: dailyEarn }, { transaction: t });
+                            let incrementFields = { [walletColumn]: dailyEarn };
+                            if (isAssetActive) {
+                                incrementFields.daily_product_earn = dailyEarn;
+                            }
+                            await user.increment(incrementFields, { transaction: t });
                             await PolicyPackageEarn.create({
                                 user_id: pack.user_id,
                                 relation: user.relation,
@@ -5419,10 +5505,14 @@ class CronJob {
                 }
             });
 
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3-资产宝, 2-余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
+
             for (const row of rows) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance'] });
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'] });
                     if (!user) {
                         console.log(`User ID ${row.user_id} not found. Skipping...`);
                         continue;
@@ -5439,15 +5529,20 @@ class CronJob {
                     await CashFlow.create({
                         relation: user.relation,
                         user_id: user.id,
-                        wallet_type: 2,
+                        wallet_type: walletType,
                         model: 'GoldPackageHistory',
                         type: '联合储备收益',
                         amount: rate,
-                        before_amount: user.balance,
-                        after_amount: Number(user.balance) + rate,
+                        before_amount: user[walletColumn],
+                        after_amount: Number(user[walletColumn]) + rate,
                         flow_status: 'IN',
                     }, { transaction: t });
-                    await user.increment({ balance: rate }, { transaction: t });
+
+                    let incrementFields = { [walletColumn]: rate };
+                    if (isAssetActive) {
+                        incrementFields.total_assets_earn = rate;
+                    }
+                    await user.increment(incrementFields, { transaction: t });
                     await row.update({ is_returned_rate: 1 }, { transaction: t });
                     await t.commit();
                     console.log(`[RETURN_GOLD_PACKAGE_RATE][HISTORY_ID: ${row.id}]: Returned rate to User ID ${user.id}`);

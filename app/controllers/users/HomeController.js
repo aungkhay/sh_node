@@ -34,6 +34,25 @@ class Controller {
         this.getRandomInt = (min, max) => {
             return Math.floor(Math.random() * (Number(max) - Number(min) + 1)) + Number(min);
         }
+        this.is_asset_treasure_active = async () => {
+            try {
+                let isActive = await this.redisHelper.getValue('is_asset_treasure_active');
+                if (!isActive) {
+                    const config = await Config.findOne({
+                        where: { type: 'is_asset_treasure_active' },
+                        attributes: ['val']
+                    });
+                    if (config) {
+                        await this.redisHelper.setValue('is_asset_treasure_active', config.val);
+                    }
+                    isActive = config ? config.val : 0;
+                }
+                return Number(isActive) === 1;
+            } catch (error) {
+                errLogger('Error checking if asset treasure is active:' + error.stack);
+                return false;
+            }
+        }
     }
 
     GET_SERVER_TIME = async (req, res) => {
@@ -9410,7 +9429,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date'],
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date', 'total_assets', 'daily_product_earn'],
                 useMaster: true
             });
             if (!user.kyc) {
@@ -9446,6 +9465,10 @@ class Controller {
             const goldPrice = await GoldPrice.findOne({
                 order: [['createdAt', 'DESC']],
             });
+
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3:资产宝, 2:余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
 
             const t = await db.transaction();
             try {
@@ -9495,7 +9518,7 @@ class Controller {
                 if (gPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
-                    let beforeAmount = Number(user.balance);
+                    let beforeAmount = Number(user[walletColumn]);
                     
                     for (let index = 0; index <= gPackage.buy_one_get_quantity; index++) {
                         let obj = null;
@@ -9585,7 +9608,7 @@ class Controller {
                                 {
                                     user_id: user.id,
                                     relation: user.relation,
-                                    wallet_type: 2,
+                                    wallet_type: walletType,
                                     model: 'GoldAppreciationPackageEarn',
                                     type: '黄金增值金返还',
                                     amount: gPackage.gold_appreciation_earn,
@@ -9596,7 +9619,7 @@ class Controller {
                                 {
                                     user_id: user.id,
                                     relation: user.relation,
-                                    wallet_type: 2,
+                                    wallet_type: walletType,
                                     model: 'GoldAppreciationPackageEarn',
                                     type: '黄金增值计划战略储备金返还',
                                     amount: gPackage.reserve_earn,
@@ -9621,7 +9644,7 @@ class Controller {
                                 earnCashflows.push({
                                     user_id: user.id,
                                     relation: user.relation,
-                                    wallet_type: 2,
+                                    wallet_type: walletType,
                                     model: 'GoldAppreciationPackageEarn',
                                     type: '黄金增值计划本金返还',
                                     amount: Number(gPackage.price),
@@ -9694,35 +9717,35 @@ class Controller {
                         {
                             user_id: user.id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'GoldAppreciationPackageEarn',
                             type: '黄金增值金返还',
                             amount: gPackage.gold_appreciation_earn,
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                            before_amount: Number(user[walletColumn]),
+                            after_amount: Number(user[walletColumn]) + Number(gPackage.gold_appreciation_earn),
                             flow_status: 'IN',
                         },
                         {
                             user_id: user.id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'GoldAppreciationPackageEarn',
                             type: '黄金增值计划战略储备金返还',
                             amount: gPackage.reserve_earn,
-                            before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
-                            after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                            before_amount: Number(user[walletColumn]) + Number(gPackage.gold_appreciation_earn),
+                            after_amount: Number(user[walletColumn]) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
                             flow_status: 'IN',
                             description: `黄金增值计划战略储备金返还${gPackage.reserve_earn}`,
                         },
                         {
                             user_id: user.id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'GoldAppreciationPackageEarn',
                             type: '黄金增值计划本金返还',
                             amount: Number(gPackage.price),
-                            before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
-                            after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn) + Number(gPackage.price),
+                            before_amount: Number(user[walletColumn]) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                            after_amount: Number(user[walletColumn]) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn) + Number(gPackage.price),
                             flow_status: 'IN',
                         }
                     ];
@@ -9730,7 +9753,10 @@ class Controller {
                     totalEarn += Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn) + Number(gPackage.price);
                 }
 
-                updates.balance = Number(user.balance) + totalEarn;
+                updates[walletColumn] = Number(user[walletColumn]) + totalEarn;
+                if (isAssetActive) {
+                    updates.daily_product_earn = Number(user.daily_product_earn) + totalEarn;
+                }
                 await user.update(updates, { transaction: t });
 
                 await gPackage.increment({ total_quantity: -1 }, { transaction: t });
@@ -9901,7 +9927,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'createdAt'],
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'createdAt', 'total_assets', 'daily_product_earn'],
                 useMaster: true
             });
 
@@ -9939,6 +9965,10 @@ class Controller {
             const goldPrice = await GoldPrice.findOne({
                 order: [['createdAt', 'DESC']],
             });
+
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3:资产宝, 2:余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
 
             const t = await db.transaction();
             try {
@@ -9996,23 +10026,23 @@ class Controller {
                     {
                         user_id: user.id,
                         relation: user.relation,
-                        wallet_type: 2,
+                        wallet_type: walletType,
                         model: 'GoldAppreciationPackageEarn',
                         type: '黄金增值金返还',
                         amount: gPackage.gold_appreciation_earn,
-                        before_amount: user.balance,
-                        after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
+                        before_amount: Number(user[walletColumn]),
+                        after_amount: Number(user[walletColumn]) + Number(gPackage.gold_appreciation_earn),
                         flow_status: 'IN',
                     },
                     {
                         user_id: user.id,
                         relation: user.relation,
-                        wallet_type: 2,
+                        wallet_type: walletType,
                         model: 'GoldAppreciationPackageEarn',
                         type: '黄金增值计划战略储备金返还',
                         amount: gPackage.reserve_earn,
-                        before_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn),
-                        after_amount: Number(user.balance) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
+                        before_amount: Number(user[walletColumn]) + Number(gPackage.gold_appreciation_earn),
+                        after_amount: Number(user[walletColumn]) + Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn),
                         flow_status: 'IN',
                         description: `黄金增值计划战略储备金返还${gPackage.reserve_earn}`,
                     }
@@ -10034,7 +10064,10 @@ class Controller {
                     }, { transaction: t });
                 }
                 const incrementObj = {
-                    balance: Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn)
+                    [walletColumn]: Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn)
+                }
+                if (isAssetActive) {
+                    incrementObj.daily_product_earn = Number(gPackage.gold_appreciation_earn) + Number(gPackage.reserve_earn);
                 }
                 if (gPackage.is_release_authorize_letter) {
                     incrementObj.total_gold_count_in_letter = 1000 - goldGram;
@@ -10589,7 +10622,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date', 'total_gold_count_in_letter', 'total_gold_count_in_coupon', 'total_gold_count'],
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'have_reward_6', 'payment_password', 'initial_buy_product_date', 'total_gold_count_in_letter', 'total_gold_count_in_coupon', 'total_gold_count', 'total_assets', 'daily_product_earn'],
                 useMaster: true
             });
             if (!user.kyc) {
@@ -10621,6 +10654,10 @@ class Controller {
             //     await this.redisHelper.deleteKey(PROCESSING_KEY);
             //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             // }
+
+            const isAssetActive = await this.is_asset_treasure_active();
+            const walletType = isAssetActive ? 3 : 2; // 3:资产宝, 2:余额
+            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
 
             const t = await db.transaction();
             try {
@@ -10706,7 +10743,7 @@ class Controller {
                 if (gPackage.buy_one_get_quantity > 0) {
                     const randomNumber = this.commonHelper.randomNumber(6);
 
-                    let beforeAmount = Number(user.balance);
+                    let beforeAmount = Number(user[walletColumn]);
 
                     for (let index = 0; index <= gPackage.buy_one_get_quantity; index++) {
                         const obj = {
@@ -10759,7 +10796,7 @@ class Controller {
                             {
                                 user_id: user.id,
                                 relation: user.relation,
-                                wallet_type: 2,
+                                wallet_type: walletType,
                                 model: 'PersonalReservePackageEarn',
                                 type: '上合个人储备计划收益返还',
                                 amount: gPackage.reserve_earn,
@@ -10784,7 +10821,7 @@ class Controller {
                             earnCashFlows.push({
                                 user_id: user.id,
                                 relation: user.relation,
-                                wallet_type: 2,
+                                wallet_type: walletType,
                                 model: 'PersonalReservePackageEarn',
                                 type: '上合个人储备计划收益返还',
                                 amount: gPackage.price,
@@ -10820,7 +10857,7 @@ class Controller {
                             earnCashFlows.push({
                                 user_id: user.id,
                                 relation: user.relation,
-                                wallet_type: 2,
+                                wallet_type: walletType,
                                 model: 'PersonalReservePackageEarn',
                                 type: '上合个人储备计划收益返还',
                                 amount: goldInAmount,
@@ -10905,36 +10942,36 @@ class Controller {
                         {
                             user_id: user.id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划收益返还',
                             amount: gPackage.reserve_earn,
-                            before_amount: Number(user.balance),
-                            after_amount: Number(user.balance) + Number(gPackage.reserve_earn),
+                            before_amount: Number(user[walletColumn]),
+                            after_amount: Number(user[walletColumn]) + Number(gPackage.reserve_earn),
                             flow_status: 'IN',
                             description: `储备现金返还`,
                         },
                         {
                             user_id: user.id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划收益返还',
                             amount: gPackage.price,
-                            before_amount: Number(user.balance) + Number(gPackage.reserve_earn),
-                            after_amount: Number(user.balance) + Number(gPackage.reserve_earn) + Number(gPackage.price),
+                            before_amount: Number(user[walletColumn]) + Number(gPackage.reserve_earn),
+                            after_amount: Number(user[walletColumn]) + Number(gPackage.reserve_earn) + Number(gPackage.price),
                             flow_status: 'IN',
                             description: `储备费返还`,
                         },
                         {
                             user_id: user.id,
                             relation: user.relation,
-                            wallet_type: 2,
+                            wallet_type: walletType,
                             model: 'PersonalReservePackageEarn',
                             type: '上合个人储备计划收益返还',
                             amount: goldInAmount,
-                            before_amount: Number(user.balance) + Number(gPackage.reserve_earn) + Number(gPackage.price),
-                            after_amount: Number(user.balance) + Number(gPackage.reserve_earn) + Number(gPackage.price) + Number(goldInAmount),
+                            before_amount: Number(user[walletColumn]) + Number(gPackage.reserve_earn) + Number(gPackage.price),
+                            after_amount: Number(user[walletColumn]) + Number(gPackage.reserve_earn) + Number(gPackage.price) + Number(goldInAmount),
                             flow_status: 'IN',
                             description: `个人黄金返还`,
                         }
@@ -10967,7 +11004,10 @@ class Controller {
                     }
                     letterGoldCount = 1000 * pkgHistory.length;
                 }
-                userUpdates.balance = Number(user.balance) + Number(totalEarn);
+                userUpdates[walletColumn] = Number(user[walletColumn]) + Number(totalEarn);
+                if (isAssetActive) {
+                    userUpdates.daily_product_earn = Number(user.daily_product_earn) + Number(totalEarn);
+                }
                 userUpdates.total_gold_count_in_letter = Number(user.total_gold_count_in_letter) + letterGoldCount - totalGoldGram;
                 await user.update(userUpdates, { transaction: t });
 
