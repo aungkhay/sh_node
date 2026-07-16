@@ -5581,7 +5581,7 @@ class CronJob {
                         relation: user.relation,
                         total_assets: Number(user.total_assets),
                         daily_product_earn: Number(user.daily_product_earn),
-                        amount: dailyEarn,
+                        daily_earn: dailyEarn,
                     }, { transaction: t });
 
                     await user.update({
