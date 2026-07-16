@@ -94,6 +94,8 @@ class CronJob {
         cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
         // Run every hour
         cron.schedule('0 2-23 * * *', this.CHECK_VALIDED_COUPON).start();
+        // Run at 1AM Every day
+        cron.schedule('0 1 * * *', this.CALCULATE_ASSET_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -5580,7 +5582,7 @@ class CronJob {
                         user_id: user.id,
                         relation: user.relation,
                         total_assets: Number(user.total_assets),
-                        daily_product_earn: Number(user.daily_product_earn),
+                        total_product_earn: Number(user.daily_product_earn),
                         daily_earn: dailyEarn,
                     }, { transaction: t });
 
