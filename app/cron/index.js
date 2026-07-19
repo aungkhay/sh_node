@@ -5670,6 +5670,8 @@ class CronJob {
                     await user.increment({ balance: Number(history.asset_fund), total_assets: -Number(history.asset_fund) }, { transaction: t });
                     await history.update({ is_returned_fund: 1, return_fund_date: new Date() }, { transaction: t });
 
+                    await t.commit();
+                    console.log(`[RELEASE_ASSET_FUND][HISTORY_ID: ${history.id}]: Released asset fund to User ID ${user.id}`);
                 } catch (error) {
                     await t.rollback();
                     errLogger(`[RELEASE_ASSET_FUND][HISTORY_ID: ${history.id}]: ${error.stack}`);
