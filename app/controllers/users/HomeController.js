@@ -11391,7 +11391,7 @@ class Controller {
                 });
                 if (historyCount >= aPackage.quantity_limit) {
                     await this.redisHelper.deleteKey(PROCESSING_KEY);
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该礼包', {});
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该方案', {});
                 }
             }
 
@@ -11407,7 +11407,7 @@ class Controller {
                 console.log(historyCount, aPackage.quantity_limit);
                 if (historyCount >= aPackage.quantity_limit) {
                     await this.redisHelper.deleteKey(PROCESSING_KEY);
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已经购买了该礼包', {});
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已经购买了该方案', {});
                 }
             }
 
