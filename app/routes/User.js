@@ -136,6 +136,12 @@ class UserRoute extends express.Router {
         this.get('/personal-reserve-packages/history', middleware.isLoggedIn, HomeCtrl.PERSONAL_RESERVE_PACKAGE_HISTORY);
         this.get('/personal-reserve-packages/earn-history', middleware.isLoggedIn, HomeCtrl.PERSONAL_RESERVE_PACKAGE_EARN_HISTORY);
         this.get('/personal-reserve-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.PERSONAL_RESERVE_PACKAGE_BONUS_HISTORY);
+        // Asset Distribution Plan Routes
+        this.get('/asset-distribution-packages', middleware.isLoggedIn, HomeCtrl.ASSET_DISTRIBUTION_PACKAGE);
+        this.post('/asset-distribution-packages/:id/buy', FormValidator.buy_asset_distribution_package(), middleware.isLoggedIn, HomeCtrl.BUY_ASSET_DISTRIBUTION_PACKAGE);
+        this.get('/asset-distribution-packages/history', middleware.isLoggedIn, HomeCtrl.ASSET_DISTRIBUTION_PACKAGE_HISTORY);
+        this.get('/asset-distribution-packages/earn-history', middleware.isLoggedIn, HomeCtrl.ASSET_DISTRIBUTION_PACKAGE_EARN_HISTORY);
+        this.get('/asset-distribution-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.ASSET_DISTRIBUTION_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);
