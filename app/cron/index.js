@@ -5897,24 +5897,25 @@ class CronJob {
             for (const user of users) {
                 const t = await db.transaction();
                 try {
+                    const bonus = Number(user.referral_bonus);
                     await CashFlow.create({
                         user_id: user.id,
                         relation: user.relation,
                         wallet_type: 2, // 2-余额
                         model: 'User',
                         type: '推荐奖励发放',
-                        amount: Number(user.referral_bonus),
+                        amount: bonus,
                         before_amount: user.balance,
-                        after_amount: Number(user.balance) + Number(user.referral_bonus),
+                        after_amount: Number(user.balance) + bonus,
                         flow_status: 'IN',
                     }, { transaction: t });
                     await user.update({ 
-                        balance: Number(user.balance) + Number(user.referral_bonus), 
+                        balance: Number(user.balance) + bonus, 
                         referral_bonus: 0 
                     }, { transaction: t });
 
                     await t.commit();
-                    console.log(`[RELEASE_REFERRAL_BONUS][USER_ID: ${user.id}]: Released referral bonus of ${user.referral_bonus}`);
+                    console.log(`[RELEASE_REFERRAL_BONUS][USER_ID: ${user.id}]: Released referral bonus of ${bonus}`);
                 } catch (error) {
                     await t.rollback();
                     errLogger(`[RELEASE_REFERRAL_BONUS][USER_ID: ${user.id}]: ${error.stack}`);
