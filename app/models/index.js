@@ -86,6 +86,10 @@ const PersonalReservePackageHistory = require('./PersonalReservePackageHistory')
 const PersonalReservePackageBonuses = require('./PersonalReservePackageBonuses');
 const PersonalReservePackageEarn = require('./PersonalReservePackageEarn');
 const AssetEarnHistory = require('./AssetEarnHistory');
+const AssetDistributionPackage = require('./AssetDistributionPackage');
+const AssetDistributionPackageHistory = require('./AssetDistributionPackageHistory');
+const AssetDistributionPackageBonuses = require('./AssetDistributionPackageBonuses');
+const AssetDistributionPackageEarn = require('./AssetDistributionPackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -496,6 +500,35 @@ PersonalReservePackageBonuses.belongsTo(PersonalReservePackageHistory, { foreign
 User.hasMany(AssetEarnHistory, { foreignKey: 'user_id', as: 'asset_earn_histories', onDelete: 'CASCADE' });
 AssetEarnHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ ASSET_DISTRIBUTION_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(AssetDistributionPackageHistory, { foreignKey: 'user_id', as: 'asset_distribution_package_histories', onDelete: 'CASCADE' });
+AssetDistributionPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== ASSET_DISTRIBUTION_PACKAGE_HISTORY ↔️ ASSET_DISTRIBUTION_PACKAGE_BONUSES (1:N) ==========
+AssetDistributionPackageHistory.hasMany(AssetDistributionPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+AssetDistributionPackageBonuses.belongsTo(AssetDistributionPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ASSET_DISTRIBUTION_PACKAGE_HISTORY ↔️ ASSET_DISTRIBUTION_PACKAGE_EARN (1:N) ==========
+AssetDistributionPackageHistory.hasMany(AssetDistributionPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+AssetDistributionPackageEarn.belongsTo(AssetDistributionPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ASSET_DISTRIBUTION_PACKAGE ↔️ ASSET_DISTRIBUTION_PACKAGE_EARN (1:N) ==========
+AssetDistributionPackage.hasMany(AssetDistributionPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+AssetDistributionPackageEarn.belongsTo(AssetDistributionPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== ASSET_DISTRIBUTION_PACKAGE ↔️ ASSET_DISTRIBUTION_PACKAGE_HISTORY (1:N) ==========
+AssetDistributionPackage.hasMany(AssetDistributionPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+AssetDistributionPackageHistory.belongsTo(AssetDistributionPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ASSET_DISTRIBUTION_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(AssetDistributionPackageBonuses, { foreignKey: 'user_id', as: 'asset_distribution_package_bonuses', onDelete: 'CASCADE' });
+AssetDistributionPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+AssetDistributionPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ASSET_DISTRIBUTION_PACKAGE_EARN (1:N) ==========
+User.hasMany(AssetDistributionPackageEarn, { foreignKey: 'user_id', as: 'asset_distribution_package_earns', onDelete: 'CASCADE' });
+AssetDistributionPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -578,7 +611,11 @@ const models = {
     PersonalReservePackageHistory,
     PersonalReservePackageBonuses,
     PersonalReservePackageEarn,
-    AssetEarnHistory
+    AssetEarnHistory,
+    AssetDistributionPackage,
+    AssetDistributionPackageHistory,
+    AssetDistributionPackageBonuses,
+    AssetDistributionPackageEarn
 };
 
 // Export models + db connection

@@ -359,6 +359,16 @@ class AdminRoute extends express.Router {
         this.post('/authorization-letters/:id/upload', middleware.isLoggedIn('authorize-letter-update'), AuthorizeLetterCtrl.UPLOAD);
         this.post('/authorization-letters/:id/update', FormValidator.update_authorization_letter(), middleware.isLoggedIn('authorize-letter-update'), AuthorizeLetterCtrl.UPDATE);
         this.get('/authorization-letters/history', middleware.isLoggedIn('authorize-letter-history-list'), AuthorizeLetterCtrl.HISTORY);
+
+        // Asset Distribution
+        let AssetDistributionPackageController = require('../controllers/admins/AssetDistributionPackageController');
+        let AssetDistributionPackageCtrl = new AssetDistributionPackageController(app);
+        this.get('/asset-distribution-packages', middleware.isLoggedIn('asset-distribution-package-list'), AssetDistributionPackageCtrl.INDEX);
+        this.post('/asset-distribution-packages/create', FormValidator.create_asset_distribution_package(), middleware.isLoggedIn('asset-distribution-package-create'), AssetDistributionPackageCtrl.CREATE);
+        this.post('/asset-distribution-packages/:id/update', FormValidator.create_asset_distribution_package(), middleware.isLoggedIn('asset-distribution-package-update'), AssetDistributionPackageCtrl.UPDATE);
+        this.get('/asset-distribution-packages/history', middleware.isLoggedIn('asset-distribution-package-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_HISTORY);
+        this.get('/asset-distribution-packages/bonus-history', middleware.isLoggedIn('asset-distribution-package-bonus-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_BONUS_HISTORY);
+        this.get('/asset-distribution-packages/earn-history', middleware.isLoggedIn('asset-distribution-package-earn-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_EARN_HISTORY);
     }
 }
 

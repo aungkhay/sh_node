@@ -353,6 +353,13 @@ module.exports = async () => {
             description: '0 - 关闭 | 1 - 开启',
             data_type: 'boolean'
         },
+        {
+            type: 'asset_distribution_package_period',
+            title: '上合资产宝分发方案 - 申报时间',
+            val: '2026-07-10 00:00:00|2026-07-12 00:00:00',
+            description: '-',
+            data_type: 'string'
+        }
     ];
 
     const count = await Config.count();
