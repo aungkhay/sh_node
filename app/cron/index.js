@@ -5638,7 +5638,7 @@ class CronJob {
                         relation: user.relation,
                         package_id: history.package_id,
                         package_history_id: history.id,
-                        amount: history.fund_amount,
+                        amount: history.asset_fund,
                     }, { transaction: t });
 
                     const cashflows = [
@@ -5648,7 +5648,7 @@ class CronJob {
                             wallet_type: 2, // 2-余额
                             model: 'AssetDistributionPackageEarn',
                             type: '资产宝发放收益',
-                            amount: history.fund_amount,
+                            amount: history.asset_fund,
                             before_amount: user.balance,
                             after_amount: Number(user.balance) + Number(history.asset_fund),
                             flow_status: 'IN',
@@ -5659,7 +5659,7 @@ class CronJob {
                             wallet_type: 3, // 2-资产宝
                             model: 'AssetDistributionPackageEarn',
                             type: '资产宝发放收益',
-                            amount: history.fund_amount,
+                            amount: history.asset_fund,
                             before_amount: user.total_assets,
                             after_amount: Number(user.total_assets) - Number(history.asset_fund),
                             flow_status: 'OUT',
@@ -5667,7 +5667,7 @@ class CronJob {
                     ]
 
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
-                    await user.increment({ balance: Number(history.fund_amount), total_assets: -Number(history.asset_fund) }, { transaction: t });
+                    await user.increment({ balance: Number(history.asset_fund), total_assets: -Number(history.asset_fund) }, { transaction: t });
                     await history.update({ is_returned_fund: 1, return_fund_date: new Date() }, { transaction: t });
 
                 } catch (error) {
