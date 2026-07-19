@@ -11440,28 +11440,51 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
+            let reserveAmount = Number(aPackage.price);
+            let balanceAmount = 0;
             if (Number(user.reserve_fund) < Number(aPackage.price)) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+            if (Number(user.balance) < balanceAmount) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '余额不足', {});
             }
 
             const t = await db.transaction();
             try {
-                const price = Number(aPackage.price);
-                await CashFlow.create({
-                    relation: user.relation,
-                    user_id: userId,
-                    wallet_type: 1,
-                    model: 'AssetDistributionPackageHistory',
-                    type: `购买资产宝分发方案`,
-                    amount: price,
-                    before_amount: Number(user.reserve_fund),
-                    after_amount: Number(user.reserve_fund) - price,
-                    flow_status: 'OUT',
-                    description: `${aPackage.product_name}`,
-                }, { transaction: t });
+                if (reserveAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'AssetDistributionPackageHistory',
+                        type: `购买资产宝分发方案`,
+                        amount: reserveAmount,
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: Number(user.reserve_fund) - reserveAmount,
+                        flow_status: 'OUT',
+                        description: `${aPackage.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
+                if (balanceAmount > 0) {
+                     await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'AssetDistributionPackageHistory',
+                        type: `购买资产宝分发方案`,
+                        amount: balanceAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) - balanceAmount,
+                        flow_status: 'OUT',
+                        description: `${aPackage.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
 
                 const userUpdates = {
-                    reserve_fund: Number(user.reserve_fund) - price,
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount,
                 };
                 if (!user.initial_buy_product_date) {
                     userUpdates.initial_buy_product_date = new Date();
