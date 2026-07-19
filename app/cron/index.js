@@ -5533,14 +5533,14 @@ class CronJob {
                         package_id: row.package_id,
                         package_history_id: row.id,
                         amount: rate,
-                        description: `联合储备收益`,
+                        description: `和衷储备收益`,
                     }, { transaction: t });
                     await CashFlow.create({
                         relation: user.relation,
                         user_id: user.id,
                         wallet_type: walletType,
                         model: 'GoldPackageHistory',
-                        type: '联合储备收益',
+                        type: '和衷储备收益',
                         amount: rate,
                         before_amount: user[walletColumn],
                         after_amount: Number(user[walletColumn]) + rate,
