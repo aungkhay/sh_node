@@ -5879,6 +5879,50 @@ class CronJob {
             errLogger(`[EXPORT_WITHDRAW]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    RELEASE_REFERRAL_BONUS = async () => {
+        try {
+            const users = await User.findAll({
+                where: {
+                    referral_bonus: {
+                        [Op.gt]: 0
+                    }
+                },
+                attributes: ['id', 'relation', 'referral_bonus', 'balance'],
+            });
+
+            for (const user of users) {
+                const t = await db.transaction();
+                try {
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2, // 2-余额
+                        model: 'User',
+                        type: '推荐奖励发放',
+                        amount: Number(user.referral_bonus),
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + Number(user.referral_bonus),
+                        flow_status: 'IN',
+                    }, { transaction: t });
+                    await user.update({ 
+                        balance: Number(user.balance) + Number(user.referral_bonus), 
+                        referral_bonus: 0 
+                    }, { transaction: t });
+
+                    await t.commit();
+                    console.log(`[RELEASE_REFERRAL_BONUS][USER_ID: ${user.id}]: Released referral bonus of ${user.referral_bonus}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RELEASE_REFERRAL_BONUS][USER_ID: ${user.id}]: ${error.stack}`);
+                }
+            }
+            console.log(`[RELEASE_REFERRAL_BONUS]: Processed ${users.length} users.`);
+        } catch (error) {
+            errLogger(`[RELEASE_REFERRAL_BONUS]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
