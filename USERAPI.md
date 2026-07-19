@@ -996,3 +996,24 @@ const url = `${baseURL}/personal-reserve-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/personal-reserve-packages/bonus-history`;
 ```
+
+### 资产宝分发方案
+```js
+// [GET] Packages
+const url = `${baseURL}/asset-distribution-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/asset-distribution-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/asset-distribution-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/asset-distribution-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/asset-distribution-packages/bonus-history`;
+```
