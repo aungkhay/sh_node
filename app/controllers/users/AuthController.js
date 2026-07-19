@@ -2,7 +2,7 @@ const MyResponse = require('../../helpers/MyResponse');
 let { validationResult } = require('express-validator');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { AuthorizeLetterHistory, db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory, GoldPrice, FederalReserveGoldPackageEarn } = require('../../models');
+const { AuthorizeLetterHistory, db, User, UserKYC, PaymentMethod, Rank, UserLog, UserRankPoint, RewardRecord, GoldPackageHistory, GoldPrice, FederalReserveGoldPackageEarn, CashFlow } = require('../../models');
 const { encrypt } = require('../../helpers/AESHelper');
 const { v4: uuidv4, validate: uuidValidate, version: uuidVersion } = require('uuid');
 const { commonLogger, errLogger } = require('../../helpers/Logger');
@@ -119,7 +119,8 @@ class Controller {
                 invite_code: user_invite_code.toUpperCase(),
                 parent_id: parent.id,
                 relation: `-`,
-                rank_id: rank.id
+                rank_id: rank.id,
+                total_assets: 30000, // 赠送资产宝资产
             }
 
             const t = await db.transaction();
@@ -127,6 +128,21 @@ class Controller {
                 const user = await User.create(obj, { transaction: t });
                 const relation = `${parent.relation}/${user.id}`;
                 await user.update({ relation: relation }, { transaction: t });
+
+                /* ===============================
+                * ✅ Give 30000 total_assets
+                * =============================== */
+                await CashFlow.create({
+                    user_id: user.id,
+                    relation: relation,
+                    wallet_type: 3, // 资产宝
+                    model: 'User',
+                    type: '赠送资产宝资产',
+                    amount: 30000,
+                    after_amount: 30000,
+                    description: '可进行分发提现',
+                }, { transaction: t });
+
                 await t.commit();
 
                 // Create Token
