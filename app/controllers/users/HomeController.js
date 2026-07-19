@@ -11379,7 +11379,7 @@ class Controller {
             }
 
             if (aPackage.purchase_limit === 'DAILY' && aPackage.quantity_limit > 0) {
-                const historyCount = await PersonalReservePackageHistory.count({
+                const historyCount = await AssetDistributionPackageHistory.count({
                     where: {
                         user_id: req.user_id,
                         createdAt: {
@@ -11397,7 +11397,7 @@ class Controller {
             }
 
             if (aPackage.purchase_limit === 'TOTAL' && aPackage.quantity_limit > 0) {
-                const historyCount = await PersonalReservePackageHistory.count({
+                const historyCount = await AssetDistributionPackageHistory.count({
                     where: {
                         user_id: req.user_id,
                         package_id: aPackage.id,
