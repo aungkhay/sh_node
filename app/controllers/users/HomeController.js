@@ -11385,8 +11385,7 @@ class Controller {
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         },
-                        price: { [Op.gt]: 0 },
-                        description: { [Op.ne]: '新注册用户福利' }
+                        price: { [Op.gt]: 0 }
                     },
                     useMaster: true
                 });
@@ -11401,8 +11400,7 @@ class Controller {
                     where: {
                         user_id: req.user_id,
                         package_id: aPackage.id,
-                        price: { [Op.gt]: 0 },
-                        description: { [Op.ne]: '新注册用户福利' }
+                        price: { [Op.gt]: 0 }
                     },
                     useMaster: true
                 });
