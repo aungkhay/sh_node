@@ -11442,8 +11442,8 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
-            if (Number(user.total_assets) < Number(aPackage.price)) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '资产宝资金不足', {});
+            if (Number(user.reserve_fund) < Number(aPackage.price)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
 
             const t = await db.transaction();
@@ -11452,18 +11452,18 @@ class Controller {
                 await CashFlow.create({
                     relation: user.relation,
                     user_id: userId,
-                    wallet_type: 3,
+                    wallet_type: 1,
                     model: 'AssetDistributionPackageHistory',
                     type: `购买资产宝分发方案`,
                     amount: price,
-                    before_amount: Number(user.total_assets),
-                    after_amount: Number(user.total_assets) - price,
+                    before_amount: Number(user.reserve_fund),
+                    after_amount: Number(user.reserve_fund) - price,
                     flow_status: 'OUT',
                     description: `${aPackage.product_name}`,
                 }, { transaction: t });
 
                 const userUpdates = {
-                    total_assets: Number(user.total_assets) - price,
+                    reserve_fund: Number(user.reserve_fund) - price,
                 };
                 if (!user.initial_buy_product_date) {
                     userUpdates.initial_buy_product_date = new Date();

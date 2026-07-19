@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn } = require('../models');
 const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -96,6 +96,7 @@ class CronJob {
         cron.schedule('0 2-23 * * *', this.CHECK_VALIDED_COUPON).start();
         // Run at 1AM Every day
         cron.schedule('0 1 * * *', this.CALCULATE_ASSET_EARN).start();
+        cron.schedule('30 1 * * *', this.RELEASE_ASSET_FUND).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -5608,6 +5609,74 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[CALCULATE_ASSET_EARN]: ${error.stack}`);
+        }
+    }
+
+    RELEASE_ASSET_FUND = async () => {
+        try {
+            const histories = await AssetDistributionPackageHistory.findAll({
+                where: {
+                    is_returned_fund: 0,
+                    return_date: {
+                        [Op.lte]: moment().format('YYYY-MM-DD')
+                    }
+                },
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'] });
+                    if (!user) {
+                        console.log(`User ID ${history.user_id} not found. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+
+                    await AssetDistributionPackageEarn.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: history.fund_amount,
+                    }, { transaction: t });
+
+                    const cashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 2-余额
+                            model: 'AssetDistributionPackageEarn',
+                            type: '资产宝发放收益',
+                            amount: history.fund_amount,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(history.asset_fund),
+                            flow_status: 'IN',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 3, // 2-资产宝
+                            model: 'AssetDistributionPackageEarn',
+                            type: '资产宝发放收益',
+                            amount: history.fund_amount,
+                            before_amount: user.total_assets,
+                            after_amount: Number(user.total_assets) - Number(history.asset_fund),
+                            flow_status: 'OUT',
+                        },
+                    ]
+
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+                    await user.increment({ balance: Number(history.fund_amount), total_assets: -Number(history.asset_fund) }, { transaction: t });
+                    await history.update({ is_returned_fund: 1, return_fund_date: new Date() }, { transaction: t });
+
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RELEASE_ASSET_FUND][HISTORY_ID: ${history.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[RELEASE_ASSET_FUND]: ${error.stack}`);
         }
     }
 
