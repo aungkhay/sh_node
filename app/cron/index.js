@@ -2833,6 +2833,8 @@ class CronJob {
                     }
                     await t.commit();
 
+                    console.log(`[CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT] User ID: ${pack.user_id}, Package ID: ${pack.package_id}, Added Balance: ${reserveEarn}`);
+
                 } catch (error) {
                     errLogger(`[CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT][Transaction Error]: ${error.stack}`);
                     await t.rollback();
@@ -2949,6 +2951,10 @@ class CronJob {
                         if (isAssetActive) {
                             incrementFields.daily_product_earn = exchangeValue + originalPrice;
                         }
+                        if (masonicFund > 0) {
+                            incrementFields.masonic_fund = masonicFund;
+                        }
+
                         await user.increment(incrementFields, { transaction: t });
                     }
 
@@ -5602,6 +5608,206 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[CALCULATE_ASSET_EARN]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    EXPORT_GOLD_APPRECIATION_PACKAGE_HISTORY = async () => {
+        try {
+            const histories = await GoldAppreciationPackageHistory.findAll({
+                include: {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: {
+                    is_returned_price: 1,
+                    price: {
+                        [Op.in]: [600, 1200]
+                    },
+                    return_price_date: {
+                        [Op.between]: ['2026-06-15 00:30:00', '2026-06-15 23:59:59']
+                    }
+                },
+                order: [['user_id', 'ASC']],
+            });
+
+            const list = [];
+            let totalPrice = 0;
+            for (const history of histories) {
+                // check cashflow exists
+                const cashflow = await CashFlow.findOne({
+                    where: {
+                        user_id: history.user_id,
+                        model: 'GoldAppreciationPackageEarn',
+                        type: '黄金增值计划本金返还',
+                        amount: history.price,
+                    },
+                    attributes: ['id'],
+                });
+                if (!cashflow) {
+                    list.push({
+                        "用户ID": history.user ? history.user.id : '',
+                        "姓名": history.user ? history.user.name : '',
+                        "手机号": history.user ? history.user.phone_number : '',
+                        "记录ID": history.id,
+                        "本金": Number(history.price),
+                        "创建时间": history.createdAt ? moment(history.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                        "返还时间": history.return_price_date ? moment(history.return_price_date).format('YYYY-MM-DD HH:mm:ss') : '',
+                    });
+                    totalPrice += Number(history.price);
+                    console.log(`[EXPORT_GOLD_APPRECIATION_PACKAGE_HISTORY]: Missing cashflow for User ID ${history.user_id}, History ID ${history.id}, Price ${history.price}`);
+                }
+            }
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Fixes');
+            xlsx.writeFile(workbook1, `${histories.length}条_${totalPrice}金额.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_GOLD_APPRECIATION_PACKAGE_HISTORY]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    REFUND_ORIGINAL_PRICE = async () => {
+        try {
+            // read from file
+            const xlsx = require('xlsx');
+            const workbook = xlsx.readFile('22030条_16704600金额.xlsx');
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const data = xlsx.utils.sheet_to_json(worksheet);
+
+            for (const row of data) {
+                const historyId = row['记录ID'];
+                const userId = row['用户ID'];
+
+                const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'balance'] });
+                if (!user) {
+                    console.log(`User ID ${userId} not found. Skipping...`);
+                    continue;
+                }
+                const pack = await GoldAppreciationPackageHistory.findByPk(historyId);
+                if (!pack) {
+                    console.log(`History ID ${historyId} not found. Skipping...`);
+                    continue;
+                }
+
+                console.log(`[REFUND_ORIGINAL_PRICE][HISTORY_ID: ${historyId}]: Refunding original price to User ID ${user.id}, Amount: ${pack.price}`);
+
+                const t = await db.transaction();
+                try {
+                    await GoldAppreciationPackageEarn.create({
+                        user_id: pack.user_id,
+                        relation: user.relation,
+                        package_id: pack.package_id,
+                        package_history_id: pack.id,
+                        amount: Number(pack.price),
+                        type: 2, // 2-本金返还
+                    }, { transaction: t });
+
+                    await CashFlow.create({
+                        user_id: pack.user_id,
+                        relation: user.relation,
+                        wallet_type: 2,
+                        model: 'GoldAppreciationPackageEarn',
+                        type: '黄金增值计划本金返还',
+                        amount: Number(pack.price),
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + Number(pack.price),
+                        flow_status: 'IN',
+                        description: `黄金增值计划本金返还${pack.price}`,
+                    }, { transaction: t });
+
+                    await user.increment({ balance: Number(pack.price) }, { transaction: t });
+
+                    await t.commit();
+                    console.log(`[REFUND_ORIGINAL_PRICE][HISTORY_ID: ${historyId}]: Refunded original price to User ID ${user.id}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[REFUND_ORIGINAL_PRICE][HISTORY_ID: ${historyId}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[REFUND_ORIGINAL_PRICE]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    REFUND_SHANGHAI_MASONIC_FUND = async () => {
+        try {
+            const packages = await ShanghaiCooperationHistory.findAll({
+                where: {
+                    is_returned_masonic_fund: 1,
+                },
+                attributes: ['id', 'user_id', 'masonic_fund'],
+            });
+            for (const pack of packages) {
+                await User.increment({ masonic_fund: Number(pack.masonic_fund) }, { where: { id: pack.user_id } });
+                commonLogger(`[REFUND_SHANGHAI_MASONIC_FUND][HISTORY_ID: ${pack.id}]: Refunded masonic fund to User ID ${pack.user_id}, Amount: ${pack.masonic_fund}`);
+            }
+        } catch (error) {
+            errLogger(`[REFUND_SHANGHAI_MASONIC_FUND]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    EXPORT_WITHDRAW = async () => {
+        try {
+            const rows = await Withdraw.findAll({
+                include: {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'name', 'phone_number'],
+                    include: {
+                        model: PaymentMethod,
+                        as: 'payment_method',
+                        attributes: ['id', 'bank_card_number', 'bank_card_name', 'open_bank_name', 'ali_account_number', 'ali_account_name', 'fenxiang_account_name', 'fenxiang_account_number'],
+                    }
+                },
+                where: {
+                    createdAt: {
+                        [Op.between]: ['2026-07-15 00:00:00', '2026-07-19 23:59:59']
+                    },
+                    amount: {
+                        [Op.lte]: 500
+                    },
+                },
+                attributes: ['id', 'order_no', 'amount', 'handle_fee', 'before_amount', 'after_amount', 'createdAt'],
+                order: [['createdAt', 'ASC']],
+            });
+
+            const list = rows.map(row => ({
+                "用户ID": row.user ? row.user.id : '',
+                "姓名": row.user ? row.user.name : '',
+                "手机号": row.user ? row.user.phone_number : '',
+                "提现ID": row.id,
+                "订单号": row.order_no,
+                "提现金额": Number(row.amount),
+                "手续费": Number(row.handle_fee),
+                "到账金额": Number(row.amount) - Number(row.handle_fee),
+                "提现状态": row.status === 0 ? '待处理' : row.status === 1 ? '已完成' : '已拒绝',
+                "提现前金额": Number(row.before_amount),
+                "提现后金额": Number(row.after_amount),
+                "创建时间": row.createdAt ? moment(row.createdAt).format('YYYY-MM-DD HH:mm:ss') : '',
+                "银行账户": row.user && row.user.payment_method ? row.user.payment_method.bank_card_number : '',
+                "银行账户姓名": row.user && row.user.payment_method ? row.user.payment_method.bank_card_name : '',
+                "开户行": row.user && row.user.payment_method ? row.user.payment_method.open_bank_name : '',
+                "支付宝账户": row.user && row.user.payment_method ? row.user.payment_method.ali_account_number : '',
+                "支付宝账户姓名": row.user && row.user.payment_method ? row.user.payment_method.ali_account_name : '',
+                "纷享生活账户": row.user && row.user.payment_method ? row.user.payment_method.fenxiang_account_number : '',
+                "纷享生活账户姓名": row.user && row.user.payment_method ? row.user.payment_method.fenxiang_account_name : '',
+            }));
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Withdrawals Export');
+            xlsx.writeFile(workbook1, 'withdrawals_export.xlsx');
+        } catch (error) {
+            errLogger(`[EXPORT_WITHDRAW]: ${error.stack}`);
         }
     }
 }
