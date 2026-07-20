@@ -83,11 +83,6 @@ class CronJob {
         cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
         // Run every 10 second
         cron.schedule('*/10 * * * * *', this.RELEASE_MEETING_REWARD).start();
-        // every 15th of month at 00:40 AM
-        // cron.schedule('40 0 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start();
-        // run every 1 AM
-        // cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
-        // cron.schedule('* * * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
         // Run every 1 minute
         cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
         // run every 00:50
@@ -95,8 +90,10 @@ class CronJob {
         // Run every hour
         cron.schedule('0 2-23 * * *', this.CHECK_VALIDED_COUPON).start();
         // Run at 1AM Every day
-        cron.schedule('0 1 * * *', this.CALCULATE_ASSET_EARN).start();
-        cron.schedule('30 1 * * *', this.RELEASE_ASSET_FUND).start();
+        cron.schedule('0 1 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start();
+        cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
+        cron.schedule('30 1 * * *', this.CALCULATE_ASSET_EARN).start();
+        cron.schedule('0 2 * * *', this.RELEASE_ASSET_FUND).start();
     }
 
     PAY_ALLOWANCE = async () => {
