@@ -139,8 +139,10 @@ class Controller {
                     model: 'User',
                     type: '赠送资产宝资产',
                     amount: 30000,
+                    before_amount: 0,
                     after_amount: 30000,
                     description: '可进行分发提现',
+                    flow_status: 'IN',
                 }, { transaction: t });
 
                 await t.commit();
