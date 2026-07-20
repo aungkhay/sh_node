@@ -10276,6 +10276,8 @@ class Controller {
         let redisLocked = false;
         const userId = req.user_id;
         try {
+
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '兑换功能暂未开放', {});
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
