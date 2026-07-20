@@ -5926,6 +5926,34 @@ class CronJob {
             errLogger(`[RELEASE_REFERRAL_BONUS]: ${error.stack}`);
         }
     }
+
+    EXPORT_USER_BALANCE_GT_0 = async () => {
+        try {
+            const users = await User.findAll({
+                where: {
+                    balance: {
+                        [Op.gt]: 0
+                    }
+                },
+                attributes: ['id', 'name', 'phone_number', 'balance'],
+            });
+
+            const list = users.map(user => ({
+                "用户ID": user.id,
+                "姓名": user.name,
+                "手机号": user.phone_number,
+                "余额": Number(user.balance),
+            }));
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Users with Balance > 0');
+            xlsx.writeFile(workbook1, 'users_balance_gt_0.xlsx');
+        } catch (error) {
+            errLogger(`[EXPORT_USER_BALANCE_GT_0]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;

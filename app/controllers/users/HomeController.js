@@ -7403,7 +7403,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
-            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'payment_password', 'reserve_fund', 'masonic_fund', 'balance'] });
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'payment_password', 'reserve_fund', 'masonic_fund', 'balance', 'total_assets'] });
             if (user.is_group_letter_used == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已使用过六国授权书，无法重复使用', {});
             }
@@ -7503,8 +7503,13 @@ class Controller {
                 // let remainingLetterCount = Number(user.total_gold_count_in_letter) - subLetterCount;
 
                 // let usedGoldCount = Number(user.total_gold_count) + 6000;
+                
+                const isAssetActive = await this.is_asset_treasure_active();
+                const walletType = isAssetActive ? 3 : 2;
+                const walletColumn = isAssetActive ? 'total_assets' : 'balance';
+
                 let remainReserveFund = Number(user.reserve_fund) - Number(amount);
-                let remainBalance = Number(user.balance) + Number(user.masonic_fund);
+                let remainBalance = Number(user[walletColumn]) + Number(user.masonic_fund);
 
                 const cashflows = [
                     {
@@ -7521,14 +7526,14 @@ class Controller {
                     {
                         relation: user.relation,
                         user_id: userId,
-                        wallet_type: 2,
+                        wallet_type: walletType,
                         model: 'AuthorizeLetterHistory',
                         type: `使用六国授权书`,
                         amount: Number(user.masonic_fund),
-                        before_amount: Number(user.balance),
+                        before_amount: Number(user[walletColumn]),
                         after_amount: remainBalance,
                         flow_status: 'IN',
-                        description: `释放共济基金:${Number(user.masonic_fund)}至可提余额`,
+                        description: `释放共济基金:${Number(user.masonic_fund)}`,
                     }
                 ];
                 await CashFlow.bulkCreate(cashflows, { transaction: t });
@@ -7539,7 +7544,7 @@ class Controller {
                     // total_gold_count_in_coupon: remainingCouponCount, 
                     // total_gold_count: usedGoldCount,
                     reserve_fund: remainReserveFund,
-                    balance: remainBalance,
+                    [walletColumn]: remainBalance,
                     masonic_fund: 0
                 }, { where: { id: userId }, transaction: t });
 
