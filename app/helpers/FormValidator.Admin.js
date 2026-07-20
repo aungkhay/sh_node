@@ -445,8 +445,8 @@ exports.update_wallet = () => {
         check('walletType')
             .not().isEmpty().withMessage('钱包类型不能为空')
             .bail()
-            .isIn([1,2,3])
-            .withMessage('钱包类型必须是 1、2 或 3'),
+            .isIn([1,2,3,4])
+            .withMessage('钱包类型必须是 1、2、3 或 4'),
         check('addOrSubstract')
             .not().isEmpty().withMessage('操作类型不能为空')
             .bail()
@@ -460,7 +460,11 @@ exports.update_wallet = () => {
         check('isAddedDepositRecord')
             .optional()
             .isIn([0, 1])
-            .withMessage('是否添加充值记录值无效')
+            .withMessage('是否添加充值记录值无效'),
+        check('description')
+            .optional()
+            .isString()
+            .withMessage('描述必须是字符串'),
     ]
 }
 

@@ -2067,7 +2067,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
             }
 
-            const { walletType, addOrSubstract, amount, isAddedDepositRecord } = req.body;
+            const { walletType, addOrSubstract, amount, isAddedDepositRecord, description } = req.body;
             // addOrSubstract => 1 (add) | 2 (substract)
             
             const user = await User.findByPk(req.params.id, { attributes: ['id', 'relation', 'reserve_fund', 'balance', 'referral_bonus', 'total_assets'] });
@@ -2075,6 +2075,7 @@ class Controller {
             const updateAmount = addOrSubstract == 1 ? parseFloat(amount) : -parseFloat(amount);
             let updateObj = {};
             let walletAmount = 0;
+            let desc = description;
             if (walletType == 1) {
                 // 储备金
 
@@ -2091,7 +2092,7 @@ class Controller {
                     before_amount: user.reserve_fund,
                     after_amount: addOrSubstract == 1 ? Number(user.reserve_fund) + Number(updateAmount) : Number(user.reserve_fund) - Number(updateAmount),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
-                    description: addOrSubstract == 1 ? '系统增加储备金' : '系统扣除储备金'
+                    description: desc || (addOrSubstract == 1 ? '系统增加储备金' : '系统扣除储备金')
                 });
 
                 if (addOrSubstract == 1 && isAddedDepositRecord) {
@@ -2123,7 +2124,7 @@ class Controller {
                     before_amount: user.balance,
                     after_amount: addOrSubstract == 1 ? Number(user.balance) + Number(updateAmount) : Number(user.balance) - Number(updateAmount),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
-                    description: addOrSubstract == 1 ? '系统增加余额' : '系统扣除余额'
+                    description: desc || (addOrSubstract == 1 ? '系统增加余额' : '系统扣除余额')
                 });
 
             } else if (walletType == 3) {
@@ -2144,7 +2145,7 @@ class Controller {
                     amount: updateAmount,
                     before_amount: Number(user.total_assets),
                     after_amount: addOrSubstract == 1 ? Number(user.total_assets) + Number(updateAmount) : Number(user.total_assets) - Number(updateAmount),
-                    description: addOrSubstract == 1 ? '系统赠送资产宝资产' : '系统扣除资产宝资产',
+                    description: desc || (addOrSubstract == 1 ? '系统赠送资产宝资产' : '系统扣除资产宝资产'),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT'
                 });
             }
