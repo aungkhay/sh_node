@@ -2148,6 +2148,8 @@ class Controller {
                     description: desc || (addOrSubstract == 1 ? '系统赠送资产宝资产' : '系统扣除资产宝资产'),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT'
                 });
+
+                await this.redisHelper.deleteKey(`ASSET_SUMMARY_${user.id}`);
             }
 
             if (addOrSubstract == 2 && parseFloat(amount) > parseFloat(walletAmount)) {
