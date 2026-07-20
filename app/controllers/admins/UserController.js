@@ -2070,7 +2070,7 @@ class Controller {
             const { walletType, addOrSubstract, amount, isAddedDepositRecord } = req.body;
             // addOrSubstract => 1 (add) | 2 (substract)
             
-            const user = await User.findByPk(req.params.id, { attributes: ['id', 'relation', 'reserve_fund', 'balance', 'referral_bonus'] });
+            const user = await User.findByPk(req.params.id, { attributes: ['id', 'relation', 'reserve_fund', 'balance', 'referral_bonus', 'total_assets'] });
 
             const updateAmount = addOrSubstract == 1 ? parseFloat(amount) : -parseFloat(amount);
             let updateObj = {};
@@ -2130,6 +2130,23 @@ class Controller {
                 // 推荐金
                 updateObj.referral_bonus = updateAmount;
                 walletAmount = user.referral_bonus;
+            } else if (walletType == 4) {
+                // 资产宝
+                updateObj.total_assets = updateAmount;
+                walletAmount = user.total_assets;
+
+                await CashFlow.create({
+                    user_id: user.id,
+                    relation: user.relation,
+                    wallet_type: 3, // 资产宝
+                    model: 'User',
+                    type: '赠送资产宝资产',
+                    amount: updateAmount,
+                    before_amount: Number(user.total_assets),
+                    after_amount: addOrSubstract == 1 ? Number(user.total_assets) + Number(updateAmount) : Number(user.total_assets) - Number(updateAmount),
+                    description: addOrSubstract == 1 ? '系统赠送资产宝资产' : '系统扣除资产宝资产',
+                    flow_status: addOrSubstract == 1 ? 'IN' : 'OUT'
+                });
             }
 
             if (addOrSubstract == 2 && parseFloat(amount) > parseFloat(walletAmount)) {

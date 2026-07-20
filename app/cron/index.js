@@ -5927,6 +5927,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     EXPORT_USER_BALANCE_GT_0 = async () => {
         try {
             const users = await User.findAll({
@@ -5952,6 +5953,46 @@ class CronJob {
             xlsx.writeFile(workbook1, 'users_balance_gt_0.xlsx');
         } catch (error) {
             errLogger(`[EXPORT_USER_BALANCE_GT_0]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    GIVE_ASSET_TO_USERS = async () => {
+        try {
+           const phoneNumbers = ["13563430587","18871369122","15166991487","15865916113","17553411249","15253445844","15266960091","13953406369","18266171101","15206903912"];
+
+            for (const phone of phoneNumbers) {
+                const user = await User.findOne({ where: { phone_number: phone }, attributes: ['id', 'relation', 'total_assets'] });
+                if (!user) {
+                    console.log(`User with phone number ${phone} not found. Skipping...`);
+                    continue;
+                }
+                const t = await db.transaction();
+                try {
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 3, // 资产宝
+                        model: 'User',
+                        type: '赠送资产宝资产',
+                        amount: 30000,
+                        before_amount: Number(user.total_assets),
+                        after_amount: Number(user.total_assets) + 30000,
+                        description: '可进行分发提现',
+                        flow_status: 'IN',
+                    }, { transaction: t });
+
+                    await user.increment({ total_assets: 30000 }, { transaction: t });
+                    await t.commit();
+
+                    console.log(`[GIVE_ASSET_TO_USERS]: Gave 30000 assets to User ID ${user.id} (Phone: ${phone})`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[GIVE_ASSET_TO_USERS]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[GIVE_ASSET_TO_USERS]: ${error.stack}`);
         }
     }
 }
