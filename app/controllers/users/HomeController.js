@@ -7550,7 +7550,7 @@ class Controller {
 
                 await t.commit();
 
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '您已合并使用成功，恭喜您完成共济基金下发，共济基金已全额下发至您的可用余额，您可以在个人余额查看', {});
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '您已合井使用成功，恭喜您完成共济基金下发，共济基金已全额下发至您的资产宝账户，您可以在上合资产宝中查看', {});
             } catch (error) {
                 errLogger(`[USER_MEMBER_STATE_LETTER][${req.user_id}]: ${error.stack}`);
                 await t.rollback();
