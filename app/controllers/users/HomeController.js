@@ -7183,9 +7183,9 @@ class Controller {
             }
 
             const letterId = req.params.id;
-            if (letterId == 1 && Number(user.have_reward_6) == 1) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
-            }
+            // if (letterId == 1 && Number(user.have_reward_6) == 1) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '你已获得上合组织中国区授权书，无需重复购买', {});
+            // }
             const letter = await AuthorizeLetter.findByPk(letterId, { useMaster: true });
             if (!letter || letter.show_hide == 0) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '授权书不存在', {});
