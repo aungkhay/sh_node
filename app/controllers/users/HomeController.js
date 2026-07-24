@@ -11599,6 +11599,7 @@ class Controller {
 
                 await t.commit();
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
+                await this.redisHelper.deleteKey(`ASSET_SUMMARY_${userId}`);
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
 
             } catch (error) {
@@ -12087,6 +12088,7 @@ class Controller {
 
                 await t.commit();
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
+                await this.redisHelper.deleteKey(`ASSET_SUMMARY_${userId}`);
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
 
             } catch (error) {
