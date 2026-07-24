@@ -11922,7 +11922,7 @@ class Controller {
                         before_amount: Number(user.reserve_fund),
                         after_amount: Number(user.reserve_fund) - reserveAmount,
                         flow_status: 'OUT',
-                        description: `${aPackage.product_name} - 合并支付`,
+                        description: `${aPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
                     }, { transaction: t });
                 }
                 if (balanceAmount > 0) {
@@ -12068,7 +12068,6 @@ class Controller {
                         before_amount: Number(upLevelUser.balance),
                         after_amount: Number(upLevelUser.balance) + Number(bonus),
                         flow_status: 'IN',
-                        description: `${aPackage.product_name}`
                     });
 
                     await upLevelUser.increment({ balance: bonus }, { transaction: t });
