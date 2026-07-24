@@ -370,6 +370,17 @@ class AdminRoute extends express.Router {
         this.get('/asset-distribution-packages/history', middleware.isLoggedIn('asset-distribution-package-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_HISTORY);
         this.get('/asset-distribution-packages/bonus-history', middleware.isLoggedIn('asset-distribution-package-bonus-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_BONUS_HISTORY);
         this.get('/asset-distribution-packages/earn-history', middleware.isLoggedIn('asset-distribution-package-earn-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_EARN_HISTORY);
+        
+        // Asset Earn
+        let AssetEarnPackageController = require('../controllers/admins/AssetEarnPackageController');
+        let AssetEarnPackageCtrl = new AssetEarnPackageController(app);
+        this.get('/asset-earn-packages', middleware.isLoggedIn('asset-earn-package-list'), AssetEarnPackageCtrl.INDEX);
+        this.post('/asset-earn-packages/create', FormValidator.create_asset_earn_package(), middleware.isLoggedIn('asset-earn-package-create'), AssetEarnPackageCtrl.CREATE);
+        this.post('/asset-earn-packages/:id/update', FormValidator.create_asset_earn_package(), middleware.isLoggedIn('asset-earn-package-update'), AssetEarnPackageCtrl.UPDATE);
+        this.post('/asset-earn-packages/:id/upload', middleware.isLoggedIn('asset-earn-package-create,asset-earn-package-update'), AssetEarnPackageCtrl.UPLOAD);
+        this.get('/asset-earn-packages/history', middleware.isLoggedIn('asset-earn-package-history-list'), AssetEarnPackageCtrl.ASSET_EARN_PACKAGE_HISTORY);
+        this.get('/asset-earn-packages/bonus-history', middleware.isLoggedIn('asset-earn-package-bonus-history-list'), AssetEarnPackageCtrl.ASSET_EARN_PACKAGE_BONUS_HISTORY);
+        this.get('/asset-earn-packages/earn-history', middleware.isLoggedIn('asset-earn-package-earn-history-list'), AssetEarnPackageCtrl.ASSET_EARN_PACKAGE_EARN_HISTORY);
     }
 }
 

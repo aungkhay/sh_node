@@ -2512,7 +2512,7 @@ class CronJob {
                     },
                     is_returned_all: 0
                 },
-                attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn', 'personal_gold', 'is_returned_earn', 'is_returned_personal_gold', 'is_returned_price', 'is_returned_masonic_fund']
+                attributes: ['id', 'user_id', 'package_id', 'price', 'reserve_earn', 'personal_gold', 'masonic_fund', 'is_returned_earn', 'is_returned_personal_gold', 'is_returned_price', 'is_returned_masonic_fund']
             });
 
             const isAssetActive = await this.is_asset_treasure_active();

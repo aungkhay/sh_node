@@ -90,6 +90,10 @@ const AssetDistributionPackage = require('./AssetDistributionPackage');
 const AssetDistributionPackageHistory = require('./AssetDistributionPackageHistory');
 const AssetDistributionPackageBonuses = require('./AssetDistributionPackageBonuses');
 const AssetDistributionPackageEarn = require('./AssetDistributionPackageEarn');
+const AssetEarnPackage = require('./AssetEarnPackage');
+const AssetEarnPackageHistory = require('./AssetEarnPackageHistory');
+const AssetEarnPackageBonuses = require('./AssetEarnPackageBonuses');
+const AssetEarnPackageEarn = require('./AssetEarnPackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -529,6 +533,35 @@ AssetDistributionPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as
 User.hasMany(AssetDistributionPackageEarn, { foreignKey: 'user_id', as: 'asset_distribution_package_earns', onDelete: 'CASCADE' });
 AssetDistributionPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ ASSET_EARN_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(AssetEarnPackageHistory, { foreignKey: 'user_id', as: 'asset_earn_package_histories', onDelete: 'CASCADE' });
+AssetEarnPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== ASSET_EARN_PACKAGE_HISTORY ↔️ ASSET_EARN_PACKAGE_BONUSES (1:N) ==========
+AssetEarnPackageHistory.hasMany(AssetEarnPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+AssetEarnPackageBonuses.belongsTo(AssetEarnPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ASSET_EARN_PACKAGE_HISTORY ↔️ ASSET_EARN_PACKAGE_EARN (1:N) ==========
+AssetEarnPackageHistory.hasMany(AssetEarnPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+AssetEarnPackageEarn.belongsTo(AssetEarnPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ASSET_EARN_PACKAGE ↔️ ASSET_EARN_PACKAGE_EARN (1:N) ==========
+AssetEarnPackage.hasMany(AssetEarnPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+AssetEarnPackageEarn.belongsTo(AssetEarnPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== ASSET_EARN_PACKAGE ↔️ ASSET_EARN_PACKAGE_HISTORY (1:N) ==========
+AssetEarnPackage.hasMany(AssetEarnPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+AssetEarnPackageHistory.belongsTo(AssetEarnPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ASSET_EARN_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(AssetEarnPackageBonuses, { foreignKey: 'user_id', as: 'asset_earn_package_bonuses', onDelete: 'CASCADE' });
+AssetEarnPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+AssetEarnPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ASSET_EARN_PACKAGE_EARN (1:N) ==========
+User.hasMany(AssetEarnPackageEarn, { foreignKey: 'user_id', as: 'asset_earn_package_earns', onDelete: 'CASCADE' });
+AssetEarnPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -615,7 +648,11 @@ const models = {
     AssetDistributionPackage,
     AssetDistributionPackageHistory,
     AssetDistributionPackageBonuses,
-    AssetDistributionPackageEarn
+    AssetDistributionPackageEarn,
+    AssetEarnPackage,
+    AssetEarnPackageHistory,
+    AssetEarnPackageBonuses,
+    AssetEarnPackageEarn
 };
 
 // Export models + db connection
