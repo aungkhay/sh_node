@@ -5693,7 +5693,7 @@ class CronJob {
                         [Op.lte]: today
                     }
                 },
-                attributes: ['id', 'user_id', 'period', 'package_id', 'daily_earn', 'will_finish_on', 'is_finished'],
+                attributes: ['id', 'user_id', 'period', 'package_id', 'daily_earn'],
             });
             
             for (const row of rows) {

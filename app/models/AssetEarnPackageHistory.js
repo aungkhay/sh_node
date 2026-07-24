@@ -109,6 +109,14 @@ AssetEarnPackageHistory.init({
             name: 'idx_createdAt',
             fields: ['createdAt'],
             using: 'BTREE'
+        },
+        {
+            name: 'idx_user_id_package_history_id',
+            fields: ['user_id', 'package_history_id'],
+        },
+        {
+            name: 'idx_is_finished_createdAt',
+            fields: ['is_finished', 'createdAt'],
         }
     ]
 })

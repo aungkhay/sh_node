@@ -100,16 +100,6 @@ AssetEarnPackage.init({
     modelName: 'AssetEarnPackage',
     tableName: 'asset_earn_packages',
     timestamps: true,
-    indexes: [
-        {
-            name: 'idx_user_id_package_history_id',
-            fields: ['user_id', 'package_id'],
-        },
-        {
-            name: 'idx_is_finished_createdAt',
-            fields: ['is_finished', 'createdAt'],
-        }
-    ],
 });
 
 module.exports = AssetEarnPackage;
