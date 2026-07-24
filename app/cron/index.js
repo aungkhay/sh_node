@@ -94,6 +94,7 @@ class CronJob {
         cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
         cron.schedule('30 1 * * *', this.CALCULATE_ASSET_EARN).start();
         cron.schedule('0 2 * * *', this.RELEASE_ASSET_FUND).start();
+        cron.schedule('30 2 * * *', this.RELEASE_ASSET_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -5684,14 +5685,15 @@ class CronJob {
 
     RELEASE_ASSET_EARN = async () => {
         try {
+            const today = moment().format('YYYY-MM-DD');
             const rows = await AssetEarnPackageHistory.findAll({
                 where: {
-                    will_finish_on: {
-                        [Op.lte]: moment().format('YYYY-MM-DD')
-                    },
                     is_finished: 0,
+                    createdAt: {
+                        [Op.lte]: today
+                    }
                 },
-                attributes: ['id', 'user_id', 'package_id', 'daily_earn', 'will_finish_on', 'is_finished'],
+                attributes: ['id', 'user_id', 'period', 'package_id', 'daily_earn', 'will_finish_on', 'is_finished'],
             });
             
             for (const row of rows) {
@@ -5702,6 +5704,18 @@ class CronJob {
                         console.log(`User ID ${row.user_id} not found. Skipping...`);
                         await t.rollback();
                         continue;
+                    }
+
+                    const earnCount = await AssetEarnPackageEarn.count({
+                        where: {
+                            user_id: row.user_id,
+                            package_history_id: row.id
+                        },
+                        transaction: t
+                    });
+
+                    if (earnCount >= row.period - 1) {
+                        await row.update({ is_finished: 1 }, { transaction: t });
                     }
 
                     await AssetEarnPackageEarn.create({
@@ -5727,9 +5741,6 @@ class CronJob {
 
                     await user.increment({ total_assets: Number(row.daily_earn) }, { transaction: t });
 
-                    if (moment().isSame(moment(row.will_finish_on), 'day')) {
-                        await row.update({ is_finished: 1, finished_on: new Date() }, { transaction: t });
-                    }
                     await t.commit();
 
                     commonLogger(`[RELEASE_ASSET_EARN][HISTORY_ID: ${row.id}]: Released asset earn - ${Number(row.daily_earn)} to User ID ${user.id}`);
