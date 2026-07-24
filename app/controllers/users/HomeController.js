@@ -12005,7 +12005,7 @@ class Controller {
                     assetCashflows.push({
                         relation: user.relation,
                         user_id: user.id,
-                        wallet_type: 1,
+                        wallet_type: 3, // 资产宝
                         model: 'AssetEarnPackageHistory',
                         type: `购买资产宝收益`,
                         amount: aPackage.asset_fund,
