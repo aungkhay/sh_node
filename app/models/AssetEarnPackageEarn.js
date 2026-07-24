@@ -58,6 +58,10 @@ AssetEarnPackageEarn.init({
     indexes: [
         { fields: ['relation'] },
         { fields: ['package_id'] },
+        {
+            name: 'idx_user_id_package_history_id',
+            fields: ['user_id', 'package_history_id'],
+        },
     ]
 })
 
