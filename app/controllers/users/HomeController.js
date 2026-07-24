@@ -12062,7 +12062,7 @@ class Controller {
                         relation: upLevelUser.relation,
                         user_id: upLevelUser.id,
                         wallet_type: 2,
-                        model: 'AssetDistributionPackageBonuses',
+                        model: 'AssetEarnPackageBonuses',
                         type: `下级购买资产宝收益奖励`,
                         amount: bonus,
                         before_amount: Number(upLevelUser.balance),
@@ -12081,7 +12081,7 @@ class Controller {
                     });
                 }
                 if (bonuses.length > 0) {
-                    await AssetDistributionPackageBonuses.bulkCreate(bonuses, { transaction: t });
+                    await AssetEarnPackageBonuses.bulkCreate(bonuses, { transaction: t });
                     await CashFlow.bulkCreate(cashFlows, { transaction: t });
                 }
 
