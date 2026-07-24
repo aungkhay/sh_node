@@ -12118,7 +12118,7 @@ class Controller {
                 where: { 
                     user_id: userId,
                 },
-                attributes: ['id', 'price', 'description', 'createdAt'],
+                attributes: ['id', 'price', 'is_finished', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,

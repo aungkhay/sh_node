@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn } = require('../models');
 const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -2620,6 +2620,9 @@ class CronJob {
                         let incrementFields = { [walletColumn]: reserveEarn + originalPrice };
                         if (isAssetActive) {
                             incrementFields.daily_product_earn = reserveEarn + originalPrice;
+                        }
+                        if (masonicFund > 0) {
+                            incrementFields.masonic_fund = masonicFund;
                         }
 
                         await user.increment(incrementFields, { transaction: t });
@@ -5676,6 +5679,68 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RELEASE_ASSET_FUND]: ${error.stack}`);
+        }
+    }
+
+    RELEASE_ASSET_EARN = async () => {
+        try {
+            const rows = await AssetEarnPackageHistory.findAll({
+                where: {
+                    will_finish_on: {
+                        [Op.lte]: moment().format('YYYY-MM-DD')
+                    },
+                    is_finished: 0,
+                },
+                attributes: ['id', 'user_id', 'package_id', 'daily_earn', 'will_finish_on', 'is_finished'],
+            });
+            
+            for (const row of rows) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'total_assets'] });
+                    if (!user) {
+                        console.log(`User ID ${row.user_id} not found. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+
+                    await AssetEarnPackageEarn.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: row.package_id,
+                        package_history_id: row.id,
+                        amount: row.daily_earn,
+                    }, { transaction: t });
+
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 3, // 3-资产宝
+                        model: 'AssetEarnPackageEarn',
+                        type: '资产宝收益',
+                        amount: row.daily_earn,
+                        before_amount: user.total_assets,
+                        after_amount: Number(user.total_assets) + Number(row.daily_earn),
+                        flow_status: 'IN',
+                        description: '每日收益',
+                    }, { transaction: t });
+
+                    await user.increment({ total_assets: Number(row.daily_earn) }, { transaction: t });
+
+                    if (moment().isSame(moment(row.will_finish_on), 'day')) {
+                        await row.update({ is_finished: 1, finished_on: new Date() }, { transaction: t });
+                    }
+                    await t.commit();
+
+                    commonLogger(`[RELEASE_ASSET_EARN][HISTORY_ID: ${row.id}]: Released asset earn - ${Number(row.daily_earn)} to User ID ${user.id}`);
+
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RELEASE_ASSET_EARN][HISTORY_ID: ${row.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[RELEASE_ASSET_EARN]: ${error.stack}`);
         }
     }
 

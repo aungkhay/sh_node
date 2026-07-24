@@ -164,7 +164,7 @@ class Controller {
                         where: userCondition
                     },
                     {
-                        model: AssetDistributionPackage,
+                        model: AssetEarnPackage,
                         as: 'package',
                         attributes: ['id', 'product_name']
                     }
