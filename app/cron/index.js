@@ -5615,11 +5615,12 @@ class CronJob {
 
     RELEASE_ASSET_FUND = async () => {
         try {
+            const today = moment().format('YYYY-MM-DD');
             const histories = await AssetDistributionPackageHistory.findAll({
                 where: {
                     is_returned_fund: 0,
                     return_date: {
-                        [Op.lte]: moment().format('YYYY-MM-DD')
+                        [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
                     }
                 },
             });
