@@ -199,7 +199,7 @@ class UserRoute extends express.Router {
         // this.post('/transfer-referral-bonus-to-reserve-fund', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND);
         this.post('/transfer-referral-bonus-to-reserve-fund-by-coupon/:id', middleware.isLoggedIn, TxnCtl.TRANSFER_REFERRAL_BONUS_TO_RESERVE_FUND_BY_COUPON);
         this.post('/transfer-allowance-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_ALLOWANCE_TO_BALANCE);
-        this.post('/transfer-balance-to-earn', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE_TO_EARN);
+        // this.post('/transfer-balance-to-earn', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_BALANCE_TO_EARN);
         this.post('/transfer-earn-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_EARN_TO_BALANCE);
         this.post('/transfer-gold-interest-to-balance', FormValidator.transfer(), middleware.isLoggedIn, TxnCtl.TRANSFER_GOLD_INTEREST_TO_BALANCE);
         this.get('/balance-transfers/get-receiver-account', middleware.isLoggedIn, TxnCtl.GET_RECEIVER_ACCOUNT);
