@@ -11382,7 +11382,7 @@ class Controller {
 
             if (aPackage.status === 3) {
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '礼包已售罄', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '本时段配额已售罄，请在下一时段开放后参与。', {});
             }
 
             if (aPackage.purchase_limit === 'DAILY' && aPackage.quantity_limit > 0) {
