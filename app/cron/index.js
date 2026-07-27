@@ -5774,7 +5774,7 @@ class CronJob {
             for (const row of rows) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance'] });
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'] });
                     if (!user) {
                         console.log(`User ID ${row.user_id} not found. Skipping...`);
                         await t.rollback();
@@ -5807,7 +5807,7 @@ class CronJob {
                         relation: user.relation,
                         wallet_type: 2, // 2-余额
                         model: 'AssetDailyReleasePackageEarn',
-                        type: '余额宝日释放收益',
+                        type: '资产宝日释放收益',
                         amount: row.daily_earn,
                         before_amount: user.balance,
                         after_amount: Number(user.balance) + Number(row.daily_earn),
@@ -5815,7 +5815,23 @@ class CronJob {
                         description: '每日释放收益',
                     }, { transaction: t });
 
-                    await user.increment({ balance: Number(row.daily_earn) }, { transaction: t });
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 3, // 3-资产宝
+                        model: 'AssetDailyReleasePackageEarn',
+                        type: '资产宝日释放收益',
+                        amount: row.daily_earn,
+                        before_amount: user.total_assets,
+                        after_amount: Number(user.total_assets) - Number(row.daily_earn),
+                        flow_status: 'OUT',
+                        description: '每日释放收益',
+                    }, { transaction: t });
+
+                    await user.increment({ 
+                        balance: Number(row.daily_earn), 
+                        total_assets: -Number(row.daily_earn) 
+                    }, { transaction: t });
 
                     await t.commit();
 
