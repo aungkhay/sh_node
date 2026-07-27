@@ -1038,3 +1038,24 @@ const url = `${baseURL}/asset-earn-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/asset-earn-packages/bonus-history`;
 ```
+
+### 资产宝日释放计划
+```js
+// [GET] Packages
+const url = `${baseURL}/asset-daily-release-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/asset-daily-release-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/asset-daily-release-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/asset-daily-release-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/asset-daily-release-packages/bonus-history`;
+```

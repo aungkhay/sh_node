@@ -148,6 +148,12 @@ class UserRoute extends express.Router {
         this.get('/asset-earn-packages/history', middleware.isLoggedIn, HomeCtrl.ASSET_EARN_PACKAGE_HISTORY);
         this.get('/asset-earn-packages/earn-history', middleware.isLoggedIn, HomeCtrl.ASSET_EARN_PACKAGE_EARN_HISTORY);
         this.get('/asset-earn-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.ASSET_EARN_PACKAGE_BONUS_HISTORY);
+        // Asset Daily Release Package Routes
+        this.get('/asset-daily-release-packages', middleware.isLoggedIn, HomeCtrl.ASSET_DAILY_RELEASE_PACKAGE);
+        this.post('/asset-daily-release-packages/:id/buy', FormValidator.buy_asset_daily_release_package(), middleware.isLoggedIn, HomeCtrl.BUY_ASSET_DAILY_RELEASE_PACKAGE);
+        this.get('/asset-daily-release-packages/history', middleware.isLoggedIn, HomeCtrl.ASSET_DAILY_RELEASE_PACKAGE_HISTORY);
+        this.get('/asset-daily-release-packages/earn-history', middleware.isLoggedIn, HomeCtrl.ASSET_DAILY_RELEASE_PACKAGE_EARN_HISTORY);
+        this.get('/asset-daily-release-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.ASSET_DAILY_RELEASE_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);
