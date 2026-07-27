@@ -5834,7 +5834,7 @@ class CronJob {
     ASSET_DAILY_RELEASE_ORIGINAL_PRICE = async () => {
         try {
             // Release after 5 days
-            const targetDate = moment().add(5, 'days').format('YYYY-MM-DD');
+            const targetDate = moment().subtract(5, 'days').format('YYYY-MM-DD');
             const rows = await AssetDailyReleasePackageHistory.findAll({
                 where: {
                     price: {
@@ -5881,6 +5881,7 @@ class CronJob {
                     }, { transaction: t });
 
                     await user.increment({ balance: Number(row.price) }, { transaction: t });
+                    await row.update({ is_returned_price: 1, return_price_date: new Date() }, { transaction: t });
 
                     await t.commit();
 
