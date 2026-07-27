@@ -11450,13 +11450,15 @@ class Controller {
             let reserveAmount = Number(aPackage.price);
             let balanceAmount = 0;
             if (Number(user.reserve_fund) < Number(aPackage.price)) {
-                balanceAmount = Number(aPackage.price) - Number(user.reserve_fund);
-                reserveAmount = Number(user.reserve_fund);
-            }
-            if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                // balanceAmount = Number(aPackage.price) - Number(user.reserve_fund);
+                // reserveAmount = Number(user.reserve_fund);
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
+            // if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+            //     await this.redisHelper.deleteKey(PROCESSING_KEY);
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+            // }
 
             const t = await db.transaction();
             try {
@@ -11901,13 +11903,15 @@ class Controller {
             let reserveAmount = Number(aPackage.price);
             let balanceAmount = 0;
             if (Number(user.reserve_fund) < Number(aPackage.price)) {
-                balanceAmount = Number(aPackage.price) - Number(user.reserve_fund);
-                reserveAmount = Number(user.reserve_fund);
-            }
-            if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+                // balanceAmount = Number(aPackage.price) - Number(user.reserve_fund);
+                // reserveAmount = Number(user.reserve_fund);
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
+            // if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+            //     await this.redisHelper.deleteKey(PROCESSING_KEY);
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+            // }
 
             const t = await db.transaction();
             try {
