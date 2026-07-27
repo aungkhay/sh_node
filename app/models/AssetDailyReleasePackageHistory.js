@@ -60,6 +60,17 @@ AssetDailyReleasePackageHistory.init({
         defaultValue: 0,
         comment: '周期(天)',
     },
+    is_returned_price: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已返还本金',
+    },
+    returned_price_on: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '返还本金时间',
+    },
     is_finished: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -108,6 +119,11 @@ AssetDailyReleasePackageHistory.init({
         {
             name: 'idx_is_finished_createdAt',
             fields: ['is_finished', 'createdAt'],
+        },
+        {
+            name: 'idx_price_is_returned_price_createdAt',
+            fields: ['price', 'is_returned_price', 'createdAt'],
+            using: 'BTREE'
         }
     ]
 })

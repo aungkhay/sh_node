@@ -46,6 +46,12 @@ AssetDailyReleasePackageEarn.init({
         allowNull: false,
         defaultValue: 0,
     },
+    type: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '类型: 0-认购金额, 1-每日释放',
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,
