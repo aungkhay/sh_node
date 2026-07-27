@@ -5881,7 +5881,7 @@ class CronJob {
                     }, { transaction: t });
 
                     await user.increment({ balance: Number(row.price) }, { transaction: t });
-                    await row.update({ is_returned_price: 1, return_price_date: new Date() }, { transaction: t });
+                    await row.update({ is_returned_price: 1, returned_price_on: new Date() }, { transaction: t });
 
                     await t.commit();
 
