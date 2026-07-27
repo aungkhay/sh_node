@@ -359,7 +359,14 @@ module.exports = async () => {
             val: '2026-07-10 00:00:00|2026-07-12 00:00:00',
             description: '-',
             data_type: 'string'
-        }
+        },
+        {
+            type: 'asset_daily_release_package_period',
+            title: '资产宝日释放计划 - 申报时间',
+            val: '2026-07-29 00:00:00|2026-08-02 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
     ];
 
     const count = await Config.count();

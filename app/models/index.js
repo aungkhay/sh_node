@@ -94,6 +94,10 @@ const AssetEarnPackage = require('./AssetEarnPackage');
 const AssetEarnPackageHistory = require('./AssetEarnPackageHistory');
 const AssetEarnPackageBonuses = require('./AssetEarnPackageBonuses');
 const AssetEarnPackageEarn = require('./AssetEarnPackageEarn');
+const AssetDailyReleasePackage = require('./AssetDailyReleasePackage');
+const AssetDailyReleasePackageHistory = require('./AssetDailyReleasePackageHistory');
+const AssetDailyReleasePackageBonuses = require('./AssetDailyReleasePackageBonuses');
+const AssetDailyReleasePackageEarn = require('./AssetDailyReleasePackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -562,6 +566,35 @@ AssetEarnPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_
 User.hasMany(AssetEarnPackageEarn, { foreignKey: 'user_id', as: 'asset_earn_package_earns', onDelete: 'CASCADE' });
 AssetEarnPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ ASSET_DAILY_RELEASE_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(AssetDailyReleasePackageHistory, { foreignKey: 'user_id', as: 'asset_daily_release_package_histories', onDelete: 'CASCADE' });
+AssetDailyReleasePackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== ASSET_DAILY_RELEASE_PACKAGE_HISTORY ↔️ ASSET_DAILY_RELEASE_PACKAGE_BONUSES (1:N) ==========
+AssetDailyReleasePackageHistory.hasMany(AssetDailyReleasePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+AssetDailyReleasePackageBonuses.belongsTo(AssetDailyReleasePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ASSET_DAILY_RELEASE_PACKAGE_HISTORY ↔️ ASSET_DAILY_RELEASE_PACKAGE_EARN (1:N) ==========
+AssetDailyReleasePackageHistory.hasMany(AssetDailyReleasePackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+AssetDailyReleasePackageEarn.belongsTo(AssetDailyReleasePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ASSET_DAILY_RELEASE_PACKAGE ↔️ ASSET_DAILY_RELEASE_PACKAGE_EARN (1:N) ==========
+AssetDailyReleasePackage.hasMany(AssetDailyReleasePackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+AssetDailyReleasePackageEarn.belongsTo(AssetDailyReleasePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== ASSET_DAILY_RELEASE_PACKAGE ↔️ ASSET_DAILY_RELEASE_PACKAGE_HISTORY (1:N) ==========
+AssetDailyReleasePackage.hasMany(AssetDailyReleasePackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+AssetDailyReleasePackageHistory.belongsTo(AssetDailyReleasePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ASSET_DAILY_RELEASE_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(AssetDailyReleasePackageBonuses, { foreignKey: 'user_id', as: 'asset_daily_release_package_bonuses', onDelete: 'CASCADE' });
+AssetDailyReleasePackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+AssetDailyReleasePackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ASSET_DAILY_RELEASE_PACKAGE_EARN (1:N) ==========
+User.hasMany(AssetDailyReleasePackageEarn, { foreignKey: 'user_id', as: 'asset_daily_release_package_earns', onDelete: 'CASCADE' });
+AssetDailyReleasePackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -652,7 +685,11 @@ const models = {
     AssetEarnPackage,
     AssetEarnPackageHistory,
     AssetEarnPackageBonuses,
-    AssetEarnPackageEarn
+    AssetEarnPackageEarn,
+    AssetDailyReleasePackage,
+    AssetDailyReleasePackageHistory,
+    AssetDailyReleasePackageBonuses,
+    AssetDailyReleasePackageEarn,
 };
 
 // Export models + db connection

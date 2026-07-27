@@ -381,6 +381,18 @@ class AdminRoute extends express.Router {
         this.get('/asset-earn-packages/history', middleware.isLoggedIn('asset-earn-package-history-list'), AssetEarnPackageCtrl.ASSET_EARN_PACKAGE_HISTORY);
         this.get('/asset-earn-packages/bonus-history', middleware.isLoggedIn('asset-earn-package-bonus-history-list'), AssetEarnPackageCtrl.ASSET_EARN_PACKAGE_BONUS_HISTORY);
         this.get('/asset-earn-packages/earn-history', middleware.isLoggedIn('asset-earn-package-earn-history-list'), AssetEarnPackageCtrl.ASSET_EARN_PACKAGE_EARN_HISTORY);
+
+        // Asset Daily Release
+        let AssetDailyReleasePackageController = require('../controllers/admins/AssetDailyReleasePackageController');
+        let AssetDailyReleasePackageCtrl = new AssetDailyReleasePackageController(app);
+        this.get('/asset-daily-release-packages', middleware.isLoggedIn('asset-daily-release-package-list'), AssetDailyReleasePackageCtrl.INDEX);
+        this.post('/asset-daily-release-packages/create', FormValidator.create_asset_daily_release_package(), middleware.isLoggedIn('asset-daily-release-package-create'), AssetDailyReleasePackageCtrl.CREATE);
+        this.post('/asset-daily-release-packages/:id/update', FormValidator.create_asset_daily_release_package(), middleware.isLoggedIn('asset-daily-release-package-update'), AssetDailyReleasePackageCtrl.UPDATE);
+        this.post('/asset-daily-release-packages/:id/upload', middleware.isLoggedIn('asset-daily-release-package-create,asset-daily-release-package-update'), AssetDailyReleasePackageCtrl.UPLOAD);
+        this.get('/asset-daily-release-packages/history', middleware.isLoggedIn('asset-daily-release-package-history-list'), AssetDailyReleasePackageCtrl.ASSET_DAILY_RELEASE_PACKAGE_HISTORY);
+        this.get('/asset-daily-release-packages/bonus-history', middleware.isLoggedIn('asset-daily-release-package-bonus-history-list'), AssetDailyReleasePackageCtrl.ASSET_DAILY_RELEASE_PACKAGE_BONUS_HISTORY);
+        this.get('/asset-daily-release-packages/earn-history', middleware.isLoggedIn('asset-daily-release-package-earn-history-list'), AssetDailyReleasePackageCtrl.ASSET_DAILY_RELEASE_PACKAGE_EARN_HISTORY);
+
     }
 }
 

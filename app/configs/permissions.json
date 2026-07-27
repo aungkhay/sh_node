@@ -158,6 +158,13 @@
     { "model": "资产宝收益", "title": "推荐奖励记录", "name": "asset-earn-package-bonus-history-list" },
     { "model": "资产宝收益", "title": "收益记录", "name": "asset-earn-package-earn-history-list" },
 
+    { "model": "资产宝日释放计划", "title": "产品列表", "name": "asset-daily-release-package-list" },
+    { "model": "资产宝日释放计划", "title": "创建", "name": "asset-daily-release-package-create" },
+    { "model": "资产宝日释放计划", "title": "编辑", "name": "asset-daily-release-package-update" },
+    { "model": "资产宝日释放计划", "title": "购买记录", "name": "asset-daily-release-package-history-list" },
+    { "model": "资产宝日释放计划", "title": "推荐奖励记录", "name": "asset-daily-release-package-bonus-history-list" },
+    { "model": "资产宝日释放计划", "title": "收益记录", "name": "asset-daily-release-package-earn-history-list" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 
