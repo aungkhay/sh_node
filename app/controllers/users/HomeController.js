@@ -11399,7 +11399,7 @@ class Controller {
                 });
                 if (historyCount > aPackage.quantity_limit) {
                     await this.redisHelper.deleteKey(PROCESSING_KEY);
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该方案', {});
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买三份该方案！', {});
                 }
             }
 
