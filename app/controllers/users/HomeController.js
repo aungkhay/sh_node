@@ -11389,6 +11389,7 @@ class Controller {
                 const historyCount = await AssetDistributionPackageHistory.count({
                     where: {
                         user_id: req.user_id,
+                        package_id: aPackage.id,
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         },
