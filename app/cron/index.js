@@ -5849,16 +5849,15 @@ class CronJob {
 
     ASSET_DAILY_RELEASE_ORIGINAL_PRICE = async () => {
         try {
-            // Release after 5 days
-            const targetDate = moment().subtract(5, 'days').format('YYYY-MM-DD');
+            const today = moment().format('YYYY-MM-DD');
             const rows = await AssetDailyReleasePackageHistory.findAll({
                 where: {
                     price: {
                         [Op.gt]: 0
                     },
                     is_returned_price: 0,
-                    createdAt: {
-                        [Op.between]: [targetDate + ' 00:00:00', targetDate + ' 23:59:59']
+                    target_return_price_date: {
+                        [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
                     },
                 },
                 attributes: ['id', 'user_id', 'package_id', 'price'],

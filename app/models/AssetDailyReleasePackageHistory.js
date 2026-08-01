@@ -129,6 +129,11 @@ AssetDailyReleasePackageHistory.init({
             name: 'idx_price_is_returned_price_createdAt',
             fields: ['price', 'is_returned_price', 'createdAt'],
             using: 'BTREE'
+        },
+        {
+            name: 'idx_price_is_returned_price_target_return_price_date',
+            fields: ['price', 'is_returned_price', 'target_return_price_date'],
+            using: 'BTREE'
         }
     ]
 })
