@@ -58,6 +58,7 @@ class Controller {
                 '22': 'success', // xpayzhifu2
                 '23': 'success', // xpayzhifu3
                 '24': 'success', // huojianzhifu
+                '25': 'success', // mzhifu2
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -202,6 +203,7 @@ class Controller {
 
                 case 'mzhifu':
                 case 'mzhifu1':
+                case 'mzhifu2':
                     // {"trade_no":"9041025059075120","product_id":"1","app_id":"483237a48f498b94f0317578","out_trade_no":"SH1117753039748973","trade_status":"1","amount":"300.00","real_amount":"300.00","desc":"5-SH1117753039748973","time":"1775806498","sign":"d125163599b8c936107513b2654ea814"}
                     const mzhifuReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
@@ -671,6 +673,7 @@ class Controller {
                     break;
                 case 'mzhifu':
                 case 'mzhifu1':
+                case 'mzhifu2':
                     payload = await this.merchantController.MZHIFU(channel, amount, userId);
                     break;
                 case 'alizhifu':
@@ -817,6 +820,7 @@ class Controller {
                     break;
                 case 'mzhifu':
                 case 'mzhifu1':
+                case 'mzhifu2':
                     if (resData.code == 200) {
                         redirectUrl = resData?.data?.url;
                         success = true;
