@@ -32,6 +32,12 @@ AssetDailyReleasePackage.init({
         defaultValue: 0,
         comment: '认购金额',
     },
+    release_price_after_day: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 5,
+        comment: '认购后第几天开始释放认购金额',
+    },
     period: {
         type: DataTypes.INTEGER,
         allowNull: false,

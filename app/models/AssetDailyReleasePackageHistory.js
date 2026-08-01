@@ -66,6 +66,11 @@ AssetDailyReleasePackageHistory.init({
         defaultValue: false,
         comment: '是否已返还本金',
     },
+    target_return_price_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '预计返还本金时间',
+    },
     returned_price_on: {
         type: DataTypes.DATE,
         allowNull: true,

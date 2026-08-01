@@ -12465,6 +12465,7 @@ class Controller {
                             daily_earn: aPackage.daily_earn,
                             period: aPackage.period,
                             will_finish_on: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                            target_return_price_date: moment().add(aPackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
 
@@ -12480,6 +12481,7 @@ class Controller {
                         daily_earn: aPackage.daily_earn,
                         period: aPackage.period,
                         will_finish_on: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                        target_return_price_date: moment().add(aPackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
                     }
 
                     const pkgHistoryItem = await AssetDailyReleasePackageHistory.create(obj, { transaction: t });

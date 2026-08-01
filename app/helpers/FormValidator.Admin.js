@@ -1226,6 +1226,9 @@ exports.create_asset_daily_release_package = () => {
             .bail()
             .isNumeric()
             .withMessage('认购金额必须是数字'),
+        check('release_price_after_day').not().isEmpty().withMessage('认购后第几天开始释放不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('认购后第几天开始释放必须是正整数'),
         check('period').not().isEmpty().withMessage('周期不能为空')
             .bail()
             .isInt({ min: 1 }).withMessage('周期必须是正整数'),
