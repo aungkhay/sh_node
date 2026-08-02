@@ -5887,7 +5887,7 @@ class CronJob {
                         relation: user.relation,
                         wallet_type: 2, // 2-余额
                         model: 'AssetDailyReleasePackageEarn',
-                        type: '余额宝日释放收益',
+                        type: '资产宝日释放收益',
                         amount: row.price,
                         before_amount: user.balance,
                         after_amount: Number(user.balance) + Number(row.price),

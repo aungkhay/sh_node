@@ -110,6 +110,7 @@ class Controller {
                 top_account_id = parent.id;
             }
 
+            const totalAssetGift = 50000; // 赠送资产宝资产
             const obj = {
                 type: 2, // User
                 name: `SH ${this.commonHelper.randomNumber(5)}`,
@@ -120,7 +121,7 @@ class Controller {
                 parent_id: parent.id,
                 relation: `-`,
                 rank_id: rank.id,
-                total_assets: 30000, // 赠送资产宝资产
+                total_assets: totalAssetGift, // 赠送资产宝资产
             }
 
             const t = await db.transaction();
@@ -130,7 +131,7 @@ class Controller {
                 await user.update({ relation: relation }, { transaction: t });
 
                 /* ===============================
-                * ✅ Give 30000 total_assets
+                * ✅ Give 50000 total_assets
                 * =============================== */
                 await CashFlow.create({
                     user_id: user.id,
@@ -138,9 +139,9 @@ class Controller {
                     wallet_type: 3, // 资产宝
                     model: 'User',
                     type: '赠送资产宝资产',
-                    amount: 30000,
+                    amount: totalAssetGift,
                     before_amount: 0,
-                    after_amount: 30000,
+                    after_amount: totalAssetGift,
                     description: '可进行分发提现',
                     flow_status: 'IN',
                 }, { transaction: t });
