@@ -371,6 +371,8 @@ class CronJob {
                 commonLogger(`[RESET_REWARD_COUNT]: Reward Type ID ${type.id} reset to ${type.total_count}`);
             }
 
+            // Meeting dupe key reset
+            await this.redisHelper.deleteKey('meeting_reward_queue_dedupe');
         } catch (error) {
             errLogger(`[RESET_REWARD_COUNT]: ${error.stack}`);
         }

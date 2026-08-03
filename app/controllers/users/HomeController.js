@@ -8538,7 +8538,12 @@ class Controller {
                 meeting_code: meetingCode,
                 reward_amount: rewardAmount,
             }
-            await this.redisHelper.rPushValue(QUEUE_KEY, JSON.stringify(queueData));
+
+            const memberKey = `${userId}:${meeting.id}`;
+            const added = await this.redisHelper.sAddValue('meeting_reward_queue_dedupe', memberKey);
+            if (added === 1) {
+                await this.redisHelper.rPushValue(QUEUE_KEY, JSON.stringify(queueData));
+            }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, `参加会议成功，获得奖励${rewardAmount}元`, { reward_amount: rewardAmount });
 
