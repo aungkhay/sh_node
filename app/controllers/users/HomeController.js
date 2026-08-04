@@ -12346,6 +12346,7 @@ class Controller {
                 const historyCount = await AssetDailyReleasePackageHistory.count({
                     where: {
                         user_id: req.user_id,
+                        package_id: aPackage.id,
                         createdAt: {
                             [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
                         },
@@ -12354,8 +12355,16 @@ class Controller {
                     useMaster: true
                 });
                 if (historyCount >= aPackage.quantity_limit) {
+                    const chineseNumbers = {
+                        1: '一',
+                        2: '二',
+                        3: '三',
+                        4: '四',
+                        5: '五',
+                        6: '六',
+                    }
                     await this.redisHelper.deleteKey(PROCESSING_KEY);
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该方案', {});
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `今日已购买${chineseNumbers[aPackage.quantity_limit]}份该方案`, {});
                 }
             }
 
