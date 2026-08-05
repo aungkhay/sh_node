@@ -11317,9 +11317,17 @@ class Controller {
                 await this.redisHelper.setValue('asset_distribution_package_period', package_period);
             }
 
+            let release_qty = await this.redisHelper.getValue('asset_distribution_package_daily_release_qty');
+            if (!release_qty) {
+                const conf = await Config.findOne({ where: { type: 'asset_distribution_package_daily_release_qty' } });
+                release_qty = conf ? conf.val : '';
+                await this.redisHelper.setValue('asset_distribution_package_daily_release_qty', release_qty);
+            }
+
             const data = {
                 package_period: package_period,
-                packages: packages
+                packages: packages,
+                release_qty: release_qty
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
@@ -12269,9 +12277,17 @@ class Controller {
                 await this.redisHelper.setValue('asset_daily_release_package_period', package_period);
             }
 
+            let release_qty = await this.redisHelper.getValue('asset_daily_release_package_daily_release_qty');
+            if (!release_qty) {
+                const conf = await Config.findOne({ where: { type: 'asset_daily_release_package_daily_release_qty' } });
+                release_qty = conf ? conf.val : '';
+                await this.redisHelper.setValue('asset_daily_release_package_daily_release_qty', release_qty);
+            }
+
             const data = {
                 package_period: package_period,
-                packages: packages
+                packages: packages,
+                release_qty: release_qty
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
