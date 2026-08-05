@@ -9047,6 +9047,18 @@ class Controller {
                 LEFT JOIN personal_reserve_package_history prph ON prph.id = prpe.package_history_id
                 LEFT JOIN personal_reserve_packages prp ON prp.id = prpe.package_id
                 WHERE prpe.user_id = :userId
+
+                UNION ALL
+
+                SELECT
+                    '贡献' AS type,
+                    mfh.amount AS product_price,
+                    '共济基金' AS product_name,
+                    '上合贡献政策收益' AS description,
+                    mfh.createdAt AS createdAt
+                FROM masonic_fund_history mfh
+                WHERE mfh.user_id = :userId
+                AND description LIKE '%上合贡献政策 - 定时任务发共济基金%'
             `;
 
             const dataQuery = `
