@@ -9052,8 +9052,9 @@ class Controller {
 
                 SELECT
                     '贡献' AS type,
-                    mfh.amount AS product_price,
+                    0 AS product_price,
                     '共济基金' AS product_name,
+                    mfh.amount AS amount,
                     '上合贡献政策收益' AS description,
                     mfh.createdAt AS createdAt
                 FROM masonic_fund_history mfh
