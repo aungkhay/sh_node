@@ -37,8 +37,8 @@ class Controller {
                 ...relationCondtion
             };
 
-            const todayDepositAmount = await Deposit.sum('amount', { where: { status: 1, ...todayCondition } });
-            const todayDepositCount = await Deposit.count({ where: { status: 1, ...todayCondition } });
+            // const todayDepositAmount = await Deposit.sum('amount', { where: { status: 1, ...todayCondition } });
+            // const todayDepositCount = await Deposit.count({ where: { status: 1, ...todayCondition } });
             const todayWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1, ...todayCondition } });
             const todayWithdrawCount = await Withdraw.count({ where: { status: 1, ...todayCondition } });
             const todayWithdawAllStatusAmount = await Withdraw.sum('amount', { where: { ...todayCondition } });
@@ -92,8 +92,8 @@ class Controller {
             const internalUserTotalAssets = await User.sum('total_assets', { where: { type: 2, is_internal_account: 1 } });
 
             const data = {
-                today_deposit_amount: todayDepositAmount ? Number(todayDepositAmount) : 0,
-                today_deposit_count: todayDepositCount ?? 0,
+                // today_deposit_amount: 0,
+                // today_deposit_count: 0,
                 today_withdraw_amount: todayWithdrawAmount ? Number(todayWithdrawAmount) : 0,
                 today_withdraw_count: todayWithdrawCount ?? 0,
                 today_withdraw_all_status_amount: todayWithdawAllStatusAmount ? Number(todayWithdawAllStatusAmount) : 0,
@@ -103,9 +103,9 @@ class Controller {
                 kyc_pending_count: kycPendingCount ?? 0,
                 payment_pending_count: paymentPendingCount ?? 0,
                 kyc_approved_count: kycApprovedCount ?? 0,
-                yesterday_check_in: 0,
+                // yesterday_check_in: 0,
                 total_refferal_bonus: totalRefferalBonus ? Number(totalRefferalBonus) : 0,
-                total_masonic_fund_release: 0,
+                // total_masonic_fund_release: 0,
                 bought_letter_count: boughtLetterCount,
                 agreement_count: agreementCount,
                 normal_user_reserve_fund: normalUserReserveFund ? Number(normalUserReserveFund) : 0,
@@ -114,6 +114,30 @@ class Controller {
                 internal_user_balance: internalUserBalance ? Number(internalUserBalance) : 0,
                 normal_user_total_assets: normalUserTotalAssets ? Number(normalUserTotalAssets) : 0,
                 internal_user_total_assets: internalUserTotalAssets ? Number(internalUserTotalAssets) : 0
+            };
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    DW_SUMMARY = async (req, res) => {
+        try {
+            // const today = new Date();
+            // const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+            // const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+
+            const totalDepositAmount = await Deposit.sum('amount', { where: { status: 1 } });
+            const totalDepositCount = await Deposit.count({ where: { status: 1 } });
+            const totalWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1 } });
+            const totalWithdrawCount = await Withdraw.count({ where: { status: 1 } });
+
+            const data = {
+                total_deposit_amount: totalDepositAmount ?? 0,
+                total_deposit_count: totalDepositCount ?? 0,
+                total_withdraw_amount: totalWithdrawAmount ?? 0,
+                total_withdraw_count: totalWithdrawCount ?? 0
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
