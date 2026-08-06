@@ -124,20 +124,34 @@ class Controller {
 
     DW_SUMMARY = async (req, res) => {
         try {
-            // const today = new Date();
-            // const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-            // const endOfToday = new Date(today.setHours(23, 59, 59, 999));
+            const today = new Date();
+            const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+            const endOfToday = new Date(today.setHours(23, 59, 59, 999));
 
             const totalDepositAmount = await Deposit.sum('amount', { where: { status: 1 } });
             const totalDepositCount = await Deposit.count({ where: { status: 1 } });
             const totalWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1 } });
             const totalWithdrawCount = await Withdraw.count({ where: { status: 1 } });
+            const totalWithdrawHandleFee = await Withdraw.sum('handle_fee', { where: { status: 1 } });
+
+            const todayDepositAmount = await Deposit.sum('amount', { where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
+            const todayDepositCount = await Deposit.count({ where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
+            const todayWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
+            const todayWithdrawCount = await Withdraw.count({ where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
+            const todayWithdrawHandleFee = await Withdraw.sum('handle_fee', { where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
 
             const data = {
                 total_deposit_amount: totalDepositAmount ?? 0,
                 total_deposit_count: totalDepositCount ?? 0,
                 total_withdraw_amount: totalWithdrawAmount ?? 0,
-                total_withdraw_count: totalWithdrawCount ?? 0
+                total_withdraw_count: totalWithdrawCount ?? 0,
+                total_withdraw_handle_fee: totalWithdrawHandleFee ?? 0,
+                
+                today_deposit_amount: todayDepositAmount ?? 0,
+                today_deposit_count: todayDepositCount ?? 0,
+                today_withdraw_amount: todayWithdrawAmount ?? 0,
+                today_withdraw_count: todayWithdrawCount ?? 0,
+                today_withdraw_handle_fee: todayWithdrawHandleFee ?? 0
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
