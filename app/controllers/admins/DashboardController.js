@@ -128,11 +128,13 @@ class Controller {
             const startOfToday = new Date(today.setHours(0, 0, 0, 0));
             const endOfToday = new Date(today.setHours(23, 59, 59, 999));
 
-            const totalDepositAmount = await Deposit.sum('amount', { where: { status: 1 } });
-            const totalDepositCount = await Deposit.count({ where: { status: 1 } });
-            const totalWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1 } });
-            const totalWithdrawCount = await Withdraw.count({ where: { status: 1 } });
-            const totalWithdrawHandleFee = await Withdraw.sum('handle_fee', { where: { status: 1 } });
+            // total is from april 4 17th
+            const createdAt = '2024-04-17';
+            const totalDepositAmount = await Deposit.sum('amount', { where: { status: 1, createdAt: { [Op.gte]: createdAt } } });
+            const totalDepositCount = await Deposit.count({ where: { status: 1, createdAt: { [Op.gte]: createdAt } } });
+            const totalWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1, createdAt: { [Op.gte]: createdAt } } });
+            const totalWithdrawCount = await Withdraw.count({ where: { status: 1, createdAt: { [Op.gte]: createdAt } } });
+            const totalWithdrawHandleFee = await Withdraw.sum('handle_fee', { where: { status: 1, createdAt: { [Op.gte]: createdAt } } });
 
             const todayDepositAmount = await Deposit.sum('amount', { where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
             const todayDepositCount = await Deposit.count({ where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
