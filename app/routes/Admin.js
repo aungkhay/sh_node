@@ -19,7 +19,7 @@ class AdminRoute extends express.Router {
         let DashboardController = require('../controllers/admins/DashboardController');
         let DashboardCtrl = new DashboardController();
         this.get('/dashboard/summary', middleware.isLoggedIn(), DashboardCtrl.DASHBOARD_SUMMARY);
-        this.get('/dashboard/dw-summary', middleware.isLoggedIn(), DashboardCtrl.DW_SUMMARY);
+        this.get('/dashboard/dw-summary', DashboardCtrl.DW_SUMMARY);
         this.get('/dashboard/masonic-fund-summary', middleware.isLoggedIn(), DashboardCtrl.MASONIC_FUND_SUMMARY);
         this.get('/dashboard/check-in-summary', middleware.isLoggedIn(), DashboardCtrl.CHECKIN_SUMMARY);
         this.get('/dashboard/today-user-active-count', middleware.isLoggedIn(), DashboardCtrl.TODAY_ACTIVE_USER_COUNT);
