@@ -5708,7 +5708,7 @@ class CronJob {
             for (const history of histories) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'total_assets'] });
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'] });
                     if (!user) {
                         console.log(`User ID ${history.user_id} not found. Skipping...`);
                         await t.rollback();
