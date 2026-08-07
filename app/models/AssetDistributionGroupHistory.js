@@ -70,13 +70,8 @@ AssetDistributionGroupHistory.init({
             using: 'BTREE',
         },
         {
-            name: 'idx_user_id_released_at',
-            fields: ['user_id', 'released_at'],
-            using: 'BTREE',
-        },
-        {
-            name: 'idx_is_release_stuck',
-            fields: ['is_release_stuck'],
+            name: 'idx_release_date_released_at',
+            fields: ['release_date', 'released_at'],
             using: 'BTREE',
         },
         {

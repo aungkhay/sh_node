@@ -5697,10 +5697,7 @@ class CronJob {
                     release_date: {
                         [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
                     },
-                    [Op.or]: [
-                        { is_released: 0 },
-                        { is_release_stuck: 1 }
-                    ]
+                    released_at: null,
                 },
                 attributes: ['id', 'user_id', 'amount'],
             });
