@@ -11328,7 +11328,7 @@ class Controller {
                 where: {
                     user_id: req.user_id,
                     released_at: {
-                        [Op.ne]: null
+                        [Op.eq]: null
                     }
                 },
                 useMaster: true 
