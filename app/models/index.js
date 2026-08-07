@@ -98,6 +98,7 @@ const AssetDailyReleasePackage = require('./AssetDailyReleasePackage');
 const AssetDailyReleasePackageHistory = require('./AssetDailyReleasePackageHistory');
 const AssetDailyReleasePackageBonuses = require('./AssetDailyReleasePackageBonuses');
 const AssetDailyReleasePackageEarn = require('./AssetDailyReleasePackageEarn');
+const AssetDistributionGroupHistory = require('./AssetDistributionGroupHistory');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -595,6 +596,10 @@ AssetDailyReleasePackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as
 User.hasMany(AssetDailyReleasePackageEarn, { foreignKey: 'user_id', as: 'asset_daily_release_package_earns', onDelete: 'CASCADE' });
 AssetDailyReleasePackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ================ USER ↔️ ASSET_DISTRIBUTION_GROUP_HISTORY (1:N) ==========
+User.hasMany(AssetDistributionGroupHistory, { foreignKey: 'user_id', as: 'asset_distribution_group_histories', onDelete: 'CASCADE' });
+AssetDistributionGroupHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -682,6 +687,7 @@ const models = {
     AssetDistributionPackageHistory,
     AssetDistributionPackageBonuses,
     AssetDistributionPackageEarn,
+    AssetDistributionGroupHistory,
     AssetEarnPackage,
     AssetEarnPackageHistory,
     AssetEarnPackageBonuses,

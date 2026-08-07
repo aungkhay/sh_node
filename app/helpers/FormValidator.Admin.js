@@ -1132,6 +1132,13 @@ exports.create_asset_distribution_package = () => {
         check('period').not().isEmpty().withMessage('周期不能为空')
             .bail()
             .isInt({ min: 1 }).withMessage('周期必须是正整数'),
+        check('release_extra_distribution_period').not().isEmpty().withMessage('额外分配周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('额外分配周期必须是正整数'),
+        check('group_identifier_number').not().isEmpty().withMessage('组标识符编号不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('组标识符编号必须是数字'),
         // 资产宝资金
         check('asset_fund').not().isEmpty().withMessage('资产宝资金不能为空')
             .bail()

@@ -1962,6 +1962,8 @@ const data = {
     product_name: '',
     price: 0,
     period: 7,
+    release_extra_distribution_period: 7, // 额外分配周期
+    group_identifier_number: 1, // 组标识符编号
     asset_fund: 1000, // 资产宝资金
     purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
     quantity_limit: 0, // optional 限购数量
@@ -2008,6 +2010,14 @@ const params = {
 
 // [GET] 收益记录
 const url = `${baseURL}/asset-distribution-packages/earn-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 可额外发放金额记录
+const url = `${baseURL}/asset-distribution-packages/extra-asset-history`;
 const params = {
     phone: '',
     startTime: '',

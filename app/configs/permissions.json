@@ -150,6 +150,7 @@
     { "model": "上合资产宝分发方案", "title": "购买记录", "name": "asset-distribution-package-history-list" },
     { "model": "上合资产宝分发方案", "title": "推荐奖励记录", "name": "asset-distribution-package-bonus-history-list" },
     { "model": "上合资产宝分发方案", "title": "收益记录", "name": "asset-distribution-package-earn-history-list" },
+    { "model": "上合资产宝分发方案", "title": "可额外发放金额记录", "name": " " },
 
     { "model": "资产宝收益", "title": "产品列表", "name": "asset-earn-package-list" },
     { "model": "资产宝收益", "title": "创建", "name": "asset-earn-package-create" },

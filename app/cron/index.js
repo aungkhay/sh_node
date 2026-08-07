@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory } = require('../models');
 const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -88,7 +88,7 @@ class CronJob {
         // run every 00:50
         cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start();
         // Run every hour
-        cron.schedule('0 4-23 * * *', this.CHECK_VALIDED_COUPON).start();
+        cron.schedule('0 5-23 * * *', this.CHECK_VALIDED_COUPON).start();
         // Run at 1AM Every day
         cron.schedule('0 1 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start();
         cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
@@ -97,6 +97,7 @@ class CronJob {
         cron.schedule('30 2 * * *', this.RELEASE_ASSET_EARN).start();
         cron.schedule('0 3 * * *', this.ASSET_DAILY_RELEASE_EARN).start();
         cron.schedule('30 3 * * *', this.ASSET_DAILY_RELEASE_ORIGINAL_PRICE).start();
+        cron.schedule('0 4 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -5685,6 +5686,84 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RELEASE_ASSET_FUND]: ${error.stack}`);
+        }
+    }
+
+    RELEASE_EXTRA_DISTRIBUTION = async () => {
+        try {
+            const today = moment().format('YYYY-MM-DD');
+            const histories = await AssetDistributionGroupHistory.findAll({
+                where: {
+                    release_date: {
+                        [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
+                    },
+                    [Op.or]: [
+                        { is_released: 0 },
+                        { is_release_stuck: 1 }
+                    ]
+                },
+                attributes: ['id', 'user_id', 'amount'],
+            });
+            
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'total_assets'] });
+                    if (!user) {
+                        console.log(`User ID ${history.user_id} not found. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+                    const subtractAmount = Number(history.amount);
+                    if (user.total_assets < subtractAmount) {
+                        console.log(`User ID ${user.id} has insufficient total_assets. Required: ${subtractAmount}, Available: ${user.total_assets}. Marking as release_stuck.`);
+                        await history.update({ is_release_stuck: 1 }, { transaction: t });
+                        await t.commit();
+                        continue;
+                    }
+                    await history.update({ 
+                        is_released: 1,
+                        released_at: new Date(),
+                        is_release_stuck: 0
+                    }, { transaction: t });
+                    await user.increment({ total_assets: -subtractAmount, balance: subtractAmount }, { transaction: t });
+
+                    const cashflows = [
+                            {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 2-余额
+                            model: 'AssetDistributionGroupHistory',
+                            type: '可额外发放金额',
+                            amount: subtractAmount,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + subtractAmount,
+                            flow_status: 'IN',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 3, // 3-资产宝
+                            model: 'AssetDistributionGroupHistory',
+                            type: '可额外发放金额',
+                            amount: subtractAmount,
+                            before_amount: user.total_assets,
+                            after_amount: Number(user.total_assets) - subtractAmount,
+                            flow_status: 'OUT',
+                        }
+                    ]
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+
+                    await t.commit();
+
+                    console.log(`[RELEASE_EXTRA_DISTRIBUTION][HISTORY_ID: ${history.id}]: Released extra distribution to User ID ${user.id}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RELEASE_EXTRA_DISTRIBUTION][HISTORY_ID: ${history.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[RELEASE_EXTRA_DISTRIBUTION]: ${error.stack}`);
         }
     }
 

@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackage, AssetDistributionPackageBonuses, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackage, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetEarnPackageBonuses, AssetDailyReleasePackage, AssetDailyReleasePackageHistory, AssetDailyReleasePackageBonuses, AssetDailyReleasePackageEarn } = require('../../models');
+const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackage, AssetDistributionPackageBonuses, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackage, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetEarnPackageBonuses, AssetDailyReleasePackage, AssetDailyReleasePackageHistory, AssetDailyReleasePackageBonuses, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes, where, col, fn } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -11324,10 +11324,21 @@ class Controller {
                 await this.redisHelper.setValue('asset_distribution_package_daily_release_qty', release_qty);
             }
 
+            const totalGroupDistributionAmount = await AssetDistributionGroupHistory.sum('amount', { 
+                where: {
+                    user_id: req.user_id,
+                    released_at: {
+                        [Op.ne]: null
+                    }
+                },
+                useMaster: true 
+            });
+
             const data = {
                 package_period: package_period,
                 packages: packages,
-                release_qty: release_qty
+                release_qty: release_qty,
+                extra_distribution_amount: totalGroupDistributionAmount || 0
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
@@ -11539,6 +11550,7 @@ class Controller {
                             price: index == 0 ? aPackage.price : 0,
                             asset_fund: aPackage.asset_fund,
                             period: aPackage.period,
+                            group_identifier_number: aPackage.group_identifier_number,
                             return_date: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
@@ -11554,6 +11566,7 @@ class Controller {
                         price: aPackage.price,
                         asset_fund: aPackage.asset_fund,
                         period: aPackage.period,
+                        release_extra_distribution_period: aPackage.release_extra_distribution_period,
                         return_date: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                     }
 
@@ -11565,6 +11578,56 @@ class Controller {
                 if (aPackage.total_quantity - 1 <= 0) {
                     await aPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
                 }
+
+                // START: GROUP DISTRIBUTION LOGIC
+                const groupPackages = await AssetDistributionPackage.findAll({
+                    where: {
+                        group_identifier_number: aPackage.group_identifier_number
+                    },
+                    transaction: t
+                });
+                if (groupPackages.length > 0) {
+                    const packageHistory = await AssetDistributionPackageHistory.findAll({
+                        attributes: [
+                            'package_id', 
+                            [Sequelize.fn('COUNT', Sequelize.col('package_id')), 'package_count']
+                        ],
+                        where: {
+                            user_id: user.id,
+                            group_identifier_number: aPackage.group_identifier_number,
+                            is_group_finished: 0
+                        },
+                        group: ['package_id'],
+                        transaction: t
+                    });
+                    if (packageHistory.length >= groupPackages.length) {
+                        await AssetDistributionGroupHistory.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            amount: 80000,
+                            release_date: moment().add(aPackage.release_extra_distribution_period, 'days').format('YYYY-MM-DD HH:mm:ss')
+                        }, { transaction: t });
+
+                        // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
+                        for (const pkgGroup of packageHistory) {
+                            const pkgHistory = await AssetDistributionPackageHistory.findOne({
+                                where: {
+                                    user_id: user.id,
+                                    package_id: pkgGroup.package_id,
+                                    group_identifier_number: aPackage.group_identifier_number,
+                                    is_group_finished: 0
+                                },
+                                attributes: ['id'],
+                                order: [['id', 'ASC']],
+                                transaction: t
+                            });
+                            if (pkgHistory) {
+                                await pkgHistory.update({ is_group_finished: 1 }, { transaction: t });
+                            }
+                        }
+                    }
+                }
+                // END: GROUP DISTRIBUTION LOGIC
 
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');

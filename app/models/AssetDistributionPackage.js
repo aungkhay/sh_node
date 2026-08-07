@@ -38,6 +38,18 @@ AssetDistributionPackage.init({
         defaultValue: 0,
         comment: '周期(天)',
     },
+    group_identifier_number: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '组标识符编号',
+    },
+    release_extra_distribution_period: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '额外释放周期(天)',
+    },
     asset_fund: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,

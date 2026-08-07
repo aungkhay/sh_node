@@ -371,6 +371,7 @@ class AdminRoute extends express.Router {
         this.get('/asset-distribution-packages/history', middleware.isLoggedIn('asset-distribution-package-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_HISTORY);
         this.get('/asset-distribution-packages/bonus-history', middleware.isLoggedIn('asset-distribution-package-bonus-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_BONUS_HISTORY);
         this.get('/asset-distribution-packages/earn-history', middleware.isLoggedIn('asset-distribution-package-earn-history-list'), AssetDistributionPackageCtrl.ASSET_DISTRIBUTION_PACKAGE_EARN_HISTORY);
+        this.get('/asset-distribution-packages/extra-asset-history', middleware.isLoggedIn('asset-distribution-package-extra-asset-history-list'), AssetDistributionPackageCtrl.ASSET_EXTRA_DISTRIBUTION_HISTORY);
         
         // Asset Earn
         let AssetEarnPackageController = require('../controllers/admins/AssetEarnPackageController');

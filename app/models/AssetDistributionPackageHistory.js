@@ -59,6 +59,18 @@ AssetDistributionPackageHistory.init({
         defaultValue: 0,
         comment: '周期(天)',
     },
+    group_identifier_number: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '组标识符编号',
+    },
+    is_group_finished: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '是否已完成组购买'
+    },
     return_date: {
         type: DataTypes.DATE,
         allowNull: true,
@@ -107,6 +119,11 @@ AssetDistributionPackageHistory.init({
         {
             name: 'idx_createdAt',
             fields: ['createdAt'],
+            using: 'BTREE'
+        },
+        {
+            name: 'idx_user_id_group_identifier_number_is_group_finished',
+            fields: ['user_id', 'group_identifier_number', 'is_group_finished'],
             using: 'BTREE'
         }
     ]
