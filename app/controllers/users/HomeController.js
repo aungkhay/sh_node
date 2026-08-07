@@ -11566,7 +11566,7 @@ class Controller {
                         price: aPackage.price,
                         asset_fund: aPackage.asset_fund,
                         period: aPackage.period,
-                        release_extra_distribution_period: aPackage.release_extra_distribution_period,
+                        group_identifier_number: aPackage.group_identifier_number,
                         return_date: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                     }
 
