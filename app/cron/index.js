@@ -5694,10 +5694,20 @@ class CronJob {
             const today = moment().format('YYYY-MM-DD');
             const histories = await AssetDistributionGroupHistory.findAll({
                 where: {
-                    release_date: {
-                        [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
-                    },
                     released_at: null,
+                    [Op.or]: [
+                        {
+                            release_date: {
+                                [Op.between]: [`${today} 00:00:00`, `${today} 23:59:59`],
+                            },
+                        },
+                        {
+                            is_release_stuck: 1,
+                            release_date: {
+                                [Op.lte]: `${today} 00:00:00`,
+                            },
+                        },
+                    ],
                 },
                 attributes: ['id', 'user_id', 'amount'],
             });
