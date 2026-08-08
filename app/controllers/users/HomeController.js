@@ -12570,6 +12570,7 @@ class Controller {
                             price: index == 0 ? aPackage.price : 0,
                             daily_earn: aPackage.daily_earn,
                             period: aPackage.period,
+                            group_identifier_number: aPackage.group_identifier_number,
                             will_finish_on: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                             target_return_price_date: moment().add(aPackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
@@ -12586,6 +12587,7 @@ class Controller {
                         price: aPackage.price,
                         daily_earn: aPackage.daily_earn,
                         period: aPackage.period,
+                        group_identifier_number: aPackage.group_identifier_number,
                         will_finish_on: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                         target_return_price_date: moment().add(aPackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
                     }
