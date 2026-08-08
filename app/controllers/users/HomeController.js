@@ -12600,6 +12600,67 @@ class Controller {
                     await aPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
                 }
 
+                // START: RELEASE FREE PACKAGE LOGIC
+                const groupPackages = await AssetDailyReleasePackage.findAll({
+                    where: {
+                        group_identifier_number: aPackage.group_identifier_number
+                    },
+                    attributes: ['id'],
+                    transaction: t
+                });
+                if (groupPackages.length > 0) {
+                    const groupHistory = await AssetDailyReleasePackageHistory.findAll({
+                        attributes: [
+                            'package_id', 
+                            [Sequelize.fn('COUNT', Sequelize.col('package_id')), 'package_count']
+                        ],
+                        where: {
+                            user_id: user.id,
+                            group_identifier_number: aPackage.group_identifier_number,
+                            is_group_finished: 0
+                        },
+                        group: ['package_id'],
+                        transaction: t
+                    });
+                    if (groupHistory.length >= groupPackages.length) {
+                        const getFreePackage = await AssetDailyReleasePackage.findOne({
+                            where: {
+                                is_free_release_package: 1,
+                            },
+                            transaction: t
+                        });
+                        await AssetDailyReleasePackageHistory.create({
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: getFreePackage.id,
+                            price: getFreePackage.price,
+                            daily_earn: getFreePackage.daily_earn,
+                            period: getFreePackage.period,
+                            will_finish_on: moment().add(getFreePackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                            target_return_price_date: moment().add(getFreePackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                        }, { transaction: t });
+
+                        // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
+                        for (const pkgGroup of groupHistory) {
+                            const pkgHistory = await AssetDailyReleasePackageHistory.findOne({
+                                where: {
+                                    user_id: user.id,
+                                    package_id: pkgGroup.package_id,
+                                    group_identifier_number: pkgGroup.group_identifier_number,
+                                    is_group_finished: 0
+                                },
+                                attributes: ['id'],
+                                order: [['id', 'ASC']],
+                                transaction: t
+                            });
+                            if (pkgHistory) {
+                                await pkgHistory.update({ is_group_finished: 1 }, { transaction: t });
+                            }
+                        }
+                    }
+                }
+                // END: RELEASE FREE PACKAGE LOGIC
+
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
                 const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);

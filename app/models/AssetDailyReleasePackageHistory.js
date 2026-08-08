@@ -60,6 +60,18 @@ AssetDailyReleasePackageHistory.init({
         defaultValue: 0,
         comment: '周期(天)',
     },
+    group_identifier_number: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '组标识符编号',
+    },
+    is_group_finished: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '是否已完成组购买'
+    },
     is_returned_price: {
         type: DataTypes.BOOLEAN,
         allowNull: false,

@@ -2168,6 +2168,8 @@ const data = {
     price: 20, // 认购金额
     period: 45, // 释放周期
     daily_earn: 300, // 每日释放
+    group_identifier_number: 1, // 组标识符编号
+    is_free_release_package: 0, // 是否免费释放产品
     purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
     quantity_limit: 0, // optional 限购数量
     total_quantity: 100, // 总发售数量

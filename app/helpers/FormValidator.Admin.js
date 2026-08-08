@@ -1239,6 +1239,14 @@ exports.create_asset_daily_release_package = () => {
         check('period').not().isEmpty().withMessage('周期不能为空')
             .bail()
             .isInt({ min: 1 }).withMessage('周期必须是正整数'),
+        check('group_identifier_number').not().isEmpty().withMessage('组标识符编号不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('组标识符编号必须是数字'),
+        check('is_free_release_package').not().isEmpty().withMessage('是否免费释放产品不能为空')
+            .bail()
+            .isIn([0, 1])
+            .withMessage('是否免费释放产品值无效'),
         // 每日释放
         check('daily_earn').not().isEmpty().withMessage('每日释放不能为空')
             .bail()

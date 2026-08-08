@@ -44,6 +44,18 @@ AssetDailyReleasePackage.init({
         defaultValue: 0,
         comment: '释放周期(天)',
     },
+    group_identifier_number: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '组标识符编号',
+    },
+    is_free_release_package: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '是否免费释放产品',
+    },
     daily_earn: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,
