@@ -12647,7 +12647,7 @@ class Controller {
                             const pkgHistory = await AssetDailyReleasePackageHistory.findOne({
                                 where: {
                                     user_id: user.id,
-                                    package_id: aPackage.package_id,
+                                    package_id: aPackage.id,
                                     group_identifier_number: aPackage.group_identifier_number,
                                     is_group_finished: 0
                                 },
