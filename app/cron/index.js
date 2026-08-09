@@ -5888,6 +5888,11 @@ class CronJob {
                         await t.rollback();
                         continue;
                     }
+                    
+                    if (Number(user.total_assets) < Number(row.daily_earn)) {
+                        await t.rollback();
+                        continue;
+                    }
 
                     const earnCount = await AssetDailyReleasePackageEarn.count({
                         where: {
