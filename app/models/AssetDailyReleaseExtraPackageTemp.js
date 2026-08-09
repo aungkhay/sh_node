@@ -77,7 +77,7 @@ AssetDailyReleaseExtraPackageTemp.init({
         },
         {
             name: 'idx_created_at_deleted_at',
-            fields: ['created_at', 'deleted_at']
+            fields: ['createdAt', 'deletedAt']
         },
     ]
 })

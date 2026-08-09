@@ -82,6 +82,12 @@ AssetDistributionPackageHistory.init({
         defaultValue: false,
         comment: '是否已返还资产宝资金',
     },
+    is_returned_fund_stuck: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否返还资产宝资金卡住',
+    },
     return_fund_date: {
         type: DataTypes.DATE,
         allowNull: true,
@@ -124,6 +130,11 @@ AssetDistributionPackageHistory.init({
         {
             name: 'idx_user_id_group_identifier_number_is_group_finished',
             fields: ['user_id', 'group_identifier_number', 'is_group_finished'],
+            using: 'BTREE'
+        },
+        {
+            name: 'idx_is_returned_fund_createdAt_is_returned_fund_stuck',
+            fields: ['is_returned_fund', 'createdAt', 'is_returned_fund_stuck'],
             using: 'BTREE'
         }
     ]

@@ -5626,9 +5626,22 @@ class CronJob {
             const histories = await AssetDistributionPackageHistory.findAll({
                 where: {
                     is_returned_fund: 0,
-                    return_date: {
-                        [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
-                    }
+                    // return_date: {
+                    //     [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
+                    // }
+                    [Op.or]: [
+                        {
+                            return_date: {
+                                [Op.between]: [`${today} 00:00:00`, `${today} 23:59:59`],
+                            },
+                        },
+                        {
+                            is_returned_fund_stuck: 1,
+                            return_date: {
+                                [Op.lte]: `${today} 00:00:00`,
+                            },
+                        },
+                    ],
                 },
             });
 
@@ -5639,6 +5652,11 @@ class CronJob {
                     if (!user) {
                         console.log(`User ID ${history.user_id} not found. Skipping...`);
                         await t.rollback();
+                        continue;
+                    }
+                    if (Number(user.total_assets) < Number(history.asset_fund)) {
+                        await history.update({ is_returned_fund_stuck: 1 }, { transaction: t });
+                        await t.commit();
                         continue;
                     }
 
