@@ -9,6 +9,7 @@ const moment = require('moment');
 const MasonicPackageHistory = require('../models/MasonicPackageHistory');
 const MasonicPackageEarn = require('../models/MasonicPackageEarn');
 const MerchantController = require('../controllers/users/MerchantController');
+const AssetDailyReleaseExtraPackageTemp = require('../models/AssetDailyReleaseExtraPackageTemp');
 
 class CronJob {
     constructor(app) {
@@ -98,6 +99,7 @@ class CronJob {
         cron.schedule('0 3 * * *', this.ASSET_DAILY_RELEASE_EARN).start();
         cron.schedule('30 3 * * *', this.ASSET_DAILY_RELEASE_ORIGINAL_PRICE).start();
         cron.schedule('0 4 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
+        cron.schedule('30 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -5996,6 +5998,43 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[ASSET_DAILY_RELEASE_ORIGINAL_PRICE]: ${error.stack}`);
+        }
+    }
+
+    ASSET_DAILY_RELEASE_EXTRA_PACKAGE = async () => {
+        try {
+            const today = moment().format('YYYY-MM-DD');
+            const temps = await AssetDailyReleaseExtraPackageTemp.findAll({
+                where: {
+                    createdAt: {
+                        [Op.lt]: today + ' 00:00:00'
+                    }
+                }
+            });
+
+            for (const temp of temps) {
+                const t = await db.transaction();
+                try {
+                    await AssetDailyReleasePackageHistory.create({
+                        relation: temp.relation,
+                        user_id: temp.user_id,
+                        package_id: temp.package_id,
+                        price: 0,
+                        daily_earn: temp.daily_earn,
+                        period: temp.period,
+                        will_finish_on: moment().add(temp.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                        target_return_price_date: moment().add(temp.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                    }, { transaction: t });
+
+                    await temp.destroy({ transaction: t });
+                    await t.commit();
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[ASSET_DAILY_RELEASE_EXTRA_PACKAGE][TEMP_ID: ${temp.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[ASSET_DAILY_RELEASE_EXTRA_PACKAGE]: ${error.stack}`);
         }
     }
 

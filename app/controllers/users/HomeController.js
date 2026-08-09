@@ -18,6 +18,7 @@ const MasonicPackageEarn = require('../../models/MasonicPackageEarn');
 const MasonicPackage = require('../../models/MasonicPackage');
 const { encrypt } = require('../../helpers/AESHelper');
 const { randomUUID } = require('crypto');
+const AssetDailyReleaseExtraPackageTemp = require('../../models/AssetDailyReleaseExtraPackageTemp');
 
 const PASS_KEY = process.env.PASS_KEY;
 const PASS_IV = process.env.PASS_IV;
@@ -11580,49 +11581,51 @@ class Controller {
                 }
 
                 // START: GROUP DISTRIBUTION LOGIC
-                const groupPackages = await AssetDistributionPackage.findAll({
-                    where: {
-                        group_identifier_number: aPackage.group_identifier_number
-                    },
-                    transaction: t
-                });
-                if (groupPackages.length > 0) {
-                    const packageHistory = await AssetDistributionPackageHistory.findAll({
-                        attributes: [
-                            'package_id', 
-                            [Sequelize.fn('COUNT', Sequelize.col('package_id')), 'package_count']
-                        ],
+                if (aPackage.group_identifier_number > 0) {
+                    const groupPackages = await AssetDistributionPackage.findAll({
                         where: {
-                            user_id: user.id,
-                            group_identifier_number: aPackage.group_identifier_number,
-                            is_group_finished: 0
+                            group_identifier_number: aPackage.group_identifier_number
                         },
-                        group: ['package_id'],
                         transaction: t
                     });
-                    if (packageHistory.length >= groupPackages.length) {
-                        await AssetDistributionGroupHistory.create({
-                            user_id: user.id,
-                            relation: user.relation,
-                            amount: 80000,
-                            release_date: moment().add(aPackage.release_extra_distribution_period, 'days').format('YYYY-MM-DD HH:mm:ss')
-                        }, { transaction: t });
+                    if (groupPackages.length > 0) {
+                        const packageHistory = await AssetDistributionPackageHistory.findAll({
+                            attributes: [
+                                'package_id', 
+                                [Sequelize.fn('COUNT', Sequelize.col('package_id')), 'package_count']
+                            ],
+                            where: {
+                                user_id: user.id,
+                                group_identifier_number: aPackage.group_identifier_number,
+                                is_group_finished: 0
+                            },
+                            group: ['package_id'],
+                            transaction: t
+                        });
+                        if (packageHistory.length >= groupPackages.length) {
+                            await AssetDistributionGroupHistory.create({
+                                user_id: user.id,
+                                relation: user.relation,
+                                amount: 80000,
+                                release_date: moment().add(aPackage.release_extra_distribution_period, 'days').format('YYYY-MM-DD HH:mm:ss')
+                            }, { transaction: t });
 
-                        // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
-                        for (const pkgGroup of packageHistory) {
-                            const pkgHistory = await AssetDistributionPackageHistory.findOne({
-                                where: {
-                                    user_id: user.id,
-                                    package_id: pkgGroup.package_id,
-                                    group_identifier_number: aPackage.group_identifier_number,
-                                    is_group_finished: 0
-                                },
-                                attributes: ['id'],
-                                order: [['id', 'ASC']],
-                                transaction: t
-                            });
-                            if (pkgHistory) {
-                                await pkgHistory.update({ is_group_finished: 1 }, { transaction: t });
+                            // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
+                            for (const pkgGroup of packageHistory) {
+                                const pkgHistory = await AssetDistributionPackageHistory.findOne({
+                                    where: {
+                                        user_id: user.id,
+                                        package_id: pkgGroup.package_id,
+                                        group_identifier_number: aPackage.group_identifier_number,
+                                        is_group_finished: 0
+                                    },
+                                    attributes: ['id'],
+                                    order: [['id', 'ASC']],
+                                    transaction: t
+                                });
+                                if (pkgHistory) {
+                                    await pkgHistory.update({ is_group_finished: 1 }, { transaction: t });
+                                }
                             }
                         }
                     }
@@ -12603,61 +12606,75 @@ class Controller {
                 }
 
                 // START: RELEASE FREE PACKAGE LOGIC
-                const groupPackages = await AssetDailyReleasePackage.findAll({
-                    where: {
-                        group_identifier_number: aPackage.group_identifier_number
-                    },
-                    attributes: ['id'],
-                    transaction: t
-                });
-                if (groupPackages.length > 0) {
-                    const groupHistory = await AssetDailyReleasePackageHistory.findAll({
-                        attributes: [
-                            'package_id', 
-                            [Sequelize.fn('COUNT', Sequelize.col('package_id')), 'package_count']
-                        ],
+                if (aPackage.group_identifier_number > 0) {
+                    const groupPackages = await AssetDailyReleasePackage.findAll({
                         where: {
-                            user_id: user.id,
-                            group_identifier_number: aPackage.group_identifier_number,
-                            is_group_finished: 0
+                            group_identifier_number: aPackage.group_identifier_number
                         },
-                        group: ['package_id'],
+                        attributes: ['id'],
                         transaction: t
                     });
-                    if (groupHistory.length >= groupPackages.length) {
-                        const getFreePackage = await AssetDailyReleasePackage.findOne({
+                    if (groupPackages.length > 0) {
+                        const groupHistory = await AssetDailyReleasePackageHistory.findAll({
+                            attributes: [
+                                'package_id', 
+                                [Sequelize.fn('COUNT', Sequelize.col('package_id')), 'package_count']
+                            ],
                             where: {
-                                is_free_release_package: 1,
+                                user_id: user.id,
+                                group_identifier_number: aPackage.group_identifier_number,
+                                is_group_finished: 0
                             },
+                            group: ['package_id'],
                             transaction: t
                         });
-                        await AssetDailyReleasePackageHistory.create({
-                            relation: user.relation,
-                            user_id: user.id,
-                            package_id: getFreePackage.id,
-                            // price: getFreePackage.price,
-                            price: 0,
-                            daily_earn: getFreePackage.daily_earn,
-                            period: getFreePackage.period,
-                            will_finish_on: moment().add(getFreePackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
-                            target_return_price_date: moment().add(getFreePackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
-                        }, { transaction: t });
-
-                        // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
-                        for (const pkgGroup of groupHistory) {
-                            const pkgHistory = await AssetDailyReleasePackageHistory.findOne({
+                        if (groupHistory.length >= groupPackages.length) {
+                            const getFreePackage = await AssetDailyReleasePackage.findOne({
                                 where: {
-                                    user_id: user.id,
-                                    package_id: pkgGroup.package_id,
-                                    group_identifier_number: aPackage.group_identifier_number,
-                                    is_group_finished: 0
+                                    is_free_release_package: 1,
                                 },
-                                attributes: ['id'],
-                                order: [['id', 'ASC']],
                                 transaction: t
                             });
-                            if (pkgHistory) {
-                                await pkgHistory.update({ is_group_finished: 1 }, { transaction: t });
+                            // await AssetDailyReleasePackageHistory.create({
+                            //     relation: user.relation,
+                            //     user_id: user.id,
+                            //     package_id: getFreePackage.id,
+                            //     // price: getFreePackage.price,
+                            //     price: 0,
+                            //     daily_earn: getFreePackage.daily_earn,
+                            //     period: getFreePackage.period,
+                            //     will_finish_on: moment().add(getFreePackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                            //     target_return_price_date: moment().add(getFreePackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                            // }, { transaction: t });
+
+                            // will release on the next day, so create a temp table to store the free package info, and will release on the next day
+                            await AssetDailyReleaseExtraPackageTemp.create({
+                                relation: user.relation,
+                                user_id: user.id,
+                                package_id: getFreePackage.id,
+                                price: 0,
+                                daily_earn: getFreePackage.daily_earn,
+                                period: getFreePackage.period,
+                                will_finish_on: moment().add(getFreePackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                                target_return_price_date: moment().add(getFreePackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                            }, { transaction: t });
+
+                            // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
+                            for (const pkgGroup of groupHistory) {
+                                const pkgHistory = await AssetDailyReleasePackageHistory.findOne({
+                                    where: {
+                                        user_id: user.id,
+                                        package_id: pkgGroup.package_id,
+                                        group_identifier_number: aPackage.group_identifier_number,
+                                        is_group_finished: 0
+                                    },
+                                    attributes: ['id'],
+                                    order: [['id', 'ASC']],
+                                    transaction: t
+                                });
+                                if (pkgHistory) {
+                                    await pkgHistory.update({ is_group_finished: 1 }, { transaction: t });
+                                }
                             }
                         }
                     }

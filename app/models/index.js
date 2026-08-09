@@ -98,6 +98,7 @@ const AssetDailyReleasePackage = require('./AssetDailyReleasePackage');
 const AssetDailyReleasePackageHistory = require('./AssetDailyReleasePackageHistory');
 const AssetDailyReleasePackageBonuses = require('./AssetDailyReleasePackageBonuses');
 const AssetDailyReleasePackageEarn = require('./AssetDailyReleasePackageEarn');
+const AssetDailyReleaseExtraPackageTemp = require('./AssetDailyReleaseExtraPackageTemp');
 const AssetDistributionGroupHistory = require('./AssetDistributionGroupHistory');
 
 // ========== Role ↔️ Permission ========== 
@@ -695,6 +696,7 @@ const models = {
     AssetDailyReleasePackage,
     AssetDailyReleasePackageHistory,
     AssetDailyReleasePackageBonuses,
+    AssetDailyReleasePackageEarn,
     AssetDailyReleasePackageEarn,
 };
 
