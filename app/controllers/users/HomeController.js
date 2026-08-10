@@ -12321,6 +12321,7 @@ class Controller {
 
     ASSET_DAILY_RELEASE_PACKAGE = async (req, res) => {
         try {
+            const userId = req.user_id;
             let packages = await this.redisHelper.getValue('asset_daily_release_packages');
             if (packages) {
                 packages = JSON.parse(packages);
@@ -12350,10 +12351,67 @@ class Controller {
                 await this.redisHelper.setValue('asset_daily_release_package_daily_release_qty', release_qty);
             }
 
+            // START: get progress for each package
+            const progress = Object.fromEntries(
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(k => [k, { id: 0, active: false, count: 0 }])
+            );
+            const packs = await AssetDailyReleasePackage.findAll({
+                where: { group_identifier_number: 1 },
+                attributes: ['id', 'product_name'],
+                useMaster: true
+            });
+
+            const packNames = ['A', 'B', 'C', 'D', 'E', 'F'];
+            const packageIdToKey = {};
+            const packIds = []; // exclude G
+
+            for (const key of packNames) {
+                const pack = packs.find(p => p.product_name.includes(key));
+                if (pack) {
+                    progress[key].id = pack.id;
+                    packIds.push(pack.id);
+                    packageIdToKey[pack.id] = key;
+                }
+            }
+
+            const historyCounts = await AssetDailyReleasePackageHistory.findAll({
+                where: {
+                    package_id: { [Op.in]: packIds },
+                    group_identifier_number: 1,
+                    user_id: userId
+                },
+                attributes: [
+                    'package_id', 
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+                ],
+                group: ['package_id'],
+                useMaster: true
+            });
+
+            for (const h of historyCounts) {
+                const key = packageIdToKey[h.package_id];
+                if (key) {
+                    const count = Number(h.get('count'));
+                    progress[key].count = count;
+                    progress[key].active = count > 0;
+                }
+            }
+
+            const GCount = await AssetDailyReleaseExtraPackageTemp.count({
+                where: { user_id: userId },
+                paranoid: false,
+                useMaster: true
+            });
+            progress['G'].count = GCount;
+            progress['G'].active = GCount > 0;
+            console.log(progress);
+            // END: get progress for each package
+
             const data = {
                 package_period: package_period,
                 packages: packages,
-                release_qty: release_qty
+                release_qty: release_qty,
+                progress: progress
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
