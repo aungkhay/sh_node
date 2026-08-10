@@ -12368,7 +12368,7 @@ class Controller {
             for (const key of packNames) {
                 const pack = packs.find(p => p.product_name.includes(key));
                 if (pack) {
-                    progress[key].id = pack.id;
+                    progress[key].id = Number(pack.id);
                     packIds.push(pack.id);
                     packageIdToKey[pack.id] = key;
                 }
@@ -12405,7 +12405,7 @@ class Controller {
             });
             progress['G'].count = GCount;
             progress['G'].active = GCount > 0;
-            console.log(progress);
+            // console.log(progress);
             // END: get progress for each package
 
             const data = {
