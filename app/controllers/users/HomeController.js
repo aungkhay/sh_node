@@ -12376,9 +12376,10 @@ class Controller {
 
             const historyCounts = await AssetDailyReleasePackageHistory.findAll({
                 where: {
+                    user_id: userId,
                     package_id: { [Op.in]: packIds },
                     group_identifier_number: 1,
-                    user_id: userId
+                    is_group_finished: false
                 },
                 attributes: [
                     'package_id', 
