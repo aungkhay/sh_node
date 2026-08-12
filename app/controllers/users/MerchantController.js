@@ -533,16 +533,17 @@ class Controller {
     YFZHIFU = async (channel, amount, userId) => {
         try {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
+
             const body = {
                 customerCode: channel.deposit_merchant.app_id,
-                signType: "HMAC-SHA256",
+                signType: 'HMAC-SHA256',
                 timestamp: Math.floor(Date.now() / 1000),
                 nonce: crypto.randomBytes(16).toString('hex'),
                 data: {
                     merchantOrderNo: orderNo,
                     amount: Number(amount).toFixed(2),
-                    currencyCode: "CNY",
-                    paymentMethod: "qr_code",
+                    currencyCode: 'CNY',
+                    paymentMethod: 'qr_code',
                     notifyUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                     productCode: channel.merchant_channel,
                 }
@@ -553,9 +554,7 @@ class Controller {
 
                 Object.keys(obj).forEach((key) => {
                     const value = obj[key];
-                    if (value === null || value === undefined || value === '') {
-                        return;
-                    }
+                    if (value === null || value === undefined || value === '') return;
 
                     const newKey = prefix ? `${prefix}.${key}` : key;
                     if (typeof value === 'object' && !Array.isArray(value)) {
