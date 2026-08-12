@@ -570,16 +570,25 @@ class Controller {
             const flattened = flattenObject(body);
             const signString = Object.keys(flattened)
                 .sort()
-                .map((key) => `${key}=${flattened[key]}`)
+                .map((key) => {
+                    return `${encodeURIComponent(key)}=${encodeURIComponent(flattened[key])}`;
+                })
                 .join('&');
 
             const sign = crypto
                 .createHmac('sha256', channel.deposit_merchant.app_key)
                 .update(signString, 'utf8')
-                .digest('hex');
+                .digest('hex')
+                .toLowerCase();
 
             body.sign = sign;
             body.orderNo = orderNo;
+            
+            // console.log('app_key:', channel.deposit_merchant.app_key);
+            // console.log('flattened:', flattened);
+            // console.log('signString:', signString);
+            // console.log('sign:', sign);
+            
             return body;
         } catch (error) {
             errLogger(`[YFZHIFU] ${error.stack}`);

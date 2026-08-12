@@ -59,6 +59,7 @@ class Controller {
                 '23': 'success', // xpayzhifu3
                 '24': 'success', // huojianzhifu
                 '25': 'success', // mzhifu2
+                '26': 'success', // yfzhifu
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -432,6 +433,15 @@ class Controller {
                 case 'huojianzhifu':
                     if (reqBody.status === 2) {
                         status = 1;
+                    } else {
+                        status = 0;
+                    }
+                    break;
+                case 'yfzhifu':
+                    if (reqBody.status === 'success') {
+                        status = 1;
+                    } else if (reqBody.status === 'fail' || reqBody.status === 'closed') {
+                        status = 2;
                     } else {
                         status = 0;
                     }
