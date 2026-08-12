@@ -548,21 +548,38 @@ class Controller {
                 }
             }
 
-            const signString = Object.keys(body)
-                .filter(key => body[key] !== null && body[key] !== undefined && body[key] !== '')
-                .sort()
-                .map(key => {
-                    if (key === 'data') {
-                        return `${key}=${JSON.stringify(body[key])}`;
+            const flattenObject = (obj, prefix = '') => {
+                const result = {};
+
+                Object.keys(obj).forEach((key) => {
+                    const value = obj[key];
+                    if (value === null || value === undefined || value === '') {
+                        return;
                     }
-                    return `${key}=${body[key]}`;
-                })
+
+                    const newKey = prefix ? `${prefix}.${key}` : key;
+                    if (typeof value === 'object' && !Array.isArray(value)) {
+                        Object.assign(result, flattenObject(value, newKey));
+                    } else {
+                        result[newKey] = value;
+                    }
+                });
+
+                return result;
+            }
+
+            const flattened = flattenObject(body);
+            const signString = Object.keys(flattened)
+                .sort()
+                .map((key) => `${key}=${flattened[key]}`)
                 .join('&');
-            
-            const hmac = crypto.createHmac('sha256', channel.deposit_merchant.app_key);
-            hmac.update(signString);
-            const signature = hmac.digest('hex');
-            body.sign = signature;
+
+            const sign = crypto
+                .createHmac('sha256', channel.deposit_merchant.app_key)
+                .update(signString, 'utf8')
+                .digest('hex');
+
+            body.sign = sign;
             body.orderNo = orderNo;
             return body;
         } catch (error) {
