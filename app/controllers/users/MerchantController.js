@@ -530,6 +530,47 @@ class Controller {
         }
     }
 
+    YFZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+            const body = {
+                customerCode: channel.deposit_merchant.app_id,
+                signType: "HMAC-SHA256",
+                timestamp: Math.floor(Date.now() / 1000),
+                nonce: crypto.randomBytes(16).toString('hex'),
+                data: {
+                    merchantOrderNo: orderNo,
+                    amount: Number(amount).toFixed(2),
+                    currencyCode: "CNY",
+                    paymentMethod: "qr_code",
+                    notifyUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                    productCode: channel.merchant_channel,
+                }
+            }
+
+            const signString = Object.keys(body)
+                .filter(key => body[key] !== null && body[key] !== undefined && body[key] !== '')
+                .sort()
+                .map(key => {
+                    if (key === 'data') {
+                        return `${key}=${JSON.stringify(body[key])}`;
+                    }
+                    return `${key}=${body[key]}`;
+                })
+                .join('&');
+            
+            const hmac = crypto.createHmac('sha256', channel.deposit_merchant.app_key);
+            hmac.update(signString);
+            const signature = hmac.digest('hex');
+            body.sign = signature;
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[YFZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
+
     XPAY360DAIFU = async (channel, amount, userId, paymentMethod, withdrawBy, orderNo) => {
         try {
             let name = '';

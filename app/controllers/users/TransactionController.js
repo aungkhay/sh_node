@@ -731,6 +731,10 @@ class Controller {
                     payload = await this.merchantController.HUOJIANZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'yfzhifu':
+                    payload = await this.merchantController.YFZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
+                    break;
                 default:
                     break;
             }
@@ -902,6 +906,12 @@ class Controller {
                 case 'huojianzhifu':
                     if (resData.code == 0) {
                         redirectUrl = resData?.payload;
+                        success = true;
+                    }
+                    break;
+                case 'yfzhifu':
+                    if (resData.code == 1) {
+                        redirectUrl = resData?.data?.credentialPayload;
                         success = true;
                     }
                     break;
