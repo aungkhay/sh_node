@@ -438,9 +438,10 @@ class Controller {
                     }
                     break;
                 case 'yfzhifu':
-                    if (reqBody.status === 'success') {
+                    // {"customerCode":"JjLyPa5771","signType":"HMAC-SHA256","timestamp":1786534158,"nonce":"b6e37565e897427b","data":{"paymentOrderNo":"AGT260812191919753887","merchantOrderNo":"SH5296461440107219","upstreamOrderNo":"S260812191919767UVD8AU","status":"success","amount":"100.00","currencyCode":"CNY","paidTime":"2026-08-12T19:24:59+08:00","failureCode":"","failureReason":""},"sign":"9f5616dba5a59e7efdcfaea4f3fe6389cd933c0ec4d7ef3bbfbaa4ac555133e0"}
+                    if (reqBody.data.status === 'success') {
                         status = 1;
-                    } else if (reqBody.status === 'fail' || reqBody.status === 'closed') {
+                    } else if (reqBody.data.status === 'fail' || reqBody.data.status === 'closed') {
                         status = 2;
                     } else {
                         status = 0;
