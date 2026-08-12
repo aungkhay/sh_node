@@ -57,11 +57,18 @@ APP.use((req, res, next) => {
     }
 
     try {
-        if(req.body?.data) {
-            const decrypted = decryptReqBody(req.body.data);
-            Object.assign(req.body, decrypted);
-            delete req.body.data;
+        if (!req.path.startsWith('/api/recharge-callback')) {
+            if(req.body?.data) {
+                const decrypted = decryptReqBody(req.body.data);
+                Object.assign(req.body, decrypted);
+                delete req.body.data;
+            }
         }
+        // if(req.body?.data) {
+        //     const decrypted = decryptReqBody(req.body.data);
+        //     Object.assign(req.body, decrypted);
+        //     delete req.body.data;
+        // }
         if(req.query?.data) {
             const decrypted = decryptReqQuery(req.query.data);
             Object.defineProperty(req, 'query', {
