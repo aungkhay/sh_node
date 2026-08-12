@@ -88,6 +88,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'AssetDailyReleasePackage', 'create');
             
+            await this.redisHelper.setValue('MAX_GROUP_IDENTIFIER_NUMBER', req.body.group_identifier_number);
             await this.redisHelper.deleteKey(`asset_daily_release_packages`); // Clear cache
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '创建成功', {});
         } catch (error) {
@@ -115,6 +116,7 @@ class Controller {
             // Log
             await this.adminLogger(req, 'AssetDailyReleasePackage', 'update');
 
+            await this.redisHelper.setValue('MAX_GROUP_IDENTIFIER_NUMBER', req.body.group_identifier_number);
             await this.redisHelper.deleteKey(`asset_daily_release_packages`); // Clear cache
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
         } catch (error) {

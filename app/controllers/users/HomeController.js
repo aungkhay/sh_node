@@ -12383,11 +12383,13 @@ class Controller {
                 }
             }
 
+            const max_identifier_number = await this.redisHelper.getValue('MAX_GROUP_IDENTIFIER_NUMBER');
+            
             const historyCounts = await AssetDailyReleasePackageHistory.findAll({
                 where: {
                     user_id: userId,
                     package_id: { [Op.in]: packIds },
-                    group_identifier_number: 1,
+                    group_identifier_number: max_identifier_number ? Number(max_identifier_number) : 1,
                     is_group_finished: false
                 },
                 attributes: [
