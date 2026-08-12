@@ -11603,12 +11603,21 @@ class Controller {
                             transaction: t
                         });
                         if (packageHistory.length >= groupPackages.length) {
-                            await AssetDistributionGroupHistory.create({
-                                user_id: user.id,
-                                relation: user.relation,
-                                amount: 80000,
-                                release_date: moment().add(aPackage.release_extra_distribution_period, 'days').format('YYYY-MM-DD HH:mm:ss')
-                            }, { transaction: t });
+                            
+                            // for buy one get one
+                            const groupArr = [];
+                            const groupRandomNumber = this.commonHelper.randomNumber(6);
+                            for (let index = 0; index <= aPackage.buy_one_get_quantity; index++) {
+                                groupArr.push({
+                                    relation: user.relation,
+                                    user_id: user.id,
+                                    amount: 80000,
+                                    release_date: moment().add(aPackage.release_extra_distribution_period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                                    description: aPackage.buy_one_get_quantity == 0 ? null : `Group[${userId}-${groupRandomNumber}]: ${index + 1}`,
+                                });
+                            }
+
+                            await AssetDistributionGroupHistory.bulkCreate(groupArr, { transaction: t });
 
                             // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
                             for (const pkgGroup of packageHistory) {
@@ -11635,8 +11644,8 @@ class Controller {
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
                 const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
-                commonLogger(`[BUY_PERSONAL_RESERVE_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
-                commonLogger(`[BUY_PERSONAL_RESERVE_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+                commonLogger(`[BUY_ASSET_DISTRIBUTION_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_ASSET_DISTRIBUTION_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
 
                 const upLevelUsers = await User.findAll({
                     where: {
@@ -11662,7 +11671,7 @@ class Controller {
                     if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
                         continue;
                     }
-                    commonLogger(`[BUY_PERSONAL_RESERVE_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    commonLogger(`[BUY_ASSET_DISTRIBUTION_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
 
                     cashFlows.push({
                         relation: upLevelUser.relation,
@@ -11701,10 +11710,10 @@ class Controller {
                 console.log(error);
                 await t.rollback();
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买个人储备计划失败', {}); 
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买资产宝分发方案失败', {}); 
             }
         } catch (error) {
-            errLogger(`[BUY_PERSONAL_RESERVE_PACKAGE][${req.user_id}]: ${error.stack}`);
+            errLogger(`[BUY_ASSET_DISTRIBUTION_PACKAGE][${req.user_id}]: ${error.stack}`);
             await this.redisHelper.deleteKey(PROCESSING_KEY);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
         }

@@ -58,6 +58,11 @@ AssetDistributionGroupHistory.init({
         defaultValue: 0,
         comment: '是否分发卡住',
     },
+    description: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: '备注',
+    },
 }, {
     sequelize,
     modelName: 'AssetDistributionGroupHistory',
