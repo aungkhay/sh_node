@@ -12362,15 +12362,17 @@ class Controller {
 
             // START: get progress for each package
             const progress = Object.fromEntries(
-                ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map(k => [k, { id: 0, active: false, count: 0 }])
+                ['A', 'B', 'C', 'D'].map(k => [k, { id: 0, active: false, count: 0 }])
             );
+
+            const max_identifier_number = await this.redisHelper.getValue('MAX_GROUP_IDENTIFIER_NUMBER');
             const packs = await AssetDailyReleasePackage.findAll({
-                where: { group_identifier_number: 1 },
+                where: { group_identifier_number:  max_identifier_number ? Number(max_identifier_number) : 1 },
                 attributes: ['id', 'product_name'],
                 useMaster: true
             });
 
-            const packNames = ['A', 'B', 'C', 'D', 'E', 'F'];
+            const packNames = ['A', 'B', 'C'];
             const packageIdToKey = {};
             const packIds = []; // exclude G
 
@@ -12382,8 +12384,6 @@ class Controller {
                     packageIdToKey[pack.id] = key;
                 }
             }
-
-            const max_identifier_number = await this.redisHelper.getValue('MAX_GROUP_IDENTIFIER_NUMBER');
             
             const historyCounts = await AssetDailyReleasePackageHistory.findAll({
                 where: {
@@ -12409,13 +12409,13 @@ class Controller {
                 }
             }
 
-            const GCount = await AssetDailyReleaseExtraPackageTemp.count({
+            const DCount = await AssetDailyReleaseExtraPackageTemp.count({
                 where: { user_id: userId },
                 paranoid: false,
                 useMaster: true
             });
-            progress['G'].count = GCount;
-            progress['G'].active = GCount > 0;
+            progress['D'].count = DCount;
+            progress['D'].active = DCount > 0;
             // console.log(progress);
             // END: get progress for each package
 
