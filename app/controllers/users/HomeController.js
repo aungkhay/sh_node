@@ -12410,7 +12410,10 @@ class Controller {
             }
 
             const DCount = await AssetDailyReleaseExtraPackageTemp.count({
-                where: { user_id: userId },
+                where: { 
+                    user_id: userId, 
+                    group_identifier_number: max_identifier_number ? Number(max_identifier_number) : 1 
+                },
                 paranoid: false,
                 useMaster: true
             });
@@ -12727,6 +12730,7 @@ class Controller {
                                 period: getFreePackage.period,
                                 will_finish_on: moment().add(getFreePackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                                 target_return_price_date: moment().add(getFreePackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                                group_identifier_number: aPackage.group_identifier_number,
                             }, { transaction: t });
 
                             // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished

@@ -59,7 +59,13 @@ AssetDailyReleaseExtraPackageTemp.init({
         type: DataTypes.DATE,
         allowNull: true,
         comment: '完成时间',
-    }
+    },
+    group_identifier_number: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '组标识符编号',
+    },
 }, {
     sequelize,
     modelName: 'AssetDailyReleaseExtraPackageTemp',
