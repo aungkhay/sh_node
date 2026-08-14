@@ -12744,20 +12744,33 @@ class Controller {
 
                             // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
                             for (const pkgGroup of groupHistory) {
-                                const pkgHistory = await AssetDailyReleasePackageHistory.findOne({
-                                    where: {
-                                        user_id: user.id,
-                                        package_id: pkgGroup.package_id,
-                                        group_identifier_number: aPackage.group_identifier_number,
-                                        is_group_finished: 0
-                                    },
-                                    attributes: ['id'],
-                                    order: [['id', 'ASC']],
-                                    transaction: t
-                                });
-                                if (pkgHistory) {
-                                    await pkgHistory.update({ is_group_finished: 1 }, { transaction: t });
-                                }
+                                // const pkgHistory = await AssetDailyReleasePackageHistory.findOne({
+                                //     where: {
+                                //         user_id: user.id,
+                                //         package_id: pkgGroup.package_id,
+                                //         group_identifier_number: aPackage.group_identifier_number,
+                                //         is_group_finished: 0
+                                //     },
+                                //     attributes: ['id'],
+                                //     order: [['id', 'ASC']],
+                                //     transaction: t
+                                // });
+                                // if (pkgHistory) {
+                                //     await pkgHistory.update({ is_group_finished: 1 }, { transaction: t });
+                                // }
+                                await AssetDailyReleasePackageHistory.update(
+                                    { is_group_finished: 1 },
+                                    {
+                                        where: {
+                                            user_id: user.id,
+                                            package_id: pkgGroup.package_id,
+                                            group_identifier_number: aPackage.group_identifier_number,
+                                            is_group_finished: 0,
+                                            description: pkgGroup.description
+                                        },
+                                        transaction: t
+                                    }
+                                );
                             }
                         }
                     }
