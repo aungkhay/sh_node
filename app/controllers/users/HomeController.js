@@ -11597,7 +11597,8 @@ class Controller {
                             where: {
                                 user_id: user.id,
                                 group_identifier_number: aPackage.group_identifier_number,
-                                is_group_finished: 0
+                                is_group_finished: 0,
+                                price: { [Op.gt]: 0 }
                             },
                             group: ['package_id'],
                             transaction: t
