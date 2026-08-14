@@ -12766,7 +12766,9 @@ class Controller {
                                             package_id: pkgGroup.package_id,
                                             group_identifier_number: aPackage.group_identifier_number,
                                             is_group_finished: 0,
-                                            description: pkgGroup.description ? pkgGroup.description.split(':')[0] : null
+                                            description: pkgGroup.description ? {
+                                                [Op.like]: `${pkgGroup.description.split(':')[0]}%`
+                                            } : null
                                         },
                                         transaction: t
                                     }
