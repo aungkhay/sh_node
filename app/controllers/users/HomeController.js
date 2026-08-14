@@ -12698,7 +12698,8 @@ class Controller {
                             where: {
                                 user_id: user.id,
                                 group_identifier_number: aPackage.group_identifier_number,
-                                is_group_finished: 0
+                                is_group_finished: 0,
+                                price: { [Op.gt]: 0 }
                             },
                             group: ['package_id'],
                             transaction: t
@@ -12723,17 +12724,22 @@ class Controller {
                             // }, { transaction: t });
 
                             // will release on the next day, so create a temp table to store the free package info, and will release on the next day
-                            await AssetDailyReleaseExtraPackageTemp.create({
-                                relation: user.relation,
-                                user_id: user.id,
-                                package_id: getFreePackage.id,
-                                price: 0,
-                                daily_earn: getFreePackage.daily_earn,
-                                period: getFreePackage.period,
-                                will_finish_on: moment().add(getFreePackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
-                                target_return_price_date: moment().add(getFreePackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
-                                group_identifier_number: aPackage.group_identifier_number,
-                            }, { transaction: t });
+                            // buy one get quantity
+                            const tempArr = [];
+                            for (let index = 0; index <= getFreePackage.buy_one_get_quantity; index++) {
+                                tempArr.push({
+                                    relation: user.relation,
+                                    user_id: user.id,
+                                    package_id: getFreePackage.id,
+                                    price: 0,
+                                    daily_earn: getFreePackage.daily_earn,
+                                    period: getFreePackage.period,
+                                    will_finish_on: moment().add(getFreePackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                                    target_return_price_date: moment().add(getFreePackage.release_price_after_day, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                                    group_identifier_number: aPackage.group_identifier_number,
+                                });
+                            }
+                            await AssetDailyReleaseExtraPackageTemp.bulkCreate(tempArr, { transaction: t });
 
                             // update package history to mark group finished, if have count 2 of the same package, only mark 1 of them to finished
                             for (const pkgGroup of groupHistory) {
