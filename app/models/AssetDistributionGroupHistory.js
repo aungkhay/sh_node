@@ -58,6 +58,12 @@ AssetDistributionGroupHistory.init({
         defaultValue: 0,
         comment: '是否分发卡住',
     },
+    group_identifier_number: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '组标识符编号',
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,

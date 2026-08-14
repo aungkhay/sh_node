@@ -6374,6 +6374,94 @@ class CronJob {
             errLogger(`[GIVE_ASSET_TO_USERS]: ${error.stack}`);
         }
     }
+
+    RESET_ASSET_DISTRIBUTION_GROUP_PACKAGE_HISTORY = async () => {
+        try {
+            const [results] = await db.query(`
+                select distinct user_id
+                from asset_distribution_package_history
+                where createdAt > '2026-08-10' and group_identifier_number = 2
+                order by createdAt asc
+            `);
+            for (const row of results) {
+                const userId = row.user_id;
+                const t = await db.transaction();
+                try {
+                    const histories = await AssetDistributionPackageHistory.findAll({
+                        where: {
+                            user_id: userId,
+                            group_identifier_number: 2,
+                            createdAt: {
+                                [Op.gt]: '2026-08-10'
+                            },
+                        },
+                        order: [['createdAt', 'ASC']],
+                        transaction: t
+                    });
+
+                    let groupMap = {};
+                    let packageCountMap = {};
+
+                    for (let i = 0; i < histories.length; i++) {
+                        const packageId = histories[i].package_id;
+
+                        if (packageCountMap[packageId] === undefined) {
+                            packageCountMap[packageId] = 0;
+                        }
+
+                        const index = packageCountMap[packageId];
+
+                        if (!groupMap[index]) {
+                            groupMap[index] = [];
+                        }
+
+                        groupMap[index].push(histories[i]);
+
+                        packageCountMap[packageId]++;
+                    }
+
+                    // create group history
+                    let groupHistories = [];
+                    for (const group of Object.values(groupMap)) {
+                        if (group.length === 3) {
+                            const sortedGroup = [...group].sort(
+                                (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                            );
+
+                            const latest = sortedGroup[0];
+                            groupHistories.push({
+                                relation: latest.relation,
+                                user_id: latest.user_id,
+                                amount: 80000,
+                                release_date: moment().add(latest.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                                description: latest.description,
+                                createdAt: latest.createdAt,
+                                updatedAt: latest.updatedAt,
+                            });
+
+                            for (const h of group) {
+                                const rawUpdate = `UPDATE asset_distribution_package_history SET is_group_finished = 1 WHERE id = ${h.id};`;
+                                await db.query(rawUpdate, { transaction: t });
+                            }
+
+                            console.log(`[RESET_ASSET_DISTRIBUTION_GROUP_PACKAGE_HISTORY]: User ID ${userId} with packages ${group.map((h) => h.package_id).join(', ')}`);
+                        }
+                    }
+                    if (groupHistories.length > 0) {
+                        await AssetDistributionGroupHistory.bulkCreate(groupHistories, { transaction: t });
+                    }
+                    
+                    await t.commit();
+                    console.log(`[RESET_ASSET_DISTRIBUTION_GROUP_PACKAGE_HISTORY]: Reset histories for User ID ${userId}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RESET_ASSET_DISTRIBUTION_GROUP_PACKAGE_HISTORY][USER_ID: ${userId}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[RESET_ASSET_DISTRIBUTION_GROUP_PACKAGE_HISTORY]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;

@@ -11615,6 +11615,7 @@ class Controller {
                                     amount: 80000,
                                     release_date: moment().add(aPackage.release_extra_distribution_period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                                     description: aPackage.buy_one_get_quantity == 0 ? null : `Group[${userId}-${groupRandomNumber}]: ${index + 1}`,
+                                    group_identifier_number: aPackage.group_identifier_number
                                 });
                             }
 
