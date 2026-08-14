@@ -12708,6 +12708,7 @@ class Controller {
                             const getFreePackage = await AssetDailyReleasePackage.findOne({
                                 where: {
                                     is_free_release_package: 1,
+                                    status: 1,
                                 },
                                 transaction: t
                             });
