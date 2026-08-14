@@ -12692,7 +12692,7 @@ class Controller {
                     if (groupPackages.length > 0) {
                         const groupHistory = await AssetDailyReleasePackageHistory.findAll({
                             attributes: [
-                                'package_id', 
+                                'package_id', 'description', 
                                 [Sequelize.fn('COUNT', Sequelize.col('package_id')), 'package_count']
                             ],
                             where: {
