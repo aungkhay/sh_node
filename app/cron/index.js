@@ -5840,7 +5840,7 @@ class CronJob {
             for (const history of histories) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'] });
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets', 'distributed_assets'] });
                     if (!user) {
                         console.log(`User ID ${history.user_id} not found. Skipping...`);
                         await t.rollback();
@@ -5883,10 +5883,25 @@ class CronJob {
                             after_amount: Number(user.total_assets) - Number(history.asset_fund),
                             flow_status: 'OUT',
                         },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'AssetDistributionPackageEarn',
+                            type: '资产宝发放收益',
+                            amount: history.asset_fund,
+                            before_amount: user.distributed_assets,
+                            after_amount: Number(user.distributed_assets) - Number(history.asset_fund),
+                            flow_status: 'OUT',
+                        },
                     ]
 
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
-                    await user.increment({ balance: Number(history.asset_fund), total_assets: -Number(history.asset_fund) }, { transaction: t });
+                    await user.increment({ 
+                        balance: Number(history.asset_fund), 
+                        total_assets: -Number(history.asset_fund), 
+                        distributed_assets: -Number(history.asset_fund) 
+                    }, { transaction: t });
                     await history.update({ is_returned_fund: 1, return_fund_date: new Date() }, { transaction: t });
 
                     await t.commit();
@@ -5927,7 +5942,7 @@ class CronJob {
             for (const history of histories) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'] });
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets', 'distributed_assets'] });
                     if (!user) {
                         console.log(`User ID ${history.user_id} not found. Skipping...`);
                         await t.rollback();
@@ -5945,7 +5960,12 @@ class CronJob {
                         released_at: new Date(),
                         is_release_stuck: 0
                     }, { transaction: t });
-                    await user.increment({ total_assets: -subtractAmount, balance: subtractAmount }, { transaction: t });
+
+                    await user.increment({ 
+                        total_assets: -subtractAmount, 
+                        balance: subtractAmount,
+                        distributed_assets: -subtractAmount
+                    }, { transaction: t });
 
                     const cashflows = [
                             {
@@ -5968,6 +5988,17 @@ class CronJob {
                             amount: subtractAmount,
                             before_amount: user.total_assets,
                             after_amount: Number(user.total_assets) - subtractAmount,
+                            flow_status: 'OUT',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'AssetDistributionGroupHistory',
+                            type: '可额外发放金额',
+                            amount: subtractAmount,
+                            before_amount: user.distributed_assets,
+                            after_amount: Number(user.distributed_assets) - subtractAmount,
                             flow_status: 'OUT',
                         }
                     ]
@@ -6002,7 +6033,7 @@ class CronJob {
             for (const row of rows) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'total_assets'] });
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'total_assets', 'distributed_assets'] });
                     if (!user) {
                         console.log(`User ID ${row.user_id} not found. Skipping...`);
                         await t.rollback();
@@ -6029,20 +6060,39 @@ class CronJob {
                         amount: row.daily_earn,
                     }, { transaction: t });
 
-                    await CashFlow.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 3, // 3-资产宝
-                        model: 'AssetEarnPackageEarn',
-                        type: '资产宝收益',
-                        amount: row.daily_earn,
-                        before_amount: user.total_assets,
-                        after_amount: Number(user.total_assets) + Number(row.daily_earn),
-                        flow_status: 'IN',
-                        description: '每日收益',
-                    }, { transaction: t });
+                    const cashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 3, // 3-资产宝
+                            model: 'AssetEarnPackageEarn',
+                            type: '资产宝收益',
+                            amount: row.daily_earn,
+                            before_amount: user.total_assets,
+                            after_amount: Number(user.total_assets) + Number(row.daily_earn),
+                            flow_status: 'IN',
+                            description: '每日收益',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'AssetEarnPackageEarn',
+                            type: '资产宝收益',
+                            amount: row.daily_earn,
+                            before_amount: user.distributed_assets,
+                            after_amount: Number(user.distributed_assets) + Number(row.daily_earn),
+                            flow_status: 'IN',
+                            description: '每日收益',
+                        }
+                    ]
 
-                    await user.increment({ total_assets: Number(row.daily_earn) }, { transaction: t });
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+
+                    await user.increment({ 
+                        total_assets: Number(row.daily_earn), 
+                        distributed_assets: Number(row.daily_earn) 
+                    }, { transaction: t });
 
                     await t.commit();
 
@@ -6074,7 +6124,7 @@ class CronJob {
             for (const row of rows) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'] });
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets', 'distributed_assets'] });
                     if (!user) {
                         console.log(`User ID ${row.user_id} not found. Skipping...`);
                         await t.rollback();
@@ -6107,35 +6157,51 @@ class CronJob {
                         type: 1, // 每日释放
                     }, { transaction: t });
 
-                    await CashFlow.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 2, // 2-余额
-                        model: 'AssetDailyReleasePackageEarn',
-                        type: '资产宝日释放收益',
-                        amount: row.daily_earn,
-                        before_amount: user.balance,
-                        after_amount: Number(user.balance) + Number(row.daily_earn),
-                        flow_status: 'IN',
-                        description: '每日释放收益',
-                    }, { transaction: t });
+                    const cashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 2-余额
+                            model: 'AssetDailyReleasePackageEarn',
+                            type: '资产宝日释放收益',
+                            amount: row.daily_earn,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + Number(row.daily_earn),
+                            flow_status: 'IN',
+                            description: '每日释放收益',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 3, // 3-资产宝
+                            model: 'AssetDailyReleasePackageEarn',
+                            type: '资产宝日释放收益',
+                            amount: row.daily_earn,
+                            before_amount: user.total_assets,
+                            after_amount: Number(user.total_assets) - Number(row.daily_earn),
+                            flow_status: 'OUT',
+                            description: '每日释放收益',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'AssetDailyReleasePackageEarn',
+                            type: '资产宝日释放收益',
+                            amount: row.daily_earn,
+                            before_amount: user.distributed_assets,
+                            after_amount: Number(user.distributed_assets) - Number(row.daily_earn),
+                            flow_status: 'OUT',
+                            description: '每日释放收益',
+                        }
+                    ]
 
-                    await CashFlow.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 3, // 3-资产宝
-                        model: 'AssetDailyReleasePackageEarn',
-                        type: '资产宝日释放收益',
-                        amount: row.daily_earn,
-                        before_amount: user.total_assets,
-                        after_amount: Number(user.total_assets) - Number(row.daily_earn),
-                        flow_status: 'OUT',
-                        description: '每日释放收益',
-                    }, { transaction: t });
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
 
                     await user.increment({ 
                         balance: Number(row.daily_earn), 
-                        total_assets: -Number(row.daily_earn) 
+                        total_assets: -Number(row.daily_earn),
+                        distributed_assets: -Number(row.daily_earn)
                     }, { transaction: t });
 
                     await t.commit();
