@@ -60,8 +60,8 @@ class CronJob {
         // Run at 23:30 every day
         cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
         // cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
-        cron.schedule('20 0 * * *', this.GIVE_MASONIC_BONUS).start();
-        cron.schedule('30 0 * * *', this.GIVE_POLICY_PACKAGE_EARN).start();
+        cron.schedule('10 0 * * *', this.GIVE_MASONIC_BONUS).start();
+        cron.schedule('20 0 * * *', this.GIVE_POLICY_PACKAGE_EARN).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run 10th minute of every hour
@@ -78,8 +78,8 @@ class CronJob {
         // cron.schedule('* * * * *', this.CHECK_GOLD_PACKAGE_REIMBURSEMENT).start(); // package_id 1 and 2 are eligible for reimbursement // all completed
         // Run at 30th minute of every hour
         // cron.schedule('30 * * * *', this.REFUND_WITHDRAW_AFTER_3_DAYS).start();
-        cron.schedule('* * * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
-        cron.schedule('40 0 * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start(); // all completed
+        cron.schedule('* 5-23 * * *', this.CHECK_FEDERAL_PACKAGE_REIMBURSEMENT).start();
+        // cron.schedule('40 0 * * *', this.CHECK_SHANGHAI_COOPERATION_REIMBURSEMENT).start(); // all completed
         // cron.schedule('* * * * *', this.SEND_WITHDRAWAL_TO_THIRD_PARTY).start();
         cron.schedule('*/3 * * * *', this.UPDATE_MEETING_USED_CODE).start();
         // Run every 10 second
@@ -87,19 +87,19 @@ class CronJob {
         // Run every 1 minute
         cron.schedule('* * * * *', this.RELEASE_USER_ACTIVE_STATUS).start();
         // run every 00:50
-        cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start(); // all completed
+        // cron.schedule('50 0 * * *', this.CHECK_PERSONAL_RESERVE_PACKAGE_REIMBURSEMENT).start(); // all completed
         // Run every hour
         cron.schedule('0 5-23 * * *', this.CHECK_VALIDED_COUPON).start();
         // Run at 1AM Every day
-        cron.schedule('40 0 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start();
-        cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start();
-        cron.schedule('30 1 * * *', this.CALCULATE_ASSET_EARN).start();
-        cron.schedule('0 2 * * *', this.RELEASE_ASSET_FUND).start();
-        cron.schedule('30 2 * * *', this.RELEASE_ASSET_EARN).start();
-        cron.schedule('0 3 * * *', this.ASSET_DAILY_RELEASE_EARN).start();
-        cron.schedule('30 3 * * *', this.ASSET_DAILY_RELEASE_ORIGINAL_PRICE).start();
-        cron.schedule('0 4 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
-        cron.schedule('30 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
+        // cron.schedule('30 0 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start(); // manual
+        // cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start(); // all completed
+        cron.schedule('0 1 * * *', this.CALCULATE_ASSET_EARN).start();
+        cron.schedule('30 1 * * *', this.RELEASE_ASSET_FUND).start();
+        cron.schedule('0 2 * * *', this.RELEASE_ASSET_EARN).start();
+        cron.schedule('30 2 * * *', this.ASSET_DAILY_RELEASE_EARN).start();
+        cron.schedule('0 3 * * *', this.ASSET_DAILY_RELEASE_ORIGINAL_PRICE).start();
+        cron.schedule('30 3 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
+        cron.schedule('0 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
     }
 
     PAY_ALLOWANCE = async () => {
