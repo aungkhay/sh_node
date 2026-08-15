@@ -6375,6 +6375,7 @@ class CronJob {
         }
     }
 
+    // NOT CRON
     RESET_ASSET_DISTRIBUTION_GROUP_PACKAGE_HISTORY = async () => {
         try {
             const [results] = await db.query(`
@@ -6460,6 +6461,204 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RESET_ASSET_DISTRIBUTION_GROUP_PACKAGE_HISTORY]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    SWITCH_RESERVE_FUND_TO_BALANCE_FROM_TRANSFERS = async () => {
+        try {
+            const transfers = await Transfer.findAll({
+                where: {
+                    wallet_type: 2,
+                    from: 2,
+                    to: 1,
+                    createdAt: {
+                        [Op.gt]: '2026-08-15'
+                    },
+                },
+                attributes: ['id', 'user_id', 'amount']
+            });
+
+            for (const transfer of transfers) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(transfer.user_id, { attributes: ['id', 'relation', 'balance', 'reserve_fund'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+
+                    if (Number(user.reserve_fund) < Number(transfer.amount)) {
+                        console.log(`[SWITCH_RESERVE_FUND_TO_BALANCE_FROM_TRANSFERS][TRANSFER_ID: ${transfer.id}]: User ID ${user.id} has insufficient reserve fund. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+
+                    await user.increment({
+                        balance: Number(transfer.amount),
+                        reserve_fund: -Number(transfer.amount)
+                    }, { transaction: t });
+
+                    await transfer.destroy({ transaction: t });
+                    await CashFlow.destroy({
+                        where: {
+                            user_id: user.id,
+                            model: 'Transfer',
+                            type: '转账',
+                            amount: transfer.amount,
+                            createdAt: {
+                                [Op.gt]: '2026-08-15'
+                            }
+                        },
+                        transaction: t
+                    })
+
+                    await t.commit();
+
+                    console.log(`[SWITCH_RESERVE_FUND_TO_BALANCE_FROM_TRANSFERS][TRANSFER_ID: ${transfer.id}]: Switched ${Number(transfer.amount)} from reserve fund to balance for User ID ${user.id}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[SWITCH_RESERVE_FUND_TO_BALANCE_FROM_TRANSFERS][TRANSFER_ID: ${transfer.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[SWITCH_RESERVE_FUND_TO_BALANCE_FROM_TRANSFERS]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    FIX_TOTAL_ASSETS = async () => {
+        try {
+            const users = await User.findAll({
+                attributes: ['id', 'total_assets'],
+                where: {
+                    type: 2, // 2-普通用户
+                    total_assets: {
+                        [Op.gt]: 0
+                    }
+                },
+                order: [['id', 'ASC']]
+            });
+
+            for (const user of users) {
+                const t = await db.transaction();
+                try {
+                    const maxCashFlow = await CashFlow.findOne({
+                        where: {
+                            user_id: user.id,
+                            wallet_type: 3,
+                            model: 'GoldAppreciationPackageEarn',
+                            type: '黄金增值金返还',
+                            createdAt: {
+                                [Op.gt]: '2026-08-15',
+                            },
+                        },
+                        attributes: [
+                            [fn('MAX', col('after_amount')), 'max_after_amount'],
+                        ],
+                        raw: true,
+                        transaction: t,
+                    });
+                    if (maxCashFlow?.max_after_amount == null) {
+                        console.log(`[FIX_TOTAL_ASSETS][USER_ID: ${user.id}]: No max cash flow found. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+
+                    const afterAmount = Number(maxCashFlow.max_after_amount);
+                    const sumOutCashFlows = await CashFlow.sum('amount', {
+                        where: {
+                            user_id: user.id,
+                            wallet_type: 3, // 资产宝
+                            type: {
+                                [Op.ne]: '黄金增值金返还'
+                            },
+                            flow_status: 'OUT',
+                            createdAt: {
+                                [Op.gte]: '2026-08-15 02:00:00'
+                            }
+                        },
+                        transaction: t
+                    });
+                    const sumInCashFlows = await CashFlow.sum('amount', {
+                        where: {
+                            user_id: user.id,
+                            wallet_type: 3, // 资产宝
+                            type: {
+                                [Op.ne]: '黄金增值金返还'
+                            },
+                            flow_status: 'IN',
+                            createdAt: {
+                                [Op.gte]: '2026-08-15 02:00:00'
+                            }
+                        },
+                        transaction: t
+                    });
+
+                    const remainTotalAssets = afterAmount - (Number(sumOutCashFlows || 0)) + (Number(sumInCashFlows || 0));
+                    if (Number(user.total_assets) === Number(remainTotalAssets)) {
+                        console.log(`[FIX_TOTAL_ASSETS][USER_ID: ${user.id}]: Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+                    console.log(`[FIX_TOTAL_ASSETS][USER_ID: ${user.id}]: Fixed total_assets from ${user.total_assets} to ${remainTotalAssets}`);
+                    await user.update({ total_assets: remainTotalAssets }, { transaction: t });
+
+                    await t.commit();
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[FIX_TOTAL_ASSETS][USER_ID: ${user.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[FIX_TOTAL_ASSETS]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    PAY_ALLOWANCE_TO_TOTAL_ASSETS = async () => {
+        try {
+            const allowances = await Allowance.findAll({
+                where: {
+                    createdAt: {
+                        [Op.gt]: '2026-08-15'
+                    }
+                },
+                attributes: ['id', 'user_id', 'amount']
+            });
+
+            for (const allowance of allowances) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(allowance.user_id, { attributes: ['id', 'relation', 'total_assets'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 3, // 资产宝
+                        model: 'Allowance',
+                        type: '津贴发放',
+                        amount: Number(allowance.amount),
+                        before_amount: Number(user.total_assets),
+                        after_amount: Number(user.total_assets) + Number(allowance.amount),
+                        flow_status: 'IN',
+                    }, { transaction: t });
+
+                    await user.increment({ total_assets: Number(allowance.amount) }, { transaction: t });
+
+                    await t.commit();
+                    console.log(`[PAY_ALLOWANCE_TO_TOTAL_ASSETS][ALLOWANCE_ID: ${allowance.id}]: Paid allowance of ${Number(allowance.amount)} to User ID ${user.id}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[PAY_ALLOWANCE_TO_TOTAL_ASSETS][ALLOWANCE_ID: ${allowance.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[PAY_ALLOWANCE_TO_TOTAL_ASSETS]: ${error.stack}`);
         }
     }
 }
