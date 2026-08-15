@@ -54,7 +54,7 @@ class CronJob {
         // cron.schedule('0 */6 * * *', this.RESET_ACTIVE).start();
         // Runs every day at midnight
         cron.schedule('0 0 * * *', this.RESET_REWARD_COUNT).start();
-        cron.schedule('0 0 * * *', this.EARN_INTEREST).start();
+        // cron.schedule('0 0 * * *', this.EARN_INTEREST).start();
         cron.schedule('0 0 * * *', this.RESET_TODAY_NEWS_REWARD_COUNT).start();
         cron.schedule('0 0 * * *', this.RESET_CAN_GET_RED_ENVELOPE).start();
         // Run at 23:30 every day

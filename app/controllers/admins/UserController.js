@@ -3143,7 +3143,7 @@ class Controller {
 
             const { rows, count } = await CashFlow.findAndCountAll({
                 where: condition,
-                order: [['createdAt', 'DESC']],
+                order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
             });
