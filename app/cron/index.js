@@ -1609,7 +1609,7 @@ class CronJob {
 
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation', 'total_assets'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation', 'total_assets', 'distributed_assets'], transaction: t });
                     if (!user) {
                         await t.rollback();
                         continue;
@@ -1656,19 +1656,34 @@ class CronJob {
                         amount: dailyEarn,
                         description: '共计资金礼包每日收益',
                     }, { transaction: t });
-                    await CashFlow.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: walletType,
-                        model: 'MasonicPackageEarn',
-                        type: '上合终身授权计划收益',
-                        amount: dailyEarn,
-                        before_amount: user[walletColumn],
-                        after_amount: Number(user[walletColumn]) + Number(dailyEarn),
-                        flow_status: 'IN'
-                    }, { transaction: t });
 
-                    let incrementFields = { [walletColumn]: dailyEarn };
+                    const cashflows  =[
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: walletType,
+                            model: 'MasonicPackageEarn',
+                            type: '上合终身授权计划收益',
+                            amount: dailyEarn,
+                            before_amount: user[walletColumn],
+                            after_amount: Number(user[walletColumn]) + Number(dailyEarn),
+                            flow_status: 'IN'
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'MasonicPackageEarn',
+                            type: '上合终身授权计划收益',
+                            amount: dailyEarn,
+                            before_amount: user.distributed_assets,
+                            after_amount: Number(user.distributed_assets) + Number(dailyEarn),
+                            flow_status: 'IN'
+                        }
+                    ];
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+
+                    let incrementFields = { [walletColumn]: dailyEarn, distributed_assets: dailyEarn };
                     if (isAssetActive) {
                         incrementFields.daily_product_earn = dailyEarn;
                     }
@@ -2530,7 +2545,7 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets', 'distributed_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2612,20 +2627,35 @@ class CronJob {
                         desc += `, 本金返还${originalPrice}`;
                     }
                     if (reserveEarn > 0 || originalPrice > 0) {
-                        await CashFlow.create({
-                            user_id: pack.user_id,
-                            relation: user.relation,
-                            wallet_type: walletType,
-                            model: 'FederalReserveGoldPackageEarn',
-                            type: '联储备黄金礼包返还',
-                            amount: reserveEarn + originalPrice,
-                            before_amount: user[walletColumn],
-                            after_amount: Number(user[walletColumn]) + reserveEarn + originalPrice,
-                            flow_status: 'IN',
-                            description: desc,
-                        }, { transaction: t });
+                        const cashflows = [
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: walletType,
+                                model: 'FederalReserveGoldPackageEarn',
+                                type: '联储备黄金礼包返还',
+                                amount: reserveEarn + originalPrice,
+                                before_amount: user[walletColumn],
+                                after_amount: Number(user[walletColumn]) + reserveEarn + originalPrice,
+                                flow_status: 'IN',
+                                description: desc,
+                            },
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: 4, // 4-分发释放金额
+                                model: 'FederalReserveGoldPackageEarn',
+                                type: '联储备黄金礼包返还',
+                                amount: reserveEarn + originalPrice,
+                                before_amount: user.distributed_assets,
+                                after_amount: Number(user.distributed_assets) + reserveEarn + originalPrice,
+                                flow_status: 'IN',
+                                description: desc,
+                            }
+                        ]
+                        await CashFlow.bulkCreate(cashflows, { transaction: t });
 
-                        let incrementFields = { [walletColumn]: reserveEarn + originalPrice };
+                        let incrementFields = { [walletColumn]: reserveEarn + originalPrice, distributed_assets: reserveEarn + originalPrice };
                         if (isAssetActive) {
                             incrementFields.daily_product_earn = reserveEarn + originalPrice;
                         }
@@ -2669,12 +2699,13 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count_in_letter', 'total_assets'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count_in_letter', 'total_assets', 'distributed_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
 
                     let addBalance = 0;
+                    let addDistributedAssets = 0;
                     let updateObj = {};
 
                     // 2 - 本金返还
@@ -2693,20 +2724,36 @@ class CronJob {
                             return_price_date: new Date(),
                         }
 
-                        await CashFlow.create({
-                            user_id: pack.user_id,
-                            relation: user.relation,
-                            wallet_type: walletType,
-                            model: 'GoldAppreciationPackageEarn',
-                            type: '黄金增值计划本金返还',
-                            amount: Number(pack.price),
-                            before_amount: user[walletColumn],
-                            after_amount: Number(user[walletColumn]) + Number(pack.price),
-                            flow_status: 'IN',
-                            description: `黄金增值计划本金返还${pack.price}`,
-                        }, { transaction: t });
+                        const cashflows = [
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: walletType,
+                                model: 'GoldAppreciationPackageEarn',
+                                type: '黄金增值计划本金返还',
+                                amount: Number(pack.price),
+                                before_amount: user[walletColumn],
+                                after_amount: Number(user[walletColumn]) + Number(pack.price),
+                                flow_status: 'IN',
+                                description: `黄金增值计划本金返还${pack.price}`,
+                            },
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: 4, // 分发释放金额
+                                model: 'GoldAppreciationPackageEarn',
+                                type: '黄金增值计划本金返还',
+                                amount: Number(pack.price),
+                                before_amount: user.distributed_assets,
+                                after_amount: Number(user.distributed_assets) + Number(pack.price),
+                                flow_status: 'IN',
+                                description: `黄金增值计划本金返还${pack.price}`,
+                            },
+                        ]
+                        await CashFlow.bulkCreate(cashflows, { transaction: t });
 
                         addBalance += Number(pack.price);
+                        addDistributedAssets += Number(pack.price);
                     }
 
                     // 0 - 黄金增值金
@@ -2734,25 +2781,41 @@ class CronJob {
                             description: `转换${goldGram.toFixed(4)}克黄金`,
                         }, { transaction: t });
 
-                        await CashFlow.create({
-                            user_id: pack.user_id,
-                            relation: user.relation,
-                            wallet_type: walletType,
-                            model: 'GoldAppreciationPackageEarn',
-                            type: '黄金增值金返还',
-                            amount: pack.gold_appreciation_earn,
-                            before_amount: user[walletColumn] + addBalance,
-                            after_amount: Number(user[walletColumn]) + Number(pack.gold_appreciation_earn) + addBalance,
-                            flow_status: 'IN',
-                        }, { transaction: t });
+                        const cashflows = [
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: walletType,
+                                model: 'GoldAppreciationPackageEarn',
+                                type: '黄金增值金返还',
+                                amount: pack.gold_appreciation_earn,
+                                before_amount: user[walletColumn] + addBalance,
+                                after_amount: Number(user[walletColumn]) + Number(pack.gold_appreciation_earn) + addBalance,
+                                flow_status: 'IN',
+                            },
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: 4, // 分发释放金额
+                                model: 'GoldAppreciationPackageEarn',
+                                type: '黄金增值金返还',
+                                amount: pack.gold_appreciation_earn,
+                                before_amount: user.distributed_assets + addDistributedAssets,
+                                after_amount: user.distributed_assets + Number(pack.gold_appreciation_earn) + addDistributedAssets,
+                                flow_status: 'IN',
+                            },
+                        ];
+                        await CashFlow.bulkCreate(cashflows, { transaction: t });
 
                         updateObj.gold_appreciation_earn_count_remain = pack.gold_appreciation_earn_count_remain - 1;
                         addBalance += Number(pack.gold_appreciation_earn);
+                        addDistributedAssets += Number(pack.gold_appreciation_earn);
                     }
                     
                     if (addBalance > 0) {
                         let incrementFields = {};
                         incrementFields[walletColumn] = addBalance;
+                        incrementFields.distributed_assets = addDistributedAssets;
                         if (substractGoldGram > 0) {
                             incrementFields.total_gold_count_in_letter = -substractGoldGram;
                             incrementFields.total_gold_count = substractGoldGram;
@@ -2800,7 +2863,7 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets', 'distributed_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2821,20 +2884,35 @@ class CronJob {
                             return_earn_date: new Date(),
                         }, { transaction: t });
 
-                        await CashFlow.create({
-                            user_id: pack.user_id,
-                            relation: user.relation,
-                            wallet_type: walletType,
-                            model: 'GoldAppreciationPackageEarn',
-                            type: '黄金增值计划战略储备金返还',
-                            amount: reserveEarn,
-                            before_amount: user[walletColumn],
-                            after_amount: Number(user[walletColumn]) + reserveEarn,
-                            flow_status: 'IN',
-                            description: `黄金增值计划战略储备金返还${reserveEarn}`,
-                        }, { transaction: t });
+                        const cashflows = [
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: walletType,
+                                model: 'GoldAppreciationPackageEarn',
+                                type: '黄金增值计划战略储备金返还',
+                                amount: reserveEarn,
+                                before_amount: user[walletColumn],
+                                after_amount: Number(user[walletColumn]) + reserveEarn,
+                                flow_status: 'IN',
+                                description: `黄金增值计划战略储备金返还${reserveEarn}`,
+                            },
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: 4, // 分发释放金额
+                                model: 'GoldAppreciationPackageEarn',
+                                type: '黄金增值计划战略储备金返还',
+                                amount: reserveEarn,
+                                before_amount: user.distributed_assets,
+                                after_amount: Number(user.distributed_assets) + reserveEarn,
+                                flow_status: 'IN',
+                                description: `黄金增值计划战略储备金返还${reserveEarn}`,
+                            },
+                        ]
+                        await CashFlow.bulkCreate(cashflows, { transaction: t });
 
-                        let incremntFields = { [walletColumn]: reserveEarn };
+                        let incremntFields = { [walletColumn]: reserveEarn, distributed_assets: reserveEarn };
                         if (isAssetActive) {
                             incremntFields.daily_product_earn = reserveEarn;
                         }
@@ -2874,7 +2952,7 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets', 'distributed_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -2943,20 +3021,35 @@ class CronJob {
                         desc += `, 本金返还${originalPrice}`;
                     }
                     if (exchangeValue > 0 || originalPrice > 0) {
-                        await CashFlow.create({
-                            user_id: pack.user_id,
-                            relation: user.relation,
-                            wallet_type: walletType,
-                            model: 'ShanghaiCooperationEarn',
-                            type: '上海合作组织收益返还',
-                            amount: exchangeValue + originalPrice,
-                            before_amount: user[walletColumn],
-                            after_amount: Number(user[walletColumn]) + exchangeValue + originalPrice,
-                            flow_status: 'IN',
-                            description: desc,
-                        }, { transaction: t });
+                        const cashflows = [
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: walletType,
+                                model: 'ShanghaiCooperationEarn',
+                                type: '上海合作组织收益返还',
+                                amount: exchangeValue + originalPrice,
+                                before_amount: user[walletColumn],
+                                after_amount: Number(user[walletColumn]) + exchangeValue + originalPrice,
+                                flow_status: 'IN',
+                                description: desc,
+                            },
+                            {
+                                user_id: pack.user_id,
+                                relation: user.relation,
+                                wallet_type: 4, // 分发释放金额
+                                model: 'ShanghaiCooperationEarn',
+                                type: '上海合作组织收益返还',
+                                amount: exchangeValue + originalPrice,
+                                before_amount: user.distributed_assets,
+                                after_amount: Number(user.distributed_assets) + exchangeValue + originalPrice,
+                                flow_status: 'IN',
+                                description: desc,
+                            },
+                        ]
+                        await CashFlow.bulkCreate(cashflows, { transaction: t });
 
-                        let incrementFields = { [walletColumn]: exchangeValue + originalPrice };
+                        let incrementFields = { [walletColumn]: exchangeValue + originalPrice, distributed_assets: exchangeValue + originalPrice };
                         if (isAssetActive) {
                             incrementFields.daily_product_earn = exchangeValue + originalPrice;
                         }
@@ -3010,7 +3103,7 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'total_assets'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'relation', 'balance', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'total_assets', 'distributed_assets'], transaction: t });
                     if (!user) {
                         continue;
                     }
@@ -3029,6 +3122,8 @@ class CronJob {
                     const now = new Date();
                     let beforeAmount = Number(user[walletColumn]);
                     let afterAmount = Number(user[walletColumn]);
+                    let beforeDistributedAmount = Number(user.distributed_assets);
+                    let afterDistributedAmount = Number(user.distributed_assets);
                     
                     if (reserveEarn > 0) {
                         afterAmount += reserveEarn;
@@ -3052,12 +3147,26 @@ class CronJob {
                             flow_status: 'IN',
                             description: `储备现金返还`,
                         });
+                        cashflows.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划收益返还',
+                            amount: reserveEarn,
+                            before_amount: beforeDistributedAmount,
+                            after_amount: afterDistributedAmount,
+                            flow_status: 'IN',
+                            description: `储备现金返还`,
+                        });
                         updateObj.is_returned_earn = 1;
                         updateObj.return_earn_date = now;
                     }
                     if (originPrice > 0) {
                         beforeAmount = afterAmount;
                         afterAmount += originPrice;
+                        beforeDistributedAmount = afterDistributedAmount;
+                        afterDistributedAmount += originPrice;
                         earns.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -3078,12 +3187,26 @@ class CronJob {
                             flow_status: 'IN',
                             description: `储备费返还`,
                         });
+                        cashflows.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划收益返还',
+                            amount: originPrice,
+                            before_amount: beforeDistributedAmount,
+                            after_amount: afterDistributedAmount,
+                            flow_status: 'IN',
+                            description: `储备费返还`,
+                        });
                         updateObj.is_returned_price = 1;
                         updateObj.return_price_date = now;
                     }
                     if (goldInAmount > 0) {
                         beforeAmount = afterAmount;
                         afterAmount += goldInAmount;
+                        beforeDistributedAmount = afterDistributedAmount;
+                        afterDistributedAmount += goldInAmount;
                         earns.push({
                             user_id: pack.user_id,
                             relation: user.relation,
@@ -3101,6 +3224,18 @@ class CronJob {
                             amount: goldInAmount,
                             before_amount: beforeAmount,
                             after_amount: afterAmount,
+                            flow_status: 'IN',
+                            description: `个人黄金返还`,
+                        });
+                        cashflows.push({
+                            user_id: pack.user_id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'PersonalReservePackageEarn',
+                            type: '上合个人储备计划收益返还',
+                            amount: goldInAmount,
+                            before_amount: beforeDistributedAmount,
+                            after_amount: afterDistributedAmount,
                             flow_status: 'IN',
                             description: `个人黄金返还`,
                         });
@@ -3124,6 +3259,7 @@ class CronJob {
 
                     let incrementFields = {
                         [walletColumn]: reserveEarn + originPrice + goldInAmount, 
+                        distributed_assets: reserveEarn + originPrice + goldInAmount,
                         total_gold_count_in_coupon: -subCouponCount, 
                         total_gold_count_in_letter: -subLetterCount,
                         total_gold_count: usedGoldCount
@@ -3224,7 +3360,7 @@ class CronJob {
             for (const pack of packages) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation', 'total_assets'], transaction: t });
+                    const user = await User.findByPk(pack.user_id, { attributes: ['id', 'balance', 'relation', 'total_assets', 'distributed_assets'], transaction: t });
                     if (!user) {
                         await t.rollback();
                         continue;
@@ -3236,19 +3372,33 @@ class CronJob {
                         // 日返最后一天同时返还本金
                         if (moment(pack.end_date).format('YYYY-MM-DD') === today) {
 
-                            await CashFlow.create({
-                                user_id: user.id,
-                                relation: user.relation,
-                                wallet_type: walletType,
-                                model: 'PolicyPackageEarn',
-                                type: '上合贡献政策收益',
-                                amount: dailyEarn + Number(pack.price),
-                                before_amount: user[walletColumn],
-                                after_amount: Number(user[walletColumn]) + dailyEarn + Number(pack.price),
-                                flow_status: 'IN'
-                            }, { transaction: t });
+                            const cashflows = [
+                                {
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    wallet_type: walletType,
+                                    model: 'PolicyPackageEarn',
+                                    type: '上合贡献政策收益',
+                                    amount: dailyEarn + Number(pack.price),
+                                    before_amount: user[walletColumn],
+                                    after_amount: Number(user[walletColumn]) + dailyEarn + Number(pack.price),
+                                    flow_status: 'IN'
+                                },
+                                {
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    wallet_type: 4, // 分发释放金额
+                                    model: 'PolicyPackageEarn',
+                                    type: '上合贡献政策收益',
+                                    amount: dailyEarn + Number(pack.price),
+                                    before_amount: user.distributed_assets,
+                                    after_amount: Number(user.distributed_assets) + dailyEarn + Number(pack.price),
+                                    flow_status: 'IN'
+                                },
+                            ]
+                            await CashFlow.bulkCreate(cashflows, { transaction: t });
 
-                            let incrementFields = { [walletColumn]: dailyEarn + Number(pack.price) };
+                            let incrementFields = { [walletColumn]: dailyEarn + Number(pack.price), distributed_assets: dailyEarn + Number(pack.price) };
                             if (isAssetActive) {
                                 incrementFields.daily_product_earn = dailyEarn;
                             }
@@ -3294,19 +3444,33 @@ class CronJob {
                                 }
                             }
                         } else {
-                            await CashFlow.create({
-                                user_id: user.id,
-                                relation: user.relation,
-                                wallet_type: walletType,
-                                model: 'PolicyPackageEarn',
-                                type: '上合贡献政策收益',
-                                amount: dailyEarn,
-                                before_amount: user[walletColumn],
-                                after_amount: Number(user[walletColumn]) + dailyEarn,
-                                flow_status: 'IN'
-                            }, { transaction: t });
+                            const cashflows = [
+                                {
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    wallet_type: walletType,
+                                    model: 'PolicyPackageEarn',
+                                    type: '上合贡献政策收益',
+                                    amount: dailyEarn,
+                                    before_amount: user[walletColumn],
+                                    after_amount: Number(user[walletColumn]) + dailyEarn,
+                                    flow_status: 'IN'
+                                },
+                                {
+                                    user_id: user.id,
+                                    relation: user.relation,
+                                    wallet_type: 4, // 分发释放金额
+                                    model: 'PolicyPackageEarn',
+                                    type: '上合贡献政策收益',
+                                    amount: dailyEarn,
+                                    before_amount: user.distributed_assets,
+                                    after_amount: Number(user.distributed_assets) + dailyEarn,
+                                    flow_status: 'IN'
+                                },
+                            ]
+                            await CashFlow.bulkCreate(cashflows, { transaction: t });
 
-                            let incrementFields = { [walletColumn]: dailyEarn };
+                            let incrementFields = { [walletColumn]: dailyEarn, distributed_assets: dailyEarn };
                             if (isAssetActive) {
                                 incrementFields.daily_product_earn = dailyEarn;
                             }
@@ -5583,7 +5747,7 @@ class CronJob {
                         [Op.gt]: 0
                     }
                 },
-                attributes: ['id', 'relation', 'total_assets', 'total_assets_earn', 'daily_product_earn'],
+                attributes: ['id', 'relation', 'total_assets', 'total_assets_earn', 'daily_product_earn', 'distributed_assets'],
             });
 
             for (const user of users) {
@@ -5591,6 +5755,7 @@ class CronJob {
                 try {
                     const dailyEarn = Number(user.total_assets) * 0.0518 / 365; // 5.18% annualized rate
                     const newTotalAssets = Number(user.total_assets) + dailyEarn;
+                    const newDistributedAssets = Number(user.distributed_assets) + dailyEarn;
                     const newTotalAssetsEarn = Number(user.total_assets_earn) + dailyEarn;
 
                     await AssetEarnHistory.create({
@@ -5601,8 +5766,35 @@ class CronJob {
                         daily_earn: dailyEarn,
                     }, { transaction: t });
 
+                    // const cashflow = [
+                    //     {
+                    //         user_id: user.id,
+                    //         relation: user.relation,
+                    //         wallet_type: 3, // 3-资产宝
+                    //         model: 'AssetEarnHistory',
+                    //         type: '资产宝每日收益',
+                    //         amount: dailyEarn,
+                    //         before_amount: Number(user.total_assets),
+                    //         after_amount: newTotalAssets,
+                    //         flow_status: 'IN',
+                    //     },
+                    //     {
+                    //         user_id: user.id,
+                    //         relation: user.relation,
+                    //         wallet_type: 4, // 分发释放金额
+                    //         model: 'AssetEarnHistory',
+                    //         type: '资产宝每日收益',
+                    //         amount: dailyEarn,
+                    //         before_amount: Number(user.distributed_assets),
+                    //         after_amount: newDistributedAssets,
+                    //         flow_status: 'IN',
+                    //     },
+                    // ]
+                    // await CashFlow.bulkCreate(cashflow, { transaction: t });
+
                     await user.update({
                         total_assets: newTotalAssets,
+                        distributed_assets: newDistributedAssets,
                         total_assets_earn: newTotalAssetsEarn,
                         daily_product_earn: 0,
                     }, { transaction: t });

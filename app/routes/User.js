@@ -166,6 +166,7 @@ class UserRoute extends express.Router {
         // Asset Earn History
         this.get('/assets/earn-history', middleware.isLoggedIn, HomeCtrl.ASSET_EARN_HISTORY);
         this.get('/assets/earn-summary', middleware.isLoggedIn, HomeCtrl.ASSET_SUMMARY);
+        this.get('/assets/distributed-asset-history', middleware.isLoggedIn, HomeCtrl.DISTRIBUTED_ASSET_HISTORY);
 
         let UserController = require('../controllers/users/UserController');
         const UserCtrl = new UserController(app);

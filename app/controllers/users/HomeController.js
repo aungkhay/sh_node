@@ -7404,7 +7404,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
-            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'payment_password', 'reserve_fund', 'masonic_fund', 'balance', 'total_assets'] });
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'payment_password', 'reserve_fund', 'masonic_fund', 'balance', 'total_assets', 'distributed_assets'] });
             if (user.is_group_letter_used == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已使用过六国授权书，无法重复使用', {});
             }
@@ -7535,6 +7535,18 @@ class Controller {
                         after_amount: remainBalance,
                         flow_status: 'IN',
                         description: `释放共济基金:${Number(user.masonic_fund)}`,
+                    },
+                    {
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 4, // 分发释放金额
+                        model: 'AuthorizeLetterHistory',
+                        type: `使用六国授权书`,
+                        amount: Number(user.masonic_fund),
+                        before_amount: Number(user.distributed_assets),
+                        after_amount: Number(user.distributed_assets) + Number(user.masonic_fund),
+                        flow_status: 'IN',
+                        description: `释放共济基金:${Number(user.masonic_fund)}`,
                     }
                 ];
                 await CashFlow.bulkCreate(cashflows, { transaction: t });
@@ -7546,6 +7558,7 @@ class Controller {
                     // total_gold_count: usedGoldCount,
                     reserve_fund: remainReserveFund,
                     [walletColumn]: remainBalance,
+                    distributed_assets: Number(user.distributed_assets) + Number(user.masonic_fund),
                     masonic_fund: 0
                 }, { where: { id: userId }, transaction: t });
 
@@ -8599,7 +8612,7 @@ class Controller {
 
             const { count, rows } = await CashFlow.findAndCountAll({
                 attributes: ['id', 'wallet_type', 'type', 'amount', 'flow_status', 'description', 'createdAt'],
-                where: { user_id: userId },
+                where: { user_id: userId, wallet_type: { [Op.ne]: 4 } },
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset
@@ -11244,7 +11257,7 @@ class Controller {
             }
 
             const user = await User.findByPk(userId, {
-                attributes: ['id', 'total_assets', 'total_assets_earn'],
+                attributes: ['id', 'total_assets', 'total_assets_earn', 'distributed_assets'],
                 useMaster: true
             });
 
@@ -11252,6 +11265,7 @@ class Controller {
             const data = {
                 total_assets: Number(user.total_assets),
                 total_assets_earn: Number(user.total_assets_earn),
+                distributed_assets: Number(user.distributed_assets),
                 daily_earn: Number(dailyEarn)
             }
             await this.redisHelper.setValue(`ASSET_SUMMARY_${userId}`, JSON.stringify(data), 120); // cache for 2 minutes
@@ -11259,6 +11273,41 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             errLogger(`[ASSET_SUMMARY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    DISTRIBUTED_ASSET_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await CashFlow.findAndCountAll({
+                where: {
+                    user_id: userId,
+                    wallet_type: 4, // 分发释放金额
+                },
+                attributes: ['id', 'type', 'amount', 'flow_status', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[DISTRIBUTED_ASSET_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
@@ -11983,7 +12032,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'payment_password', 'initial_buy_product_date', 'total_assets'],
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'payment_password', 'initial_buy_product_date', 'total_assets', 'distributed_assets'],
                 useMaster: true
             });
             if (!user.kyc) {
@@ -12092,6 +12141,18 @@ class Controller {
                             flow_status: 'IN',
                             description: `发放资产宝资产`,
                         });
+                        assetCashflows.push({
+                            relation: user.relation,
+                            user_id: user.id,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'AssetEarnPackageHistory',
+                            type: `购买资产宝收益`,
+                            amount: aPackage.asset_fund,
+                            before_amount: Number(user.distributed_assets) + totalAssets - Number(aPackage.asset_fund),
+                            after_amount: Number(user.distributed_assets) + totalAssets,
+                            flow_status: 'IN',
+                            description: `发放资产宝资产`,
+                        });
                     }
                 } else {
                     const obj = {
@@ -12122,10 +12183,23 @@ class Controller {
                         flow_status: 'IN',
                         description: `发放资产宝资产`,
                     });
+                    assetCashflows.push({
+                        relation: user.relation,
+                        user_id: user.id,
+                        wallet_type: 4, // 分发释放金额
+                        model: 'AssetEarnPackageHistory',
+                        type: `购买资产宝收益`,
+                        amount: aPackage.asset_fund,
+                        before_amount: Number(user.distributed_assets),
+                        after_amount: Number(user.distributed_assets) + totalAssets,
+                        flow_status: 'IN',
+                        description: `发放资产宝资产`,
+                    });
                 }
 
                 if (totalAssets > 0) {
                     userUpdates.total_assets = Number(user.total_assets) + totalAssets;
+                    userUpdates.distributed_assets = Number(user.distributed_assets) + totalAssets;
                     await CashFlow.bulkCreate(assetCashflows, { transaction: t });
                 }
                 await user.update(userUpdates, { transaction: t });

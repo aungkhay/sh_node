@@ -323,6 +323,12 @@ User.init({
         defaultValue: 0,
         comment: '总资产'
     },
+    distributed_assets: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '分发释放金额'
+    },
     total_assets_earn: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,
