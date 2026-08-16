@@ -6042,7 +6042,7 @@ class CronJob {
             for (const row of rows) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance', 'distributed_assets'] });
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'balance', 'total_assets', 'distributed_assets'] });
                     if (!user) {
                         console.log(`User ID ${row.user_id} not found. Skipping...`);
                         await t.rollback();
@@ -6071,20 +6071,36 @@ class CronJob {
                     //     description: '返还认购金额'
                     // }, { transaction: t });
 
-                    await CashFlow.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 4, // 分发释放金额
-                        model: 'AssetDailyReleasePackageEarn',
-                        type: '资产宝日释放收益',
-                        amount: row.price,
-                        before_amount: user.distributed_assets,
-                        after_amount: Number(user.distributed_assets) + Number(row.price),
-                        flow_status: 'IN',
-                        description: '返还认购金额'
-                    }, { transaction: t });
+                    const cashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 3, // 3-资产宝
+                            model: 'AssetDailyReleasePackageEarn',
+                            type: '资产宝日释放收益',
+                            amount: row.price,
+                            before_amount: user.total_assets,
+                            after_amount: Number(user.total_assets) + Number(row.price),
+                            flow_status: 'IN',
+                            description: '返还认购金额'
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'AssetDailyReleasePackageEarn',
+                            type: '资产宝日释放收益',
+                            amount: row.price,
+                            before_amount: user.distributed_assets,
+                            after_amount: Number(user.distributed_assets) + Number(row.price),
+                            flow_status: 'IN',
+                            description: '返还认购金额'
+                        }
+                    ]
 
-                    await user.increment({ distributed_assets: Number(row.price) }, { transaction: t });
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+
+                    await user.increment({ distributed_assets: Number(row.price), total_assets: Number(row.price) }, { transaction: t });
                     await row.update({ is_returned_price: 1, returned_price_on: new Date() }, { transaction: t });
 
                     await t.commit();
