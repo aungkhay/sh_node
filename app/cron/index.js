@@ -5704,7 +5704,7 @@ class CronJob {
                             type: '资产宝发放收益',
                             amount: history.asset_fund,
                             before_amount: user.total_assets,
-                            after_amount: Number(user.total_assets) - Number(history.asset_fund),
+                            after_amount: Number(user.total_assets) + Number(history.asset_fund),
                             flow_status: 'OUT',
                         },
                         {
@@ -5723,7 +5723,7 @@ class CronJob {
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await user.increment({ 
                         // balance: Number(history.asset_fund), 
-                        total_assets: +Number(history.asset_fund), 
+                        total_assets: Number(history.asset_fund), 
                         distributed_assets: Number(history.asset_fund) 
                     }, { transaction: t });
                     await history.update({ is_returned_fund: 1, return_fund_date: new Date() }, { transaction: t });
