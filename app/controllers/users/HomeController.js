@@ -8612,7 +8612,7 @@ class Controller {
 
             const { count, rows } = await CashFlow.findAndCountAll({
                 attributes: ['id', 'wallet_type', 'type', 'amount', 'flow_status', 'description', 'createdAt'],
-                where: { user_id: userId, wallet_type: { [Op.ne]: 4 } },
+                where: { user_id: userId },
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset
