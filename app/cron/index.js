@@ -5766,31 +5766,31 @@ class CronJob {
                         daily_earn: dailyEarn,
                     }, { transaction: t });
 
-                    // const cashflow = [
-                    //     {
-                    //         user_id: user.id,
-                    //         relation: user.relation,
-                    //         wallet_type: 3, // 3-资产宝
-                    //         model: 'AssetEarnHistory',
-                    //         type: '资产宝每日收益',
-                    //         amount: dailyEarn,
-                    //         before_amount: Number(user.total_assets),
-                    //         after_amount: newTotalAssets,
-                    //         flow_status: 'IN',
-                    //     },
-                    //     {
-                    //         user_id: user.id,
-                    //         relation: user.relation,
-                    //         wallet_type: 4, // 分发释放金额
-                    //         model: 'AssetEarnHistory',
-                    //         type: '资产宝每日收益',
-                    //         amount: dailyEarn,
-                    //         before_amount: Number(user.distributed_assets),
-                    //         after_amount: newDistributedAssets,
-                    //         flow_status: 'IN',
-                    //     },
-                    // ]
-                    // await CashFlow.bulkCreate(cashflow, { transaction: t });
+                    const cashflow = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 3, // 3-资产宝
+                            model: 'AssetEarnHistory',
+                            type: '资产宝每日收益',
+                            amount: dailyEarn,
+                            before_amount: Number(user.total_assets),
+                            after_amount: newTotalAssets,
+                            flow_status: 'IN',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'AssetEarnHistory',
+                            type: '资产宝每日收益',
+                            amount: dailyEarn,
+                            before_amount: Number(user.distributed_assets),
+                            after_amount: newDistributedAssets,
+                            flow_status: 'IN',
+                        },
+                    ]
+                    await CashFlow.bulkCreate(cashflow, { transaction: t });
 
                     await user.update({
                         total_assets: newTotalAssets,
