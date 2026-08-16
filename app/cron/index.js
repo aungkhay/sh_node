@@ -5773,7 +5773,7 @@ class CronJob {
                         continue;
                     }
                     const subtractAmount = Number(history.amount);
-                    if (user.total_assets < subtractAmount) {
+                    if (Number(user.total_assets) < subtractAmount) {
                         console.log(`User ID ${user.id} has insufficient total_assets. Required: ${subtractAmount}, Available: ${user.total_assets}. Marking as release_stuck.`);
                         await history.update({ is_release_stuck: 1 }, { transaction: t });
                         await t.commit();
