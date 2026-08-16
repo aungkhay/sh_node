@@ -5705,7 +5705,7 @@ class CronJob {
                             amount: history.asset_fund,
                             before_amount: user.total_assets,
                             after_amount: Number(user.total_assets) + Number(history.asset_fund),
-                            flow_status: 'OUT',
+                            flow_status: 'IN',
                         },
                         {
                             user_id: user.id,
