@@ -7404,7 +7404,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
             }
 
-            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'payment_password', 'reserve_fund', 'masonic_fund', 'balance', 'total_assets', 'distributed_assets'] });
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'is_group_letter_used', 'total_gold_count', 'total_gold_count_in_coupon', 'total_gold_count_in_letter', 'payment_password', 'reserve_fund', 'masonic_fund', 'balance', 'total_assets'] });
             if (user.is_group_letter_used == 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已使用过六国授权书，无法重复使用', {});
             }
@@ -7535,18 +7535,6 @@ class Controller {
                         after_amount: remainBalance,
                         flow_status: 'IN',
                         description: `释放共济基金:${Number(user.masonic_fund)}`,
-                    },
-                    {
-                        relation: user.relation,
-                        user_id: userId,
-                        wallet_type: 4, // 分发释放金额
-                        model: 'AuthorizeLetterHistory',
-                        type: `使用六国授权书`,
-                        amount: Number(user.masonic_fund),
-                        before_amount: Number(user.distributed_assets),
-                        after_amount: Number(user.distributed_assets) + Number(user.masonic_fund),
-                        flow_status: 'IN',
-                        description: `释放共济基金:${Number(user.masonic_fund)}`,
                     }
                 ];
                 await CashFlow.bulkCreate(cashflows, { transaction: t });
@@ -7558,7 +7546,6 @@ class Controller {
                     // total_gold_count: usedGoldCount,
                     reserve_fund: remainReserveFund,
                     [walletColumn]: remainBalance,
-                    distributed_assets: Number(user.distributed_assets) + Number(user.masonic_fund),
                     masonic_fund: 0
                 }, { where: { id: userId }, transaction: t });
 
@@ -12141,18 +12128,6 @@ class Controller {
                             flow_status: 'IN',
                             description: `发放资产宝资产`,
                         });
-                        assetCashflows.push({
-                            relation: user.relation,
-                            user_id: user.id,
-                            wallet_type: 4, // 分发释放金额
-                            model: 'AssetEarnPackageHistory',
-                            type: `购买资产宝收益`,
-                            amount: aPackage.asset_fund,
-                            before_amount: Number(user.distributed_assets) + totalAssets - Number(aPackage.asset_fund),
-                            after_amount: Number(user.distributed_assets) + totalAssets,
-                            flow_status: 'IN',
-                            description: `发放资产宝资产`,
-                        });
                     }
                 } else {
                     const obj = {
@@ -12180,18 +12155,6 @@ class Controller {
                         amount: aPackage.asset_fund,
                         before_amount: Number(user.total_assets),
                         after_amount: Number(user.total_assets) + totalAssets,
-                        flow_status: 'IN',
-                        description: `发放资产宝资产`,
-                    });
-                    assetCashflows.push({
-                        relation: user.relation,
-                        user_id: user.id,
-                        wallet_type: 4, // 分发释放金额
-                        model: 'AssetEarnPackageHistory',
-                        type: `购买资产宝收益`,
-                        amount: aPackage.asset_fund,
-                        before_amount: Number(user.distributed_assets),
-                        after_amount: Number(user.distributed_assets) + totalAssets,
                         flow_status: 'IN',
                         description: `发放资产宝资产`,
                     });
