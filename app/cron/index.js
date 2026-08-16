@@ -61,7 +61,7 @@ class CronJob {
         cron.schedule('30 23 * * *', this.RESET_REWARD_TYPE).start();
         // cron.schedule('30 23 * * *', this.CHECK_GOLD_PACKAGE_DAILY_RETURN).start();
         cron.schedule('10 0 * * *', this.GIVE_MASONIC_BONUS).start();
-        cron.schedule('20 0 * * *', this.GIVE_POLICY_PACKAGE_EARN).start();
+        cron.schedule('25 0 * * *', this.GIVE_POLICY_PACKAGE_EARN).start();
         // Every 10 minutes
         cron.schedule('*/10 * * * *', this.SUBSTRACT_MASONIC_FUND).start();
         // Run 10th minute of every hour
@@ -93,7 +93,7 @@ class CronJob {
         // Run at 1AM Every day
         // cron.schedule('30 0 15 * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_RETURN_EARN).start(); // manual
         // cron.schedule('0 1 * * *', this.CHECK_GOLD_APPRECIATION_PACKAGE_REIMBURSEMENT).start(); // all completed
-        cron.schedule('0 1 * * *', this.CALCULATE_ASSET_EARN).start();
+        cron.schedule('40 0 * * *', this.CALCULATE_ASSET_EARN).start();
         cron.schedule('30 1 * * *', this.RELEASE_ASSET_FUND).start();
         cron.schedule('0 2 * * *', this.RELEASE_ASSET_EARN).start();
         cron.schedule('30 2 * * *', this.ASSET_DAILY_RELEASE_EARN).start();
