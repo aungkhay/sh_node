@@ -5726,7 +5726,7 @@ class CronJob {
                         // total_assets: Number(history.asset_fund), 
                         distributed_assets: Number(history.asset_fund) 
                     }, { transaction: t });
-                    await history.update({ is_returned_fund: 1, return_fund_date: new Date() }, { transaction: t });
+                    await history.update({ is_returned_fund: 1, return_fund_date: new Date(), is_returned_fund_stuck: 0 }, { transaction: t });
 
                     await t.commit();
                     console.log(`[RELEASE_ASSET_FUND][HISTORY_ID: ${history.id}]: Released asset fund to User ID ${user.id}`);
