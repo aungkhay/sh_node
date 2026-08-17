@@ -2150,6 +2150,23 @@ class Controller {
                 });
 
                 await this.redisHelper.deleteKey(`ASSET_SUMMARY_${user.id}`);
+            } else if (walletType == 5) {
+                // 分发释放资产
+                updateObj.distributed_assets = updateAmount;
+                walletAmount = user.distributed_assets;
+
+                await CashFlow.create({
+                    user_id: user.id,
+                    relation: user.relation,
+                    wallet_type: 4, // 资产宝
+                    model: 'User',
+                    type: '赠送分发释放资产',
+                    amount: updateAmount,
+                    before_amount: Number(user.distributed_assets),
+                    after_amount: addOrSubstract == 1 ? Number(user.distributed_assets) + Number(updateAmount) : Number(user.distributed_assets) - Number(updateAmount),
+                    description: desc || (addOrSubstract == 1 ? '系统赠送分发释放资产' : '系统扣除分发释放资产'),
+                    flow_status: addOrSubstract == 1 ? 'IN' : 'OUT'
+                });
             }
 
             if (addOrSubstract == 2 && parseFloat(amount) > parseFloat(walletAmount)) {
