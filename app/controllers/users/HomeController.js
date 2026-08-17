@@ -13268,7 +13268,7 @@ class Controller {
                     verified_price: verifiedPrice,
                     will_finish_at: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                 }
-                const pkgHistoryItem = await AssetDailyReleasePackageHistory.create(obj, { transaction: t });
+                const pkgHistoryItem = await SCOInterbankPackageHistory.create(obj, { transaction: t });
 
                 const scoCashFlow = [];
                 if (Number(user.distributed_assets) > verifiedPrice) {
@@ -13463,7 +13463,7 @@ class Controller {
                     }
                 ],
                 where: { user_id: userId },
-                attributes: ['id', 'amount', 'type', 'description', 'createdAt'],
+                attributes: ['id', 'amount', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
