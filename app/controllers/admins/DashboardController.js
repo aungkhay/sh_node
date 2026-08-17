@@ -117,7 +117,7 @@ class Controller {
                 normal_user_total_assets: normalUserTotalAssets ? Number(normalUserTotalAssets) : 0,
                 internal_user_total_assets: internalUserTotalAssets ? Number(internalUserTotalAssets) : 0,
                 normal_user_distributed_assets: normalUserDistributedAssets ? Number(normalUserDistributedAssets) : 0,
-                internal_user_distributed_assets: internalUserDistributedAssets ? Number(internalUserTotalAssets) : 0
+                internal_user_distributed_assets: internalUserDistributedAssets ? Number(internalUserDistributedAssets) : 0
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
