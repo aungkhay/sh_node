@@ -1511,10 +1511,10 @@ class CronJob {
                 attributes: ['id', 'user_id', 'amount']
             });
             console.log(`[REFUND_WITHDRAW_AFTER_3_DAYS]: Found ${withdraws.length} withdraw(s) to refund.`);
-
-            const t = await db.transaction();
-            try {
-                for (let withdraw of withdraws) {
+            
+            for (let withdraw of withdraws) {
+                const t = await db.transaction();
+                try {
                     const user = await User.findByPk(withdraw.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
                     if (!user) continue;
                     
@@ -1534,11 +1534,12 @@ class CronJob {
 
                     await withdraw.update({ status: 2, description: 'CRON REFUND' }, { transaction: t });
                     console.log(`[REFUND_WITHDRAW_AFTER_3_DAYS][Withdraw ID: ${withdraw.id}]: Refunded ${withdraw.amount} to user ID ${user.id}`);
+                
+                    await t.commit();
+                } catch (error) {                
+                    errLogger(`[REFUND_WITHDRAW_AFTER_3_DAYS][Transaction Error]: ${error.stack}`);
+                    await t.rollback();
                 }
-                await t.commit();
-            } catch (error) {                
-                errLogger(`[REFUND_WITHDRAW_AFTER_3_DAYS][Transaction Error]: ${error.stack}`);
-                await t.rollback();
             }
         } catch (error) {
             errLogger(`[REFUND_WITHDRAW_AFTER_3_DAYS]: ${error.stack}`);
