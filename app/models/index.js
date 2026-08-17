@@ -100,6 +100,10 @@ const AssetDailyReleasePackageBonuses = require('./AssetDailyReleasePackageBonus
 const AssetDailyReleasePackageEarn = require('./AssetDailyReleasePackageEarn');
 const AssetDailyReleaseExtraPackageTemp = require('./AssetDailyReleaseExtraPackageTemp');
 const AssetDistributionGroupHistory = require('./AssetDistributionGroupHistory');
+const SCOInterbankPackage = require('./SCOInterbankPackage');
+const SCOInterbankPackageHistory = require('./SCOInterbankPackageHistory');
+const SCOInterbankPackageBonuses = require('./SCOInterbankPackageBonuses');
+const SCOInterbankPackageEarn = require('./SCOInterbankPackageEarn');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -601,6 +605,35 @@ AssetDailyReleasePackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user'
 User.hasMany(AssetDistributionGroupHistory, { foreignKey: 'user_id', as: 'asset_distribution_group_histories', onDelete: 'CASCADE' });
 AssetDistributionGroupHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ SCO_INTERBANK_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(SCOInterbankPackageHistory, { foreignKey: 'user_id', as: 'sco_interbank_package_histories', onDelete: 'CASCADE' });
+SCOInterbankPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== SCO_INTERBANK_PACKAGE_HISTORY ↔️ SCO_INTERBANK_PACKAGE_BONUSES (1:N) ==========
+SCOInterbankPackageHistory.hasMany(SCOInterbankPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+SCOInterbankPackageBonuses.belongsTo(SCOInterbankPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== SCO_INTERBANK_PACKAGE_HISTORY ↔️ SCO_INTERBANK_PACKAGE_EARN (1:N) ==========
+SCOInterbankPackageHistory.hasMany(SCOInterbankPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+SCOInterbankPackageEarn.belongsTo(SCOInterbankPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== SCO_INTERBANK_PACKAGE ↔️ SCO_INTERBANK_PACKAGE_EARN (1:N) ==========
+SCOInterbankPackage.hasMany(SCOInterbankPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+SCOInterbankPackageEarn.belongsTo(SCOInterbankPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== SCO_INTERBANK_PACKAGE ↔️ SCO_INTERBANK_PACKAGE_HISTORY (1:N) ==========
+SCOInterbankPackage.hasMany(SCOInterbankPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+SCOInterbankPackageHistory.belongsTo(SCOInterbankPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ SCO_INTERBANK_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(SCOInterbankPackageBonuses, { foreignKey: 'user_id', as: 'sco_interbank_package_bonuses', onDelete: 'CASCADE' });
+SCOInterbankPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+SCOInterbankPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ SCO_INTERBANK_PACKAGE_EARN (1:N) ==========
+User.hasMany(SCOInterbankPackageEarn, { foreignKey: 'user_id', as: 'sco_interbank_package_earns', onDelete: 'CASCADE' });
+SCOInterbankPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -698,6 +731,10 @@ const models = {
     AssetDailyReleasePackageBonuses,
     AssetDailyReleasePackageEarn,
     AssetDailyReleasePackageEarn,
+    SCOInterbankPackage,
+    SCOInterbankPackageHistory,
+    SCOInterbankPackageBonuses,
+    SCOInterbankPackageEarn
 };
 
 // Export models + db connection

@@ -395,6 +395,16 @@ class AdminRoute extends express.Router {
         this.get('/asset-daily-release-packages/bonus-history', middleware.isLoggedIn('asset-daily-release-package-bonus-history-list'), AssetDailyReleasePackageCtrl.ASSET_DAILY_RELEASE_PACKAGE_BONUS_HISTORY);
         this.get('/asset-daily-release-packages/earn-history', middleware.isLoggedIn('asset-daily-release-package-earn-history-list'), AssetDailyReleasePackageCtrl.ASSET_DAILY_RELEASE_PACKAGE_EARN_HISTORY);
 
+        // SCO Interbank Package
+        let SCOInterbankPackageController = require('../controllers/admins/SCOInterbankPackageController');
+        let SCOInterbankPackageCtrl = new SCOInterbankPackageController(app);
+        this.get('/sco-interbank-packages', middleware.isLoggedIn('sco-interbank-package-list'), SCOInterbankPackageCtrl.INDEX);
+        this.post('/sco-interbank-packages/create', FormValidator.create_sco_interbank_package(), middleware.isLoggedIn('sco-interbank-package-create'), SCOInterbankPackageCtrl.CREATE);
+        this.post('/sco-interbank-packages/:id/update', FormValidator.create_sco_interbank_package(), middleware.isLoggedIn('sco-interbank-package-update'), SCOInterbankPackageCtrl.UPDATE);
+        this.post('/sco-interbank-packages/:id/upload', middleware.isLoggedIn('sco-interbank-package-create,sco-interbank-package-update'), SCOInterbankPackageCtrl.UPLOAD);
+        this.get('/sco-interbank-packages/history', middleware.isLoggedIn('sco-interbank-package-history-list'), SCOInterbankPackageCtrl.SCO_INTERBANK_PACKAGE_HISTORY);
+        this.get('/sco-interbank-packages/bonus-history', middleware.isLoggedIn('sco-interbank-package-bonus-history-list'), SCOInterbankPackageCtrl.SCO_INTERBANK_PACKAGE_BONUS_HISTORY);
+        this.get('/sco-interbank-packages/earn-history', middleware.isLoggedIn('sco-interbank-package-earn-history-list'), SCOInterbankPackageCtrl.SCO_INTERBANK_PACKAGE_EARN_HISTORY);
     }
 }
 

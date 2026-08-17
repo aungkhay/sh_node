@@ -381,6 +381,27 @@ module.exports = async () => {
             description: '-',
             data_type: 'integer'
         },
+        {
+            type: 'sco_interbank_package_period',
+            title: '上合组织银联体 - 申报时间',
+            val: '2026-08-18 00:00:00|2026-08-24 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'sco_interbank_package_daily_release_qty',
+            title: '上合组织银联体 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
+        {
+            type: 'sco_interbank_package_can_transfer_to_balance',
+            title: '上合组织银联体 - 是否可转入余额',
+            val: '0',
+            description: '0 - 不可转入 | 1 - 可转入',
+            data_type: 'boolean'
+        },
     ];
 
     const count = await Config.count();

@@ -2221,3 +2221,68 @@ const params = {
     endTime: ''
 }
 ```
+
+### 上合组织银联体
+``` js
+// [GET] Package List
+const url = `${baseURL}/sco-interbank-packages`;
+
+// [POST] CREATE | UPDATE
+const url = `${baseURL}/sco-interbank-packages/create`;
+const url = `${baseURL}/sco-interbank-packages/${pkgID}/update`;
+const data = {
+    product_name: '-',
+    price: 20, // 清验资金
+    period: 45, // 清验期
+    transfer_out_assets_rate: 50, // 转出资产宝余额
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    description: '',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+    tag: ''
+}
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/sco-interbank-packages/${packageId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [GET] Package History
+const url = `${baseURL}/sco-interbank-packages/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: '',
+    is_internal_account: 0,
+    is_returned: 1, // 1 => 战略储备金返还 | 2 => 本金返还
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/sco-interbank-packages/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/sco-interbank-packages/earn-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+```
