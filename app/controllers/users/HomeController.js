@@ -13413,7 +13413,7 @@ class Controller {
 
             const { rows, count } = await SCOInterbankPackageHistory.findAndCountAll({
                 include: {
-                    model: AssetDailyReleasePackage,
+                    model: SCOInterbankPackage,
                     as: 'package',
                     attributes: ['id', 'product_name']
                 },
@@ -13457,7 +13457,7 @@ class Controller {
                         attributes: ['id', 'price'],
                     },
                     {
-                        model: AssetDailyReleasePackage,
+                        model: SCOInterbankPackage,
                         as: 'package',
                         attributes: ['id', 'product_name']
                     }
