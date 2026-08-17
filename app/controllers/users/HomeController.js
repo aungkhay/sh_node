@@ -13304,7 +13304,7 @@ class Controller {
                     userUpdates.total_assets = remainTotalAssets
                 } else {
                     const toSubstractTotalAssets = verifiedPrice - Number(user.distributed_assets); // 50 - 30 = 20
-                    const remainTotalAssets = Number(user.total_assets) - toSubstractTotalAssets; // 100 - 20 = 80
+                    const remainTotalAssets = Number(user.total_assets) - verifiedPrice; // 100 - 50 = 50
 
                     if (Number(user.distributed_assets) > 0) {
                         scoCashFlow.push({
@@ -13327,7 +13327,7 @@ class Controller {
                         wallet_type: 3, // 资产宝
                         model: 'SCOInterbankPackageHistory',
                         type: `购买上合组织银联体`,
-                        amount: toSubstractTotalAssets,
+                        amount: verifiedPrice,
                         before_amount: Number(user.total_assets),
                         after_amount: remainTotalAssets,
                         flow_status: 'OUT',
