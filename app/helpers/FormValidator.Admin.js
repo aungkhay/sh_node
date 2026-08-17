@@ -445,8 +445,8 @@ exports.update_wallet = () => {
         check('walletType')
             .not().isEmpty().withMessage('钱包类型不能为空')
             .bail()
-            .isIn([1,2,3,4])
-            .withMessage('钱包类型必须是 1、2、3 或 4'),
+            .isIn([1,2,3,4,5])
+            .withMessage('钱包类型必须是 1、2、3、4 或 5'),
         check('addOrSubstract')
             .not().isEmpty().withMessage('操作类型不能为空')
             .bail()
