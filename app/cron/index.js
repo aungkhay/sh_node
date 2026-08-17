@@ -5697,17 +5697,17 @@ class CronJob {
                         //     after_amount: Number(user.balance) + Number(history.asset_fund),
                         //     flow_status: 'IN',
                         // },
-                        {
-                            user_id: user.id,
-                            relation: user.relation,
-                            wallet_type: 3, // 3-资产宝
-                            model: 'AssetDistributionPackageEarn',
-                            type: '资产宝发放收益',
-                            amount: history.asset_fund,
-                            before_amount: user.total_assets,
-                            after_amount: Number(user.total_assets) + Number(history.asset_fund),
-                            flow_status: 'IN',
-                        },
+                        // {
+                        //     user_id: user.id,
+                        //     relation: user.relation,
+                        //     wallet_type: 3, // 3-资产宝
+                        //     model: 'AssetDistributionPackageEarn',
+                        //     type: '资产宝发放收益',
+                        //     amount: history.asset_fund,
+                        //     before_amount: user.total_assets,
+                        //     after_amount: Number(user.total_assets) + Number(history.asset_fund),
+                        //     flow_status: 'IN',
+                        // },
                         {
                             user_id: user.id,
                             relation: user.relation,
@@ -5724,7 +5724,7 @@ class CronJob {
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await user.increment({ 
                         // balance: Number(history.asset_fund), 
-                        total_assets: Number(history.asset_fund), 
+                        // total_assets: Number(history.asset_fund), 
                         distributed_assets: Number(history.asset_fund) 
                     }, { transaction: t });
                     await history.update({ is_returned_fund: 1, return_fund_date: new Date(), is_returned_fund_stuck: 0 }, { transaction: t });
@@ -5858,7 +5858,7 @@ class CronJob {
             for (const row of rows) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'total_assets'] });
+                    const user = await User.findByPk(row.user_id, { attributes: ['id', 'relation', 'total_assets', 'distributed_assets'] });
                     if (!user) {
                         console.log(`User ID ${row.user_id} not found. Skipping...`);
                         await t.rollback();
@@ -5877,32 +5877,48 @@ class CronJob {
                         await row.update({ is_finished: 1 }, { transaction: t });
                     }
 
+                    const dailyEarn = Number(row.daily_earn)
                     await AssetEarnPackageEarn.create({
                         user_id: user.id,
                         relation: user.relation,
                         package_id: row.package_id,
                         package_history_id: row.id,
-                        amount: row.daily_earn,
+                        amount: dailyEarn,
                     }, { transaction: t });
 
-                    await CashFlow.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 3, // 3-资产宝
-                        model: 'AssetEarnPackageEarn',
-                        type: '资产宝收益',
-                        amount: row.daily_earn,
-                        before_amount: user.total_assets,
-                        after_amount: Number(user.total_assets) + Number(row.daily_earn),
-                        flow_status: 'IN',
-                        description: '每日收益',
-                    }, { transaction: t });
+                    const cashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 3, // 3-资产宝
+                            model: 'AssetEarnPackageEarn',
+                            type: '资产宝收益',
+                            amount: dailyEarn,
+                            before_amount: user.total_assets,
+                            after_amount: Number(user.total_assets) + dailyEarn,
+                            flow_status: 'IN',
+                            description: '每日收益',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'AssetEarnPackageEarn',
+                            type: '资产宝收益',
+                            amount: dailyEarn,
+                            before_amount: user.distributed_assets,
+                            after_amount: Number(user.distributed_assets) + dailyEarn,
+                            flow_status: 'IN',
+                            description: '每日收益',
+                        }
+                    ];
+                    await CashFlow.bulkCreate(cashflows, { transaction: t })
 
-                    await user.increment({ total_assets: Number(row.daily_earn) }, { transaction: t });
+                    await user.increment({ total_assets: dailyEarn, distributed_assets: dailyEarn }, { transaction: t });
 
                     await t.commit();
 
-                    commonLogger(`[RELEASE_ASSET_EARN][HISTORY_ID: ${row.id}]: Released asset earn - ${Number(row.daily_earn)} to User ID ${user.id}`);
+                    commonLogger(`[RELEASE_ASSET_EARN][HISTORY_ID: ${row.id}]: Released asset earn - ${dailyEarn} to User ID ${user.id}`);
 
                 } catch (error) {
                     await t.rollback();
