@@ -13273,6 +13273,20 @@ class Controller {
                 const scoCashFlow = [];
                 if (Number(user.distributed_assets) > verifiedPrice) {
                     // if distributed_assets is 60
+                    const remainTotalAssets = Number(user.total_assets) - verifiedPrice;
+                    scoCashFlow.push({
+                        relation: user.relation,
+                        user_id: user.id,
+                        wallet_type: 3, // 资产宝
+                        model: 'SCOInterbankPackageHistory',
+                        type: `购买上合组织银联体`,
+                        amount: verifiedPrice,
+                        before_amount: Number(user.total_assets),
+                        after_amount: remainTotalAssets,
+                        flow_status: 'OUT',
+                        description: `清验资金`,
+                    });
+
                     const remainDistributedAssets = Number(user.distributed_assets) - verifiedPrice; // 10
                     scoCashFlow.push({
                         relation: user.relation,
@@ -13287,22 +13301,26 @@ class Controller {
                         description: `清验资金`,
                     });
                     userUpdates.distributed_assets = remainDistributedAssets;
+                    userUpdates.total_assets = remainTotalAssets
                 } else {
                     const toSubstractTotalAssets = verifiedPrice - Number(user.distributed_assets); // 50 - 30 = 20
                     const remainTotalAssets = Number(user.total_assets) - toSubstractTotalAssets; // 100 - 20 = 80
 
-                    scoCashFlow.push({
-                        relation: user.relation,
-                        user_id: user.id,
-                        wallet_type: 4, // 分发释放金额
-                        model: 'SCOInterbankPackageHistory',
-                        type: `购买上合组织银联体`,
-                        amount: user.distributed_assets,
-                        before_amount: Number(user.distributed_assets),
-                        after_amount: 0,
-                        flow_status: 'OUT',
-                        description: `清验资金`,
-                    });
+                    if (Number(user.distributed_assets) > 0) {
+                        scoCashFlow.push({
+                            relation: user.relation,
+                            user_id: user.id,
+                            wallet_type: 4, // 分发释放金额
+                            model: 'SCOInterbankPackageHistory',
+                            type: `购买上合组织银联体`,
+                            amount: user.distributed_assets,
+                            before_amount: Number(user.distributed_assets),
+                            after_amount: 0,
+                            flow_status: 'OUT',
+                            description: `清验资金`,
+                        });
+                    }
+                    
                     scoCashFlow.push({
                         relation: user.relation,
                         user_id: user.id,
