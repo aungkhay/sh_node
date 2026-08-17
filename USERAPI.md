@@ -1079,4 +1079,10 @@ const url = `${baseURL}/sco-interbank-packages/earn-history`;
 
 // [GET] Bonuses History
 const url = `${baseURL}/sco-interbank-packages/bonus-history`;
+
+// Transfer Verified Assets to balance
+const url =`${baseURL}/sco-interbank-packages/transfer-verified-assets-to-balance`;
+const data = {
+    payment_password: ''
+}
 ```

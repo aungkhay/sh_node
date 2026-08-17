@@ -13043,7 +13043,9 @@ class Controller {
                 await this.redisHelper.setValue('sco_interbank_package_description', package_description);
             }
 
+            const user = await User.findByPk(userId, { attributes: ['sco_verified_assets'], useMaster: true });
             const data = {
+                verified_assets: Number(user.sco_verified_assets),
                 package_description: package_description,
                 package_period: package_period,
                 packages: packages,
@@ -13517,6 +13519,76 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
         } catch (error) {
             errLogger(`[SCO_INTERBANK_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    TRANSFER_SCO_VERIFIED_ASSETS_TO_BALANCE = async (req, res) => {
+        const lockKey = `lock:transfer-sco-verified-assets-to-balance:${req.user_id}`;
+        let redisLocked = false;
+        try {
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            let canTransfer = await this.redisHelper.getValue(`sco_interbank_package_can_transfer_to_balance`);
+            if (!canTransfer) {
+                const conf = await Config.findOne({ where: { type: 'sco_interbank_package_can_transfer_to_balance' }, attributes: ['val'] });
+                if (conf) {
+                    canTransfer = conf.val;
+                    await this.redisHelper.setValue(`sco_interbank_package_can_transfer_to_balance`, conf.val);
+                }
+            }
+            if (Number(canTransfer) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '资金清验完成 10 个自然日后，方可转出', {});
+            }
+
+            const user = await User.findByPk(req.user_id, { attributes: ['id', 'relation', 'sco_verified_assets', 'balance', 'payment_password'] });
+
+            const { payment_password } = req.body;
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+            
+            const amountToTransfer = Number(user.sco_verified_assets);
+            if (amountToTransfer <= 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '没有可转出的资金', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: user.id,
+                    wallet_type: 2,
+                    model: 'SCOInterbankPackageHistory',
+                    type: `转出上合组织银联体已清验资金`,
+                    amount: amountToTransfer,
+                    before_amount: Number(user.balance),
+                    after_amount: Number(user.balance) + amountToTransfer,
+                    flow_status: 'IN',
+                }, { transaction: t });
+
+                await user.update({
+                    sco_verified_assets: 0,
+                    balance: Number(user.balance) + amountToTransfer
+                }, { transaction: t });
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '转出成功', {});
+            } catch (error) {
+                await t.rollback();
+                errLogger(`[TRANSFER_SCO_VERIFIED_ASSETS_TO_BALANCE][${req.user_id}]: ${error.stack}`);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '转出失败', {});
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_SCO_VERIFIED_ASSETS_TO_BALANCE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

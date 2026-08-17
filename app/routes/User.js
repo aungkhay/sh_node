@@ -160,6 +160,7 @@ class UserRoute extends express.Router {
         this.get('/sco-interbank-packages/history', middleware.isLoggedIn, HomeCtrl.SCO_INTERBANK_PACKAGE_HISTORY);
         this.get('/sco-interbank-packages/earn-history', middleware.isLoggedIn, HomeCtrl.SCO_INTERBANK_PACKAGE_EARN_HISTORY);
         this.get('/sco-interbank-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.SCO_INTERBANK_PACKAGE_BONUS_HISTORY);
+        this.post('/sco-interbank-packages/transfer-verified-assets-to-balance', FormValidator.transfer_sco_verified_assets_to_balance(), middleware.isLoggedIn, HomeCtrl.TRANSFER_SCO_VERIFIED_ASSETS_TO_BALANCE);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

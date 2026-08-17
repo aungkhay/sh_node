@@ -100,6 +100,7 @@ class CronJob {
         cron.schedule('0 3 * * *', this.ASSET_DAILY_RELEASE_ORIGINAL_PRICE).start();
         cron.schedule('30 3 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
         cron.schedule('0 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
+        cron.schedule('30 4 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6150,6 +6151,43 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[ASSET_DAILY_RELEASE_EXTRA_PACKAGE]: ${error.stack}`);
+        }
+    }
+
+    RELEASE_SCO_VERIFIED_ASSETS = async () => {
+        try {
+            const today = moment().format('YYYY-MM-DD');
+            const history = await SCOInterbankPackageHistory.findAll({
+                where: {
+                    is_finished: 0,
+                    will_finish_at: {
+                        [Op.between]: [`${today} 00:00:00`, `${today} 23:59:59`]
+                    }
+                },
+                attributes: ['id', 'user_id', 'amount'],
+            });
+
+            for (const row of history) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(row.user_id, { attributes: ['id'] });
+                    if (!user) {
+                        console.log(`User ID ${row.user_id} not found. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+
+                    await user.increment({ sco_verified_assets: Number(row.amount) }, { transaction: t });
+                    await row.update({ is_finished: 1 }, { transaction: t });
+                    await t.commit();
+                    console.log(`[RELEASE_SCO_VERIFIED_ASSETS][HISTORY_ID: ${row.id}]: Released verified assets - ${Number(row.amount)} to User ID ${user.id}`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[RELEASE_SCO_VERIFIED_ASSETS][HISTORY_ID: ${row.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[RELEASE_SCO_VERIFIED_ASSETS]: ${error.stack}`);
         }
     }
 
