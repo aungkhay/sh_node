@@ -1059,3 +1059,24 @@ const url = `${baseURL}/asset-daily-release-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/asset-daily-release-packages/bonus-history`;
 ```
+
+### 上合组织银联体
+```js
+// [GET] Packages
+const url = `${baseURL}/sco-interbank-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/sco-interbank-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/sco-interbank-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/sco-interbank-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/sco-interbank-packages/bonus-history`;
+```

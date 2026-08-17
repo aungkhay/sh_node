@@ -409,6 +409,12 @@ exports.buy_asset_daily_release_package = () => {
     ]
 }
 
+exports.buy_sco_interbank_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
 exports.transfer_authorize_letter = () => {
     return [
         check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty(),

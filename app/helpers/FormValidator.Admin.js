@@ -1311,10 +1311,6 @@ exports.create_sco_interbank_package = () => {
             .bail()
             .isNumeric()
             .withMessage('总数量必须是数字'),
-        // buy_one_get_quantity 
-        check('buy_one_get_quantity').optional({ checkFalsy: true })
-            .isNumeric()
-            .withMessage('买一赠一数量必须是数字'),
         // status 1-在售, 2-下架, 3-售罄
         check('status').not().isEmpty().withMessage('状态不能为空')
             .bail()

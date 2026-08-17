@@ -2238,7 +2238,6 @@ const data = {
     purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
     quantity_limit: 0, // optional 限购数量
     total_quantity: 100, // 总发售数量
-    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
     description: '',
     status: 1, // 1-在售, 2-下架, 3-售罄
     tag: ''

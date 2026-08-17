@@ -389,7 +389,7 @@ module.exports = async () => {
             data_type: 'string'
         },
         {
-            type: 'sco_interbank_package_daily_release_qty',
+            type: 'sco_interbank_package_description',
             title: '上合组织银联体 - 描述',
             val: '<p></p>',
             description: '-',

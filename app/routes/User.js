@@ -154,6 +154,12 @@ class UserRoute extends express.Router {
         this.get('/asset-daily-release-packages/history', middleware.isLoggedIn, HomeCtrl.ASSET_DAILY_RELEASE_PACKAGE_HISTORY);
         this.get('/asset-daily-release-packages/earn-history', middleware.isLoggedIn, HomeCtrl.ASSET_DAILY_RELEASE_PACKAGE_EARN_HISTORY);
         this.get('/asset-daily-release-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.ASSET_DAILY_RELEASE_PACKAGE_BONUS_HISTORY);
+        // SCO Interbank Routes
+        this.get('/sco-interbank-packages', middleware.isLoggedIn, HomeCtrl.SCO_INTERBANK_PACKAGE);
+        this.post('/sco-interbank-packages/:id/buy', FormValidator.buy_sco_interbank_package(), middleware.isLoggedIn, HomeCtrl.BUY_SCO_INTERBANK_PACKAGE);
+        this.get('/sco-interbank-packages/history', middleware.isLoggedIn, HomeCtrl.SCO_INTERBANK_PACKAGE_HISTORY);
+        this.get('/sco-interbank-packages/earn-history', middleware.isLoggedIn, HomeCtrl.SCO_INTERBANK_PACKAGE_EARN_HISTORY);
+        this.get('/sco-interbank-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.SCO_INTERBANK_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);
