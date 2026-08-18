@@ -13280,7 +13280,11 @@ class Controller {
                 const pkgHistory = [];
 
                 // eg. total_assets = 100, distributed_assets = 30, transfer_out_assets_rate = 50%
-                const verifiedPrice = Number((Number(user.total_assets) * Number(aPackage.transfer_out_assets_rate) * 0.01).toFixed(8)); // 50
+                // const verifiedPrice = Number((Number(user.total_assets) * Number(aPackage.transfer_out_assets_rate) * 0.01).toFixed(8)); // 50
+                const verifiedPrice = new Decimal(Number(user.total_assets))
+                                    .times(Number(aPackage.transfer_out_assets_rate))
+                                    .times(0.01)
+                                    .toNumber();
                 const obj = {
                     relation: user.relation,
                     user_id: user.id,
