@@ -13043,12 +13043,34 @@ class Controller {
                 await this.redisHelper.setValue('sco_interbank_package_description', package_description);
             }
 
+            let can_transfer = await this.redisHelper.getValue('sco_interbank_package_can_transfer_to_balance');
+            if (!package_description) {
+                const conf = await Config.findOne({ where: { type: 'sco_interbank_package_can_transfer_to_balance' } });
+                package_description = conf ? conf.val : '';
+                await this.redisHelper.setValue('sco_interbank_package_can_transfer_to_balance', package_description);
+            }
+
             const user = await User.findByPk(userId, { attributes: ['sco_verified_assets'], useMaster: true });
+            const sumVerifiedAssets = await SCOInterbankPackageHistory.sum('verified_price', {
+                where: {
+                    user_id: userId,
+                    is_finished: 0
+                }
+            });
+            let verified_assets = 0;
+            if (Number(user.sco_verified_assets) > 0) {
+                verified_assets = Number(user.sco_verified_assets) + Number(sumVerifiedAssets || 0)
+            } else {
+                verified_assets = Number(sumVerifiedAssets || 0);
+            }
+
             const data = {
-                verified_assets: Number(user.sco_verified_assets),
+                verified_assets: verified_assets,
                 package_description: package_description,
                 package_period: package_period,
                 packages: packages,
+                can_transfer: Number(can_transfer) == 1,
+                dialog_message: Number(can_transfer) == 1 ? '' : '资金清验完成10个自然日内，方可统一转出。'
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
