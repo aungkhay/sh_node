@@ -54,7 +54,7 @@ SCOInterbankPackageHistory.init({
         comment: '周期(天)',
     },
     verified_price: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(10, 8),
         allowNull: false,
         defaultValue: 0.00,
         comment: '已清验资金',
