@@ -121,7 +121,7 @@ class Controller {
                 parent_id: parent.id,
                 relation: `-`,
                 rank_id: rank.id,
-                total_assets: totalAssetGift, // 赠送资产宝资产
+                // total_assets: totalAssetGift, // 赠送资产宝资产
             }
 
             const t = await db.transaction();
@@ -133,18 +133,18 @@ class Controller {
                 /* ===============================
                 * ✅ Give 50000 total_assets
                 * =============================== */
-                await CashFlow.create({
-                    user_id: user.id,
-                    relation: relation,
-                    wallet_type: 3, // 资产宝
-                    model: 'User',
-                    type: '赠送资产宝资产',
-                    amount: totalAssetGift,
-                    before_amount: 0,
-                    after_amount: totalAssetGift,
-                    description: '可进行分发提现',
-                    flow_status: 'IN',
-                }, { transaction: t });
+                // await CashFlow.create({
+                //     user_id: user.id,
+                //     relation: relation,
+                //     wallet_type: 3, // 资产宝
+                //     model: 'User',
+                //     type: '赠送资产宝资产',
+                //     amount: totalAssetGift,
+                //     before_amount: 0,
+                //     after_amount: totalAssetGift,
+                //     description: '可进行分发提现',
+                //     flow_status: 'IN',
+                // }, { transaction: t });
 
                 await t.commit();
 
