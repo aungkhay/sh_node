@@ -421,6 +421,12 @@ exports.transfer_sco_verified_assets_to_balance = () => {
     ]
 }
 
+exports.buy_approval_fund_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
 exports.transfer_authorize_letter = () => {
     return [
         check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty(),

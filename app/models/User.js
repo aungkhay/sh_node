@@ -335,6 +335,12 @@ User.init({
         defaultValue: 0,
         comment: '上合组织银联体已清验资金'
     },
+    approval_fund: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '审批资金'
+    },
     total_assets_earn: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,

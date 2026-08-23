@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage } = require('../models');
 const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -101,6 +101,7 @@ class CronJob {
         // cron.schedule('30 3 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
         // cron.schedule('0 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
         cron.schedule('20 1 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start();
+        cron.schedule('0 2 * * *', this.TRANSFER_APPROVAL_FUND_BALANCE).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6205,6 +6206,75 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RELEASE_SCO_VERIFIED_ASSETS]: ${error.stack}`);
+        }
+    }
+
+    TRANSFER_APPROVAL_FUND_BALANCE = async () => {
+        try {
+            const today = moment().format('YYYY-MM-DD');
+            const histories = await ApprovalFundPackage.findAll({
+                where: {
+                    is_finished: 0,
+                    will_finish_at: {
+                        [Op.between]: [`${today} 00:00:00`, `${today} 23:59:59`]
+                    }
+                },
+                attributes: ['id', 'user_id', 'approval_fund'],
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'approval_fund'] });
+                    if (!user) {
+                        console.log(`User ID ${history.user_id} not found. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+
+                    if (Number(user.approval_fund) < Number(history.approval_fund)) {
+                        console.log(`User ID ${user.id} has insufficient approval_fund. Required: ${Number(history.approval_fund)}, Available: ${Number(user.approval_fund)}. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+
+                    const amount = Number(history.approval_fund) == 0 ? Number(user.approval_fund) : Number(history.approval_fund);
+                    await user.increment({ balance: amount, approval_fund: -amount }, { transaction: t });
+
+                    const cashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 2-余额
+                            model: 'ApprovalFundPackageHistory',
+                            type: '审批资金包释放',
+                            amount: amount,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + amount,
+                            flow_status: 'IN',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 5, // 审批资金 
+                            model: 'ApprovalFundPackageHistory',
+                            type: '审批资金包释放',
+                            amount: amount,
+                            before_amount: user.approval_fund,
+                            after_amount: Number(user.approval_fund) - amount,
+                            flow_status: 'OUT',
+                        },
+                    ];
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+                    await t.commit();
+
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[TRANSFER_APPROVAL_FUND_BALANCE][HISTORY_ID: ${history.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[TRANSFER_APPROVAL_FUND_BALANCE]: ${error.stack}`);
         }
     }
 

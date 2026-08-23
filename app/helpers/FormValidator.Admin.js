@@ -1323,3 +1323,44 @@ exports.create_sco_interbank_package = () => {
             .withMessage('标签必须是数组')
     ]
 }
+
+exports.create_approval_fund_package = () => {
+    return [
+        check('product_name').not().isEmpty().withMessage('产品名称不能为空'),
+        check('price').not().isEmpty().withMessage('审批费不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('审批费必须是数字'),
+        check('approval_fund').not().isEmpty().withMessage('审批资金不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('审批资金必须是数字'),
+        check('period').not().isEmpty().withMessage('周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('周期必须是正整数'),
+        // purchase_limit (NONE,DAILY,TOTAL)
+        check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
+            .bail()
+            .isIn(['NONE', 'DAILY', 'TOTAL'])
+            .withMessage('购买限制无效'),
+        // quantity_limit
+        check('quantity_limit').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('购买数量限制必须是数字'),
+        // total_quantity
+        check('total_quantity').not().isEmpty().withMessage('总数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('总数量必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+        // tag optional => array ['NEW', 'HOT', 'RECOMMENDED']
+        check('tag')
+            .optional({ checkFalsy: true })
+            .isArray({ min: 1 })
+            .withMessage('标签必须是数组')
+    ]
+}

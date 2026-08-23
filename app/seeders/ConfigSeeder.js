@@ -402,6 +402,20 @@ module.exports = async () => {
             description: '0 - 不可转入 | 1 - 可转入',
             data_type: 'boolean'
         },
+        {
+            type: 'approval_fund_package_period',
+            title: '银联体审批 - 申报时间',
+            val: '2026-08-28 00:00:00|2026-09-01 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'approval_fund_package_description',
+            title: '银联体审批 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
     ];
 
     const count = await Config.count();

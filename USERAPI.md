@@ -1086,3 +1086,21 @@ const data = {
     payment_password: ''
 }
 ```
+
+### 银联体审批
+```js
+// [GET] Packages
+const url = `${baseURL}/approval-fund-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/approval-fund-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/approval-fund-packages/history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/approval-fund-packages/bonus-history`;
+```

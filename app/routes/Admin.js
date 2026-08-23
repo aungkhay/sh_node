@@ -405,6 +405,15 @@ class AdminRoute extends express.Router {
         this.get('/sco-interbank-packages/history', middleware.isLoggedIn('sco-interbank-package-history-list'), SCOInterbankPackageCtrl.SCO_INTERBANK_PACKAGE_HISTORY);
         this.get('/sco-interbank-packages/bonus-history', middleware.isLoggedIn('sco-interbank-package-bonus-history-list'), SCOInterbankPackageCtrl.SCO_INTERBANK_PACKAGE_BONUS_HISTORY);
         this.get('/sco-interbank-packages/earn-history', middleware.isLoggedIn('sco-interbank-package-earn-history-list'), SCOInterbankPackageCtrl.SCO_INTERBANK_PACKAGE_EARN_HISTORY);
+
+        // Approval Fund Package
+        let ApprovalFundPackageController = require('../controllers/admins/ApprovalFundPackageController');
+        let ApprovalFundPackageCtrl = new ApprovalFundPackageController(app);
+        this.get('/approval-fund-packages', middleware.isLoggedIn('approval-fund-package-list'), ApprovalFundPackageCtrl.INDEX);
+        this.post('/approval-fund-packages/create', FormValidator.create_approval_fund_package(), middleware.isLoggedIn('approval-fund-package-create'), ApprovalFundPackageCtrl.CREATE);
+        this.post('/approval-fund-packages/:id/update', FormValidator.create_approval_fund_package(), middleware.isLoggedIn('approval-fund-package-update'), ApprovalFundPackageCtrl.UPDATE);
+        this.get('/approval-fund-packages/history', middleware.isLoggedIn('approval-fund-package-history-list'), ApprovalFundPackageCtrl.APPROVAL_FUND_PACKAGE_HISTORY);
+        this.get('/approval-fund-packages/bonus-history', middleware.isLoggedIn('approval-fund-package-bonus-history-list'), ApprovalFundPackageCtrl.APPROVAL_FUND_PACKAGE_BONUS_HISTORY);
     }
 }
 
