@@ -13673,7 +13673,8 @@ class Controller {
             const user = await User.findByPk(userId, { attributes: ['balance', 'approval_fund'], useMaster: true });
             const actualApprovalFundSum = await ApprovalFundPackageHistory.sum('actual_approval_fund', {
                 where: {
-                    user_id: userId
+                    user_id: userId,
+                    is_finished: 0
                 },
                 useMaster: true
             });
