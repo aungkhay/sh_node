@@ -6182,7 +6182,7 @@ class CronJob {
                         [Op.between]: [`${today} 00:00:00`, `${today} 23:59:59`]
                     }
                 },
-                attributes: ['id', 'user_id', 'amount'],
+                attributes: ['id', 'user_id', 'verified_price'],
             });
 
             for (const row of history) {
@@ -6195,10 +6195,10 @@ class CronJob {
                         continue;
                     }
 
-                    await user.increment({ sco_verified_assets: Number(row.amount) }, { transaction: t });
+                    await user.increment({ sco_verified_assets: Number(row.verified_price) }, { transaction: t });
                     await row.update({ is_finished: 1 }, { transaction: t });
                     await t.commit();
-                    console.log(`[RELEASE_SCO_VERIFIED_ASSETS][HISTORY_ID: ${row.id}]: Released verified assets - ${Number(row.amount)} to User ID ${user.id}`);
+                    console.log(`[RELEASE_SCO_VERIFIED_ASSETS][HISTORY_ID: ${row.id}]: Released verified assets - ${Number(row.verified_price)} to User ID ${user.id}`);
                 } catch (error) {
                     await t.rollback();
                     errLogger(`[RELEASE_SCO_VERIFIED_ASSETS][HISTORY_ID: ${row.id}]: ${error.stack}`);
