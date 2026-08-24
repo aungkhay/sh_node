@@ -13671,16 +13671,15 @@ class Controller {
             }
 
             const user = await User.findByPk(userId, { attributes: ['balance', 'approval_fund'], useMaster: true });
-            const approvalFundSum = await ApprovalFundPackageHistory.sum('approval_fund', {
+            const actualApprovalFundSum = await ApprovalFundPackageHistory.sum('actual_approval_fund', {
                 where: {
-                    user_id: userId,
-                    is_finished: 1
+                    user_id: userId
                 },
                 useMaster: true
             });
             const data = {
                 balance: Number(user.approval_fund || 0),
-                approval_fund: Number(approvalFundSum || 0),
+                approval_fund: Number(actualApprovalFundSum || 0),
                 package_description: package_description,
                 package_period: package_period,
                 packages: packages,
@@ -13817,7 +13816,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'payment_password', 'initial_buy_product_date', 'total_assets', 'distributed_assets'],
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'approval_fund', 'payment_password', 'initial_buy_product_date', 'total_assets', 'distributed_assets'],
                 useMaster: true
             });
             if (!user.kyc) {
@@ -13890,12 +13889,35 @@ class Controller {
                     userUpdates.initial_buy_product_date = new Date();
                 }
 
+                let actualApprovalFund = 0;
+                if (Number(aPackage.approval_fund) === 0 || Number(aPackage.approval_fund) > Number(user.approval_fund)) {
+                    // move all
+                    actualApprovalFund = Number(user.approval_fund);
+                } else {
+                    actualApprovalFund = Number(aPackage.approval_fund);
+                }
+                if (actualApprovalFund > 0) {
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 5, // 审批资金 
+                        model: 'ApprovalFundPackageHistory',
+                        type: '银联体审批',
+                        amount: actualApprovalFund,
+                        before_amount: user.approval_fund,
+                        after_amount: Number(user.approval_fund) - actualApprovalFund,
+                        flow_status: 'OUT',
+                    }, { transaction: t });
+                    userUpdates.approval_fund = Number(user.approval_fund) - actualApprovalFund;
+                }
+
                 const pkgHistoryItem = await ApprovalFundPackageHistory.create({
                     relation: user.relation,
                     user_id: user.id,
                     package_id: aPackage.id,
                     price: aPackage.price,
                     approval_fund: aPackage.approval_fund,
+                    actual_approval_fund: actualApprovalFund,
                     period: aPackage.period,
                     will_finish_at: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
                 }, { transaction: t });

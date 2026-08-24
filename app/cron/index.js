@@ -6219,7 +6219,7 @@ class CronJob {
                         [Op.between]: [`${today} 00:00:00`, `${today} 23:59:59`]
                     }
                 },
-                attributes: ['id', 'user_id', 'approval_fund'],
+                attributes: ['id', 'user_id', 'actual_approval_fund'],
             });
 
             for (const history of histories) {
@@ -6232,25 +6232,13 @@ class CronJob {
                         continue;
                     }
 
-                    if (Number(user.approval_fund) <= 0) {
+                    if (Number(history.actual_approval_fund) <= 0) {
                         console.log(`User ID ${user.id} has no approval fund to transfer. Skipping...`);
                         await t.rollback();
                         continue;
                     }
 
-                    let amount = 0;
-                    if (Number(history.approval_fund) === 0 || Number(history.approval_fund) > Number(user.approval_fund)) {
-                        // move all approval fund to balance
-                        amount = Number(user.approval_fund);
-                    } else {
-                        amount = Number(history.approval_fund);
-                    }
-                    if (amount <= 0) {
-                        console.log(`User ID ${user.id} has no approval fund to transfer. Skipping...`);
-                        await t.rollback();
-                        continue;
-                    }
-
+                    const amount = Number(history.actual_approval_fund);
                     await user.increment({ balance: amount, approval_fund: -amount }, { transaction: t });
                     await history.update({ is_finished: 1 }, { transaction: t });
 
