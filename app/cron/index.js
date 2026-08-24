@@ -6232,14 +6232,21 @@ class CronJob {
                         continue;
                     }
 
-                    if (Number(user.approval_fund) < Number(history.approval_fund)) {
-                        console.log(`User ID ${user.id} has insufficient approval_fund. Required: ${Number(history.approval_fund)}, Available: ${Number(user.approval_fund)}. Skipping...`);
+                    let amount = 0;
+                    if (Number(history.approval_fund) === 0 || Number(history.approval_fund) > Number(user.approval_fund)) {
+                        // move all approval fund to balance
+                        amount = Number(user.approval_fund);
+                    } else {
+                        amount = Number(history.approval_fund);
+                    }
+                    if (amount <= 0) {
+                        console.log(`User ID ${user.id} has no approval fund to transfer. Skipping...`);
                         await t.rollback();
                         continue;
                     }
 
-                    const amount = Number(history.approval_fund) == 0 ? Number(user.approval_fund) : Number(history.approval_fund);
                     await user.increment({ balance: amount, approval_fund: -amount }, { transaction: t });
+                    await history.update({ is_finished: 1 }, { transaction: t });
 
                     const cashflows = [
                         {
