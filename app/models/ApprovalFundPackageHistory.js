@@ -53,6 +53,12 @@ ApprovalFundPackageHistory.init({
         defaultValue: 0,
         comment: '审批资金 (0为全额审批)',
     },
+    actual_approval_fund: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '实际审批资金',
+    },
     period: {
         type: DataTypes.INTEGER,
         allowNull: false,
