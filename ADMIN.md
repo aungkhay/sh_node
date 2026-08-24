@@ -2296,9 +2296,9 @@ const url = `${baseURL}/approval-fund-packages/create`;
 const url = `${baseURL}/approval-fund-packages/${pkgID}/update`;
 const data = {
     product_name: '-',
-    price: 20, // 清验资金
-    period: 45, // 清验期
-    transfer_out_assets_rate: 50, // 转出资产宝余额
+    price: 20, // 审批费
+    period: 45, // 清验周期
+    approval_fund: 50000, // 审批资金
     purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
     quantity_limit: 0, // optional 限购数量
     total_quantity: 100, // 总发售数量

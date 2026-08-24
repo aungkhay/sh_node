@@ -13671,9 +13671,16 @@ class Controller {
             }
 
             const user = await User.findByPk(userId, { attributes: ['balance', 'approval_fund'], useMaster: true });
+            const approvalFundSum = await ApprovalFundPackageHistory.sum('approval_fund', {
+                where: {
+                    user_id: userId,
+                    is_finished: 1
+                },
+                useMaster: true
+            });
             const data = {
-                balance: Number(user.balance || 0),
-                approval_fund: Number(user.approval_fund || 0),
+                balance: Number(user.approval_fund || 0),
+                approval_fund: Number(approvalFundSum || 0),
                 package_description: package_description,
                 package_period: package_period,
                 packages: packages,
