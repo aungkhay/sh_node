@@ -6232,6 +6232,12 @@ class CronJob {
                         continue;
                     }
 
+                    if (Number(user.approval_fund) <= 0) {
+                        console.log(`User ID ${user.id} has no approval fund to transfer. Skipping...`);
+                        await t.rollback();
+                        continue;
+                    }
+
                     let amount = 0;
                     if (Number(history.approval_fund) === 0 || Number(history.approval_fund) > Number(user.approval_fund)) {
                         // move all approval fund to balance
