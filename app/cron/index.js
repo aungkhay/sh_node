@@ -6239,7 +6239,7 @@ class CronJob {
                     }
 
                     const amount = Number(history.actual_approval_fund);
-                    await user.increment({ balance: amount, approval_fund: -amount }, { transaction: t });
+                    await user.increment({ balance: amount }, { transaction: t });
                     await history.update({ is_finished: 1 }, { transaction: t });
 
                     const cashflows = [
