@@ -6254,20 +6254,22 @@ class CronJob {
                             after_amount: Number(user.balance) + amount,
                             flow_status: 'IN',
                         },
-                        {
-                            user_id: user.id,
-                            relation: user.relation,
-                            wallet_type: 5, // 审批资金 
-                            model: 'ApprovalFundPackageHistory',
-                            type: '审批资金包释放',
-                            amount: amount,
-                            before_amount: user.approval_fund,
-                            after_amount: Number(user.approval_fund) - amount,
-                            flow_status: 'OUT',
-                        },
+                        // {
+                        //     user_id: user.id,
+                        //     relation: user.relation,
+                        //     wallet_type: 5, // 审批资金 
+                        //     model: 'ApprovalFundPackageHistory',
+                        //     type: '审批资金包释放',
+                        //     amount: amount,
+                        //     before_amount: user.approval_fund,
+                        //     after_amount: Number(user.approval_fund) - amount,
+                        //     flow_status: 'OUT',
+                        // },
                     ];
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await t.commit();
+
+                    console.log(`[TRANSFER_APPROVAL_FUND_BALANCE][HISTORY_ID: ${history.id}]: Transferred approval fund - ${amount} to balance for User ID ${user.id}`);
 
                 } catch (error) {
                     await t.rollback();
