@@ -6213,6 +6213,11 @@ class CronJob {
         try {
             const today = moment().format('YYYY-MM-DD');
             const histories = await ApprovalFundPackageHistory.findAll({
+                include: {
+                    model: ApprovalFundPackage,
+                    as: 'package',
+                    attributes: ['product_name']
+                },
                 where: {
                     is_finished: 0,
                     will_finish_at: {
@@ -6253,6 +6258,7 @@ class CronJob {
                             before_amount: user.balance,
                             after_amount: Number(user.balance) + amount,
                             flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''}`,
                         },
                         // {
                         //     user_id: user.id,
