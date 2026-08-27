@@ -6220,6 +6220,9 @@ class CronJob {
                 },
                 where: {
                     is_finished: 0,
+                    actual_approval_fund: {
+                        [Op.gt]: 0
+                    },
                     will_finish_at: {
                         [Op.between]: [`${today} 00:00:00`, `${today} 23:59:59`]
                     }
@@ -6233,12 +6236,6 @@ class CronJob {
                     const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'approval_fund'] });
                     if (!user) {
                         console.log(`User ID ${history.user_id} not found. Skipping...`);
-                        await t.rollback();
-                        continue;
-                    }
-
-                    if (Number(history.actual_approval_fund) <= 0) {
-                        console.log(`User ID ${user.id} has no approval fund to transfer. Skipping...`);
                         await t.rollback();
                         continue;
                     }

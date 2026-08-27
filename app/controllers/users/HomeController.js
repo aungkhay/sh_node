@@ -13608,21 +13608,70 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                await CashFlow.create({
-                    relation: user.relation,
-                    user_id: user.id,
-                    wallet_type: 5, // 审批资金 
-                    model: 'SCOInterbankPackageHistory',
-                    type: `转出上合组织银联体已清验资金`,
-                    amount: amountToTransfer,
-                    before_amount: Number(user.approval_fund),
-                    after_amount: Number(user.approval_fund) + amountToTransfer,
-                    flow_status: 'IN',
-                }, { transaction: t });
+                let cashFlows = [
+                    {
+                        relation: user.relation,
+                        user_id: user.id,
+                        wallet_type: 5, // 审批资金 
+                        model: 'SCOInterbankPackageHistory',
+                        type: `转出上合组织银联体已清验资金`,
+                        amount: amountToTransfer,
+                        before_amount: Number(user.approval_fund),
+                        after_amount: Number(user.approval_fund) + amountToTransfer,
+                        flow_status: 'IN',
+                    },
+                ];
 
+                let beforeApprovalFund = Number(user.approval_fund) + amountToTransfer;
+                let remainApprovalFund = beforeApprovalFund;
+                const histories = await ApprovalFundPackageHistory.findAll({
+                    where: {
+                        user_id: user.id,
+                        actual_approval_fund: { [Op.gt]: 0 },
+                        is_finished: 0
+                    },
+                    attributes: ['id', 'approval_fund'],
+                    order: [['id', 'ASC']],
+                    transaction: t
+                });
+
+                for (const history of histories) {
+                    let actualApprovalFund = 0;
+                    let approvalFund = Number(history.approval_fund);
+                    if (approvalFund === 0 || approvalFund > beforeApprovalFund) {
+                        actualApprovalFund = beforeApprovalFund;
+                    } else {
+                        actualApprovalFund = approvalFund;
+                    }
+                    if (actualApprovalFund > 0) {
+
+                        remainApprovalFund -= actualApprovalFund; // after amount
+
+                        cashFlows.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 5, // 审批资金 
+                            model: 'ApprovalFundPackageHistory',
+                            type: '银联体审批',
+                            amount: actualApprovalFund,
+                            before_amount: beforeApprovalFund,
+                            after_amount: remainApprovalFund,
+                            flow_status: 'OUT',
+                        });
+
+                        
+                        beforeApprovalFund = remainApprovalFund;
+                        history.update({ 
+                            actual_approval_fund: actualApprovalFund,
+                            remark: '购买后转入审批资金',
+                        }, { transaction: t });
+                    }
+                }
+
+                await CashFlow.bulkCreate(cashFlows, { transaction: t });
                 await user.update({
                     sco_verified_assets: 0,
-                    approval_fund: Number(user.approval_fund) + amountToTransfer
+                    approval_fund: remainApprovalFund
                 }, { transaction: t });
 
                 await t.commit();
