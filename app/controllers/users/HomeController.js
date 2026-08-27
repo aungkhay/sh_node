@@ -13627,7 +13627,7 @@ class Controller {
                 const histories = await ApprovalFundPackageHistory.findAll({
                     where: {
                         user_id: user.id,
-                        actual_approval_fund: { [Op.gt]: 0 },
+                        actual_approval_fund: 0,
                         is_finished: 0
                     },
                     attributes: ['id', 'approval_fund'],
