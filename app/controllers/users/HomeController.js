@@ -13293,6 +13293,7 @@ class Controller {
                     period: aPackage.period,
                     verified_price: verifiedPrice,
                     will_finish_at: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                    is_finished: 1
                 }
                 const pkgHistoryItem = await SCOInterbankPackageHistory.create(obj, { transaction: t });
 
@@ -13364,6 +13365,7 @@ class Controller {
                     userUpdates.total_assets = remainTotalAssets;
                 }
 
+                userUpdates.sco_verified_assets = verifiedPrice + aPackage.price;
                 await CashFlow.bulkCreate(scoCashFlow, { transaction: t });
                 await user.update(userUpdates, { transaction: t });
 
