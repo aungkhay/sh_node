@@ -13365,7 +13365,7 @@ class Controller {
                     userUpdates.total_assets = remainTotalAssets;
                 }
 
-                userUpdates.sco_verified_assets = verifiedPrice + aPackage.price;
+                userUpdates.sco_verified_assets = verifiedPrice + Number(aPackage.price);
                 await CashFlow.bulkCreate(scoCashFlow, { transaction: t });
                 await user.update(userUpdates, { transaction: t });
 
