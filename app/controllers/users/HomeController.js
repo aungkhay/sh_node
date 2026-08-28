@@ -13204,7 +13204,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'payment_password', 'initial_buy_product_date', 'total_assets', 'distributed_assets'],
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'payment_password', 'initial_buy_product_date', 'total_assets', 'distributed_assets', 'sco_verified_assets'],
                 useMaster: true
             });
             if (!user.kyc) {
@@ -13365,7 +13365,7 @@ class Controller {
                     userUpdates.total_assets = remainTotalAssets;
                 }
 
-                userUpdates.sco_verified_assets = verifiedPrice + Number(aPackage.price);
+                userUpdates.sco_verified_assets = Number(user.sco_verified_assets) + verifiedPrice + Number(aPackage.price);
                 await CashFlow.bulkCreate(scoCashFlow, { transaction: t });
                 await user.update(userUpdates, { transaction: t });
 
@@ -13620,6 +13620,7 @@ class Controller {
                         before_amount: Number(user.approval_fund),
                         after_amount: Number(user.approval_fund) + amountToTransfer,
                         flow_status: 'IN',
+                        description: `包含本金`,
                     },
                 ];
 
@@ -13962,6 +13963,17 @@ class Controller {
                     userUpdates.approval_fund = Number(user.approval_fund) - actualApprovalFund;
                 }
 
+                // will_finish_at not include sat and sun, only count mon-fri
+                let finishDate = moment();
+                let daysToAdd = Number(aPackage.period);
+
+                while (daysToAdd > 0) {
+                    finishDate = finishDate.add(1, 'days');
+                    if (finishDate.isoWeekday() <= 5) {
+                        daysToAdd--;
+                    }
+                }
+
                 const pkgHistoryItem = await ApprovalFundPackageHistory.create({
                     relation: user.relation,
                     user_id: user.id,
@@ -13970,7 +13982,7 @@ class Controller {
                     approval_fund: aPackage.approval_fund,
                     actual_approval_fund: actualApprovalFund,
                     period: aPackage.period,
-                    will_finish_at: moment().add(aPackage.period, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                    will_finish_at: finishDate.format('YYYY-MM-DD HH:mm:ss'),
                 }, { transaction: t });
 
                 await user.update(userUpdates, { transaction: t });
