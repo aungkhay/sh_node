@@ -6233,7 +6233,7 @@ class CronJob {
             for (const history of histories) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'approval_fund'] });
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'approval_fund', 'actual_approval_fund'] });
                     if (!user) {
                         console.log(`User ID ${history.user_id} not found. Skipping...`);
                         await t.rollback();
@@ -6241,19 +6241,19 @@ class CronJob {
                     }
 
                     const amount = Number(history.actual_approval_fund);
-                    await user.increment({ balance: amount }, { transaction: t });
+                    await user.increment({ actual_approval_fund: amount }, { transaction: t });
                     await history.update({ is_finished: 1 }, { transaction: t });
 
                     const cashflows = [
                         {
                             user_id: user.id,
                             relation: user.relation,
-                            wallet_type: 2, // 2-余额
+                            wallet_type: 6, // 实际审批资金
                             model: 'ApprovalFundPackageHistory',
-                            type: '审批资金包释放',
+                            type: '审批资金释放',
                             amount: amount,
-                            before_amount: user.balance,
-                            after_amount: Number(user.balance) + amount,
+                            before_amount: user.actual_approval_fund,
+                            after_amount: Number(user.actual_approval_fund) + amount,
                             flow_status: 'IN',
                             description: `${history.package ? history.package.product_name : ''}`,
                         },
@@ -6272,7 +6272,7 @@ class CronJob {
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await t.commit();
 
-                    console.log(`[TRANSFER_APPROVAL_FUND_BALANCE][HISTORY_ID: ${history.id}]: Transferred approval fund - ${amount} to balance for User ID ${user.id}`);
+                    console.log(`[TRANSFER_APPROVAL_FUND_BALANCE][HISTORY_ID: ${history.id}]: Transferred approval fund - ${amount} to actual approval fund for User ID ${user.id}`);
 
                 } catch (error) {
                     await t.rollback();

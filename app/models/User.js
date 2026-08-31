@@ -341,6 +341,12 @@ User.init({
         defaultValue: 0,
         comment: '审批资金'
     },
+    actual_approval_fund: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '实际审批资金'
+    },
     total_assets_earn: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,

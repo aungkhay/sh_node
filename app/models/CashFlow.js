@@ -42,7 +42,7 @@ CashFlow.init({
     wallet_type: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: '1 => 储备金 | 2 => 余额'
+        comment: '1 => 储备金 | 2 => 余额 | 3 => 余额宝 | 4 => 分发释放金额 | 5 => 审批资金 | 6 => 实际审批资金',
     },
     model: {
         type: DataTypes.STRING,

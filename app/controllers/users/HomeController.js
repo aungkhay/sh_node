@@ -13721,7 +13721,7 @@ class Controller {
                 await this.redisHelper.setValue('approval_fund_package_description', package_description);
             }
 
-            const user = await User.findByPk(userId, { attributes: ['balance', 'approval_fund'], useMaster: true });
+            const user = await User.findByPk(userId, { attributes: ['balance', 'approval_fund', 'actual_approval_fund'], useMaster: true });
             const actualApprovalFundSum = await ApprovalFundPackageHistory.sum('actual_approval_fund', {
                 where: {
                     user_id: userId,
@@ -13731,7 +13731,7 @@ class Controller {
             });
             const data = {
                 balance: Number(user.approval_fund || 0),
-                approval_fund: Number(actualApprovalFundSum || 0),
+                approval_fund: Number(actualApprovalFundSum || 0) + Number(user.actual_approval_fund),
                 package_description: package_description,
                 package_period: package_period,
                 packages: packages,
