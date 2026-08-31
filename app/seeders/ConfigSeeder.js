@@ -416,6 +416,20 @@ module.exports = async () => {
             description: '-',
             data_type: 'html'
         },
+        {
+            type: 'allocation_auth_package_period',
+            title: '划拨授权 - 申报时间',
+            val: '2026-09-03 00:00:00|2026-09-07 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'allocation_auth_package_description',
+            title: '划拨授权 - 描述',
+            val: '-',
+            description: '-',
+            data_type: 'string'
+        },
     ];
 
     const count = await Config.count();

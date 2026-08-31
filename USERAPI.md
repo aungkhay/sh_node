@@ -1104,3 +1104,29 @@ const url = `${baseURL}/approval-fund-packages/history`;
 // [GET] Bonuses History
 const url = `${baseURL}/approval-fund-packages/bonus-history`;
 ```
+
+### 划拨授权
+```js
+// [GET] Packages
+const url = `${baseURL}/allocation-auth-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/allocation-auth-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/allocation-auth-packages/history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/allocation-auth-packages/bonus-history`;
+
+// [POST] Bind Bank
+const url = `${baseURL}/allocation-auth-packages/bind-bank`;
+const data = {
+    card_name: '', // 姓名
+    card_number: 123456789, // 卡号
+    bank_name: '', // 银行
+}
+```

@@ -179,6 +179,14 @@
     { "model": "银联体审批", "title": "购买记录", "name": "approval-fund-package-history-list" },
     { "model": "银联体审批", "title": "推荐奖励记录", "name": "approval-fund-package-bonus-history-list" },
 
+    { "model": "划拨授权", "title": "产品列表", "name": "allocation-auth-package-list" },
+    { "model": "划拨授权", "title": "创建", "name": "allocation-auth-package-create" },
+    { "model": "划拨授权", "title": "编辑", "name": "allocation-auth-package-update" },
+    { "model": "划拨授权", "title": "购买记录", "name": "allocation-auth-package-history-list" },
+    { "model": "划拨授权", "title": "推荐奖励记录", "name": "allocation-auth-package-bonus-history-list" },
+    { "model": "划拨授权", "title": "银行信息列表", "name": "allocation-auth-bank-info-list" },
+    { "model": "划拨授权", "title": "编辑银行信息", "name": "allocation-auth-bank-info-update" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 

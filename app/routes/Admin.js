@@ -414,6 +414,17 @@ class AdminRoute extends express.Router {
         this.post('/approval-fund-packages/:id/update', FormValidator.create_approval_fund_package(), middleware.isLoggedIn('approval-fund-package-update'), ApprovalFundPackageCtrl.UPDATE);
         this.get('/approval-fund-packages/history', middleware.isLoggedIn('approval-fund-package-history-list'), ApprovalFundPackageCtrl.APPROVAL_FUND_PACKAGE_HISTORY);
         this.get('/approval-fund-packages/bonus-history', middleware.isLoggedIn('approval-fund-package-bonus-history-list'), ApprovalFundPackageCtrl.APPROVAL_FUND_PACKAGE_BONUS_HISTORY);
+        
+        // Allocation Auth Package
+        let AllocationAuthPackageController = require('../controllers/admins/AllocationAuthPackageController');
+        let AllocationAuthPackageCtrl = new AllocationAuthPackageController(app);
+        this.get('/allocation-auth-packages', middleware.isLoggedIn('allocation-auth-package-list'), AllocationAuthPackageCtrl.INDEX);
+        this.post('/allocation-auth-packages/create', FormValidator.create_allocation_auth_package(), middleware.isLoggedIn('allocation-auth-package-create'), AllocationAuthPackageCtrl.CREATE);
+        this.post('/allocation-auth-packages/:id/update', FormValidator.create_allocation_auth_package(), middleware.isLoggedIn('allocation-auth-package-update'), AllocationAuthPackageCtrl.UPDATE);
+        this.get('/allocation-auth-packages/history', middleware.isLoggedIn('allocation-auth-package-history-list'), AllocationAuthPackageCtrl.ALLOCATION_AUTH_PACKAGE_HISTORY);
+        this.get('/allocation-auth-packages/bonus-history', middleware.isLoggedIn('allocation-auth-package-bonus-history-list'), AllocationAuthPackageCtrl.ALLOCATION_AUTH_PACKAGE_BONUS_HISTORY);
+        this.get('/allocation-auth-packages/bank-infos', middleware.isLoggedIn('allocation-auth-bank-info-list'), AllocationAuthPackageCtrl.BANK_INFO_LIST);
+        this.post('/allocation-auth-packages/bank-infos/:id/update', FormValidator.update_allocation_auth_bank_info(), middleware.isLoggedIn('allocation-auth-bank-info-update'), AllocationAuthPackageCtrl.UPDATE_BANK_INFO);
     }
 }
 

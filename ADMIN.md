@@ -2326,3 +2326,61 @@ const params = {
     endTime: ''
 }
 ```
+
+### 划拨授权
+``` js
+// [GET] Package List
+const url = `${baseURL}/allocation-auth-packages`;
+
+// [POST] CREATE | UPDATE
+const url = `${baseURL}/allocation-auth-packages/create`;
+const url = `${baseURL}/allocation-auth-packages/${pkgID}/update`;
+const data = {
+    product_name: '-',
+    price: 20, // 授权费
+    period: 45, // 授权周期
+    auth_amount: 50000, // 授权额度
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    description: '',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+    tag: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/allocation-auth-packages/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: '',
+    is_internal_account: 0,
+    is_returned: 1, // 1 => 战略储备金返还 | 2 => 本金返还
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/allocation-auth-packages/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 银行信息列表
+const url = `${baseURL}/allocation-auth-packages/bank-infos`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [POST] 编辑银行信息
+const url = `${baseURL}/allocation-auth-packages/bank-infos/${id}/update`;
+const data = {
+    card_name: '', // 姓名
+    card_number: 123456789, // 卡号
+    bank_name: '', // 银行
+    remark: '' // optional
+}
+```

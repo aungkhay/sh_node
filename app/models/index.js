@@ -107,6 +107,10 @@ const SCOInterbankPackageEarn = require('./SCOInterbankPackageEarn');
 const ApprovalFundPackage = require('./ApprovalFundPackage');
 const ApprovalFundPackageHistory = require('./ApprovalFundPackageHistory');
 const ApprovalFundPackageBonuses = require('./ApprovalFundPackageBonuses');
+const AllocationAuthPackage = require('./AllocationAuthPackage');
+const AllocationAuthPackageHistory = require('./AllocationAuthPackageHistory');
+const AllocationAuthPackageBonuses = require('./AllocationAuthPackageBonuses');
+const AllocationAuthBankInfo = require('./AllocationAuthBankInfo');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -654,6 +658,27 @@ User.hasMany(ApprovalFundPackageBonuses, { foreignKey: 'user_id', as: 'approval_
 ApprovalFundPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 ApprovalFundPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ ALLOCATION_AUTH_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(AllocationAuthPackageHistory, { foreignKey: 'user_id', as: 'allocation_auth_package_histories', onDelete: 'CASCADE' });
+AllocationAuthPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== ALLOCATION_AUTH_PACKAGE_HISTORY ↔️ ALLOCATION_AUTH_PACKAGE_BONUSES (1:N) ==========
+AllocationAuthPackageHistory.hasMany(AllocationAuthPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+AllocationAuthPackageBonuses.belongsTo(AllocationAuthPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ALLOCATION_AUTH_PACKAGE ↔️ ALLOCATION_AUTH_PACKAGE_HISTORY (1:N) ==========
+AllocationAuthPackage.hasMany(AllocationAuthPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+AllocationAuthPackageHistory.belongsTo(AllocationAuthPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ALLOCATION_AUTH_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(AllocationAuthPackageBonuses, { foreignKey: 'user_id', as: 'allocation_auth_package_bonuses', onDelete: 'CASCADE' });
+AllocationAuthPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+AllocationAuthPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ================ USER ↔️ ALLOCATION_AUTH_BANK_INFO (1:1) ==========
+User.hasOne(AllocationAuthBankInfo, { foreignKey: 'user_id', as: 'allocation_auth_bank_info', onDelete: 'CASCADE' });
+AllocationAuthBankInfo.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -757,7 +782,11 @@ const models = {
     SCOInterbankPackageEarn,
     ApprovalFundPackage,
     ApprovalFundPackageHistory,
-    ApprovalFundPackageBonuses
+    ApprovalFundPackageBonuses,
+    AllocationAuthPackage,
+    AllocationAuthPackageHistory,
+    AllocationAuthPackageBonuses,
+    AllocationAuthBankInfo
 };
 
 // Export models + db connection

@@ -166,6 +166,12 @@ class UserRoute extends express.Router {
         this.post('/approval-fund-packages/:id/buy', FormValidator.buy_approval_fund_package(), middleware.isLoggedIn, HomeCtrl.BUY_APPROVAL_FUND_PACKAGE);
         this.get('/approval-fund-packages/history', middleware.isLoggedIn, HomeCtrl.APPROVAL_FUND_PACKAGE_HISTORY);
         this.get('/approval-fund-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.APPROVAL_FUND_PACKAGE_BONUS_HISTORY);
+        // Allocation Auth Routes
+        this.get('/allocation-auth-packages', middleware.isLoggedIn, HomeCtrl.ALLOCATION_AUTH_PACKAGE);
+        this.post('/allocation-auth-packages/:id/buy', FormValidator.buy_allocation_auth_package(), middleware.isLoggedIn, HomeCtrl.BUY_ALLOCATION_AUTH_PACKAGE);
+        this.get('/allocation-auth-packages/history', middleware.isLoggedIn, HomeCtrl.ALLOCATION_AUTH_PACKAGE_HISTORY);
+        this.get('/allocation-auth-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.ALLOCATION_AUTH_PACKAGE_BONUS_HISTORY);
+        this.post('/allocation-auth-packages/bind-bank', FormValidator.bind_allocation_auth_bank(), middleware.isLoggedIn, HomeCtrl.BIND_ALLOCATION_AUTH_BANK);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

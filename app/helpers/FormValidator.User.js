@@ -427,6 +427,22 @@ exports.buy_approval_fund_package = () => {
     ]
 }
 
+exports.buy_allocation_auth_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
+
+exports.bind_allocation_auth_bank = () => {
+    return [
+        // card_name, card_number, bank_name
+        check('card_name').not().isEmpty().withMessage('姓名不能为空'),
+        check('card_number').not().isEmpty().withMessage('卡号不能为空'),
+        check('bank_name').not().isEmpty().withMessage('银行不能为空'),
+    ]
+}
+
 exports.transfer_authorize_letter = () => {
     return [
         check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty(),
