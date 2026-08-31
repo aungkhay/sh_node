@@ -14407,7 +14407,7 @@ class Controller {
                 }
 
                 let actualAuthAmount = 0;
-                if (Number(aPackage.auth_amount) > Number(user.actual_approval_fund)) {
+                if (Number(aPackage.auth_amount) === 0 || Number(aPackage.auth_amount) > Number(user.actual_approval_fund)) {
                     // move all
                     actualAuthAmount = Number(user.actual_approval_fund);
                 } else {
