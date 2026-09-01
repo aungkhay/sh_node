@@ -14183,7 +14183,7 @@ class Controller {
                 useMaster: true
             });
 
-            const bankInfo = await AllocationAuthPackageBankInfo.findOne({
+            const bankInfo = await AllocationAuthBankInfo.findOne({
                 where: { user_id: userId },
                 attributes: ['id'],
                 useMaster: true
