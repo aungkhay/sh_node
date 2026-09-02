@@ -13868,7 +13868,7 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status']
                 },
-                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'approval_fund', 'payment_password', 'initial_buy_product_date', 'total_assets', 'distributed_assets'],
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'approval_fund', 'actual_approval_fund', 'payment_password', 'initial_buy_product_date', 'total_assets', 'distributed_assets'],
                 useMaster: true
             });
             if (!user.kyc) {
@@ -13949,18 +13949,34 @@ class Controller {
                     actualApprovalFund = Number(aPackage.approval_fund);
                 }
                 if (actualApprovalFund > 0) {
-                    await CashFlow.create({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 5, // 审批资金 
-                        model: 'ApprovalFundPackageHistory',
-                        type: '银联体审批',
-                        amount: actualApprovalFund,
-                        before_amount: user.approval_fund,
-                        after_amount: Number(user.approval_fund) - actualApprovalFund,
-                        flow_status: 'OUT',
-                    }, { transaction: t });
+                    const actualCashFlow = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 5, // 审批资金 
+                            model: 'ApprovalFundPackageHistory',
+                            type: '银联体审批',
+                            amount: actualApprovalFund,
+                            before_amount: user.approval_fund,
+                            after_amount: Number(user.approval_fund) - actualApprovalFund,
+                            flow_status: 'OUT',
+                        },
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 6, // 实际审批资金
+                            model: 'ApprovalFundPackageHistory',
+                            type: '审批资金释放',
+                            amount: actualApprovalFund,
+                            before_amount: user.actual_approval_fund,
+                            after_amount: Number(user.actual_approval_fund) + actualApprovalFund,
+                            flow_status: 'IN',
+                            description: `${aPackage.product_name}`,
+                        }
+                    ]
+                    await CashFlow.bulkCreate(actualCashFlow, { transaction: t });
                     userUpdates.approval_fund = Number(user.approval_fund) - actualApprovalFund;
+                    userUpdates.actual_approval_fund = Number(user.actual_approval_fund) + actualApprovalFund;
                 }
 
                 // will_finish_at not include sat and sun, only count mon-fri
@@ -13983,6 +13999,7 @@ class Controller {
                     actual_approval_fund: actualApprovalFund,
                     period: aPackage.period,
                     will_finish_at: finishDate.format('YYYY-MM-DD HH:mm:ss'),
+                    is_finished: 1
                 }, { transaction: t });
 
                 await user.update(userUpdates, { transaction: t });
