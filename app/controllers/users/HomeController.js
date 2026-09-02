@@ -14370,6 +14370,10 @@ class Controller {
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
+            if (Number(user.actual_approval_fund) <= 0) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您好，请先参与银联体审批！', {});
+            }
 
             let reserveAmount = Number(aPackage.price);
             let balanceAmount = 0;
