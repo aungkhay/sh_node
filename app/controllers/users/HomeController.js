@@ -13889,6 +13889,11 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
+            if (Number(user.approval_fund) <= 0) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您好，请先转入清验资金，再参与审批方案！', {});
+            }
+
             let reserveAmount = Number(aPackage.price);
             let balanceAmount = 0;
             if (Number(user.reserve_fund) < Number(aPackage.price)) {
