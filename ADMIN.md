@@ -2384,3 +2384,38 @@ const data = {
     remark: '' // optional
 }
 ```
+
+### 优先排列
+``` js
+// [GET] Package List
+const url = `${baseURL}/priority-queueing-packages`;
+
+// [POST] CREATE | UPDATE
+const url = `${baseURL}/priority-queueing-packages/create`;
+const url = `${baseURL}/priority-queueing-packages/${pkgID}/update`;
+const data = {
+    product_name: '-',
+    price: 20, // 申请费
+    queue_amount: 10000, // ### 优先排列
+    status: 1, // 1-在售, 2-下架, 3-售罄
+}
+
+// [GET] Package History
+const url = `${baseURL}/priority-queueing-packages/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: '',
+    is_internal_account: 0,
+    is_returned: 1, // 1 => 战略储备金返还 | 2 => 本金返还
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/priority-queueing-packages/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+```

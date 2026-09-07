@@ -1414,3 +1414,22 @@ exports.update_allocation_auth_bank_info = () => {
         check('bank_name').not().isEmpty().withMessage('银行不能为空'),
     ]
 }
+
+exports.create_priority_queueing_package = () => {
+    return [
+        check('product_name').not().isEmpty().withMessage('产品名称不能为空'),
+        check('price').not().isEmpty().withMessage('申请费不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('申请费必须是数字'),
+        check('queue_amount').not().isEmpty().withMessage('优先排列不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('优先排列必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+    ]
+}

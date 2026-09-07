@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackage, AssetDistributionPackageBonuses, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackage, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetEarnPackageBonuses, AssetDailyReleasePackage, AssetDailyReleasePackageHistory, AssetDailyReleasePackageBonuses, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackage, SCOInterbankPackageHistory, SCOInterbankPackageBonuses, SCOInterbankPackageEarn, ApprovalFundPackage, ApprovalFundPackageHistory, ApprovalFundPackageBonuses, AllocationAuthPackage, AllocationAuthPackageHistory, AllocationAuthPackageBonuses, AllocationAuthBankInfo } = require('../../models');
+const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackage, AssetDistributionPackageBonuses, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackage, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetEarnPackageBonuses, AssetDailyReleasePackage, AssetDailyReleasePackageHistory, AssetDailyReleasePackageBonuses, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackage, SCOInterbankPackageHistory, SCOInterbankPackageBonuses, SCOInterbankPackageEarn, ApprovalFundPackage, ApprovalFundPackageHistory, ApprovalFundPackageBonuses, AllocationAuthPackage, AllocationAuthPackageHistory, AllocationAuthPackageBonuses, AllocationAuthBankInfo, PriorityQueueingPackage, PriorityQueueingPackageHistory, PriorityQueueingPackageBonuses } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes, where, col, fn } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -14673,6 +14673,455 @@ class Controller {
 
         } catch (error) {
             errLogger(`[BIND_ALLOCATION_AUTH_BANK][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    PRIORITY_QUEUEING_PACKAGE = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            let packages = await this.redisHelper.getValue('priority_queueing_packages');
+            if (packages) {
+                packages = JSON.parse(packages);
+            } else {
+                packages = await PriorityQueueingPackage.findAll({
+                    where: {
+                        status: {
+                            [Op.ne]: 2
+                        }
+                    },
+                    useMaster: true
+                });
+                await this.redisHelper.setValue('priority_queueing_packages', JSON.stringify(packages));
+            }
+
+            let package_period = await this.redisHelper.getValue('priority_queueing_package_period');
+            if (!package_period) {
+                const conf = await Config.findOne({ where: { type: 'priority_queueing_package_period' } });
+                package_period = conf ? conf.val : '';
+                await this.redisHelper.setValue('priority_queueing_package_period', package_period);
+            }
+
+            let package_description = await this.redisHelper.getValue('priority_queueing_package_description');
+            if (!package_description) {
+                const conf = await Config.findOne({ where: { type: 'priority_queueing_package_description' } });
+                package_description = conf ? conf.val : '';
+                await this.redisHelper.setValue('priority_queueing_package_description', package_description);
+            }
+
+            let firstAllocationAuthPackage = await this.redisHelper.getValue(`first_allocation_auth_package_${userId}`);
+            if (!firstAllocationAuthPackage) {
+                const allocationAuthPackageHistory = await AllocationAuthPackageHistory.findOne({
+                    where: {
+                        user_id: userId,
+                    },
+                    attributes: ['id', 'createdAt'],
+                    order: [['id', 'ASC']],
+                });
+                if (allocationAuthPackageHistory) {
+                    firstAllocationAuthPackage = JSON.stringify(allocationAuthPackageHistory);
+                    await this.redisHelper.setValue(`first_allocation_auth_package_${userId}`, firstAllocationAuthPackage);
+                }
+            }
+
+            let firstPriorityQueueingPackage = await this.redisHelper.getValue(`first_priority_queueing_package_${userId}`);
+            if (!firstPriorityQueueingPackage) {
+                const priorityQueueingPackageHistory = await PriorityQueueingPackageHistory.findOne({
+                    where: {
+                        user_id: userId,
+                    },
+                    attributes: ['id', 'createdAt'],
+                    order: [['id', 'ASC']],
+                });
+                if (priorityQueueingPackageHistory) {
+                    firstPriorityQueueingPackage = JSON.stringify(priorityQueueingPackageHistory);
+                    await this.redisHelper.setValue(`first_priority_queueing_package_${userId}`, firstPriorityQueueingPackage);
+                }
+            }
+
+            const sumPriorityQueueingAmount = await PriorityQueueingPackageHistory.sum('queue_amount', {
+                where: {
+                    user_id: userId,
+                },
+                useMaster: true
+            }) || 0;
+
+            const initialQueue = 288500;
+            let queueNumber = 0;
+            if (firstAllocationAuthPackage) {
+                const allocationAuthPackageHistory = JSON.parse(firstAllocationAuthPackage);
+                queueNumber = initialQueue + allocationAuthPackageHistory.id;
+            }
+            if (queueNumber > 0) {
+                queueNumber -= sumPriorityQueueingAmount;
+            }
+
+            let processing_number = await this.redisHelper.getValue('priority_queueing_processing_number');
+            if (!processing_number) {
+                const conf = await Config.findOne({ where: { type: 'priority_queueing_processing_number' } });
+                processing_number = conf ? conf.val : '';
+                await this.redisHelper.setValue('priority_queueing_processing_number', processing_number);
+            }
+
+            const data = {
+                allocation_bought_time: firstAllocationAuthPackage ? JSON.parse(firstAllocationAuthPackage).createdAt : null,
+                priority_bought_time: firstPriorityQueueingPackage ? JSON.parse(firstPriorityQueueingPackage).createdAt : null,
+                queue_number: queueNumber == 0 ? '******' : queueNumber,
+                processing_number: processing_number,
+                package_description: package_description,
+                package_period: package_period,
+                packages: packages,
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[ALLOCATION_AUTH_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    BUY_PRIORITY_QUEUEING_PACKAGE = async (req, res) => {
+
+        const lockKey = `lock:buy-priority-queueing-package:${req.ip}`;
+        let redisLocked = false;
+        const PROCESSING_KEY = `priority_queueing_package_processing_${req.user_id}`
+        try {
+            let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
+            if (!buyOnOff) {
+                const conf = await Config.findOne({ where: { type: 'buy_product_on_off' }, attributes: ['val'] });
+                buyOnOff = conf ? Number(conf.val) : 0;
+            }
+            if (Number(buyOnOff) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+            
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            // processing status
+            const isProcessing = await this.redisHelper.getValue(PROCESSING_KEY);
+            if (isProcessing) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
+            }
+            await this.redisHelper.setValue(PROCESSING_KEY, 1, 120); // 2 minutes
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            let openPeriod = await this.redisHelper.getValue('allocation_auth_package_period');
+            if (!openPeriod) {
+                const conf = await Config.findOne({ where: { type: 'allocation_auth_package_period' } });
+                if (conf) {
+                    openPeriod = conf.val;
+                    await this.redisHelper.setValue('allocation_auth_package_period', openPeriod);
+                }
+            }
+            if (openPeriod) {
+                const [start, end] = openPeriod.split('|');
+                const now = moment();
+                if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `购买时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
+                }             
+                if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
+                }
+            }
+            
+            const aPackage = await PriorityQueueingPackage.findByPk(req.params.id, { useMaster: true });
+            if (!aPackage) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '产品不存在', {});
+            }
+
+            if (aPackage.status === 2) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '产品已下架', {});
+            }
+
+            if (aPackage.status === 3) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '产品已售罄', {});
+            }
+
+            const userId = req.user_id;
+            const history = await PriorityQueueingPackageHistory.findOne({
+                where: {
+                    user_id: userId,
+                    package_id: aPackage.id,
+                },
+                attributes: ['id'],
+            });
+            if (history) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该方案已申请过，仅可提交一次!', {});
+            }
+
+            const checkBindBank = await AllocationAuthBankInfo.findOne({
+                where: { user_id: userId },
+                attributes: ['id'],
+            });
+            if (!checkBindBank) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定授权绑卡', {});
+            }
+            
+            const payment_password = req.body.payment_password;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'actual_approval_fund', 'payment_password', 'initial_buy_product_date', 'total_assets', 'distributed_assets'],
+                useMaster: true
+            });
+            if (!user.kyc) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+            if (Number(user.actual_approval_fund) <= 0) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您好，请先参与银联体审批！', {});
+            }
+
+            let reserveAmount = Number(aPackage.price);
+            let balanceAmount = 0;
+            if (Number(user.reserve_fund) < Number(aPackage.price)) {
+                // balanceAmount = Number(aPackage.price) - Number(user.reserve_fund);
+                // reserveAmount = Number(user.reserve_fund);
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+            // if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+            //     await this.redisHelper.deleteKey(PROCESSING_KEY);
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+            // }
+
+            const t = await db.transaction();
+            try {
+                if (reserveAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'PriorityQueueingPackageHistory',
+                        type: `优先排列`,
+                        amount: reserveAmount,
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: Number(user.reserve_fund) - reserveAmount,
+                        flow_status: 'OUT',
+                        description: `${aPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
+                    }, { transaction: t });
+                }
+                if (balanceAmount > 0) {
+                     await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'PriorityQueueingPackageHistory',
+                        type: `优先排列`,
+                        amount: balanceAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) - balanceAmount,
+                        flow_status: 'OUT',
+                        description: `${aPackage.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
+
+                const userUpdates = {
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount,
+                };
+                if (!user.initial_buy_product_date) {
+                    userUpdates.initial_buy_product_date = new Date();
+                }
+
+                const pkgHistoryItem = await PriorityQueueingPackageHistory.create({
+                    relation: user.relation,
+                    user_id: user.id,
+                    package_id: aPackage.id,
+                    price: aPackage.price,
+                    queue_amount: aPackage.queue_amount,
+                }, { transaction: t });
+
+                await user.update(userUpdates, { transaction: t });
+
+                await aPackage.increment({ total_quantity: -1 }, { transaction: t });
+                if (aPackage.total_quantity - 1 <= 0) {
+                    await aPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+
+                const bonusArr = [15, 7, 3];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
+                commonLogger(`[BUY_PRIORITY_QUEUEING_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_PRIORITY_QUEUEING_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type', 'balance'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                const cashFlows = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(aPackage.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[BUY_PRIORITY_QUEUEING_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+
+                    cashFlows.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        wallet_type: 2,
+                        model: 'PriorityQueueingPackageBonuses',
+                        type: `下级购买优先排列方案奖励`,
+                        amount: bonus,
+                        before_amount: Number(upLevelUser.balance),
+                        after_amount: Number(upLevelUser.balance) + Number(bonus),
+                        flow_status: 'IN',
+                    });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: pkgHistoryItem.id
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await PriorityQueueingPackageBonuses.bulkCreate(bonuses, { transaction: t });
+                    await CashFlow.bulkCreate(cashFlows, { transaction: t });
+                }
+
+                await t.commit();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '审批成功', {});
+
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '审批失败', {}); 
+            }
+        } catch (error) {
+            errLogger(`[BUY_PRIORITY_QUEUEING_PACKAGE][${req.user_id}]: ${error.stack}`);
+            await this.redisHelper.deleteKey(PROCESSING_KEY);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    PRIORITY_QUEUEING_PACKAGE_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+
+            const { rows, count } = await PriorityQueueingPackageHistory.findAndCountAll({
+                include: {
+                    model: PriorityQueueingPackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
+                where: { 
+                    user_id: userId,
+                },
+                attributes: ['id', 'price', 'queue_amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[PRIORITY_QUEUEING_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    PRIORITY_QUEUEING_PACKAGE_BONUS_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await PriorityQueueingPackageBonuses.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                bonuses: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[PRIORITY_QUEUEING_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

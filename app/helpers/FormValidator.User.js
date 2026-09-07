@@ -433,6 +433,11 @@ exports.buy_allocation_auth_package = () => {
     ]
 }
 
+exports.buy_priority_queueing_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
 
 exports.bind_allocation_auth_bank = () => {
     return [

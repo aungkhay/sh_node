@@ -1130,3 +1130,21 @@ const data = {
     bank_name: '', // 银行
 }
 ```
+
+### 优先排列
+```js
+// [GET] Packages
+const url = `${baseURL}/priority-queueing-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/priority-queueing-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/priority-queueing-packages/history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/priority-queueing-packages/bonus-history`;
+```

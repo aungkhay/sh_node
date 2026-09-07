@@ -52,6 +52,11 @@ class Controller {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, this.ResCode.NOT_FOUND.msg, {});
             }
 
+            if (config.type === 'priority_queueing_processing_number') {
+                const valError = [{ field: 'val', msg: '优先排列 - 当前提款处理号配置不可修改' }];
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, valError);
+            }
+
             if((config.data_type == 'integer' || config.data_type == 'double') && typeof val !== 'number') {
                 const valError = [{ field: 'val', msg: '值必须是数字' }];
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, valError);

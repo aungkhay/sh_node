@@ -111,6 +111,9 @@ const AllocationAuthPackage = require('./AllocationAuthPackage');
 const AllocationAuthPackageHistory = require('./AllocationAuthPackageHistory');
 const AllocationAuthPackageBonuses = require('./AllocationAuthPackageBonuses');
 const AllocationAuthBankInfo = require('./AllocationAuthBankInfo');
+const PriorityQueueingPackage = require('./PriorityQueueingPackage');
+const PriorityQueueingPackageHistory = require('./PriorityQueueingPackageHistory');
+const PriorityQueueingPackageBonuses = require('./PriorityQueueingPackageBonuses');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -679,6 +682,23 @@ AllocationAuthPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: '
 User.hasOne(AllocationAuthBankInfo, { foreignKey: 'user_id', as: 'allocation_auth_bank_info', onDelete: 'CASCADE' });
 AllocationAuthBankInfo.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
 
+// ========== USER ↔️ PRIORITY_QUEUEING_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(PriorityQueueingPackageHistory, { foreignKey: 'user_id', as: 'priority_queueing_package_histories', onDelete: 'CASCADE' });
+PriorityQueueingPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== PRIORITY_QUEUEING_PACKAGE_HISTORY ↔️ PRIORITY_QUEUEING_PACKAGE_BONUSES (1:N) ==========
+PriorityQueueingPackageHistory.hasMany(PriorityQueueingPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+PriorityQueueingPackageBonuses.belongsTo(PriorityQueueingPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== PRIORITY_QUEUEING_PACKAGE ↔️ PRIORITY_QUEUEING_PACKAGE_HISTORY (1:N) ==========
+PriorityQueueingPackage.hasMany(PriorityQueueingPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+PriorityQueueingPackageHistory.belongsTo(PriorityQueueingPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ PRIORITY_QUEUEING_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(PriorityQueueingPackageBonuses, { foreignKey: 'user_id', as: 'priority_queueing_package_bonuses', onDelete: 'CASCADE' });
+PriorityQueueingPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+PriorityQueueingPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -786,7 +806,10 @@ const models = {
     AllocationAuthPackage,
     AllocationAuthPackageHistory,
     AllocationAuthPackageBonuses,
-    AllocationAuthBankInfo
+    AllocationAuthBankInfo,
+    PriorityQueueingPackage,
+    PriorityQueueingPackageHistory,
+    PriorityQueueingPackageBonuses,
 };
 
 // Export models + db connection

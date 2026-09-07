@@ -172,6 +172,11 @@ class UserRoute extends express.Router {
         this.get('/allocation-auth-packages/history', middleware.isLoggedIn, HomeCtrl.ALLOCATION_AUTH_PACKAGE_HISTORY);
         this.get('/allocation-auth-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.ALLOCATION_AUTH_PACKAGE_BONUS_HISTORY);
         this.post('/allocation-auth-packages/bind-bank', FormValidator.bind_allocation_auth_bank(), middleware.isLoggedIn, HomeCtrl.BIND_ALLOCATION_AUTH_BANK);
+        // Priority Queueing Package Routes
+        this.get('/priority-queueing-packages', middleware.isLoggedIn, HomeCtrl.PRIORITY_QUEUEING_PACKAGE);
+        this.post('/priority-queueing-packages/:id/buy', FormValidator.buy_priority_queueing_package(), middleware.isLoggedIn, HomeCtrl.BUY_PRIORITY_QUEUEING_PACKAGE);
+        this.get('/priority-queueing-packages/history', middleware.isLoggedIn, HomeCtrl.PRIORITY_QUEUEING_PACKAGE_HISTORY);
+        this.get('/priority-queueing-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.PRIORITY_QUEUEING_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

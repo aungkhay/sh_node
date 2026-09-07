@@ -102,6 +102,7 @@ class CronJob {
         // cron.schedule('0 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
         cron.schedule('20 1 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start();
         cron.schedule('0 2 * * *', this.TRANSFER_APPROVAL_FUND_BALANCE).start();
+        cron.schedule('*/15 * * * *', this.ADD_PRIORITY_QUEUEING_NUMBER).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6281,6 +6282,26 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[TRANSFER_APPROVAL_FUND_BALANCE]: ${error.stack}`);
+        }
+    }
+
+    ADD_PRIORITY_QUEUEING_NUMBER = async () => {
+        try {
+            const amount = await this.redisHelper.getValue('priority_queueing_15_min_add_qty');
+
+            if (!amount) {
+                return;
+            }
+
+            const processNumber = await this.redisHelper.getValue('priority_queueing_processing_number');
+            if (!processNumber) {
+                return;
+            }
+
+            const newProcessNumber = Number(processNumber) + Number(amount);
+            await this.redisHelper.setValue('priority_queueing_processing_number', newProcessNumber);
+        } catch (error) {
+            errLogger(`[ADD_PRIORITY_QUEUEING_NUMBER]: ${error.stack}`);
         }
     }
 

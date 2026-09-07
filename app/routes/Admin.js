@@ -425,6 +425,15 @@ class AdminRoute extends express.Router {
         this.get('/allocation-auth-packages/bonus-history', middleware.isLoggedIn('allocation-auth-package-bonus-history-list'), AllocationAuthPackageCtrl.ALLOCATION_AUTH_PACKAGE_BONUS_HISTORY);
         this.get('/allocation-auth-packages/bank-infos', middleware.isLoggedIn('allocation-auth-bank-info-list'), AllocationAuthPackageCtrl.BANK_INFO_LIST);
         this.post('/allocation-auth-packages/bank-infos/:id/update', FormValidator.update_allocation_auth_bank_info(), middleware.isLoggedIn('allocation-auth-bank-info-update'), AllocationAuthPackageCtrl.UPDATE_BANK_INFO);
+
+        // Priority Queueing Package
+        let PriorityQueueingPackageController = require('../controllers/admins/PriorityQueueingPackageController');
+        let PriorityQueueingPackageCtrl = new PriorityQueueingPackageController(app);
+        this.get('/priority-queueing-packages', middleware.isLoggedIn('priority-queueing-package-list'), PriorityQueueingPackageCtrl.INDEX);
+        this.post('/priority-queueing-packages/create', FormValidator.create_priority_queueing_package(), middleware.isLoggedIn('priority-queueing-package-create'), PriorityQueueingPackageCtrl.CREATE);
+        this.post('/priority-queueing-packages/:id/update', FormValidator.create_priority_queueing_package(), middleware.isLoggedIn('priority-queueing-package-update'), PriorityQueueingPackageCtrl.UPDATE);
+        this.get('/priority-queueing-packages/history', middleware.isLoggedIn('priority-queueing-package-history-list'), PriorityQueueingPackageCtrl.PRIORITY_QUEUEING_PACKAGE_HISTORY);
+        this.get('/priority-queueing-packages/bonus-history', middleware.isLoggedIn('priority-queueing-package-bonus-history-list'), PriorityQueueingPackageCtrl.PRIORITY_QUEUEING_PACKAGE_BONUS_HISTORY);
     }
 }
 

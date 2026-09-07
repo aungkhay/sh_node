@@ -430,6 +430,34 @@ module.exports = async () => {
             description: '-',
             data_type: 'string'
         },
+        {
+            type: 'priority_queueing_package_period',
+            title: '优先排列 - 申报时间',
+            val: '2026-09-07 00:00:00|2026-09-15 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'priority_queueing_package_description',
+            title: '优先排列 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
+        {
+            type: 'priority_queueing_15_min_add_qty',
+            title: '优先排列 - 15分钟增加数量',
+            val: '5',
+            description: '-',
+            data_type: 'integer'
+        },
+        {
+            type: 'priority_queueing_processing_number',
+            title: '优先排列 - 当前提款处理号',
+            val: '0',
+            description: '-',
+            data_type: 'integer'
+        }
     ];
 
     const count = await Config.count();
