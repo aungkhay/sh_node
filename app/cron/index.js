@@ -6287,6 +6287,14 @@ class CronJob {
 
     ADD_PRIORITY_QUEUEING_NUMBER = async () => {
         try {
+            // check time is between 08:00 and 17:00
+            const now = moment();
+            const start = moment().hour(8).minute(0).second(0);
+            const end = moment().hour(17).minute(0).second(0);
+            if (!now.isBetween(start, end)) {
+                return;
+            }
+
             const amount = await this.redisHelper.getValue('priority_queueing_15_min_add_qty');
 
             if (!amount) {
