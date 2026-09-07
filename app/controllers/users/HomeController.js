@@ -14966,11 +14966,6 @@ class Controller {
 
                 await user.update(userUpdates, { transaction: t });
 
-                await aPackage.increment({ total_quantity: -1 }, { transaction: t });
-                if (aPackage.total_quantity - 1 <= 0) {
-                    await aPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
-                }
-
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
                 const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
@@ -15032,13 +15027,13 @@ class Controller {
 
                 await t.commit();
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.SUCCESS.code, true, '审批成功', {});
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '申请成功', {});
 
             } catch (error) {
                 console.log(error);
                 await t.rollback();
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '审批失败', {}); 
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '申请失败', {}); 
             }
         } catch (error) {
             errLogger(`[BUY_PRIORITY_QUEUEING_PACKAGE][${req.user_id}]: ${error.stack}`);
