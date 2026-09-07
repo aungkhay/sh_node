@@ -14004,7 +14004,7 @@ class Controller {
                     actual_approval_fund: actualApprovalFund,
                     period: aPackage.period,
                     will_finish_at: finishDate.format('YYYY-MM-DD HH:mm:ss'),
-                    is_finished: 1
+                    is_finished: actualApprovalFund > 0 ? 1 : 0
                 }, { transaction: t });
 
                 await user.update(userUpdates, { transaction: t });
@@ -14739,6 +14739,22 @@ class Controller {
                 }
             }
 
+            let launchTime = await this.redisHelper.getValue('priority_queueing_package_launch_time');
+            if (!launchTime) {
+                const conf = await Config.findOne({ where: { type: 'priority_queueing_package_launch_time' } });    
+                launchTime = conf ? conf.val : '';
+                await this.redisHelper.setValue('priority_queueing_package_launch_time', launchTime);
+            }
+            launchTime = launchTime ? moment(launchTime).toDate() : null;
+            let priority_bought_time = null;
+            if (firstPriorityQueueingPackage && launchTime) {
+                if (moment(JSON.parse(firstPriorityQueueingPackage).createdAt).isBefore(moment(launchTime))) {
+                    priority_bought_time = launchTime;
+                } else {
+                    priority_bought_time = JSON.parse(firstPriorityQueueingPackage).createdAt;
+                }
+            }
+
             const sumPriorityQueueingAmount = await PriorityQueueingPackageHistory.sum('queue_amount', {
                 where: {
                     user_id: userId,
@@ -14765,7 +14781,7 @@ class Controller {
 
             const data = {
                 allocation_bought_time: firstAllocationAuthPackage ? JSON.parse(firstAllocationAuthPackage).createdAt : null,
-                priority_bought_time: firstPriorityQueueingPackage ? JSON.parse(firstPriorityQueueingPackage).createdAt : null,
+                priority_bought_time: priority_bought_time,
                 queue_number: queueNumber == 0 ? '******' : queueNumber,
                 processing_number: processing_number,
                 package_description: package_description,

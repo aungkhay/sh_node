@@ -457,6 +457,13 @@ module.exports = async () => {
             val: '0',
             description: '-',
             data_type: 'integer'
+        },
+        {
+            type: 'priority_queueing_package_launch_time',
+            title: '优先排列 - 发布时间',
+            val: '2026-09-07 00:00:00',
+            description: '-',
+            data_type: 'string'
         }
     ];
 
