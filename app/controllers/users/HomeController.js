@@ -14715,7 +14715,7 @@ class Controller {
                     where: {
                         user_id: userId,
                     },
-                    attributes: ['id', 'will_finish_at', 'createdAt'],
+                    attributes: ['id', 'will_finish_at', 'is_finished', 'createdAt'],
                     order: [['id', 'ASC']],
                 });
                 if (allocationAuthPackageHistory) {
@@ -14739,21 +14739,28 @@ class Controller {
             //     }
             // }
 
-            let launchTime = await this.redisHelper.getValue('priority_queueing_package_launch_time');
-            if (!launchTime) {
-                const conf = await Config.findOne({ where: { type: 'priority_queueing_package_launch_time' } });    
-                launchTime = conf ? conf.val : '';
-                await this.redisHelper.setValue('priority_queueing_package_launch_time', launchTime);
-            }
+            // let launchTime = await this.redisHelper.getValue('priority_queueing_package_launch_time');
+            // if (!launchTime) {
+            //     const conf = await Config.findOne({ where: { type: 'priority_queueing_package_launch_time' } });    
+            //     launchTime = conf ? conf.val : '';
+            //     await this.redisHelper.setValue('priority_queueing_package_launch_time', launchTime);
+            // }
             
-            launchTime = launchTime ? moment(launchTime).toDate() : null;
+            // launchTime = launchTime ? moment(launchTime).toDate() : null;
+            // let priority_bought_time = null;
+            // firstAllocationAuthPackage = firstAllocationAuthPackage ? JSON.parse(firstAllocationAuthPackage) : null;
+            // if (firstAllocationAuthPackage && launchTime && firstAllocationAuthPackage.is_finished === 1) {
+            //     if (moment(firstAllocationAuthPackage.will_finish_at).isBefore(moment(launchTime))) {
+            //         priority_bought_time = launchTime;
+            //     } else {
+            //         priority_bought_time = firstAllocationAuthPackage.will_finish_at;
+            //     }
+            // }
+
             let priority_bought_time = null;
-            if (firstAllocationAuthPackage && launchTime) {
-                if (moment(JSON.parse(firstAllocationAuthPackage).will_finish_at).isBefore(moment(launchTime))) {
-                    priority_bought_time = launchTime;
-                } else {
-                    priority_bought_time = JSON.parse(firstAllocationAuthPackage).will_finish_at;
-                }
+            firstAllocationAuthPackage = firstAllocationAuthPackage ? JSON.parse(firstAllocationAuthPackage) : null;
+            if (firstAllocationAuthPackage && firstAllocationAuthPackage.is_finished === 1) {
+                priority_bought_time = firstAllocationAuthPackage.will_finish_at;
             }
 
             const sumPriorityQueueingAmount = await PriorityQueueingPackageHistory.sum('queue_amount', {
@@ -14766,8 +14773,7 @@ class Controller {
             const initialQueue = 288500;
             let queueNumber = 0;
             if (firstAllocationAuthPackage) {
-                const allocationAuthPackageHistory = JSON.parse(firstAllocationAuthPackage);
-                queueNumber = initialQueue + allocationAuthPackageHistory.id;
+                queueNumber = initialQueue + firstAllocationAuthPackage.id;
             }
             if (queueNumber > 0) {
                 queueNumber -= sumPriorityQueueingAmount;
@@ -14781,7 +14787,7 @@ class Controller {
             }
 
             const data = {
-                allocation_bought_time: firstAllocationAuthPackage ? JSON.parse(firstAllocationAuthPackage).createdAt : null,
+                allocation_bought_time: firstAllocationAuthPackage ? firstAllocationAuthPackage.createdAt : null,
                 priority_bought_time: priority_bought_time,
                 queue_number: queueNumber == 0 ? '******' : queueNumber,
                 processing_number: processing_number,
