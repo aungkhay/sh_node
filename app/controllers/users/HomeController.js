@@ -14715,7 +14715,7 @@ class Controller {
                     where: {
                         user_id: userId,
                     },
-                    attributes: ['id', 'createdAt'],
+                    attributes: ['id', 'will_finish_at', 'createdAt'],
                     order: [['id', 'ASC']],
                 });
                 if (allocationAuthPackageHistory) {
@@ -14724,20 +14724,20 @@ class Controller {
                 }
             }
 
-            let firstPriorityQueueingPackage = await this.redisHelper.getValue(`first_priority_queueing_package_${userId}`);
-            if (!firstPriorityQueueingPackage) {
-                const priorityQueueingPackageHistory = await PriorityQueueingPackageHistory.findOne({
-                    where: {
-                        user_id: userId,
-                    },
-                    attributes: ['id', 'createdAt'],
-                    order: [['id', 'ASC']],
-                });
-                if (priorityQueueingPackageHistory) {
-                    firstPriorityQueueingPackage = JSON.stringify(priorityQueueingPackageHistory);
-                    await this.redisHelper.setValue(`first_priority_queueing_package_${userId}`, firstPriorityQueueingPackage);
-                }
-            }
+            // let firstPriorityQueueingPackage = await this.redisHelper.getValue(`first_priority_queueing_package_${userId}`);
+            // if (!firstPriorityQueueingPackage) {
+            //     const priorityQueueingPackageHistory = await PriorityQueueingPackageHistory.findOne({
+            //         where: {
+            //             user_id: userId,
+            //         },
+            //         attributes: ['id', 'createdAt'],
+            //         order: [['id', 'ASC']],
+            //     });
+            //     if (priorityQueueingPackageHistory) {
+            //         firstPriorityQueueingPackage = JSON.stringify(priorityQueueingPackageHistory);
+            //         await this.redisHelper.setValue(`first_priority_queueing_package_${userId}`, firstPriorityQueueingPackage);
+            //     }
+            // }
 
             let launchTime = await this.redisHelper.getValue('priority_queueing_package_launch_time');
             if (!launchTime) {
@@ -14745,13 +14745,14 @@ class Controller {
                 launchTime = conf ? conf.val : '';
                 await this.redisHelper.setValue('priority_queueing_package_launch_time', launchTime);
             }
+            
             launchTime = launchTime ? moment(launchTime).toDate() : null;
             let priority_bought_time = null;
-            if (firstPriorityQueueingPackage && launchTime) {
-                if (moment(JSON.parse(firstPriorityQueueingPackage).createdAt).isBefore(moment(launchTime))) {
+            if (firstAllocationAuthPackage && launchTime) {
+                if (moment(JSON.parse(firstAllocationAuthPackage).will_finish_at).isBefore(moment(launchTime))) {
                     priority_bought_time = launchTime;
                 } else {
-                    priority_bought_time = JSON.parse(firstPriorityQueueingPackage).createdAt;
+                    priority_bought_time = JSON.parse(firstAllocationAuthPackage).will_finish_at;
                 }
             }
 
