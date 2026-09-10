@@ -14720,7 +14720,7 @@ class Controller {
                 });
                 if (allocationAuthPackageHistory) {
                     firstAllocationAuthPackage = JSON.stringify(allocationAuthPackageHistory);
-                    await this.redisHelper.setValue(`first_allocation_auth_package_${userId}`, firstAllocationAuthPackage);
+                    await this.redisHelper.setValue(`first_allocation_auth_package_${userId}`, firstAllocationAuthPackage, allocationAuthPackageHistory.is_finished ? 0 : 600); // Cache for 10 minutes (600 seconds) if not finished
                 }
             }
 
