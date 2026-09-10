@@ -6325,7 +6325,7 @@ class CronJob {
                 {
                     where: {
                         is_finished: 0,
-                        finish_date: {
+                        will_finish_at: {
                             [Op.lte]: now.toDate()
                         }
                     }
