@@ -14759,7 +14759,7 @@ class Controller {
 
             let priority_bought_time = null;
             firstAllocationAuthPackage = firstAllocationAuthPackage ? JSON.parse(firstAllocationAuthPackage) : null;
-            if (firstAllocationAuthPackage && firstAllocationAuthPackage.is_finished === 1) {
+            if (firstAllocationAuthPackage && firstAllocationAuthPackage.is_finished) {
                 priority_bought_time = firstAllocationAuthPackage.will_finish_at;
             }
 
