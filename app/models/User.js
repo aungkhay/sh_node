@@ -359,6 +359,12 @@ User.init({
         defaultValue: 0,
         comment: '产品收益 (clear after calculate)'
     },
+    priority_queue_number: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '优先排队'
+    },
     google_2fa_secret: {
         type: DataTypes.STRING,
         allowNull: true,

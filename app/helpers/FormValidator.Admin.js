@@ -474,6 +474,15 @@ exports.update_contact_info = () => {
     ]
 }
 
+exports.update_priority_queue_number = () => {
+    return [
+        check('priority_queue_number')
+            .not().isEmpty().withMessage('优先队列号不能为空')
+            .bail()
+            .isNumeric().withMessage('优先队列号必须是数字')
+    ]
+}
+
 exports.spring_whitelist = () => {
     return [
         check('can_join_spring_event')

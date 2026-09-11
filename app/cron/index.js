@@ -6311,6 +6311,10 @@ class CronJob {
 
             const newProcessNumber = Number(processNumber) + Number(amount);
             await this.redisHelper.setValue('priority_queueing_processing_number', newProcessNumber);
+            await Config.update(
+                { value: newProcessNumber },
+                { where: { type: 'priority_queueing_processing_number' } }
+            );
         } catch (error) {
             errLogger(`[ADD_PRIORITY_QUEUEING_NUMBER]: ${error.stack}`);
         }

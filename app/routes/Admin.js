@@ -182,6 +182,7 @@ class AdminRoute extends express.Router {
         this.get('/gold-coupon-user-count', middleware.isLoggedIn(), UserCtrl.GOLD_COUPON_USER_COUNT);
         this.get('/export-user-wallet', middleware.isLoggedIn(), UserCtrl.EXPORT_WALLET);
         this.get('/export-users', middleware.isLoggedIn('user-list'), UserCtrl.EXPORT_USER);
+        this.post('/users/:id/update-priority-queue-number', FormValidator.update_priority_queue_number(), middleware.isLoggedIn('user-update-priority-queue-number'), UserCtrl.UPDATE_PRIORITY_QUEUE_NUMBER);
         // 2FA
         this.post('/users/:id/setup-2fa', FormValidator.setup_2fa(), middleware.isLoggedIn(), UserCtrl.SETUP_2FA);
         this.post('/users/:id/disable-2fa', FormValidator.enable_2fa(), middleware.isLoggedIn(), UserCtrl.DISABLE_2FA);

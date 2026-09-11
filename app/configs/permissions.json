@@ -25,6 +25,7 @@
     { "model": "用户管理", "title": "禁用、启用用户", "name": "user-disable-enable" },
     { "model": "用户管理", "title": "分配角色", "name": "user-assign-role" },
     { "model": "用户管理", "title": "生成提现激活码", "name": "user-generate-withdraw-active-code" },
+    { "model": "用户管理", "title": "更新优先队列号", "name": "user-update-priority-queue-number" },
 
     { "model": "实名认证管理", "title": "实名认证列表", "name": "kyc-list" },
     { "model": "实名认证管理", "title": "添加", "name": "kyc-add" },
