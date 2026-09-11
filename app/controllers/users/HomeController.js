@@ -14779,6 +14779,11 @@ class Controller {
                 queueNumber -= Number(sumPriorityQueueingAmount);
             }
 
+            const user = await User.findOne({ where: { id: userId }, attributes: ['priority_queue_number'], useMaster: true });
+            if (Number(user.priority_queue_number) > 0) {
+                queueNumber = Number(user.priority_queue_number);
+            }
+
             let processing_number = await this.redisHelper.getValue('priority_queueing_processing_number');
             if (!processing_number) {
                 const conf = await Config.findOne({ where: { type: 'priority_queueing_processing_number' } });
