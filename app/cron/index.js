@@ -102,7 +102,7 @@ class CronJob {
         // cron.schedule('0 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
         cron.schedule('20 1 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start();
         cron.schedule('0 2 * * *', this.TRANSFER_APPROVAL_FUND_BALANCE).start();
-        cron.schedule('*/15 * * * *', this.ADD_PRIORITY_QUEUEING_NUMBER).start();
+        cron.schedule('*/5 * * * *', this.ADD_PRIORITY_QUEUEING_NUMBER).start();
 
         // Run every 30 minutes
         cron.schedule('*/30 * * * *', this.FINISH_ALLOCATION_AUTH_HISTORY).start();

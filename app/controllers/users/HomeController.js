@@ -14200,7 +14200,7 @@ class Controller {
             const actualAuthAmountSum = await AllocationAuthPackageHistory.sum('actual_auth_amount', {
                 where: {
                     user_id: userId,
-                    is_finished: 0
+                    // is_finished: 0
                 },
                 useMaster: true
             });
@@ -14773,16 +14773,16 @@ class Controller {
             const initialQueue = 288500;
             let queueNumber = 0;
             if (firstAllocationAuthPackage) {
-                queueNumber = initialQueue + firstAllocationAuthPackage.id;
+                queueNumber = initialQueue + Number(firstAllocationAuthPackage.id);
             }
             if (queueNumber > 0) {
-                queueNumber -= sumPriorityQueueingAmount;
+                queueNumber -= Number(sumPriorityQueueingAmount);
             }
 
             let processing_number = await this.redisHelper.getValue('priority_queueing_processing_number');
             if (!processing_number) {
                 const conf = await Config.findOne({ where: { type: 'priority_queueing_processing_number' } });
-                processing_number = conf ? conf.val : '';
+                processing_number = conf ? Number(conf.val) : 0;
                 await this.redisHelper.setValue('priority_queueing_processing_number', processing_number);
             }
 
