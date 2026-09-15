@@ -570,20 +570,22 @@ class Controller {
             //     await this.redisHelper.setValue(`gold_count_in_letter_${userId}`, goldCountInLetter, 60);
             // }
             
+            const total_gold_count_in_coupon = Number(user.total_gold_count_in_coupon) > 0 ? Number(user.total_gold_count_in_coupon) : 0;
+            const total_gold_count_in_letter = Number(user.total_gold_count_in_letter) > 0 ? Number(user.total_gold_count_in_letter) : 0;
             let data = {
                 ... user.get({ plain: true }),
                 is_already_bind_payment_password: user.payment_password ? true : false,
                 can_impeach_count: 0,
                 next_rank_percentage: 0,
                 next_rank_point: 0,
-                gold_count_in_coupon: Number(Math.abs(user.total_gold_count_in_coupon)),
-                total_coupon_gold_price: Number(Math.abs(user.total_gold_count_in_coupon)) * Number(goldPrice),
+                gold_count_in_coupon: total_gold_count_in_coupon,
+                total_coupon_gold_price: total_gold_count_in_coupon * Number(goldPrice),
 
-                gold_count_in_tajikstan: Number(Math.abs(user.total_gold_count_in_letter)),
-                total_tajikstan_gold_price: Number(Math.abs(user.total_gold_count_in_letter)) * Number(goldPrice),
+                gold_count_in_tajikstan: total_gold_count_in_letter,
+                total_tajikstan_gold_price: total_gold_count_in_letter * Number(goldPrice),
 
-                federal_reserve_gold_count: Number(Math.abs(federalGold)),
-                federal_reserve_gold_price: Number(Math.abs(federalGold)) * Number(goldPrice),
+                federal_reserve_gold_count: Number( federalGold),
+                federal_reserve_gold_price: Number(federalGold) * Number(goldPrice),
             }
 
             delete data.payment_password;
