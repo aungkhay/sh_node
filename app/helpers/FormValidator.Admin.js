@@ -1440,5 +1440,9 @@ exports.create_priority_queueing_package = () => {
             .bail()
             .isIn([1, 2, 3])
             .withMessage('状态无效'),
+        check('tag')
+            .optional({ checkFalsy: true })
+            .isArray({ min: 1 })
+            .withMessage('标签必须是数组')
     ]
 }

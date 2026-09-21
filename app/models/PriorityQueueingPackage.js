@@ -41,7 +41,12 @@ PriorityQueueingPackage.init({
         allowNull: false,
         defaultValue: 1,
         comment: '状态: 1-在售, 2-下架, 3-售罄',
-    }
+    },
+    tag: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: '标签 | 分隔',
+    },
 }, {
     sequelize,
     modelName: 'PriorityQueueingPackage',
