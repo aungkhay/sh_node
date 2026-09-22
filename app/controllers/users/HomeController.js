@@ -15336,16 +15336,13 @@ class Controller {
             if (Number(user.reserve_fund) < Number(gPackage.price)) {
                 // balanceAmount = Number(gPackage.price) - Number(user.reserve_fund);
                 // reserveAmount = Number(user.reserve_fund);
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
             // if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
             //     await this.redisHelper.deleteKey(PROCESSING_KEY);
             //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             // }
-
-            const isAssetActive = await this.is_asset_treasure_active();
-            const walletType = isAssetActive ? 3 : 2; // 3:资产宝, 2:余额
-            const walletColumn = isAssetActive ? 'total_assets' : 'balance';
 
             const t = await db.transaction();
             try {
