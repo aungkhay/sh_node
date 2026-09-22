@@ -59,6 +59,12 @@ SharingPlanPackageHistory.init({
         defaultValue: 0,
         comment: '上合共享金',
     },
+    period: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '共享周期(天)',
+    },
     return_date: {
         type: DataTypes.DATE,
         allowNull: true,
