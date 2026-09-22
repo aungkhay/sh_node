@@ -6438,7 +6438,7 @@ class CronJob {
                             after_amount: Number(user.balance) + originPrice,
                             flow_status: 'IN',
                             description: `${history.package ? history.package.product_name : ''}`,
-                        }, { transaction: t });
+                        });
                         userUpdate.balance = Number(user.balance) + originPrice;
                     }
                     if (!history.is_returned_share_amount) {
@@ -6453,7 +6453,7 @@ class CronJob {
                             after_amount: Number(user.sharing_amount) + shareAmount,
                             flow_status: 'IN',
                             description: `${history.package ? history.package.product_name : ''}`,
-                        }, { transaction: t });
+                        });
                         userUpdate.sharing_amount = Number(user.sharing_amount) + shareAmount;
                     }
 
