@@ -6463,6 +6463,8 @@ class CronJob {
                         await history.update({ is_returned_price: 1, is_returned_share_amount: 1 }, { transaction: t });
                     }
                     await t.commit();
+
+                    console.log(`[RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT_TRANSACTION]: Successfully processed for user ${user.id} | originPrice: ${originPrice} | shareAmount: ${shareAmount}`);
                 } catch (error) {
                     errLogger(`[RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT_TRANSACTION]: ${error.stack}`);
                     await t.rollback();
