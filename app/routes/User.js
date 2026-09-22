@@ -177,6 +177,12 @@ class UserRoute extends express.Router {
         this.post('/priority-queueing-packages/:id/buy', FormValidator.buy_priority_queueing_package(), middleware.isLoggedIn, HomeCtrl.BUY_PRIORITY_QUEUEING_PACKAGE);
         this.get('/priority-queueing-packages/history', middleware.isLoggedIn, HomeCtrl.PRIORITY_QUEUEING_PACKAGE_HISTORY);
         this.get('/priority-queueing-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.PRIORITY_QUEUEING_PACKAGE_BONUS_HISTORY);
+        // Sharing Plan Package Routes
+        this.get('/sharing-plan-packages', middleware.isLoggedIn, HomeCtrl.SHARING_PLAN_PACKAGE);
+        this.post('/sharing-plan-packages/:id/buy', FormValidator.buy_sharing_plan_package(), middleware.isLoggedIn, HomeCtrl.BUY_SHARING_PLAN_PACKAGE);
+        this.get('/sharing-plan-packages/history', middleware.isLoggedIn, HomeCtrl.SHARING_PLAN_PACKAGE_HISTORY);
+        this.get('/sharing-plan-packages/earn-history', middleware.isLoggedIn, HomeCtrl.SHARING_PLAN_PACKAGE_EARN_HISTORY);
+        this.get('/sharing-plan-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.SHARING_PLAN_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

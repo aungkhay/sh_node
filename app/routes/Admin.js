@@ -435,6 +435,17 @@ class AdminRoute extends express.Router {
         this.post('/priority-queueing-packages/:id/update', FormValidator.create_priority_queueing_package(), middleware.isLoggedIn('priority-queueing-package-update'), PriorityQueueingPackageCtrl.UPDATE);
         this.get('/priority-queueing-packages/history', middleware.isLoggedIn('priority-queueing-package-history-list'), PriorityQueueingPackageCtrl.PRIORITY_QUEUEING_PACKAGE_HISTORY);
         this.get('/priority-queueing-packages/bonus-history', middleware.isLoggedIn('priority-queueing-package-bonus-history-list'), PriorityQueueingPackageCtrl.PRIORITY_QUEUEING_PACKAGE_BONUS_HISTORY);
+
+        // Sharing Plan Package
+        let SharingPlanPackageController = require('../controllers/admins/SharingPlanPackageController');
+        let SharingPlanPackageCtrl = new SharingPlanPackageController(app);
+        this.get('/sharing-plan-packages', middleware.isLoggedIn('sharing-plan-package-list'), SharingPlanPackageCtrl.INDEX);
+        this.post('/sharing-plan-packages/create', FormValidator.create_sharing_plan_package(), middleware.isLoggedIn('sharing-plan-package-create'), SharingPlanPackageCtrl.CREATE);
+        this.post('/sharing-plan-packages/:id/update', FormValidator.create_sharing_plan_package(), middleware.isLoggedIn('sharing-plan-package-update'), SharingPlanPackageCtrl.UPDATE);
+        this.post('/sharing-plan-packages/:id/upload', middleware.isLoggedIn('sharing-plan-package-create,sharing-plan-package-update'), SharingPlanPackageCtrl.UPLOAD);
+        this.get('/sharing-plan-packages/history', middleware.isLoggedIn('sharing-plan-package-history-list'), SharingPlanPackageCtrl.SHARING_PLAN_PACKAGE_HISTORY);
+        this.get('/sharing-plan-packages/bonus-history', middleware.isLoggedIn('sharing-plan-package-bonus-history-list'), SharingPlanPackageCtrl.SHARING_PLAN_PACKAGE_BONUS_HISTORY);
+        this.get('/sharing-plan-packages/earn-history', middleware.isLoggedIn('sharing-plan-package-earn-history-list'), SharingPlanPackageCtrl.SHARING_PLAN_PACKAGE_EARN_HISTORY);
     }
 }
 

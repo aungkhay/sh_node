@@ -498,7 +498,7 @@ class Controller {
                     where: { status: 1 },
                     attributes: [
                         'id', 'name', 'serial_number', 'phone_number', 'invite_code', 'reserve_fund', 
-                        'balance', 'referral_bonus', 'masonic_fund', 'address', 'address_status', 
+                        'balance', 'sharing_amount', 'referral_bonus', 'masonic_fund', 'address', 'address_status', 
                         'agreement_status', 'rank_allowance', 'freeze_allowance', 'profile_picture',
                         'political_vetting_status', 'rank_id', 'rank_point', 
                         'gold', 'gold_interest', 'total_gold_count_in_coupon', 'total_gold_count_in_letter',

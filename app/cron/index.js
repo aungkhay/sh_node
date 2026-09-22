@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn } = require('../models');
 const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -106,6 +106,10 @@ class CronJob {
 
         // Run every 30 minutes
         cron.schedule('*/30 * * * *', this.FINISH_ALLOCATION_AUTH_HISTORY).start();
+        // Run at 2:20 AM Every day
+        cron.schedule('20 2 * * *', this.SHARING_PLAN_DAILY_EARN).start();
+        // Run at 3:00 AM Every day
+        cron.schedule('0 3 * * *', this.RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6337,6 +6341,134 @@ class CronJob {
             );
         } catch (error) {
             errLogger(`[FINISH_ALLOCATION_AUTH_HISTORY]: ${error.stack}`);
+        }
+    }
+
+    SHARING_PLAN_DAILY_EARN = async () => {
+        try {
+            const histories = await SharingPlanPackageHistory.findAll({
+                include: {
+                    model: SharingPlanPackage,
+                    as: 'package',
+                    attributes: ['product_name']
+                },
+                attributes: ['id', 'package_id', 'user_id', 'daily_earn']
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) continue;
+
+                    const dailyEarn = Number(history.daily_earn);
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2, // 余额
+                        model: 'SharingPlanPackageEarn',
+                        type: '上合共享-每日收益',
+                        amount: dailyEarn,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + dailyEarn,
+                        flow_status: 'IN',
+                        description: `${history.package ? history.package.product_name : ''}`,
+                    }, { transaction: t });
+                    await SharingPlanPackageEarn.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: dailyEarn,
+                        description: `${history.package ? history.package.product_name : ''}`,
+                    }, { transaction: t });
+
+                    await user.increment({ balance: dailyEarn }, { transaction: t });
+                    await t.commit();
+
+                    console.log(`[SHARING_PLAN_DAILY_EARN]: User ${user.id} earned ${dailyEarn}`);
+                } catch (error) {
+                    errLogger(`[SHARING_PLAN_DAILY_EARN_TRANSACTION]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[SHARING_PLAN_DAILY_EARN]: ${error.stack}`);
+        }
+    }
+
+    RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT = async () => {
+        try {
+            const now = moment();
+            const startOfDay = now.startOf('day').toDate();
+            const endOfDay = now.endOf('day').toDate();
+            const histories = await SharingPlanPackageHistory.findAll({
+                include: {
+                    model: SharingPlanPackage,
+                    as: 'package',
+                    attributes: ['product_name']
+                },
+                where: {
+                    return_date: {
+                        [Op.between]: [startOfDay, endOfDay]
+                    }
+                }
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'sharing_amount'], transaction: t });
+                    if (!user) continue;
+
+                    const cashflows = [];
+                    const originPrice = Number(history.price); 
+                    const shareAmount = Number(history.share_amount);
+                    const userUpdate = {}
+
+                    if (!history.is_returned_price) {
+                        cashflows.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 余额
+                            model: 'SharingPlanPackageHistory',
+                            type: '上合共享-返还本金',
+                            amount: originPrice,
+                            before_amount: user.balance,
+                            after_amount: Number(user.balance) + originPrice,
+                            flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''}`,
+                        }, { transaction: t });
+                        userUpdate.balance = Number(user.balance) + originPrice;
+                    }
+                    if (!history.is_returned_share_amount) {
+                        cashflows.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 7, // 上合共享金
+                            model: 'SharingPlanPackageHistory',
+                            type: '上合共享-返还上合共享金',
+                            amount: shareAmount,
+                            before_amount: user.sharing_amount,
+                            after_amount: Number(user.sharing_amount) + shareAmount,
+                            flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''}`,
+                        }, { transaction: t });
+                        userUpdate.sharing_amount = Number(user.sharing_amount) + shareAmount;
+                    }
+
+                    if (cashflows.length > 0) {
+                        await CashFlow.bulkCreate(cashflows, { transaction: t });
+                        await user.update(userUpdate, { transaction: t });
+                    }
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT_TRANSACTION]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT]: ${error.stack}`);
         }
     }
 

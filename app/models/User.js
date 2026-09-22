@@ -33,6 +33,8 @@ class User extends Model {
             attributes.rank_point = Number(attributes.rank_point);
         if (attributes.level_up_pay !== undefined)
             attributes.level_up_pay = Number(attributes.level_up_pay);
+        if (attributes.sharing_amount !== undefined)
+            attributes.sharing_amount = Number(attributes.sharing_amount);
         return attributes
     }
 }
@@ -364,6 +366,12 @@ User.init({
         allowNull: false,
         defaultValue: 0,
         comment: '优先排队'
+    },
+    sharing_amount: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '共享金'
     },
     google_2fa_secret: {
         type: DataTypes.STRING,

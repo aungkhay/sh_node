@@ -1148,3 +1148,24 @@ const url = `${baseURL}/priority-queueing-packages/history`;
 // [GET] Bonuses History
 const url = `${baseURL}/priority-queueing-packages/bonus-history`;
 ```
+
+### 上合共享
+```js
+// [GET] Packages
+const url = `${baseURL}/sharing-plan-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/sharing-plan-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/sharing-plan-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/sharing-plan-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/sharing-plan-packages/bonus-history`;
+```
