@@ -6460,7 +6460,12 @@ class CronJob {
                     if (cashflows.length > 0) {
                         await CashFlow.bulkCreate(cashflows, { transaction: t });
                         await user.update(userUpdate, { transaction: t });
-                        await history.update({ is_returned_price: 1, is_returned_share_amount: 1 }, { transaction: t });
+                        await history.update({ 
+                            is_returned_price: 1,
+                            return_price_at: new Date(),
+                            is_returned_share_amount: 1,
+                            return_share_amount_at: new Date()
+                        }, { transaction: t });
                     }
                     await t.commit();
 
