@@ -287,12 +287,13 @@ class Controller {
             const endTime = req.query.endTime;
 
             let condition = {}
+            let userCondition = {};
             if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
                 condition.relation = { [Op.like]: `${me.relation}/%` }
             }
             if (phone) {
-                condition.phone_number = phone;
+                userCondition.phone_number = phone;
             }
 
             if (startTime && endTime) {
@@ -305,7 +306,7 @@ class Controller {
                         model: User,
                         as: 'user',
                         attributes: ['id', 'name', 'phone_number'],
-                        where: condition
+                        where: userCondition
                     },
                     {
                         model: SharingPlanPackageHistory,
@@ -318,6 +319,7 @@ class Controller {
                         attributes: ['id', 'product_name']
                     }
                 ],
+                where: condition,
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset

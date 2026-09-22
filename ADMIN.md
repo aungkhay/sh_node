@@ -2440,7 +2440,6 @@ const data = {
     buy_one_get_quantity: 0, // default 0 | 0表示不赠送
     description: '申购成功次日发放收益，期满返还本金并发放上合共享金。',
     status: 1, // 1-在售, 2-下架, 3-售罄
-    can_new_registered_user_get_free: 1, // 新注册用户是否可以免费领取 default 0
 }
 
 // [POST] Upload Product Cover Image
