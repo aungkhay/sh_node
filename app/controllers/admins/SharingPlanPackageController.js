@@ -1,6 +1,8 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const { Op } = require('sequelize');
+const multer = require('multer');
+const path = require('path');
 const { SharingPlanPackage, SharingPlanPackageHistory, User, SharingPlanPackageBonuses, SharingPlanPackageEarn } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
