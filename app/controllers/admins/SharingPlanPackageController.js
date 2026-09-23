@@ -6,6 +6,7 @@ const path = require('path');
 const { SharingPlanPackage, SharingPlanPackageHistory, User, SharingPlanPackageBonuses, SharingPlanPackageEarn } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
+const AliOSS = require('../../helpers/AliOSS');
 const RedisHelper = require('../../helpers/RedisHelper');
 
 class Controller {
@@ -15,6 +16,7 @@ class Controller {
         this.getOffset = this.commonHelper.getOffset;
         this.adminLogger = this.commonHelper.adminLogger;
         this.redisHelper = new RedisHelper(app);
+        this.OSS = new AliOSS();
     }
 
     INDEX = async (req, res) => {

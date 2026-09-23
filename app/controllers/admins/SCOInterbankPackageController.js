@@ -15,8 +15,8 @@ class Controller {
         this.ResCode = this.commonHelper.ResCode;
         this.getOffset = this.commonHelper.getOffset;
         this.adminLogger = this.commonHelper.adminLogger;
-        this.OSS = new AliOSS();
         this.redisHelper = new RedisHelper(app);
+        this.OSS = new AliOSS();
     }
 
     INDEX = async (req, res) => {
