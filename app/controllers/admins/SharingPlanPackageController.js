@@ -62,6 +62,7 @@ class Controller {
                 const localFile = path.resolve(__dirname, `../../../uploads/sharing_plan_packages/${fileName}`);
                 const { success } = await this.OSS.PUT(dir, fileName, localFile);
                 if (success) {
+                    await this.redisHelper.deleteKey(`sharing_plan_packages`); // Clear cache
                     await pkg.update({ cover_image: `/uploads/sharing_plan_packages/${fileName}` });
                     return MyResponse(res, this.ResCode.SUCCESS.code, true, '上传成功', {});
                 } else {
