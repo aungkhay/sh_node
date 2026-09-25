@@ -1,6 +1,6 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
-const { Op } = require('sequelize');
+const { Op, QueryTypes } = require('sequelize');
 const { PriorityQueueingPackage, PriorityQueueingPackageHistory, User, PriorityQueueingPackageBonuses, db } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -274,10 +274,10 @@ class Controller {
                 ) AS subquery;
             `;
 
-            const totalCountResult = await sequelize.query(totalCountQuery, { type: sequelize.QueryTypes.SELECT });
+            const totalCountResult = await db.query(totalCountQuery, { type: QueryTypes.SELECT });
             const totalCount = totalCountResult[0].total;
 
-            const rows = await db.query(query, { type: sequelize.QueryTypes.SELECT });
+            const rows = await db.query(query, { type: QueryTypes.SELECT });
 
             const data = {
                 packages: rows,
@@ -291,6 +291,7 @@ class Controller {
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
+            console.log(error);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
