@@ -446,6 +446,7 @@ class AdminRoute extends express.Router {
         this.get('/sharing-plan-packages/history', middleware.isLoggedIn('sharing-plan-package-history-list'), SharingPlanPackageCtrl.SHARING_PLAN_PACKAGE_HISTORY);
         this.get('/sharing-plan-packages/bonus-history', middleware.isLoggedIn('sharing-plan-package-bonus-history-list'), SharingPlanPackageCtrl.SHARING_PLAN_PACKAGE_BONUS_HISTORY);
         this.get('/sharing-plan-packages/earn-history', middleware.isLoggedIn('sharing-plan-package-earn-history-list'), SharingPlanPackageCtrl.SHARING_PLAN_PACKAGE_EARN_HISTORY);
+        this.get('/order-priority-queue', middleware.isLoggedIn('sharing-plan-package-history-list'), PriorityQueueingPackageCtrl.ORDER_PRIORTIY_QUEUE);
     }
 }
 

@@ -2418,6 +2418,13 @@ const params = {
     startTime: '',
     endTime: ''
 }
+
+// [GET]
+const url = `${baseURL}/order-priority-queue`
+const params = {
+    phone: '',
+    order: 'ASC', // ASC (default) | DESC
+};
 ```
 
 ### 上合共享

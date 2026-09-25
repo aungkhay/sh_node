@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const { Op } = require('sequelize');
-const { PriorityQueueingPackage, PriorityQueueingPackageHistory, User, PriorityQueueingPackageBonuses } = require('../../models');
+const { PriorityQueueingPackage, PriorityQueueingPackageHistory, User, PriorityQueueingPackageBonuses, db } = require('../../models');
 const { errLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
 const RedisHelper = require('../../helpers/RedisHelper');
@@ -173,11 +173,17 @@ class Controller {
             const offset = this.getOffset(page, perPage);
             const userId = req.user_id;
             const phone = req.query.phone;
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
 
             let condition = {}
             if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
                 condition.relation = { [Op.like]: `${me.relation}/%` }
+            }
+
+            if (startTime && endTime) {
+                condition.created_at = { [Op.between]: [startTime, endTime] };
             }
 
             let userCondition = {}
@@ -224,6 +230,64 @@ class Controller {
                     total: count
                 }
             }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    ORDER_PRIORTIY_QUEUE = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const phone = req.query.phone;
+            const order = req.query.order || 'ASC';
+
+            const condition = phone ? `WHERE u.phone_number = '${phone}'` : '';
+
+            const query = `
+                SELECT
+                    u.id,
+                    u.name,
+                    u.phone_number,
+                    u.balance,
+                    COUNT(pqph.id) AS total_queue_entries,
+                    (288500 - SUM(pqph.queue_amount)) AS total_queue_amount
+                FROM priority_queueing_package_history pqph
+                JOIN users u ON u.id = pqph.user_id
+                ${condition}
+                GROUP BY u.id, u.name, u.phone_number, u.balance
+                ORDER BY total_queue_amount ${order}
+                LIMIT ${perPage} OFFSET ${offset};
+            `;
+
+            const totalCountQuery = `
+                SELECT COUNT(*) AS total
+                FROM (
+                    SELECT u.id
+                    FROM priority_queueing_package_history pqph
+                    JOIN users u ON u.id = pqph.user_id
+                    ${condition}
+                    GROUP BY u.id, u.name, u.phone_number, u.balance
+                ) AS subquery;
+            `;
+
+            const totalCountResult = await sequelize.query(totalCountQuery, { type: sequelize.QueryTypes.SELECT });
+            const totalCount = totalCountResult[0].total;
+
+            const rows = await db.query(query, { type: sequelize.QueryTypes.SELECT });
+
+            const data = {
+                packages: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: totalCount > 0 ? Math.ceil(totalCount / perPage) : totalCount,
+                    total: totalCount
+                }
+            };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
