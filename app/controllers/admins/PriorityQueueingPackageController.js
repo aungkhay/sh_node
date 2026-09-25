@@ -183,7 +183,7 @@ class Controller {
             }
 
             if (startTime && endTime) {
-                condition.created_at = { [Op.between]: [startTime, endTime] };
+                condition.createdAt = { [Op.between]: [startTime, endTime] };
             }
 
             let userCondition = {}
