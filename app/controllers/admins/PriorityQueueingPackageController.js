@@ -254,11 +254,19 @@ class Controller {
                     u.phone_number,
                     u.balance,
                     COUNT(pqph.id) AS total_queue_entries,
-                    (288500 - SUM(pqph.queue_amount)) AS total_queue_amount
+                    (288500 - SUM(pqph.queue_amount)) AS total_queue_amount,
+                    aaph_first.id AS allocation_auth_history_id
                 FROM priority_queueing_package_history pqph
                 JOIN users u ON u.id = pqph.user_id
+                LEFT JOIN (
+                    SELECT user_id, MIN(id) AS first_id
+                    FROM allocation_auth_package_history
+                    GROUP BY user_id
+                ) first_aaph ON first_aaph.user_id = u.id
+                LEFT JOIN allocation_auth_package_history aaph_first
+                    ON aaph_first.id = first_aaph.first_id
                 ${condition}
-                GROUP BY u.id, u.name, u.phone_number, u.balance
+                GROUP BY u.id, u.name, u.phone_number, u.balance, aaph_first.id
                 ORDER BY total_queue_amount ${order}
                 LIMIT ${perPage} OFFSET ${offset};
             `;
@@ -269,8 +277,15 @@ class Controller {
                     SELECT u.id
                     FROM priority_queueing_package_history pqph
                     JOIN users u ON u.id = pqph.user_id
+                    LEFT JOIN (
+                        SELECT user_id, MIN(id) AS first_id
+                        FROM allocation_auth_package_history
+                        GROUP BY user_id
+                    ) first_aaph ON first_aaph.user_id = u.id
+                    LEFT JOIN allocation_auth_package_history aaph_first
+                        ON aaph_first.id = first_aaph.first_id
                     ${condition}
-                    GROUP BY u.id, u.name, u.phone_number, u.balance
+                    GROUP BY u.id, u.name, u.phone_number, u.balance, aaph_first.id
                 ) AS subquery;
             `;
 
