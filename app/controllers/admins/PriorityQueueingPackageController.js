@@ -267,7 +267,7 @@ class Controller {
                     ON aaph_first.id = first_aaph.first_id
                 ${condition}
                 GROUP BY u.id, u.name, u.phone_number, u.balance, aaph_first.id
-                ORDER BY total_queue_amount ${order}
+                ORDER BY total_queue_amount + allocation_auth_history_id ${order}
                 LIMIT ${perPage} OFFSET ${offset};
             `;
 
