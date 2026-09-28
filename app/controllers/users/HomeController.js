@@ -14895,14 +14895,14 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该方案已申请过，仅可提交一次!', {});
             }
 
-            const checkBindBank = await AllocationAuthBankInfo.findOne({
-                where: { user_id: userId },
-                attributes: ['id'],
-            });
-            if (!checkBindBank) {
-                await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定授权绑卡', {});
-            }
+            // const checkBindBank = await AllocationAuthBankInfo.findOne({
+            //     where: { user_id: userId },
+            //     attributes: ['id'],
+            // });
+            // if (!checkBindBank) {
+            //     await this.redisHelper.deleteKey(PROCESSING_KEY);
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请先绑定授权绑卡', {});
+            // }
             
             const payment_password = req.body.payment_password;
             const user = await User.findByPk(userId, {
