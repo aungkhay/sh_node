@@ -6346,13 +6346,20 @@ class CronJob {
 
     SHARING_PLAN_DAILY_EARN = async () => {
         try {
+            const now = moment();
+            const startOfDay = now.startOf('day').toDate();
             const histories = await SharingPlanPackageHistory.findAll({
                 include: {
                     model: SharingPlanPackage,
                     as: 'package',
                     attributes: ['product_name']
                 },
-                attributes: ['id', 'package_id', 'user_id', 'daily_earn']
+                attributes: ['id', 'package_id', 'user_id', 'daily_earn'],
+                where: {
+                    return_date: {
+                        [Op.gt]: startOfDay
+                    }
+                }
             });
 
             for (const history of histories) {
