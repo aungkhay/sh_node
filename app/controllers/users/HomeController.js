@@ -8511,14 +8511,7 @@ class Controller {
             if (meeting.is_active !== 2) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议未结束', {});
             }
-
-            const countKey = `MEETING:${meeting.id}:USED_CODE`;
-            const usedCode = await this.redisHelper.incrementValue(countKey);
-            if (usedCode > Number(meeting.total_release_code)) {
-                await this.redisHelper.decrementValue(countKey);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您来迟了，今日福利码已发完。', {});
-            }
-
+            
             const userId = req.user_id;
             const meetingCode = req.params.code;
             if (meeting.meeting_code !== meetingCode) {
@@ -8528,6 +8521,13 @@ class Controller {
             const already_joined = await this.CHECK_ALREADY_JOINED_MEETING(userId, meeting.id, meetingCode);
             if (already_joined) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已参加过本次会议', {});
+            }
+
+            const countKey = `MEETING:${meeting.id}:USED_CODE`;
+            const usedCode = await this.redisHelper.incrementValue(countKey);
+            if (usedCode > Number(meeting.total_release_code)) {
+                await this.redisHelper.decrementValue(countKey);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您来迟了，今日福利码已发完。', {});
             }
 
             meeting.used_code = Number(meeting.used_code) + 1;
