@@ -8512,7 +8512,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '会议未结束', {});
             }
 
-            if (Number(meeting.used_code) >= Number(meeting.total_release_code)) {
+            const countKey = `MEETING:${meeting.id}:USED_CODE`;
+            const usedCode = await this.redisHelper.incrementValue(countKey);
+            if (usedCode > Number(meeting.total_release_code)) {
+                await this.redisHelper.decrementValue(countKey);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您来迟了，今日福利码已发完。', {});
             }
 
