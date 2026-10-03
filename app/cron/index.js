@@ -7087,6 +7087,160 @@ class CronJob {
             errLogger(`[PAY_ALLOWANCE_TO_TOTAL_ASSETS]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    EXPORT_CASH_FLOWS = async () => {
+        console.log('[EXPORT_CASH_FLOWS]: Starting export of cash flows');
+
+        try {
+            const path = require('path');
+            const fs = require('fs');
+
+            const outputDir = path.join(__dirname, 'cash_flows_exports');
+            if (!fs.existsSync(outputDir)) {
+                fs.mkdirSync(outputDir, { recursive: true });
+            }
+
+            const startDate = moment('2026-05-01');
+            const endDate = moment('2026-10-01');
+            const PAGE_SIZE = 5000;
+
+            const escapeCsv = (value) => {
+                if (value === null || value === undefined) return '';
+                const str = String(value).replace(/"/g, '""');
+                return /[",\n]/.test(str) ? `"${str}"` : str;
+            };
+
+            for (let current = startDate.clone(); current.isBefore(endDate); current.add(1, 'day')) {
+                const dayLabel = current.format('YYYY-MM-DD');
+                const dayStartDate = current.clone().startOf('day').toDate();
+                const nextDayStartDate = current.clone().add(1, 'day').startOf('day').toDate();
+
+                const filePath = path.join(outputDir, `cash_flows_${dayLabel}.csv`);
+                const stream = fs.createWriteStream(filePath, { encoding: 'utf8' });
+
+                stream.write([
+                    '流水ID',
+                    '用户ID',
+                    '姓名',
+                    '手机号',
+                    '钱包类型',
+                    '类型',
+                    '金额',
+                    '流水状态',
+                    '描述',
+                    '创建时间'
+                ].join(',') + '\n');
+
+                let total = 0;
+                let lastId = 0;
+
+                console.time(`[EXPORT_CASH_FLOWS][${dayLabel}] total`);
+
+                while (true) {
+                    console.time(`[EXPORT_CASH_FLOWS][${dayLabel}] cashflow query lastId=${lastId}`);
+
+                    const cashFlows = await CashFlow.findAll({
+                        raw: true,
+                        subQuery: false,
+                        where: {
+                            id: {
+                                [Op.gt]: lastId
+                            },
+                            wallet_type: {
+                                [Op.in]: [1, 2]
+                            },
+                            createdAt: {
+                                [Op.gte]: dayStartDate,
+                                [Op.lt]: nextDayStartDate
+                            }
+                        },
+                        attributes: [
+                            'id',
+                            'user_id',
+                            'wallet_type',
+                            'type',
+                            'amount',
+                            'flow_status',
+                            'description',
+                            'createdAt'
+                        ],
+                        order: [['id', 'ASC']],
+                        limit: PAGE_SIZE
+                    });
+
+                    console.timeEnd(`[EXPORT_CASH_FLOWS][${dayLabel}] cashflow query lastId=${lastId}`);
+
+                    if (!cashFlows.length) {
+                        break;
+                    }
+
+                    const userIds = [...new Set(cashFlows.map(item => item.user_id).filter(Boolean))];
+
+                    console.time(`[EXPORT_CASH_FLOWS][${dayLabel}] user query count=${userIds.length}`);
+
+                    const users = await User.findAll({
+                        raw: true,
+                        where: {
+                            id: {
+                                [Op.in]: userIds
+                            },
+                            is_internal_account: 0,
+                            type: 2
+                        },
+                        attributes: ['id', 'name', 'phone_number']
+                    });
+
+                    console.timeEnd(`[EXPORT_CASH_FLOWS][${dayLabel}] user query count=${userIds.length}`);
+
+                    const userMap = new Map(users.map(user => [user.id, user]));
+
+                    console.time(`[EXPORT_CASH_FLOWS][${dayLabel}] write lastId=${lastId}`);
+
+                    for (const flow of cashFlows) {
+                        const user = userMap.get(flow.user_id);
+                        if (!user) continue;
+
+                        const row = [
+                            escapeCsv(flow.id),
+                            escapeCsv(user.id),
+                            escapeCsv(user.name || ''),
+                            escapeCsv(user.phone_number || ''),
+                            escapeCsv(flow.wallet_type == 1 ? '储备金' : '余额'),
+                            escapeCsv(flow.type),
+                            escapeCsv(Number(flow.amount || 0)),
+                            escapeCsv(flow.flow_status === 'IN' ? '收入' : '支出'),
+                            escapeCsv(flow.description || ''),
+                            escapeCsv(flow.createdAt ? moment(flow.createdAt).format('YYYY-MM-DD HH:mm:ss') : '')
+                        ].join(',') + '\n';
+
+                        if (!stream.write(row)) {
+                            await new Promise(resolve => stream.once('drain', resolve));
+                        }
+                    }
+
+                    console.timeEnd(`[EXPORT_CASH_FLOWS][${dayLabel}] write lastId=${lastId}`);
+
+                    total += cashFlows.length;
+                    lastId = cashFlows[cashFlows.length - 1].id;
+
+                    console.log(`[EXPORT_CASH_FLOWS][${dayLabel}] exported so far: ${total}, lastId: ${lastId}`);
+                }
+
+                await new Promise((resolve, reject) => {
+                    stream.end(() => resolve());
+                    stream.on('error', reject);
+                });
+
+                console.timeEnd(`[EXPORT_CASH_FLOWS][${dayLabel}] total`);
+                console.log(`[EXPORT_CASH_FLOWS]: Exported ${total} records to ${filePath}`);
+            }
+
+            console.log('[EXPORT_CASH_FLOWS]: All daily exports completed successfully');
+        } catch (error) {
+            errLogger(`[EXPORT_CASH_FLOWS]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
