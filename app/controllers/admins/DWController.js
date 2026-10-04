@@ -91,8 +91,11 @@ class Controller {
                 offset: offset
             });
 
+            const totalAmount = await Deposit.sum('amount', { where: condition });
+
             const data = {
                 deposits: rows,
+                totalAmount: totalAmount,
                 meta: {
                     page: page,
                     perPage: perPage,
