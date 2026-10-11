@@ -367,7 +367,15 @@ class Controller {
         try {
             const historyId = req.params.id;
             const type = req.body.type; // 1 => 共享发展金 | 2 => 上合共享金 | 3 => 本金
-            const history = await NewChapterPackageHistory.findByPk(historyId);
+            const history = await NewChapterPackageHistory.findByPk(historyId, {
+                include: [
+                    {
+                        model: NewChapterPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    }
+                ]
+            });
             if (!history) {
                 return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '历史记录未找到', {});
             }
@@ -409,7 +417,7 @@ class Controller {
                     before_amount: beforeAmount,
                     after_amount: afterAmount,
                     flow_status: 'IN',
-                    description: `系统手动释放 . ${history.package ? history.package.product_name : ''} . ${type === 1 ? '共享发展金' : type === 2 ? '上合共享金' : '本金'}`,
+                    description: `${history.package ? history.package.product_name : ''} . ${type === 1 ? '共享发展金' : type === 2 ? '上合共享金' : '本金'}`,
                 }, { transaction: t });
 
                 await NewChapterPackageEarn.create({
@@ -418,7 +426,6 @@ class Controller {
                     package_history_id: history.id,
                     type: type,
                     amount: amount,
-                    description: '系统手动释放'
                 }, { transaction: t });
 
                 const updateObj = type == 2 ? { sharing_amount: Number(amount) } : { balance: Number(amount) };
