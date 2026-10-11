@@ -389,8 +389,8 @@ class Controller {
                     amount = history.price || 0;
                 }
                 
-                let beforeAmount = type == 2 ? user.sharing_amount : user.balance;
-                let afterAmount = type == 2 ? Number(user.sharing_amount) + amount : Number(user.balance) + amount;
+                let beforeAmount = type == 2 ? Number(user.sharing_amount) : Number(user.balance);
+                let afterAmount = type == 2 ? Number(user.sharing_amount) + Number(amount) : Number(user.balance) + Number(amount);
 
                 await CashFlow.create({
                     user_id: user.id,
@@ -414,7 +414,7 @@ class Controller {
                     description: '系统手动释放'
                 }, { transaction: t });
 
-                const updateObj = type == 2 ? { sharing_amount: Number(amount) } : { balance: Number(amount) };
+                const updateObj = type == 2 ? { sharing_amount: Number(user.sharing_amount) + Number(amount) } : { balance: Number(user.balance) + Number(amount) };
                 await user.increment(updateObj, { transaction: t });
 
                 await t.commit();
