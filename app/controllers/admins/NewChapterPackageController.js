@@ -233,11 +233,17 @@ class Controller {
             const offset = this.getOffset(page, perPage);
             const userId = req.user_id;
             const phone = req.query.phone;
+            const startTime = req.query.startTime;
+            const endTime = req.query.endTime;
 
             let condition = {}
             if (userId != 1) {
                 const me = await User.findByPk(userId, { attributes: ['id', 'relation'] });
                 condition.relation = { [Op.like]: `${me.relation}/%` }
+            }
+
+            if (startTime && endTime) {
+                condition.createdAt = { [Op.between]: [startTime, endTime] };
             }
 
             let userCondition = {}
