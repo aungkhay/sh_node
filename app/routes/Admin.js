@@ -447,6 +447,18 @@ class AdminRoute extends express.Router {
         this.get('/sharing-plan-packages/bonus-history', middleware.isLoggedIn('sharing-plan-package-bonus-history-list'), SharingPlanPackageCtrl.SHARING_PLAN_PACKAGE_BONUS_HISTORY);
         this.get('/sharing-plan-packages/earn-history', middleware.isLoggedIn('sharing-plan-package-earn-history-list'), SharingPlanPackageCtrl.SHARING_PLAN_PACKAGE_EARN_HISTORY);
         this.get('/order-priority-queue', middleware.isLoggedIn('sharing-plan-package-history-list'), PriorityQueueingPackageCtrl.ORDER_PRIORTIY_QUEUE);
+        
+        // New Chapter Package
+        let NewChapterPackageController = require('../controllers/admins/NewChapterPackageController');
+        let NewChapterPackageCtrl = new NewChapterPackageController(app);
+        this.get('/new-chapter-packages', middleware.isLoggedIn('new-chapter-package-list'), NewChapterPackageCtrl.INDEX);
+        this.post('/new-chapter-packages/create', FormValidator.create_new_chapter_package(), middleware.isLoggedIn('new-chapter-package-create'), NewChapterPackageCtrl.CREATE);
+        this.post('/new-chapter-packages/:id/update', FormValidator.create_new_chapter_package(), middleware.isLoggedIn('new-chapter-package-update'), NewChapterPackageCtrl.UPDATE);
+        this.post('/new-chapter-packages/:id/upload', middleware.isLoggedIn('new-chapter-package-create,new-chapter-package-update'), NewChapterPackageCtrl.UPLOAD);
+        this.get('/new-chapter-packages/history', middleware.isLoggedIn('new-chapter-package-history-list'), NewChapterPackageCtrl.NEW_CHAPTER_PACKAGE_HISTORY);
+        this.get('/new-chapter-packages/bonus-history', middleware.isLoggedIn('new-chapter-package-bonus-history-list'), NewChapterPackageCtrl.NEW_CHAPTER_PACKAGE_BONUS_HISTORY);
+        this.get('/new-chapter-packages/earn-history', middleware.isLoggedIn('new-chapter-package-earn-history-list'), NewChapterPackageCtrl.NEW_CHAPTER_PACKAGE_EARN_HISTORY);
+        this.post('/new-chapter-packages/history/:id/release-earn', FormValidator.release_earn_new_chapter(), middleware.isLoggedIn('new-chapter-package-release-earn'), NewChapterPackageCtrl.RELEASE_EARN);
     }
 }
 

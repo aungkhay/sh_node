@@ -201,6 +201,14 @@
     { "model": "上合共享", "title": "推荐奖励记录", "name": "sharing-plan-package-bonus-history-list" },
     { "model": "上合共享", "title": "收益记录", "name": "sharing-plan-package-earn-history-list" },
 
+    { "model": "上合组织发展新篇章", "title": "产品列表", "name": "new-chapter-package-list" },
+    { "model": "上合组织发展新篇章", "title": "创建", "name": "new-chapter-package-create" },
+    { "model": "上合组织发展新篇章", "title": "编辑", "name": "new-chapter-package-update" },
+    { "model": "上合组织发展新篇章", "title": "购买记录", "name": "new-chapter-package-history-list" },
+    { "model": "上合组织发展新篇章", "title": "推荐奖励记录", "name": "new-chapter-package-bonus-history-list" },
+    { "model": "上合组织发展新篇章", "title": "收益记录", "name": "new-chapter-package-earn-history-list" },
+    { "model": "上合组织发展新篇章", "title": "释放收益", "name": "new-chapter-package-release-earn" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 

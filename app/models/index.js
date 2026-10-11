@@ -118,6 +118,10 @@ const SharingPlanPackage = require('./SharingPlanPackage');
 const SharingPlanPackageHistory = require('./SharingPlanPackageHistory');
 const SharingPlanPackageEarn = require('./SharingPlanPackageEarn');
 const SharingPlanPackageBonuses = require('./SharingPlanPackageBonuses');
+const NewChapterPackage = require('./NewChapterPackage');
+const NewChapterPackageHistory = require('./NewChapterPackageHistory');
+const NewChapterPackageEarn = require('./NewChapterPackageEarn');
+const NewChapterPackageBonuses = require('./NewChapterPackageBonuses');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -732,6 +736,35 @@ SharingPlanPackageEarn.belongsTo(SharingPlanPackage, { foreignKey: 'package_id',
 SharingPlanPackageHistory.hasMany(SharingPlanPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
 SharingPlanPackageBonuses.belongsTo(SharingPlanPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
+// ========== NEW_CHAPTER_PACKAGE ↔️ NEW_CHAPTER_PACKAGE_HISTORY (1:N) ==========
+NewChapterPackage.hasMany(NewChapterPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+NewChapterPackageHistory.belongsTo(NewChapterPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ NEW_CHAPTER_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(NewChapterPackageHistory, { foreignKey: 'user_id', as: 'new_chapter_package_histories', onDelete: 'CASCADE' });
+NewChapterPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ NEW_CHAPTER_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(NewChapterPackageBonuses, { foreignKey: 'user_id', as: 'new_chapter_package_bonuses', onDelete: 'CASCADE' });
+NewChapterPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+NewChapterPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ NEW_CHAPTER_PACKAGE_EARN (1:N) ==========
+User.hasMany(NewChapterPackageEarn, { foreignKey: 'user_id', as: 'new_chapter_package_earn', onDelete: 'CASCADE' });
+NewChapterPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== NEW_CHAPTER_PACKAGE_HISTORY ↔️ NEW_CHAPTER_PACKAGE_EARN (1:N) ==========
+NewChapterPackageHistory.hasMany(NewChapterPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+NewChapterPackageEarn.belongsTo(NewChapterPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== NEW_CHAPTER_PACKAGE ↔️ NEW_CHAPTER_PACKAGE_EARN (1:N) ==========
+NewChapterPackage.hasMany(NewChapterPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+NewChapterPackageEarn.belongsTo(NewChapterPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== NEW_CHAPTER_PACKAGE_HISTORY ↔️ NEW_CHAPTER_PACKAGE_BONUSES (1:N) ==========
+NewChapterPackageHistory.hasMany(NewChapterPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+NewChapterPackageBonuses.belongsTo(NewChapterPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -847,6 +880,10 @@ const models = {
     SharingPlanPackageHistory,
     SharingPlanPackageBonuses,
     SharingPlanPackageEarn,
+    NewChapterPackage,
+    NewChapterPackageHistory,
+    NewChapterPackageBonuses,
+    NewChapterPackageEarn,
 };
 
 // Export models + db connection

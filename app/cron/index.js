@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn } = require('../models');
 const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -110,6 +110,8 @@ class CronJob {
         cron.schedule('20 2 * * *', this.SHARING_PLAN_DAILY_EARN).start();
         // Run at 3:00 AM Every day
         cron.schedule('0 3 * * *', this.RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT).start();
+        // Run at 4:00 AM Every day
+        cron.schedule('0 4 * * *', this.RETURN_NEW_CHAPTER_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6484,6 +6486,139 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT]: ${error.stack}`);
+        }
+    }
+
+    RETURN_NEW_CHAPTER_EARN = async () => {
+        try {
+            const now = moment();
+            const startOfDay = now.startOf('day').toDate();
+            const endOfDay = now.endOf('day').toDate();
+            const histories = await NewChapterPackageHistory.findAll({
+                include: {
+                    model: NewChapterPackage,
+                    as: 'package',
+                    attributes: ['product_name']
+                },
+                where: {
+                    return_date: {
+                        [Op.between]: [startOfDay, endOfDay]
+                    }
+                }
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) continue;
+
+                    const cashflows = [];
+                    const originPrice = Number(history.price); 
+                    const shareAmount = Number(history.share_amount);
+                    const shareDevFund = Number(history.share_dev_fund);
+                    const newBalance = Number(user.balance);
+
+                    const userUpdate = {}
+                    const historyUpdate = {}
+
+                    if (!history.is_returned_price) {
+                        cashflows.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 余额
+                            model: 'NewChapterPackageHistory',
+                            type: '上合组织发展新篇章',
+                            amount: originPrice,
+                            before_amount: newBalance,
+                            after_amount: newBalance + originPrice,
+                            flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''} . 返还本金`,
+                        });
+                        newBalance += originPrice;
+
+                        await NewChapterPackageEarn.create({
+                            user_id: user.id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            type: 3,
+                            amount: originPrice,
+                            description: '返还本金'
+                        }, { transaction: t });
+                        historyUpdate.is_returned_price = 1;
+                        historyUpdate.return_price_at = new Date();
+                    }
+
+                    if (!history.is_returned_share_amount) {
+                        cashflows.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 7, // 上合共享金
+                            model: 'NewChapterPackageHistory',
+                            type: '上合组织发展新篇章',
+                            amount: shareAmount,
+                            before_amount: user.sharing_amount,
+                            after_amount: Number(user.sharing_amount) + shareAmount,
+                            flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''} . 返还上合共享金`,
+                        });
+                        userUpdate.sharing_amount = Number(user.sharing_amount) + shareAmount;
+
+                        await NewChapterPackageEarn.create({
+                            user_id: user.id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            type: 2,
+                            amount: shareAmount,
+                            description: '返还上合共享金'
+                        }, { transaction: t });
+                        historyUpdate.is_returned_share_amount = 1;
+                        historyUpdate.return_share_amount_at = new Date();
+                    }
+
+                    if (!history.is_returned_share_dev_fund) {
+                        cashflows.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 余额
+                            model: 'NewChapterPackageHistory',
+                            type: '上合组织发展新篇章',
+                            amount: shareDevFund,
+                            before_amount: newBalance,
+                            after_amount: newBalance + shareDevFund,
+                            flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''} . 返还共享发展金`,
+                        });
+                        newBalance += shareDevFund;
+
+                        await NewChapterPackageEarn.create({
+                            user_id: user.id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            type: 1,
+                            amount: shareDevFund,
+                            description: '返还共享发展金'
+                        }, { transaction: t });
+                        historyUpdate.is_returned_share_dev_fund = 1;
+                        historyUpdate.return_share_dev_fund_at = new Date();
+                    }
+
+                    if (cashflows.length > 0) {
+                        await CashFlow.bulkCreate(cashflows, { transaction: t });
+                        userUpdate.balance = newBalance;
+                        await user.update(userUpdate, { transaction: t });
+                        await history.update(historyUpdate, { transaction: t });
+                    }
+                    await t.commit();
+
+                    console.log(`[RETURN_NEW_CHAPTER_EARN]: Successfully processed for user ${user.id}, history ${history.id}`);
+                } catch (error) {
+                    errLogger(`[RETURN_NEW_CHAPTER_EARN]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[RETURN_NEW_CHAPTER_EARN]: ${error.stack}`);
         }
     }
 

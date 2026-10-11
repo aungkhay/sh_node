@@ -486,6 +486,27 @@ module.exports = async () => {
             description: '-',
             data_type: 'integer'
         },
+        {
+            type: 'new_chapter_package_description',
+            title: '上合组织发展新篇章 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
+        {
+            type: 'new_chapter_package_period',
+            title: '上合组织发展新篇章 - 申报时间',
+            val: '2026-10-11 00:00:00|2026-10-20 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'new_chapter_package_daily_release_qty',
+            title: '上合组织发展新篇章 - 每日发放数量',
+            val: '300000',
+            description: '-',
+            data_type: 'integer'
+        },
     ];
 
     const count = await Config.count();

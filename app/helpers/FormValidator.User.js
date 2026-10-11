@@ -445,6 +445,12 @@ exports.buy_sharing_plan_package = () => {
     ]
 }
 
+exports.buy_new_chapter_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
 exports.bind_allocation_auth_bank = () => {
     return [
         // card_name, card_number, bank_name

@@ -1169,3 +1169,24 @@ const url = `${baseURL}/sharing-plan-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/sharing-plan-packages/bonus-history`;
 ```
+
+###  上合组织发展新篇章
+```js
+// [GET] Packages
+const url = `${baseURL}/new-chapter-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/new-chapter-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/new-chapter-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/new-chapter-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/new-chapter-packages/bonus-history`;
+```

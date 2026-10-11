@@ -183,6 +183,12 @@ class UserRoute extends express.Router {
         this.get('/sharing-plan-packages/history', middleware.isLoggedIn, HomeCtrl.SHARING_PLAN_PACKAGE_HISTORY);
         this.get('/sharing-plan-packages/earn-history', middleware.isLoggedIn, HomeCtrl.SHARING_PLAN_PACKAGE_EARN_HISTORY);
         this.get('/sharing-plan-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.SHARING_PLAN_PACKAGE_BONUS_HISTORY);
+        // New Chapter Package Routes
+        this.get('/new-chapter-packages', middleware.isLoggedIn, HomeCtrl.NEW_CHAPTER_PACKAGE);
+        this.post('/new-chapter-packages/:id/buy', FormValidator.buy_new_chapter_package(), middleware.isLoggedIn, HomeCtrl.BUY_NEW_CHAPTER_PACKAGE);
+        this.get('/new-chapter-packages/history', middleware.isLoggedIn, HomeCtrl.NEW_CHAPTER_PACKAGE_HISTORY);
+        this.get('/new-chapter-packages/earn-history', middleware.isLoggedIn, HomeCtrl.NEW_CHAPTER_PACKAGE_EARN_HISTORY);
+        this.get('/new-chapter-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.NEW_CHAPTER_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);
