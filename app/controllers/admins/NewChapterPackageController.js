@@ -381,12 +381,19 @@ class Controller {
                 }
 
                 let amount = 0;
+                const historyUpdate = {}
                 if (type === 1) {
                     amount = history.share_dev_fund || 0;
+                    historyUpdate.is_returned_share_dev_fund = 1;
+                    historyUpdate.return_share_dev_fund_at = new Date();
                 } else if (type === 2) {
                     amount = history.share_amount || 0;
+                    historyUpdate.is_returned_share_amount = 1;
+                    historyUpdate.return_share_amount_at = new Date();
                 } else if (type === 3) {
                     amount = history.price || 0;
+                    historyUpdate.is_returned_price = 1;
+                    historyUpdate.return_price_at = new Date();
                 }
                 
                 let beforeAmount = type == 2 ? Number(user.sharing_amount) : Number(user.balance);
@@ -416,6 +423,7 @@ class Controller {
 
                 const updateObj = type == 2 ? { sharing_amount: Number(amount) } : { balance: Number(amount) };
                 await user.increment(updateObj, { transaction: t });
+                await history.update(historyUpdate, { transaction: t });
 
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '释放收益成功', {});
