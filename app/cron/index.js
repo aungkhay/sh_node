@@ -6510,14 +6510,14 @@ class CronJob {
             for (const history of histories) {
                 const t = await db.transaction();
                 try {
-                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'sharing_amount'], transaction: t });
                     if (!user) continue;
 
                     const cashflows = [];
                     const originPrice = Number(history.price); 
                     const shareAmount = Number(history.share_amount);
                     const shareDevFund = Number(history.share_dev_fund);
-                    const newBalance = Number(user.balance);
+                    let newBalance = Number(user.balance);
 
                     const userUpdate = {}
                     const historyUpdate = {}
