@@ -6739,7 +6739,8 @@ class CronJob {
                 where: {
                     balance: {
                         [Op.gt]: 0
-                    }
+                    },
+                    is_internal_account: 0
                 },
                 attributes: ['id', 'name', 'phone_number', 'balance'],
             });
