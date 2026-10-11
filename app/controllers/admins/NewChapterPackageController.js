@@ -414,7 +414,7 @@ class Controller {
                     description: '系统手动释放'
                 }, { transaction: t });
 
-                const updateObj = type == 2 ? { sharing_amount: Number(user.sharing_amount) + Number(amount) } : { balance: Number(user.balance) + Number(amount) };
+                const updateObj = type == 2 ? { sharing_amount: Number(amount) } : { balance: Number(amount) };
                 await user.increment(updateObj, { transaction: t });
 
                 await t.commit();
