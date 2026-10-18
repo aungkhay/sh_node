@@ -16471,7 +16471,7 @@ class Controller {
 
             const { rows, count } = await SharedHomePackageHistory.findAndCountAll({
                 include: {
-                    model: NewChapterPackage,
+                    model: SharedHomePackage,
                     as: 'package',
                     attributes: ['id', 'product_name']
                 },
