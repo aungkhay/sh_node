@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackage, AssetDistributionPackageBonuses, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackage, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetEarnPackageBonuses, AssetDailyReleasePackage, AssetDailyReleasePackageHistory, AssetDailyReleasePackageBonuses, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackage, SCOInterbankPackageHistory, SCOInterbankPackageBonuses, SCOInterbankPackageEarn, ApprovalFundPackage, ApprovalFundPackageHistory, ApprovalFundPackageBonuses, AllocationAuthPackage, AllocationAuthPackageHistory, AllocationAuthPackageBonuses, AllocationAuthBankInfo, PriorityQueueingPackage, PriorityQueueingPackageHistory, PriorityQueueingPackageBonuses, SharingPlanPackage, SharingPlanPackageHistory, SharingPlanPackageBonuses, SharingPlanPackageEarn, NewChapterPackage, NewChapterPackageHistory, NewChapterPackageBonuses, NewChapterPackageEarn, SharedHomePackage, SharedHomePackageHistory, SharedHomePackageBonuses } = require('../../models');
+const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackage, AssetDistributionPackageBonuses, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackage, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetEarnPackageBonuses, AssetDailyReleasePackage, AssetDailyReleasePackageHistory, AssetDailyReleasePackageBonuses, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackage, SCOInterbankPackageHistory, SCOInterbankPackageBonuses, SCOInterbankPackageEarn, ApprovalFundPackage, ApprovalFundPackageHistory, ApprovalFundPackageBonuses, AllocationAuthPackage, AllocationAuthPackageHistory, AllocationAuthPackageBonuses, AllocationAuthBankInfo, PriorityQueueingPackage, PriorityQueueingPackageHistory, PriorityQueueingPackageBonuses, SharingPlanPackage, SharingPlanPackageHistory, SharingPlanPackageBonuses, SharingPlanPackageEarn, NewChapterPackage, NewChapterPackageHistory, NewChapterPackageBonuses, NewChapterPackageEarn, SharedHomePackage, SharedHomePackageHistory, SharedHomePackageBonuses, SharedHomePackageEarn } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes, where, col, fn } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -16506,18 +16506,21 @@ class Controller {
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
             const userId = req.user_id;
+            const packageId = req.params.id;
 
-            const { rows, count } = await NewChapterPackageEarn.findAndCountAll({
+            const { rows, count } = await SharedHomePackageEarn.findAndCountAll({
                 include: [
                     {
-                        model: NewChapterPackageHistory,
+                        model: SharedHomePackageHistory,
                         as: 'package_history',
                         attributes: ['id', 'price'],
+                        where: { package_id: packageId }
                     },
                     {
-                        model: NewChapterPackage,
+                        model: SharedHomePackage,
                         as: 'package',
-                        attributes: ['id', 'product_name']
+                        attributes: ['id', 'product_name'],
+                        where: { id: packageId }
                     }
                 ],
                 where: { user_id: userId },

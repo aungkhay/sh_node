@@ -193,7 +193,7 @@ class UserRoute extends express.Router {
         this.get('/shared-home-packages', middleware.isLoggedIn, HomeCtrl.SHARED_HOME_PACKAGE);
         this.post('/shared-home-packages/:id/buy', FormValidator.buy_shared_home_package(), middleware.isLoggedIn, HomeCtrl.BUY_SHARED_HOME_PACKAGE);
         this.get('/shared-home-packages/history', middleware.isLoggedIn, HomeCtrl.SHARED_HOME_PACKAGE_HISTORY);
-        this.get('/shared-home-packages/earn-history', middleware.isLoggedIn, HomeCtrl.SHARED_HOME_PACKAGE_EARN_HISTORY);
+        this.get('/shared-home-packages/:id/earn-history', middleware.isLoggedIn, HomeCtrl.SHARED_HOME_PACKAGE_EARN_HISTORY);
         this.get('/shared-home-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.SHARED_HOME_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
