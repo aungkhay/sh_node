@@ -209,6 +209,13 @@
     { "model": "上合组织发展新篇章", "title": "收益记录", "name": "new-chapter-package-earn-history-list" },
     { "model": "上合组织发展新篇章", "title": "释放收益", "name": "new-chapter-package-release-earn" },
 
+    { "model": "共建共同家园计划", "title": "产品列表", "name": "shared-home-package-list" },
+    { "model": "共建共同家园计划", "title": "创建", "name": "shared-home-package-create" },
+    { "model": "共建共同家园计划", "title": "编辑", "name": "shared-home-package-update" },
+    { "model": "共建共同家园计划", "title": "购买记录", "name": "shared-home-package-history-list" },
+    { "model": "共建共同家园计划", "title": "推荐奖励记录", "name": "shared-home-package-bonus-history-list" },
+    { "model": "共建共同家园计划", "title": "收益记录", "name": "shared-home-package-earn-history-list" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 

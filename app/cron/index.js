@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn } = require('../models');
 const { Op, fn, col, literal, or } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -112,6 +112,8 @@ class CronJob {
         cron.schedule('0 3 * * *', this.RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT).start();
         // Run at 4:00 AM Every day
         cron.schedule('0 4 * * *', this.RETURN_NEW_CHAPTER_EARN).start();
+        // Run every 5 days at 5 AM
+        cron.schedule('0 5 */5 * *', this.SHARED_HOME_PACKAGE_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6622,6 +6624,94 @@ class CronJob {
         }
     }
 
+    SHARED_HOME_PACKAGE_EARN = async () => {
+        try {
+            const histories = await SharedHomePackageHistory.findAll({
+                include: {
+                    model: SharedHomePackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
+                where: {
+                    is_finished: 0
+                }
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+
+                    let releasedCount = history.released_count;
+                    let releasedMonth = history.month;
+                    let historyUpdate = {};
+
+                    await SharedHomePackageEarn.create({
+                        relation: history.relation,
+                        user_id: history.user_id,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: history.earn_amount_per_count
+                    }, { transaction: t });
+                    
+                    releasedCount += 1;
+                    if (releasedCount % history.earn_count_per_month === 0) {
+                        releasedMonth += 1;
+                        historyUpdate.month = releasedMonth;
+                    }
+
+                    historyUpdate.released_count = releasedCount;
+                    if (history.total_month * history.earn_count_per_month === releasedCount) {
+                        historyUpdate.is_finished = 1;
+                        await CashFlow.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 7, // 上合共享金
+                            model: 'SharedHomePackageHistory',
+                            type: '共建共同家园计划',
+                            amount: shareAmount,
+                            before_amount: user.sharing_amount,
+                            after_amount: Number(user.sharing_amount) + shareAmount,
+                            flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''}`,
+                        }, { transaction: t });
+                    }
+                    await history.update(historyUpdate, { transaction: t });
+
+                    // Add to balance 12 count per times
+                    if (releasedCount % history.release_earn_count_at === 0) {
+                        const forRelease = releasedMonth * history.earn_amount_per_count * history.earn_count_per_month;
+                        const newBalance = Number(user.balance) + Number(forRelease);
+                        await user.update({ balance: newBalance }, { transaction: t });
+                        await CashFlow.create({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 余额
+                            model: 'SharedHomePackageHistory',
+                            type: '共建共同家园计划',
+                            amount: forRelease,
+                            before_amount: user.balance,
+                            after_amount: newBalance,
+                            flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''} . 第${releasedCount}次释放`,
+                        }, { transaction: t });
+                    }
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[SHARED_HOME_PACKAGE_EARN]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[SHARED_HOME_PACKAGE_EARN]: ${error.stack}`);
+        }
+    }
+
     // NOT CRON
     EXPORT_GOLD_APPRECIATION_PACKAGE_HISTORY = async () => {
         try {
@@ -7377,6 +7467,62 @@ class CronJob {
             errLogger(`[EXPORT_CASH_FLOWS]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    EXPORT_SHARING_PLAN_EARN = async () => {
+        try {
+            const earns = await SharingPlanPackageEarn.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number'],
+                        include: {
+                            model: User,
+                            as: 'parent',
+                            attributes: ['id', 'name', 'phone_number']
+                        }
+                    },
+                    {
+                        model: SharingPlanPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    },
+                    {
+                        model: SharingPlanPackageHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'price']
+                    }
+                ],
+                where: {
+                    createdAt: {
+                        [Op.gte]: moment().startOf('day').toDate(),
+                    }
+                },
+                attributes: ['id']
+            });
+
+            const list = earns.map(earn => ({
+                "用户ID": earn.user.id,
+                "用户名": earn.user.name,
+                "用户手机号": earn.user.phone_number,
+                "顶级账号ID": earn.user.parent?.id,
+                "顶级账号姓名": earn.user.parent?.name,
+                "顶级账号手机号": earn.user.parent?.phone_number,
+                "产品名称": earn.package.product_name,
+                "订单ID": earn.package_history.id,
+                "订单金额": earn.package_history.price,
+            }));
+
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Sharing Plan Earn Export');
+            xlsx.writeFile(workbook1, 'sharing_plan_earn_export.xlsx');
+        } catch (error) {
+            errLogger(`[EXPORT_SHARING_PLAN_EARN]: ${error.stack}`);
+        }
+    };
 }
 
 module.exports = CronJob;

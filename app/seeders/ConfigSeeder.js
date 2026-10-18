@@ -507,6 +507,27 @@ module.exports = async () => {
             description: '-',
             data_type: 'integer'
         },
+        {
+            type: 'shared_home_package_description',
+            title: '共建共同家园计划 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
+        {
+            type: 'shared_home_package_period',
+            title: '共建共同家园计划 - 申购时间',
+            val: '2026-10-19 00:00:00|2026-10-25 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'shared_home_package_daily_release_qty',
+            title: '共建共同家园计划 - 每日发放数量',
+            val: '300000',
+            description: '-',
+            data_type: 'integer'
+        },
     ];
 
     const count = await Config.count();

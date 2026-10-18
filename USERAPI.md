@@ -1190,3 +1190,24 @@ const url = `${baseURL}/new-chapter-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/new-chapter-packages/bonus-history`;
 ```
+
+### 共建共同家园计划
+```js
+// [GET] Packages
+const url = `${baseURL}/shared-home-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/shared-home-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/shared-home-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/shared-home-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/shared-home-packages/bonus-history`;
+```

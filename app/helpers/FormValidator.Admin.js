@@ -1553,3 +1553,59 @@ exports.create_new_chapter_package = () => {
             .withMessage('标签必须是数组')
     ]
 }
+
+exports.create_shared_home_package = () => {
+    return [
+        check('product_name', { msg: '产品名称不能为空' }).not().isEmpty(),
+        check('price').not().isEmpty().withMessage('申购费不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('申购费必须是数字'),
+        check('total_month').not().isEmpty().withMessage('总月数不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('总月数必须是正整数'),
+        check('earn_count_per_month').not().isEmpty().withMessage('计划收益时间不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('计划收益时间必须是正整数'),
+        check('earn_amount_per_count').not().isEmpty().withMessage('每次收益金额不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('每次收益金额必须是数字'),
+        check('total_earn_amount').not().isEmpty().withMessage('计划收益总额不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('计划收益总额必须是数字'),
+        check('share_amount').not().isEmpty().withMessage('上合共享金不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('上合共享金必须是数字'),
+        // perchase_limit 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+        check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
+            .bail()
+            .isIn(['NONE', 'DAILY', 'TOTAL'])
+            .withMessage('购买限制无效'),
+        // quantity_limit 限购数量
+        check('quantity_limit').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('限购数量必须是数字'),
+        // total_quantity
+        check('total_quantity').not().isEmpty().withMessage('总数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('总数量必须是数字'),
+        // buy_one_get_quantity 
+        check('buy_one_get_quantity').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('买一赠一数量必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+        // tag optional => array ['NEW', 'HOT', 'RECOMMENDED']
+        check('tag')
+            .optional({ checkFalsy: true })
+            .isArray({ min: 1 })
+            .withMessage('标签必须是数组')
+    ]
+}

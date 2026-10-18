@@ -2562,3 +2562,69 @@ const data = {
     type: 1, // 1 => 共享发展金返还 | 2 => 上合共享金返还 | 3 => 本金返还
 }
 ```
+
+### 共建共同家园计划
+``` js
+// [GET] Package List
+const url = `${baseURL}/shared-home-packages`;
+
+// [POST] CREATE | UPDATE
+const url = `${baseURL}/shared-home-packages/create`;
+const url = `${baseURL}/shared-home-packages/${pkgID}/update`;
+const data = {
+    product_name: '',
+    price: 0, // 申购费
+    total_month: 60, // 总月数
+    earn_count_per_month: 6, // 计划收益时间
+    earn_amount_per_count: 30, // 每次收益金额
+    total_earn_amount: 10800, // 计划收益总额
+    share_amount: 50000, // 上合共享金
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    description: '备注：申购金额在第12次发放收益时返还至可提余额。',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+}
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/shared-home-packages/${packageId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [GET] Package History
+const url = `${baseURL}/shared-home-packages/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: '',
+    is_internal_account: 0,
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/shared-home-packages/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/shared-home-packages/earn-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+```

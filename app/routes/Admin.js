@@ -459,6 +459,17 @@ class AdminRoute extends express.Router {
         this.get('/new-chapter-packages/bonus-history', middleware.isLoggedIn('new-chapter-package-bonus-history-list'), NewChapterPackageCtrl.NEW_CHAPTER_PACKAGE_BONUS_HISTORY);
         this.get('/new-chapter-packages/earn-history', middleware.isLoggedIn('new-chapter-package-earn-history-list'), NewChapterPackageCtrl.NEW_CHAPTER_PACKAGE_EARN_HISTORY);
         this.post('/new-chapter-packages/history/:id/release-earn', FormValidator.release_earn_new_chapter(), middleware.isLoggedIn('new-chapter-package-release-earn'), NewChapterPackageCtrl.RELEASE_EARN);
+
+        // Shared Home Package
+        let SharedHomePackageController = require('../controllers/admins/SharedHomePackageController');
+        let SharedHomePackageCtrl = new SharedHomePackageController(app);
+        this.get('/shared-home-packages', middleware.isLoggedIn('shared-home-package-list'), SharedHomePackageCtrl.INDEX);
+        this.post('/shared-home-packages/create', FormValidator.create_shared_home_package(), middleware.isLoggedIn('shared-home-package-create'), SharedHomePackageCtrl.CREATE);
+        this.post('/shared-home-packages/:id/update', FormValidator.create_shared_home_package(), middleware.isLoggedIn('shared-home-package-update'), SharedHomePackageCtrl.UPDATE);
+        this.post('/shared-home-packages/:id/upload', middleware.isLoggedIn('shared-home-package-create,shared-home-package-update'), SharedHomePackageCtrl.UPLOAD);
+        this.get('/shared-home-packages/history', middleware.isLoggedIn('shared-home-package-history-list'), SharedHomePackageCtrl.SHARED_HOME_PACKAGE_HISTORY);
+        this.get('/shared-home-packages/bonus-history', middleware.isLoggedIn('shared-home-package-bonus-history-list'), SharedHomePackageCtrl.SHARED_HOME_PACKAGE_BONUS_HISTORY);
+        this.get('/shared-home-packages/earn-history', middleware.isLoggedIn('shared-home-package-earn-history-list'), SharedHomePackageCtrl.SHARED_HOME_PACKAGE_EARN_HISTORY);
     }
 }
 
