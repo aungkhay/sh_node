@@ -6663,6 +6663,8 @@ class CronJob {
                         releasedMonth += 1;
                         historyUpdate.month = releasedMonth;
                     }
+                    releasedCount += 1;
+                    await history.update(historyUpdate, { transaction: t });
                     
                     historyUpdate.released_count = releasedCount;
                     if (history.total_month * history.earn_count_per_month === releasedCount) {
@@ -6729,9 +6731,7 @@ class CronJob {
                             type: 2, // 本金返还
                         }, { transaction: t });
                     }
-
-                    releasedCount += 1;
-                    await history.update(historyUpdate, { transaction: t });
+                    
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await user.update({ balance: newBalance }, { transaction: t });
 
