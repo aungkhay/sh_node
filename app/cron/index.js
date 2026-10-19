@@ -6659,14 +6659,14 @@ class CronJob {
                         type: 0, // 每日收益
                     }, { transaction: t });
                     
-                    if (releasedCount % history.earn_count_per_month === 0) {
+                    if (releasedCount > 0 && releasedCount % history.earn_count_per_month === 0) {
                         releasedMonth += 1;
                         historyUpdate.month = releasedMonth;
                     }
                     releasedCount += 1;
+                    historyUpdate.released_count = releasedCount;
                     await history.update(historyUpdate, { transaction: t });
                     
-                    historyUpdate.released_count = releasedCount;
                     if (history.total_month * history.earn_count_per_month === releasedCount) {
                         historyUpdate.is_finished = 1;
                         await CashFlow.create({
