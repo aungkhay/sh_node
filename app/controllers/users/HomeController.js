@@ -16504,34 +16504,39 @@ class Controller {
 
     SHARED_HOME_PACKAGE_EARN_HISTORY = async (req, res) => {
         try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
             const userId = req.user_id;
             const packageId = req.params.id;
 
-            const historyCount = await SharedHomePackageHistory.count({
-                where: { user_id: userId, package_id: packageId }
-            });
-            const earns = await SharedHomePackageEarn.findAll({
-                where: { user_id: userId, package_id: packageId, type: 0 },
-                attributes: [
-                    'package_id',
-                    'amount',
-                    // sum of amount
-                    [Sequelize.fn('SUM', Sequelize.col('amount')), 'total_amount']
+            const { rows, count } = await SharedHomePackageEarn.findAndCountAll({
+                include: [
+                    {
+                        model: SharedHomePackageHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'price']
+                    }
                 ],
-                order: [['id', 'ASC']],
-                group: ['package_id', 'amount'],
-                raw: true,
+                where: { user_id: userId, package_id: packageId, type: 0 },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
             });
-
-            const newEarns = earns.map((e, index) => ({
-                month: index + 1,
-                current_earn: Number(e.amount),
-                total_earn: Number(e.total_amount)
-            }));
+            const sum = await SharedHomePackageEarn.sum('amount', {
+                where: { user_id: userId, package_id: packageId, type: 0 }
+            });
 
             const data = {
-                earns: newEarns,
-                history_count: historyCount
+                earns: rows,
+                sum: Number(sum || 0),
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
             }
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);

@@ -62,7 +62,11 @@ SharedHomePackageEarn.init({
     timestamps: true,
     indexes: [
         { fields: ['relation'] },
-        { fields: ['type']}
+        { fields: ['type']},
+        {
+            name: 'idx_user_id_package_id_type',
+            fields: ['user_id', 'package_id', 'type']
+        }
     ]
 })
 

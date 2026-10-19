@@ -7534,7 +7534,7 @@ class CronJob {
                         [Op.gte]: moment().startOf('day').toDate(),
                     }
                 },
-                attributes: ['id']
+                attributes: ['id', 'amount']
             });
 
             const list = earns.map(earn => ({
@@ -7547,6 +7547,7 @@ class CronJob {
                 "产品名称": earn.package.product_name,
                 "订单ID": earn.package_history.id,
                 "订单金额": earn.package_history.price,
+                "收益": earn.amount,
             }));
 
             const xlsx = require('xlsx');
