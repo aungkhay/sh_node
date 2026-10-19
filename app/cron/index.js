@@ -112,8 +112,8 @@ class CronJob {
         cron.schedule('0 3 * * *', this.RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT).start();
         // Run at 4:00 AM Every day
         cron.schedule('0 4 * * *', this.RETURN_NEW_CHAPTER_EARN).start();
-        // Run every 5 days at 5 AM
-        cron.schedule('0 5 */5 * *', this.SHARED_HOME_PACKAGE_EARN).start();
+        // Run at 5:00 AM Every day
+        cron.schedule('0 5 * * *', this.SHARED_HOME_PACKAGE_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6626,6 +6626,10 @@ class CronJob {
 
     SHARED_HOME_PACKAGE_EARN = async () => {
         try {
+            const now = moment();
+            const startOfDay = now.startOf('day').toDate();
+            const endOfDay = now.endOf('day').toDate();
+
             const histories = await SharedHomePackageHistory.findAll({
                 include: {
                     model: SharedHomePackage,
@@ -6633,7 +6637,10 @@ class CronJob {
                     attributes: ['id', 'product_name']
                 },
                 where: {
-                    is_finished: 0
+                    is_finished: 0,
+                    next_release_at: {
+                        [Op.between]: [startOfDay, endOfDay]
+                    }
                 }
             });
 
