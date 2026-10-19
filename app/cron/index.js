@@ -6637,10 +6637,7 @@ class CronJob {
                     attributes: ['id', 'product_name']
                 },
                 where: {
-                    is_finished: 0,
-                    next_release_at: {
-                        [Op.between]: [startOfDay, endOfDay]
-                    }
+                    is_finished: 0
                 }
             });
 
