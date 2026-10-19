@@ -6626,6 +6626,10 @@ class CronJob {
 
     SHARED_HOME_PACKAGE_EARN = async () => {
         try {
+            const now = moment();
+            const start = moment().startOf('day');
+            const end = moment().endOf('day');
+
             const histories = await SharedHomePackageHistory.findAll({
                 include: {
                     model: SharedHomePackage,
@@ -6633,7 +6637,10 @@ class CronJob {
                     attributes: ['id', 'product_name']
                 },
                 where: {
-                    is_finished: 0
+                    is_finished: 0,
+                    start_release_at: { 
+                        [Op.between]: [start.toDate(), end.toDate()]
+                    }
                 }
             });
 

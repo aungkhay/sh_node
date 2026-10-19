@@ -78,6 +78,12 @@ SharedHomePackageHistory.init({
         defaultValue: 12,
         comment: '第12次发放收益',
     },
+    start_release_at: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+        comment: '开始发放时间',
+    },
     released_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -123,6 +129,11 @@ SharedHomePackageHistory.init({
         {
             name: 'idx_is_finished',
             fields: ['is_finished'],
+            using: 'BTREE'
+        },
+        {
+            name: 'idx_is_finished_start_release_at',
+            fields: ['is_finished', 'start_release_at'],
             using: 'BTREE'
         }
     ]
