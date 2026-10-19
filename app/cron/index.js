@@ -6654,13 +6654,14 @@ class CronJob {
                         releasedMonth += 1;
                         historyUpdate.month = releasedMonth;
                     }
+                    const earnAmount = history.earn_amount_per_count * releasedMonth;
 
                     await SharedHomePackageEarn.create({
                         relation: history.relation,
                         user_id: history.user_id,
                         package_id: history.package_id,
                         package_history_id: history.id,
-                        amount: history.earn_amount_per_count * releasedCount,
+                        amount: earnAmount,
                         type: 0, // 每日收益
                     }, { transaction: t });
 
@@ -6692,8 +6693,7 @@ class CronJob {
                         }, { transaction: t });
                     }
 
-                    const forRelease = releasedMonth * history.earn_amount_per_count;
-                    let newBalance = Number(user.balance) + Number(forRelease);
+                    let newBalance = Number(user.balance) + Number(earnAmount);
                     
                     const cashflows = [
                         {
@@ -6702,7 +6702,7 @@ class CronJob {
                             wallet_type: 2, // 余额
                             model: 'SharedHomePackageHistory',
                             type: '共建共同家园计划',
-                            amount: forRelease,
+                            amount: earnAmount,
                             before_amount: user.balance,
                             after_amount: newBalance,
                             flow_status: 'IN',
