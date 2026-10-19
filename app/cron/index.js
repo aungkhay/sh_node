@@ -6626,10 +6626,6 @@ class CronJob {
 
     SHARED_HOME_PACKAGE_EARN = async () => {
         try {
-            const now = moment();
-            const startOfDay = now.startOf('day').toDate();
-            const endOfDay = now.endOf('day').toDate();
-
             const histories = await SharedHomePackageHistory.findAll({
                 include: {
                     model: SharedHomePackage,

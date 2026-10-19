@@ -84,12 +84,6 @@ SharedHomePackageHistory.init({
         defaultValue: 0,
         comment: '已发放次数',
     },
-    released_amount: {
-        type: DataTypes.DECIMAL(20, 8),
-        allowNull: false,
-        defaultValue: 0,
-        comment: '已发放金额',
-    },
     month: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -101,11 +95,6 @@ SharedHomePackageHistory.init({
         allowNull: false,
         defaultValue: false,
         comment: '是否完成',
-    },
-    next_release_at: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        comment: '下次发放时间',
     },
     description: {
         type: DataTypes.STRING,
@@ -134,11 +123,6 @@ SharedHomePackageHistory.init({
         {
             name: 'idx_is_finished',
             fields: ['is_finished'],
-            using: 'BTREE'
-        },
-        {
-            name: 'idx_is_finished_next_release_at',
-            fields: ['is_finished', 'next_release_at'],
             using: 'BTREE'
         }
     ]
