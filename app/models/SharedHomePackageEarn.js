@@ -62,6 +62,7 @@ SharedHomePackageEarn.init({
     timestamps: true,
     indexes: [
         { fields: ['relation'] },
+        { fields: ['type']}
     ]
 })
 

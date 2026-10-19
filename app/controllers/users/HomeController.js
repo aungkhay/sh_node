@@ -16525,7 +16525,7 @@ class Controller {
                         where: { id: packageId }
                     }
                 ],
-                where: { user_id: userId },
+                where: { user_id: userId, type: 0 },
                 attributes: ['id', 'amount', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
