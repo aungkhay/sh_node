@@ -6649,24 +6649,25 @@ class CronJob {
                     let releasedCount = history.released_count;
                     let releasedMonth = history.month;
                     let historyUpdate = {};
+                    
+                    if (releasedCount > 0 && releasedCount % history.earn_count_per_month === 0) {
+                        releasedMonth += 1;
+                        historyUpdate.month = releasedMonth;
+                    }
 
                     await SharedHomePackageEarn.create({
                         relation: history.relation,
                         user_id: history.user_id,
                         package_id: history.package_id,
                         package_history_id: history.id,
-                        amount: history.earn_amount_per_count,
+                        amount: history.earn_amount_per_count * releasedCount,
                         type: 0, // 每日收益
                     }, { transaction: t });
-                    
-                    if (releasedCount > 0 && releasedCount % history.earn_count_per_month === 0) {
-                        releasedMonth += 1;
-                        historyUpdate.month = releasedMonth;
-                    }
+
                     releasedCount += 1;
                     historyUpdate.released_count = releasedCount;
                     await history.update(historyUpdate, { transaction: t });
-                    
+
                     if (history.total_month * history.earn_count_per_month === releasedCount) {
                         historyUpdate.is_finished = 1;
                         await CashFlow.create({
