@@ -6689,8 +6689,7 @@ class CronJob {
                     }
                     await history.update(historyUpdate, { transaction: t });
 
-                    // Add to balance 12 count per times
-                    const forRelease = releasedMonth * history.earn_count_per_month;
+                    const forRelease = releasedMonth * history.earn_amount_per_count;
                     let newBalance = Number(user.balance) + Number(forRelease);
                     
                     const cashflows = [
