@@ -6690,11 +6690,11 @@ class CronJob {
                     await history.update(historyUpdate, { transaction: t });
 
                     // Add to balance 12 count per times
-                    if (releasedCount % history.release_earn_count_at === 0) {
-                        const forRelease = releasedMonth * history.earn_amount_per_count * history.earn_count_per_month;
-                        const newBalance = Number(user.balance) + Number(forRelease);
-                        await user.update({ balance: newBalance }, { transaction: t });
-                        await CashFlow.create({
+                    const forRelease = releasedMonth * history.earn_count_per_month;
+                    let newBalance = Number(user.balance) + Number(forRelease);
+                    
+                    const cashflows = [
+                        {
                             user_id: user.id,
                             relation: user.relation,
                             wallet_type: 2, // 余额
@@ -6704,9 +6704,27 @@ class CronJob {
                             before_amount: user.balance,
                             after_amount: newBalance,
                             flow_status: 'IN',
-                            description: `${history.package ? history.package.product_name : ''} . 第${releasedCount}次释放`,
-                        }, { transaction: t });
+                            description: `${history.package ? history.package.product_name : ''} . 收益`,
+                        }
+                    ]
+                    if (Number(releasedCount) === Number(history.release_earn_count_at)) {
+                        cashflows.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 余额
+                            model: 'SharedHomePackageHistory',
+                            type: '共建共同家园计划',
+                            amount: history.price,
+                            before_amount: newBalance,
+                            after_amount: newBalance + Number(history.price),
+                            flow_status: 'IN',
+                            description: `${history.package ? history.package.product_name : ''} . 本金返还`,
+                        });
+                        newBalance += Number(history.price);
                     }
+
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+                    await user.update({ balance: newBalance }, { transaction: t });
 
                     await t.commit();
                 } catch (error) {
