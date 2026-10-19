@@ -46,6 +46,11 @@ SharedHomePackageEarn.init({
         allowNull: false,
         defaultValue: 0,
     },
+    type: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: '0 => 每日收益, 1 => 返还上合共享金, 2 => 本金返还'
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,

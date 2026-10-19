@@ -6655,7 +6655,8 @@ class CronJob {
                         user_id: history.user_id,
                         package_id: history.package_id,
                         package_history_id: history.id,
-                        amount: history.earn_amount_per_count
+                        amount: history.earn_amount_per_count,
+                        type: 0, // 每日收益
                     }, { transaction: t });
                     
                     if (releasedCount % history.earn_count_per_month === 0) {
@@ -6678,6 +6679,14 @@ class CronJob {
                             after_amount: Number(user.sharing_amount) + shareAmount,
                             flow_status: 'IN',
                             description: `${history.package ? history.package.product_name : ''}`,
+                        }, { transaction: t });
+                        await SharedHomePackageEarn.create({
+                            relation: history.relation,
+                            user_id: history.user_id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            amount: shareAmount,
+                            type: 1, // 返还上合共享金
                         }, { transaction: t });
                     }
                     await history.update(historyUpdate, { transaction: t });
@@ -6713,6 +6722,14 @@ class CronJob {
                             description: `${history.package ? history.package.product_name : ''} . 本金返还`,
                         });
                         newBalance += Number(history.price);
+                        await SharedHomePackageEarn.create({
+                            relation: history.relation,
+                            user_id: history.user_id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            amount: history.price,
+                            type: 2, // 本金返还
+                        }, { transaction: t });
                     }
 
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
