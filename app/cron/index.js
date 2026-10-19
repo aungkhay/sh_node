@@ -6658,11 +6658,11 @@ class CronJob {
                         amount: history.earn_amount_per_count
                     }, { transaction: t });
                     
-                    releasedCount += 1;
                     if (releasedCount % history.earn_count_per_month === 0) {
                         releasedMonth += 1;
                         historyUpdate.month = releasedMonth;
                     }
+                    releasedCount += 1;
 
                     historyUpdate.released_count = releasedCount;
                     if (history.total_month * history.earn_count_per_month === releasedCount) {
