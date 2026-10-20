@@ -6626,9 +6626,7 @@ class CronJob {
 
     SHARED_HOME_PACKAGE_EARN = async () => {
         try {
-            const now = moment();
-            const start = moment().startOf('day');
-            const end = moment().endOf('day');
+            const today = moment().startOf('day');
 
             const histories = await SharedHomePackageHistory.findAll({
                 include: {
@@ -6639,7 +6637,7 @@ class CronJob {
                 where: {
                     is_finished: 0,
                     start_release_at: { 
-                        [Op.between]: [start.toDate(), end.toDate()]
+                        [Op.gte]: today.toDate()
                     }
                 }
             });
@@ -7566,6 +7564,52 @@ class CronJob {
             errLogger(`[EXPORT_SHARING_PLAN_EARN]: ${error.stack}`);
         }
     };
+
+    // NOT CRON
+    EXPORT_SHARING_PLAN_HISTORY = async () => {
+        try {
+            const rows = await SharingPlanPackageHistory.findAll({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: ['id', 'name', 'phone_number'],
+                        where: {
+                            is_internal_account: 0
+                        }
+                    },
+                    {
+                        model: SharingPlanPackage,
+                        as: 'package',
+                        attributes: ['id', 'product_name']
+                    }
+                ],
+                where: {
+                    price: 5000
+                },
+                attributes: ['id', 'price', 'is_returned_price', 'is_returned_share_amount']
+            });
+
+            const list = rows.map(row => ({
+                "用户ID": row.user.id,
+                "用户名": row.user.name,
+                "用户手机号": row.user.phone_number,
+                "产品ID": row.package.id,
+                "产品名称": row.package.product_name,
+                "订单ID": row.id,
+                "订单金额": row.price,
+                "是否完成": row.is_returned_price && row.is_returned_share_amount ? '是' : '否',
+            }));
+            
+            const xlsx = require('xlsx');
+            const worksheet = xlsx.utils.json_to_sheet(list);
+            const workbook1 = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook1, worksheet, 'Sharing Plan History Export');
+            xlsx.writeFile(workbook1, 'sharing_plan_history_export.xlsx');
+        } catch (error) {
+            errLogger(`[EXPORT_SHARING_PLAN_EARN_1]: ${error.stack}`);
+        }
+    }
 }
 
 module.exports = CronJob;
