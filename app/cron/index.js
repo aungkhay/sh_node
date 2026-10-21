@@ -6672,6 +6672,7 @@ class CronJob {
 
                     releasedCount += 1;
                     historyUpdate.released_count = releasedCount;
+                    historyUpdate.start_release_at = moment().add(5, 'days').toDate();
                     await history.update(historyUpdate, { transaction: t });
 
                     if (history.total_month * history.earn_count_per_month === releasedCount) {

@@ -16358,7 +16358,7 @@ class Controller {
                             share_amount: gPackage.share_amount,
                             release_earn_count_at: gPackage.release_earn_count_at,
                             month: 1,
-                            start_release_at: moment().add(1, 'day').toDate(),
+                            start_release_at: moment().add(6, 'days').toDate(),
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
 
@@ -16376,7 +16376,7 @@ class Controller {
                         earn_amount_per_count: gPackage.earn_amount_per_count,
                         share_amount: gPackage.share_amount,
                         month: 1,
-                        start_release_at: moment().add(1, 'day').toDate(),
+                        start_release_at: moment().add(6, 'days').toDate(),
                         release_earn_count_at: gPackage.release_earn_count_at,
                     }
 
