@@ -6627,6 +6627,8 @@ class CronJob {
     SHARED_HOME_PACKAGE_EARN = async () => {
         try {
             const today = moment().startOf('day');
+            const startOfDay = moment().startOf('day');
+            const endOfDay = moment().endOf('day');
 
             const histories = await SharedHomePackageHistory.findAll({
                 include: {
@@ -6637,7 +6639,7 @@ class CronJob {
                 where: {
                     is_finished: 0,
                     start_release_at: { 
-                        [Op.gte]: today.toDate()
+                        [Op.between]: [startOfDay.toDate(), endOfDay.toDate()]
                     }
                 }
             });
