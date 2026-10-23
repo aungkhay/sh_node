@@ -596,6 +596,31 @@ class Controller {
         }
     }
 
+    ZTZHIFU = async (channel, amount, userId) => {
+        try {
+            const orderNo = await this.commonHelper.generateDepositOrderNo();
+
+            const body = {
+                mchNo: channel.deposit_merchant.mch_no,
+                mchOrderNo: orderNo,
+                amount: Number(amount).toFixed(2),
+                channelCode: channel.merchant_channel,
+                createTime: new Date().getTime().toString(),
+                notifyUrl: `${process.env.CALLBACK_DOMAIN}/api/deposit-callback/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                redirectUrl: `${process.env.CALLBACK_DOMAIN}/api/deposit-callback/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                extraParams: JSON.stringify({ userId }),
+            };
+            
+            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            body.sign = sign.toLowerCase();
+            body.orderNo = orderNo;
+            return body;
+        } catch (error) {
+            errLogger(`[ZTZHIFU] ${error.stack}`);
+            return null;
+        }
+    }
+
     XPAY360DAIFU = async (channel, amount, userId, paymentMethod, withdrawBy, orderNo) => {
         try {
             let name = '';

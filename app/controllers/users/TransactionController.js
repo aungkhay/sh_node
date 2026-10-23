@@ -60,6 +60,7 @@ class Controller {
                 '24': 'success', // huojianzhifu
                 '25': 'success', // mzhifu2
                 '26': 'success', // yfzhifu
+                '27': 'success', // ztzhifu
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -447,6 +448,26 @@ class Controller {
                         status = 0;
                     }
                     break;
+                case 'ztzhifu':
+                    const ztzhifuReqSign = reqBody.sign.toLowerCase();
+                    delete reqBody.sign;
+                    const ztzhifuCleaned = Object.fromEntries(
+                        Object.entries(reqBody).filter(([key, value]) => value !== "" && value !== null)
+                    );
+                    console.log("ztzhifuCleaned:", ztzhifuCleaned);
+                    const ztzhifuSign = this.merchantController.CREATE_SIGN(ztzhifuCleaned, `&key=${merchant.app_key}`);
+                    console.log("ztzhifuSign:", ztzhifuSign, "ztzhifuReqSign:", ztzhifuReqSign);
+
+                    // FAIL(失败)、WAITING(进行中)、SUCCESS(成功)
+                    if (ztzhifuCleaned.status === 'SUCCESS') {
+                        status = 1;
+                    } else if (ztzhifuCleaned.status === 'FAIL') {
+                        status = 2;
+                    } else if (ztzhifuCleaned.status === 'WAITING') {
+                        status = 0;
+                    }
+                    resMsg = 'success';
+                    break;
                 default:
                     break;
             }
@@ -746,6 +767,9 @@ class Controller {
                     payload = await this.merchantController.YFZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
+                case 'ztzhifu':
+                    payload = await this.merchantController.ZTZHIFU(channel, amount, userId);
+                    break;
                 default:
                     break;
             }
@@ -923,6 +947,12 @@ class Controller {
                 case 'yfzhifu':
                     if (resData.code == 1) {
                         redirectUrl = resData?.data?.credentialPayload;
+                        success = true;
+                    }
+                    break;
+                case 'ztzhifu':
+                    if (resData.code == 200) {
+                        redirectUrl = resData?.data?.url;
                         success = true;
                     }
                     break;
