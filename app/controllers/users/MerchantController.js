@@ -610,8 +610,27 @@ class Controller {
                 redirectUrl: `${process.env.CALLBACK_DOMAIN}/api/deposit-callback/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
                 extraParams: JSON.stringify({ userId }),
             };
+
+            const genSign = (params, apiPrivateKey) => {
+                let appKey = '';
+
+                const sortedKeys = Object.keys(params).sort();
+
+                for (const key of sortedKeys) {
+                    const value = params[key];
+
+                    if (value !== null && value !== '' && key !== 'sign') {
+                        appKey += String(value);
+                    }
+                }
+
+                return crypto
+                    .createHash('md5')
+                    .update(appKey + apiPrivateKey, 'utf8')
+                    .digest('hex');
+            }
             
-            const sign = this.CREATE_SIGN(body, `&key=${channel.deposit_merchant.app_key}`);
+            const sign = genSign(body, channel.deposit_merchant.app_key);
             body.sign = sign.toLowerCase();
             body.orderNo = orderNo;
             return body;
