@@ -606,9 +606,9 @@ class Controller {
                 amount: Number(amount).toFixed(2),
                 channelCode: channel.merchant_channel,
                 createTime: new Date().getTime().toString(),
-                notifyUrl: `${process.env.CALLBACK_DOMAIN}/api/deposit-callback/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
-                redirectUrl: `${process.env.CALLBACK_DOMAIN}/api/deposit-callback/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
-                extraParams: JSON.stringify({ userId }),
+                notifyUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                redirectUrl: `${this.notifyUrl}/${orderNo}/${channel.deposit_merchant.id}/${userId}`,
+                // extraParams: JSON.stringify({ userId }),
             };
 
             const genSign = (params, apiPrivateKey) => {
@@ -631,7 +631,7 @@ class Controller {
             }
             
             const sign = genSign(body, channel.deposit_merchant.app_key);
-            body.sign = sign.toLowerCase();
+            body.sign = sign.toUpperCase();
             body.orderNo = orderNo;
             return body;
         } catch (error) {
