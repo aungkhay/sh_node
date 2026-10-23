@@ -769,6 +769,7 @@ class Controller {
                     break;
                 case 'ztzhifu':
                     payload = await this.merchantController.ZTZHIFU(channel, amount, userId);
+                    headers = { "Content-Type": "application/json" }
                     break;
                 default:
                     break;
