@@ -60,7 +60,9 @@ class Controller {
                 '24': 'success', // huojianzhifu
                 '25': 'success', // mzhifu2
                 '26': 'success', // yfzhifu
-                '27': 'success', // ztzhifu
+                '27': 'success', // ztzhifu1
+                '28': 'success', // ztzhifu2
+                '29': 'success', // ztzhifu3
             }
 
             let resMsg = resMessages[String(merchantId)] || 'success';
@@ -448,7 +450,9 @@ class Controller {
                         status = 0;
                     }
                     break;
-                case 'ztzhifu':
+                case 'ztzhifu1':
+                case 'ztzhifu2':
+                case 'ztzhifu3':
                     const ztzhifuReqSign = reqBody.sign.toLowerCase();
                     delete reqBody.sign;
                     const ztzhifuCleaned = Object.fromEntries(
@@ -767,7 +771,9 @@ class Controller {
                     payload = await this.merchantController.YFZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
-                case 'ztzhifu':
+                case 'ztzhifu1':
+                case 'ztzhifu2':
+                case 'ztzhifu3':
                     payload = await this.merchantController.ZTZHIFU(channel, amount, userId);
                     headers = { "Content-Type": "application/json" }
                     break;
@@ -951,7 +957,9 @@ class Controller {
                         success = true;
                     }
                     break;
-                case 'ztzhifu':
+                case 'ztzhifu1':
+                case 'ztzhifu2':
+                case 'ztzhifu3':
                     if (resData.code == 200) {
                         redirectUrl = resData?.data?.url;
                         success = true;
