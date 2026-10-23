@@ -601,7 +601,7 @@ class Controller {
             const orderNo = await this.commonHelper.generateDepositOrderNo();
 
             const body = {
-                mchNo: channel.deposit_merchant.mch_no,
+                mchNo: channel.deposit_merchant.app_id,
                 mchOrderNo: orderNo,
                 amount: Number(amount).toFixed(2),
                 channelCode: channel.merchant_channel,
