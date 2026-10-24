@@ -181,7 +181,7 @@ class Controller {
                         model: User,
                         as: 'user',
                         attributes: [],
-                        where: { is_internal_account: 0 }
+                        where: userCondition
                     }
                 ],
                 where: { ...condition, price: { [Op.gt]: 0 } } 
@@ -192,7 +192,7 @@ class Controller {
                         model: User,
                         as: 'user',
                         attributes: [],
-                        where: { is_internal_account: 0 }
+                        where: userCondition
                     }
                 ],
                 where: { ...condition, price: { [Op.gt]: 0 } } 
