@@ -185,8 +185,28 @@ class Controller {
                 offset: offset
             });
 
-            const totalBought = await NewChapterPackageHistory.sum('price', { where: { ...condition, price: { [Op.gt]: 0 } } }) || 0;
-            const boughtCount = await NewChapterPackageHistory.count({ where: { ...condition, price: { [Op.gt]: 0 } } });
+            const totalBought = await NewChapterPackageHistory.sum('price', { 
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: [],
+                        where: { is_internal_account: 0 }
+                    }
+                ],
+                where: { ...condition, price: { [Op.gt]: 0 } } 
+            }) || 0;
+            const boughtCount = await NewChapterPackageHistory.count({
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: [],
+                        where: { is_internal_account: 0 }
+                    }
+                ],
+                where: { ...condition, price: { [Op.gt]: 0 } } 
+            });
             const userBoughtCount = await NewChapterPackageHistory.count({ where: { ...condition, price: { [Op.gt]: 0 } }, distinct: true, col: 'user_id' });
 
             const internalUserBought = await NewChapterPackageHistory.sum('price', {
