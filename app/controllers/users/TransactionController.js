@@ -1697,17 +1697,13 @@ class Controller {
             const t = await db.transaction();
             try {
                 const user = await User.findByPk(userId, {
-                    attributes: ['id', 'relation', 'reserve_fund', 'balance', 'can_transfer_wallet'],
+                    attributes: ['id', 'relation', 'reserve_fund', 'balance'],
                     transaction: t,
                     useMaster: true
                 });
 
                 if (amount > user.balance) {
                     throw new Error('余额不足');
-                }
-                
-                if (!user.can_transfer_wallet) {
-                    throw new Error('该账户不允许转账');
                 }
                 
                 await Transfer.create({
@@ -2626,9 +2622,14 @@ class Controller {
                     as: 'kyc',
                     attributes: ['id', 'status'],
                 },
-                attributes: ['id', 'relation', 'phone_number', 'reserve_fund', 'can_withdraw', 'can_transfer', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date'],
+                attributes: ['id', 'relation', 'phone_number', 'reserve_fund', 'can_withdraw', 'can_transfer', 'is_withdraw_active_code_used', 'createdAt', 'payment_password', 'initial_buy_product_date', 'can_transfer_wallet'],
                 useMaster: true
             });
+
+            if (!sender.can_transfer_wallet) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该账户不允许转账', {});
+            }
 
             if (!sender.kyc || sender.kyc.status !== 'APPROVED') {
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
