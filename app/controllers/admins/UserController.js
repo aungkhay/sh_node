@@ -3557,6 +3557,33 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    SET_CAN_TRANSFER_WALLET = async (req, res) => {
+        try {
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            const userId = req.params.id;
+            const { can_transfer_wallet } = req.body;
+            const user = await User.findByPk(userId, { attributes: ['id', 'can_transfer_wallet'] });
+            if (!user) {
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, 'User not found', {});
+            }
+
+            await user.update({ can_transfer_wallet: can_transfer_wallet });
+
+            // log
+            await this.adminLogger(req, 'User', 'update');
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '更新成功', {});
+        } catch (error) {
+            errLogger(`[SET_CAN_TRANSFER_WALLET]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;

@@ -381,6 +381,11 @@ User.init({
         type: DataTypes.TINYINT,
         defaultValue: 0,
     },
+    can_transfer_wallet: {
+        type: DataTypes.TINYINT,
+        defaultValue: 1,
+        comment: '是否可以转账钱包'
+    }
 }, {
     sequelize,
     modelName: 'User',

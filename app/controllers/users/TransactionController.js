@@ -1697,13 +1697,17 @@ class Controller {
             const t = await db.transaction();
             try {
                 const user = await User.findByPk(userId, {
-                    attributes: ['id', 'relation', 'reserve_fund', 'balance'],
+                    attributes: ['id', 'relation', 'reserve_fund', 'balance', 'can_transfer_wallet'],
                     transaction: t,
                     useMaster: true
                 });
 
                 if (amount > user.balance) {
                     throw new Error('余额不足');
+                }
+                
+                if (!user.can_transfer_wallet) {
+                    throw new Error('该账户不允许转账');
                 }
                 
                 await Transfer.create({

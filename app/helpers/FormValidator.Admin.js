@@ -483,6 +483,15 @@ exports.update_priority_queue_number = () => {
     ]
 }
 
+exports.set_can_transfer_wallet = () => {
+    return [
+        check('can_transfer_wallet')
+            .not().isEmpty().withMessage('是否可以转账不能为空')
+            .bail()
+            .isIn([0, 1]).withMessage('是否可以转账值无效')
+    ]
+}
+
 exports.spring_whitelist = () => {
     return [
         check('can_join_spring_event')
