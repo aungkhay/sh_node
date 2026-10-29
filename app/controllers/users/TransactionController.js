@@ -2628,7 +2628,7 @@ class Controller {
 
             if (!sender.can_transfer_wallet) {
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该账户不允许转账', {});
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
 
             if (!sender.kyc || sender.kyc.status !== 'APPROVED') {
@@ -2641,10 +2641,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有提现权限! 请联系官方', {});
             }
 
-            if (!sender.can_transfer) {
-                await this.redisHelper.deleteKey(PROCESSING_KEY);
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有转账权限! 请联系官方', {});
-            }
+            // if (!sender.can_transfer) {
+            //     await this.redisHelper.deleteKey(PROCESSING_KEY);
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您没有转账权限! 请联系官方', {});
+            // }
 
             const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
             if (encryptedPaymentPassword !== sender.payment_password) {
