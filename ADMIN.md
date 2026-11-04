@@ -2638,11 +2638,11 @@ const params = {
 ### 上合互联互通计划
 ``` js
 // [GET] Package List
-const url = `${baseURL}/onnectivity-theme-packages`;
+const url = `${baseURL}/connectivity-theme-packages`;
 
 // [POST] CREATE | UPDATE
-const url = `${baseURL}/onnectivity-theme-packages/create`;
-const url = `${baseURL}/onnectivity-theme-packages/${pkgID}/update`;
+const url = `${baseURL}/connectivity-theme-packages/create`;
+const url = `${baseURL}/connectivity-theme-packages/${pkgID}/update`;
 const data = {
     product_name: '',
     price: 0, // 申购费
@@ -2658,7 +2658,7 @@ const data = {
 }
 
 // [POST] Upload Product Cover Image
-const url = `${baseURL}/onnectivity-theme-packages/${packageId}/upload`;
+const url = `${baseURL}/connectivity-theme-packages/${packageId}/upload`;
 const formData = new FormData();
 formData.append('image', file, file.name.toLocaleLowerCase());
 const config = {
@@ -2673,7 +2673,7 @@ const config = {
 await axios(config);
 
 // [GET] Package History
-const url = `${baseURL}/onnectivity-theme-packages/history`;
+const url = `${baseURL}/connectivity-theme-packages/history`;
 const params = {
     phone: '',
     packageId: '',
@@ -2683,7 +2683,7 @@ const params = {
 }
 
 // [GET] 推荐奖励记录
-const url = `${baseURL}/onnectivity-theme-packages/bonus-history`;
+const url = `${baseURL}/connectivity-theme-packages/bonus-history`;
 const params = {
     phone: '',
     startTime: '',
@@ -2691,7 +2691,7 @@ const params = {
 }
 
 // [GET] 收益记录
-const url = `${baseURL}/onnectivity-theme-packages/earn-history`;
+const url = `${baseURL}/connectivity-theme-packages/earn-history`;
 const params = {
     phone: '',
     startTime: '',

@@ -16983,7 +16983,6 @@ class Controller {
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
             const userId = req.user_id;
-            const packageId = req.params.id;
 
             const { rows, count } = await ConnectivityThemePackageEarn.findAndCountAll({
                 include: [
@@ -16993,19 +16992,15 @@ class Controller {
                         attributes: ['id', 'price']
                     }
                 ],
-                where: { user_id: userId, package_id: packageId, type: 0 },
+                where: { user_id: userId, type: 0 },
                 attributes: ['id', 'amount', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
             });
-            const sum = await ConnectivityThemePackageEarn.sum('amount', {
-                where: { user_id: userId, package_id: packageId, type: 0 }
-            });
 
             const data = {
                 earns: rows,
-                sum: Number(sum || 0),
                 meta: {
                     page: page,
                     perPage: perPage,

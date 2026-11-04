@@ -199,7 +199,7 @@ class UserRoute extends express.Router {
         this.get('/connectivity-theme-packages', middleware.isLoggedIn, HomeCtrl.CONNECTIVITY_THEME_PACKAGE);
         this.post('/connectivity-theme-packages/:id/buy', FormValidator.buy_connectivity_theme_package(), middleware.isLoggedIn, HomeCtrl.BUY_CONNECTIVITY_THEME_PACKAGE);
         this.get('/connectivity-theme-packages/history', middleware.isLoggedIn, HomeCtrl.CONNECTIVITY_THEME_PACKAGE_HISTORY);
-        this.get('/connectivity-theme-packages/:id/earn-history', middleware.isLoggedIn, HomeCtrl.CONNECTIVITY_THEME_PACKAGE_EARN_HISTORY);
+        this.get('/connectivity-theme-packages/earn-history', middleware.isLoggedIn, HomeCtrl.CONNECTIVITY_THEME_PACKAGE_EARN_HISTORY);
         this.get('/connectivity-theme-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.CONNECTIVITY_THEME_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
