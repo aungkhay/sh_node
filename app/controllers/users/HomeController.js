@@ -16992,7 +16992,7 @@ class Controller {
                         attributes: ['id', 'price']
                     }
                 ],
-                where: { user_id: userId, type: 0 },
+                where: { user_id: userId },
                 attributes: ['id', 'amount', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
