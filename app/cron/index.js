@@ -1,6 +1,6 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn } = require('../models');
-const { Op, fn, col, literal, or } = require('sequelize');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn, ConnectivityThemePackageHistory, ConnectivityThemePackage, ConnectivityThemePackageEarn } = require('../models');
+const { Op, fn, col, literal, or, where } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
 const axios = require('axios');
@@ -114,6 +114,8 @@ class CronJob {
         cron.schedule('0 4 * * *', this.RETURN_NEW_CHAPTER_EARN).start();
         // Run at 5:00 AM Every day
         cron.schedule('0 5 * * *', this.SHARED_HOME_PACKAGE_EARN).start();
+        // Run 1:20 AM Every 10th of the month
+        cron.schedule('20 1 10 * *', this.CONNECTIVITY_THEME_PACKAGE_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6755,6 +6757,69 @@ class CronJob {
         }
     }
 
+    CONNECTIVITY_THEME_PACKAGE_EARN = async () => {
+        try {
+            const histories = await ConnectivityThemePackageHistory.findAll({
+                include: {
+                    model: ConnectivityThemePackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
+                where: {
+                    is_finished: 0
+                }
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+                    const amount = Number(history.connectivity_amount);
+
+                    await ConnectivityThemePackageEarn.create({
+                        relation: history.relation,
+                        user_id: history.user_id,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: amount,
+                    }, { transaction: t });
+
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2, // 余额
+                        model: 'ConnectivityThemePackageHistory',
+                        type: '上合互联互通计划收益',
+                        amount: amount,
+                        before_amount: user.balance,
+                        after_amount: Number(user.balance) + amount,
+                        flow_status: 'IN',
+                        description: `${history.package ? history.package.product_name : ''}`,
+                    }, { transaction: t });
+
+                    await user.increment({ balance: amount }, { transaction: t });
+                    const total_released_count = Number(history.total_released_count) + 1;
+                    const historyUpdates = { total_released_count: total_released_count };
+                    if (total_released_count >= Number(history.total_count)) {
+                        historyUpdates.is_finished = 1;
+                    }
+                    await history.update(historyUpdates, { transaction: t });
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[CONNECTIVITY_THEME_PACKAGE_EARN]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[CONNECTIVITY_THEME_PACKAGE_EARN]: ${error.stack}`);
+        }
+    }
+
     // NOT CRON
     EXPORT_GOLD_APPRECIATION_PACKAGE_HISTORY = async () => {
         try {
@@ -7613,6 +7678,168 @@ class CronJob {
             errLogger(`[EXPORT_SHARING_PLAN_EARN_1]: ${error.stack}`);
         }
     }
+
+    // Not CRON
+    EXPORT_USER_LAST_LOGIN_AFTER_OCT_25 = async () => {
+        try {
+            const [result] = await db.query(`
+                SELECT u.id, u.phone_number, u.reserve_fund, u.balance, ul.last_login_at
+                FROM users u
+                JOIN (
+                    SELECT user_id, MAX(createdAt) AS last_login_at
+                    FROM user_logs
+                    WHERE createdAt > '2026-10-25'
+                    GROUP BY user_id
+                ) ul ON ul.user_id = u.id
+                WHERE u.is_internal_account = 0
+                AND u.type = 2;
+            `);
+
+            const xlsx = require('xlsx');
+            console.log(`Exporting ${result.length} users to Excel...`);
+            const data = result.map(user => ({
+                id: user.id,
+                "手机号": user.phone_number,
+                "储备金": Number(user.reserve_fund),
+                "余额": Number(user.balance),
+                "最后登录时间": user.last_login_at ? moment(user.last_login_at).format('YYYY-MM-DD HH:mm:ss') : '-',
+            }));
+            const worksheet = xlsx.utils.json_to_sheet(data);
+            const workbook = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(workbook, worksheet, 'Users_Last_Login_After_Oct_25');
+            xlsx.writeFile(workbook, 'users_last_login_after_oct_25.xlsx');
+
+            console.log(`Export completed. File saved as users_last_login_after_oct_25.xlsx`);
+        } catch (error) {
+            errLogger(`[EXPORT_USER_LAST_LOGIN_AFTER_OCT_25]: ${error.stack}`);
+        }
+    }
+    
+    // Not CRON
+    EXPORT_USER_LAST_LOGIN_BEFORE_OCT_25 = async () => {
+        const xlsx = require('xlsx');
+        const moment = require('moment');
+        const path = require('path');
+        const fs = require('fs');
+
+        const startTime = Date.now();
+
+        try {
+            console.log('[EXPORT] Starting...');
+
+            console.time('[EXPORT] MySQL Query');
+
+            const [result] = await db.query(`
+                SELECT
+                    u.id,
+                    u.phone_number,
+                    u.reserve_fund,
+                    u.balance,
+                    (
+                        SELECT MAX(ul.createdAt)
+                        FROM user_logs ul
+                        WHERE ul.user_id = u.id
+                    ) AS last_login_at
+                FROM users u
+                WHERE u.is_internal_account = 0
+                AND u.type = 2
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM user_logs recent
+                    WHERE recent.user_id = u.id
+                        AND recent.createdAt > NOW() - INTERVAL 10 DAY
+                )
+                ORDER BY u.id ASC
+            `);
+
+            console.timeEnd('[EXPORT] MySQL Query');
+            console.log(`[EXPORT] Found ${result.length} users`);
+
+            console.time('[EXPORT] Data Processing');
+
+            let totalReserveFund = 0;
+            let totalBalance = 0;
+
+            const now = moment();
+
+            const data = result.map(user => {
+                const reserveFund = Number(user.reserve_fund || 0);
+                const balance = Number(user.balance || 0);
+
+                totalReserveFund += reserveFund;
+                totalBalance += balance;
+
+                return {
+                    "用户ID": user.id,
+                    "手机号": String(user.phone_number || ''),
+                    "储备金": reserveFund,
+                    "余额": balance,
+                    "最后登录时间": user.last_login_at
+                        ? moment(user.last_login_at).format('YYYY-MM-DD HH:mm:ss')
+                        : '从未登录',
+                    "未登录天数": user.last_login_at
+                        ? now.diff(moment(user.last_login_at), 'days')
+                        : '-'
+                };
+            });
+
+            data.push({
+                "用户ID": "合计",
+                "手机号": `共 ${result.length} 人`,
+                "储备金": totalReserveFund,
+                "余额": totalBalance,
+                "最后登录时间": "",
+                "未登录天数": ""
+            });
+
+            console.timeEnd('[EXPORT] Data Processing');
+
+            console.time('[EXPORT] Excel Generation');
+
+            const worksheet = xlsx.utils.json_to_sheet(data);
+
+            worksheet['!cols'] = [
+                { wch: 15 },
+                { wch: 20 },
+                { wch: 20 },
+                { wch: 20 },
+                { wch: 25 },
+                { wch: 15 }
+            ];
+
+            const workbook = xlsx.utils.book_new();
+
+            xlsx.utils.book_append_sheet(
+                workbook,
+                worksheet,
+                '10天未登录用户'
+            );
+
+            const exportDir = path.resolve(process.cwd(), 'exports');
+
+            fs.mkdirSync(exportDir, { recursive: true });
+
+            const filename = `inactive_users_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
+            const filePath = path.join(exportDir, filename);
+
+            xlsx.writeFile(workbook, filePath);
+
+            console.timeEnd('[EXPORT] Excel Generation');
+
+            console.log(`[EXPORT] File saved: ${filePath}`);
+            console.log(`[EXPORT] Total users: ${result.length}`);
+            console.log(`[EXPORT] Total reserve fund: ${totalReserveFund}`);
+            console.log(`[EXPORT] Total balance: ${totalBalance}`);
+            console.log(`[EXPORT] Total time: ${((Date.now() - startTime) / 1000).toFixed(2)} seconds`);
+
+            return filePath;
+
+        } catch (error) {
+            console.error('[EXPORT] Failed:', error);
+            errLogger(`[EXPORT_INACTIVE_USERS]: ${error.stack}`);
+            throw error;
+        }
+    };
 }
 
 module.exports = CronJob;

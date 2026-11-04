@@ -126,6 +126,10 @@ const SharedHomePackage = require('./SharedHomePackage');
 const SharedHomePackageHistory = require('./SharedHomePackageHistory');
 const SharedHomePackageEarn = require('./SharedHomePackageEarn');
 const SharedHomePackageBonuses = require('./SharedHomePackageBonuses');
+const ConnectivityThemePackage = require('./ConnectivityThemePackage');
+const ConnectivityThemePackageHistory = require('./ConnectivityThemePackageHistory');
+const ConnectivityThemePackageEarn = require('./ConnectivityThemePackageEarn');
+const ConnectivityThemePackageBonuses = require('./ConnectivityThemePackageBonuses');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -798,6 +802,35 @@ SharedHomePackageEarn.belongsTo(SharedHomePackage, { foreignKey: 'package_id', a
 SharedHomePackageHistory.hasMany(SharedHomePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
 SharedHomePackageBonuses.belongsTo(SharedHomePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
+// ========== CONNECTIVITY_THEME_PACKAGE ↔️ CONNECTIVITY_THEME_PACKAGE_HISTORY (1:N) ==========
+ConnectivityThemePackage.hasMany(ConnectivityThemePackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+ConnectivityThemePackageHistory.belongsTo(ConnectivityThemePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ CONNECTIVITY_THEME_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(ConnectivityThemePackageHistory, { foreignKey: 'user_id', as: 'connectivity_theme_package_histories', onDelete: 'CASCADE' });
+ConnectivityThemePackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ CONNECTIVITY_THEME_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(ConnectivityThemePackageBonuses, { foreignKey: 'user_id', as: 'connectivity_theme_package_bonuses', onDelete: 'CASCADE' });
+ConnectivityThemePackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+ConnectivityThemePackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ CONNECTIVITY_THEME_PACKAGE_EARN (1:N) ==========
+User.hasMany(ConnectivityThemePackageEarn, { foreignKey: 'user_id', as: 'connectivity_theme_package_earn', onDelete: 'CASCADE' });
+ConnectivityThemePackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== CONNECTIVITY_THEME_PACKAGE_HISTORY ↔️ CONNECTIVITY_THEME_PACKAGE_EARN (1:N) ==========
+ConnectivityThemePackageHistory.hasMany(ConnectivityThemePackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+ConnectivityThemePackageEarn.belongsTo(ConnectivityThemePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== CONNECTIVITY_THEME_PACKAGE ↔️ CONNECTIVITY_THEME_PACKAGE_EARN (1:N) ==========
+ConnectivityThemePackage.hasMany(ConnectivityThemePackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+ConnectivityThemePackageEarn.belongsTo(ConnectivityThemePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== CONNECTIVITY_THEME_PACKAGE_HISTORY ↔️ CONNECTIVITY_THEME_PACKAGE_BONUSES (1:N) ==========
+ConnectivityThemePackageHistory.hasMany(ConnectivityThemePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+ConnectivityThemePackageBonuses.belongsTo(ConnectivityThemePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -921,6 +954,10 @@ const models = {
     SharedHomePackageHistory,
     SharedHomePackageBonuses,
     SharedHomePackageEarn,
+    ConnectivityThemePackage,
+    ConnectivityThemePackageHistory,
+    ConnectivityThemePackageBonuses,
+    ConnectivityThemePackageEarn,
 };
 
 // Export models + db connection

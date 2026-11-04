@@ -1211,3 +1211,24 @@ const url = `${baseURL}/shared-home-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/shared-home-packages/bonus-history`;
 ```
+
+### 上合互联互通计划
+```js
+// [GET] Packages
+const url = `${baseURL}/connectivity-theme-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/connectivity-theme-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/connectivity-theme-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/connectivity-theme-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/connectivity-theme-packages/bonus-history`;
+```

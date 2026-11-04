@@ -528,6 +528,27 @@ module.exports = async () => {
             description: '-',
             data_type: 'integer'
         },
+        {
+            type: 'connectivity_theme_package_description',
+            title: '上合互联互通计划 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
+        {
+            type: 'connectivity_theme_package_period',
+            title: '上合互联互通计划 - 申购时间',
+            val: '2026-11-06 00:00:00|2026-11-09 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'connectivity_theme_package_daily_release_qty',
+            title: '上合互联互通计划 - 每日发放数量',
+            val: '200000',
+            description: '-',
+            data_type: 'integer'
+        },
     ];
 
     const count = await Config.count();

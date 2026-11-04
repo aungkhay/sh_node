@@ -470,6 +470,17 @@ class AdminRoute extends express.Router {
         this.get('/shared-home-packages/history', middleware.isLoggedIn('shared-home-package-history-list'), SharedHomePackageCtrl.SHARED_HOME_PACKAGE_HISTORY);
         this.get('/shared-home-packages/bonus-history', middleware.isLoggedIn('shared-home-package-bonus-history-list'), SharedHomePackageCtrl.SHARED_HOME_PACKAGE_BONUS_HISTORY);
         this.get('/shared-home-packages/earn-history', middleware.isLoggedIn('shared-home-package-earn-history-list'), SharedHomePackageCtrl.SHARED_HOME_PACKAGE_EARN_HISTORY);
+        
+        // Connectivity Theme Package
+        let ConnectivityThemePackageController = require('../controllers/admins/ConnectivityThemePackageController');
+        let ConnectivityThemePackageCtrl = new ConnectivityThemePackageController(app);
+        this.get('/connectivity-theme-packages', middleware.isLoggedIn('connectivity-theme-package-list'), ConnectivityThemePackageCtrl.INDEX);
+        this.post('/connectivity-theme-packages/create', FormValidator.create_connectivity_theme_package(), middleware.isLoggedIn('connectivity-theme-package-create'), ConnectivityThemePackageCtrl.CREATE);
+        this.post('/connectivity-theme-packages/:id/update', FormValidator.create_connectivity_theme_package(), middleware.isLoggedIn('connectivity-theme-package-update'), ConnectivityThemePackageCtrl.UPDATE);
+        this.post('/connectivity-theme-packages/:id/upload', middleware.isLoggedIn('connectivity-theme-package-create,connectivity-theme-package-update'), ConnectivityThemePackageCtrl.UPLOAD);
+        this.get('/connectivity-theme-packages/history', middleware.isLoggedIn('connectivity-theme-package-history-list'), ConnectivityThemePackageCtrl.CONNECTIVITY_THEME_PACKAGE_HISTORY);
+        this.get('/connectivity-theme-packages/bonus-history', middleware.isLoggedIn('connectivity-theme-package-bonus-history-list'), ConnectivityThemePackageCtrl.CONNECTIVITY_THEME_PACKAGE_BONUS_HISTORY);
+        this.get('/connectivity-theme-packages/earn-history', middleware.isLoggedIn('connectivity-theme-package-earn-history-list'), ConnectivityThemePackageCtrl.CONNECTIVITY_THEME_PACKAGE_EARN_HISTORY);
     }
 }
 
