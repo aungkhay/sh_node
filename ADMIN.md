@@ -1102,6 +1102,12 @@ const data = {
     phone_numbers: []
 }
 
+// [POST] 是否可以转账钱包
+const url = `${baseURL}/users/${userId}/set-can-transfer-wallet`;
+const data = {
+    can_transfer_wallet: 1, // 0 => No | 1 => Yes 
+} 
+
 // [POST] Setup 2FA
 const url = `${baseURL}/users/${userId}/setup-2fa`;
 const data = {
