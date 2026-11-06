@@ -145,6 +145,8 @@ class Controller {
             const todayWithdrawAmount = await Withdraw.sum('amount', { where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
             const todayWithdrawCount = await Withdraw.count({ where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
             const todayWithdrawHandleFee = await Withdraw.sum('handle_fee', { where: { status: 1, createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
+            const todayAllWithdrawAmount = await Withdraw.sum('amount', { where: { createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
+            const todayAllWithdrawCount = await Withdraw.count({ where: { createdAt: { [Op.between]: [startOfToday, endOfToday] } } });
 
             const data = {
                 total_deposit_amount: totalDepositAmount ?? 0,
@@ -157,7 +159,10 @@ class Controller {
                 today_deposit_count: todayDepositCount ?? 0,
                 today_withdraw_amount: todayWithdrawAmount ?? 0,
                 today_withdraw_count: todayWithdrawCount ?? 0,
-                today_withdraw_handle_fee: todayWithdrawHandleFee ?? 0
+                today_withdraw_handle_fee: todayWithdrawHandleFee ?? 0,
+
+                today_all_withdraw_amount: todayAllWithdrawAmount ?? 0,
+                today_all_withdraw_count: todayAllWithdrawCount ?? 0
             };
 
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
