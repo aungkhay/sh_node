@@ -17734,6 +17734,155 @@ class Controller {
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
+
+    NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const startTime = '2026-11-10 01:30:00';
+            const now = new Date();
+            if (now < new Date(startTime)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未到领取时间', {});
+            }
+            
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'sharing_amount', 'createdAt'] });
+            if (!user) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '用户不存在', {});
+            }
+                
+            if (new Date(user.createdAt) < new Date(startTime)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '注册时间不符合领取条件', {});
+            }
+
+            // CHECK ALREADY RECEIVED
+            const desc = '新注册用户免费领取互联互通主题方案';
+            const alreadyReceived = await ConnectivityThemePackageHistory.findOne({
+                where: {
+                    user_id: userId,
+                    package_id: 1,
+                    price: 0,
+                    description: desc
+                },
+                attributes: ['id']
+            });
+            if (alreadyReceived) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过该免费方案', {});
+            }
+
+            let pkg = await this.redisHelper.getValue('free_connectivity_theme_package');
+            if (!pkg) {
+                const connectivityPackage = await ConnectivityThemePackage.findByPk(1);
+                if (!connectivityPackage) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '免费方案不存在', {});
+                }
+                await this.redisHelper.setValue('free_connectivity_theme_package', JSON.stringify(connectivityPackage));
+                pkg = connectivityPackage;
+            } else {
+                pkg = JSON.parse(pkg);
+            }
+            
+            if (Number(pkg.status) === 2) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '免费方案已下架', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                const shareAmount = 1000000;
+
+                await ConnectivityThemePackageHistory.create({
+                    relation: user.relation,
+                    user_id: user.id,
+                    price: 0,
+                    period: pkg.period,
+                    connectivity_amount: pkg.connectivity_amount,
+                    package_id: pkg.id,
+                    description: desc
+                }, { transaction: t });
+
+                await CashFlow.create({
+                    user_id: user.id,
+                    relation: user.relation,
+                    wallet_type: 7, // 上合共享金
+                    model: 'ConnectivityThemePackageHistory',
+                    type: '上合互联互通计划',
+                    amount: shareAmount,
+                    before_amount: user.sharing_amount,
+                    after_amount: Number(user.sharing_amount) + shareAmount,
+                    flow_status: 'IN',
+                    description: desc,
+                }, { transaction: t });
+
+                await user.increment({ sharing_amount: shareAmount }, { transaction: t });
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '领取成功', {});
+            } catch (error) {
+                await t.rollback();
+                errLogger(`[NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE][${req.user_id}]: ${error.stack}`);
+                return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+            }
+
+        } catch (error) {
+            errLogger(`[NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    NEW_REGISTER_USER_GET_FREE_SHARED_HOME_PACKAGE = async (req, res) => {
+        try {
+            const userId = req.user_id;
+
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'createdAt'] });
+            if (new Date(user.createdAt) < new Date('2026-11-10')) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '注册时间不符合领取条件', {});
+            }
+
+            const childCount = await User.count({ where: { parent_id: userId } });
+            if (childCount < 2) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '推荐用户数量不符合领取条件', {});
+            }
+
+            const desc = '推荐两名新用户免费领取共建共同家园方案';
+            const alreadyReceived = await SharedHomePackageHistory.findOne({
+                where: {
+                    user_id: userId,
+                    description: desc
+                }
+            });
+            if (alreadyReceived) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过该方案', {});
+            }
+
+            const pkg = await SharedHomePackage.findOne({ 
+                where: {
+                    status: 1
+                },
+                order: [['id', 'ASC']]
+            });
+            if (!pkg) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无可领取共建共同家园方案', {});
+            }
+
+            await SharedHomePackageHistory.create({
+                relation: user.relation,
+                user_id: user.id,
+                price: 0,
+                package_id: pkg.id,
+                total_month: pkg.total_month,
+                earn_count_per_month: pkg.earn_count_per_month,
+                earn_amount_per_count: pkg.earn_amount_per_count,
+                share_amount: pkg.share_amount,
+                month: 1,
+                start_release_at: moment().add(6, 'days').toDate(),
+                release_earn_count_at: pkg.release_earn_count_at,
+                description: desc
+            });
+            
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '领取成功', {});
+        } catch (error) {
+            errLogger(`[NEW_REGISTER_USER_GET_FREE_SHARED_HOME_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = Controller;

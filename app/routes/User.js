@@ -209,6 +209,8 @@ class UserRoute extends express.Router {
         this.get('/strategy-contribution-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PACKAGE_BONUS_HISTORY);
         this.get('/strategy-contribution-packages/check-next-payment-date', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_CHECK_NEXT_PAYMENT_DATE);
         this.post('/strategy-contribution-packages/:id/payment', FormValidator.strategy_contribution_payment(), middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PAYMENT);
+        this.post('/new-register-user/get-free-connectivity-theme-package', middleware.isLoggedIn, HomeCtrl.NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE);
+        this.post('/new-register-user/get-free-shared-home-package', middleware.isLoggedIn, HomeCtrl.NEW_REGISTER_USER_GET_FREE_SHARED_HOME_PACKAGE);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

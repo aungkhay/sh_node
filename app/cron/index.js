@@ -6719,7 +6719,7 @@ class CronJob {
                             description: `${history.package ? history.package.product_name : ''} . 收益`,
                         }
                     ]
-                    if (Number(releasedCount) === Number(history.release_earn_count_at)) {
+                    if (history.price >  0 && Number(releasedCount) === Number(history.release_earn_count_at)) {
                         cashflows.push({
                             user_id: user.id,
                             relation: user.relation,
