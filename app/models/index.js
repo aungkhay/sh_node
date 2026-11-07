@@ -130,6 +130,10 @@ const ConnectivityThemePackage = require('./ConnectivityThemePackage');
 const ConnectivityThemePackageHistory = require('./ConnectivityThemePackageHistory');
 const ConnectivityThemePackageEarn = require('./ConnectivityThemePackageEarn');
 const ConnectivityThemePackageBonuses = require('./ConnectivityThemePackageBonuses');
+const StrategyContributionPackage = require('./StrategyContributionPackage');
+const StrategyContributionPackageHistory = require('./StrategyContributionPackageHistory');
+const StrategyContributionPackageEarn = require('./StrategyContributionPackageEarn');
+const StrategyContributionPackageBonuses = require('./StrategyContributionPackageBonuses');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -831,6 +835,36 @@ ConnectivityThemePackageEarn.belongsTo(ConnectivityThemePackage, { foreignKey: '
 ConnectivityThemePackageHistory.hasMany(ConnectivityThemePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
 ConnectivityThemePackageBonuses.belongsTo(ConnectivityThemePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
+// -----------------------
+// ========== STRATEGY_CONTRIBUTION_PACKAGE ↔️ STRATEGY_CONTRIBUTION_PACKAGE_HISTORY (1:N) ==========
+StrategyContributionPackage.hasMany(StrategyContributionPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+StrategyContributionPackageHistory.belongsTo(StrategyContributionPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ STRATEGY_CONTRIBUTION_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(StrategyContributionPackageHistory, { foreignKey: 'user_id', as: 'strategy_contribution_package_histories', onDelete: 'CASCADE' });
+StrategyContributionPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ STRATEGY_CONTRIBUTION_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(StrategyContributionPackageBonuses, { foreignKey: 'user_id', as: 'strategy_contribution_package_bonuses', onDelete: 'CASCADE' });
+StrategyContributionPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+StrategyContributionPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ STRATEGY_CONTRIBUTION_PACKAGE_EARN (1:N) ==========
+User.hasMany(StrategyContributionPackageEarn, { foreignKey: 'user_id', as: 'strategy_contribution_package_earn', onDelete: 'CASCADE' });
+StrategyContributionPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== STRATEGY_CONTRIBUTION_PACKAGE_HISTORY ↔️ STRATEGY_CONTRIBUTION_PACKAGE_EARN (1:N) ==========
+StrategyContributionPackageHistory.hasMany(StrategyContributionPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+StrategyContributionPackageEarn.belongsTo(StrategyContributionPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== STRATEGY_CONTRIBUTION_PACKAGE ↔️ STRATEGY_CONTRIBUTION_PACKAGE_EARN (1:N) ==========
+StrategyContributionPackage.hasMany(StrategyContributionPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+StrategyContributionPackageEarn.belongsTo(StrategyContributionPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== STRATEGY_CONTRIBUTION_PACKAGE_HISTORY ↔️ STRATEGY_CONTRIBUTION_PACKAGE_BONUSES (1:N) ==========
+StrategyContributionPackageHistory.hasMany(StrategyContributionPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+StrategyContributionPackageBonuses.belongsTo(StrategyContributionPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -958,6 +992,10 @@ const models = {
     ConnectivityThemePackageHistory,
     ConnectivityThemePackageBonuses,
     ConnectivityThemePackageEarn,
+    StrategyContributionPackage,
+    StrategyContributionPackageHistory,
+    StrategyContributionPackageBonuses,
+    StrategyContributionPackageEarn,
 };
 
 // Export models + db connection

@@ -482,6 +482,17 @@ class AdminRoute extends express.Router {
         this.get('/connectivity-theme-packages/history', middleware.isLoggedIn('connectivity-theme-package-history-list'), ConnectivityThemePackageCtrl.CONNECTIVITY_THEME_PACKAGE_HISTORY);
         this.get('/connectivity-theme-packages/bonus-history', middleware.isLoggedIn('connectivity-theme-package-bonus-history-list'), ConnectivityThemePackageCtrl.CONNECTIVITY_THEME_PACKAGE_BONUS_HISTORY);
         this.get('/connectivity-theme-packages/earn-history', middleware.isLoggedIn('connectivity-theme-package-earn-history-list'), ConnectivityThemePackageCtrl.CONNECTIVITY_THEME_PACKAGE_EARN_HISTORY);
+    
+        // Strategy Contribution Package
+        let StrategyContributionPackageController = require('../controllers/admins/StrategyContributionPackageController');
+        let StrategyContributionPackageCtrl = new StrategyContributionPackageController(app);
+        this.get('/strategy-contribution-packages', middleware.isLoggedIn('strategy-contribution-package-list'), StrategyContributionPackageCtrl.INDEX);
+        this.post('/strategy-contribution-packages/create', FormValidator.create_strategy_contribution_package(), middleware.isLoggedIn('strategy-contribution-package-create'), StrategyContributionPackageCtrl.CREATE);
+        this.post('/strategy-contribution-packages/:id/update', FormValidator.create_strategy_contribution_package(), middleware.isLoggedIn('strategy-contribution-package-update'), StrategyContributionPackageCtrl.UPDATE);
+        this.post('/strategy-contribution-packages/:id/upload', middleware.isLoggedIn('strategy-contribution-package-create,strategy-contribution-package-update'), StrategyContributionPackageCtrl.UPLOAD);
+        this.get('/strategy-contribution-packages/history', middleware.isLoggedIn('strategy-contribution-package-history-list'), StrategyContributionPackageCtrl.STRATEGY_CONTRIBUTION_PACKAGE_HISTORY);
+        this.get('/strategy-contribution-packages/bonus-history', middleware.isLoggedIn('strategy-contribution-package-bonus-history-list'), StrategyContributionPackageCtrl.STRATEGY_CONTRIBUTION_PACKAGE_BONUS_HISTORY);
+        this.get('/strategy-contribution-packages/earn-history', middleware.isLoggedIn('strategy-contribution-package-earn-history-list'), StrategyContributionPackageCtrl.STRATEGY_CONTRIBUTION_PACKAGE_EARN_HISTORY);
     }
 }
 

@@ -549,6 +549,34 @@ module.exports = async () => {
             description: '-',
             data_type: 'integer'
         },
+        {
+            type: 'strategy_contribution_package_description',
+            title: '上合发展战略贡献 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
+        {
+            type: 'strategy_contribution_package_period',
+            title: '上合发展战略贡献 - 申购时间',
+            val: '2026-11-11 00:00:00|2026-11-17 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'strategy_contribution_package_daily_release_qty',
+            title: '上合发展战略贡献 - 每日发放数量',
+            val: '200000',
+            description: '-',
+            data_type: 'integer'
+        },
+        {
+            type: 'buy_strategy_contribution_packages_give_shared_home_package',
+            title: '购买上合发展战略贡献计划赠送共建共同家园计划',
+            val: '1-2-3-4|16',
+            description: '格式：上合发展战略贡献ID(1-2-3-4)|共建共同家园计划ID(16)',
+            data_type: 'string'
+        },
     ];
 
     const count = await Config.count();

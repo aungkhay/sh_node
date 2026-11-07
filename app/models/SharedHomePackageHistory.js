@@ -135,6 +135,11 @@ SharedHomePackageHistory.init({
             name: 'idx_is_finished_start_release_at',
             fields: ['is_finished', 'start_release_at'],
             using: 'BTREE'
+        },
+        {
+            name: 'idx_user_id_remark',
+            fields: ['user_id', 'remark'],
+            using: 'BTREE'
         }
     ]
 })

@@ -1232,3 +1232,34 @@ const url = `${baseURL}/connectivity-theme-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/connectivity-theme-packages/bonus-history`;
 ```
+
+### 上合发展战略贡献
+```js
+// [GET] Packages
+const url = `${baseURL}/strategy-contribution-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/strategy-contribution-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/strategy-contribution-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/strategy-contribution-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/strategy-contribution-packages/bonus-history`;
+
+// [GET] Check Next Payment Date
+const url = `${baseURL}/strategy-contribution-packages/check-next-payment-date`;
+
+// [POST] Payment
+const url = `${baseURL}/strategy-contribution-packages/${historyId}/payment`;
+const data = {
+    payment_type: 1, // 1-分期付款, 2-一次性付款
+    payment_amount: 100
+}
+```

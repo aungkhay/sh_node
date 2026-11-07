@@ -1,7 +1,7 @@
 const MyResponse = require('../../helpers/MyResponse');
 const CommonHelper = require('../../helpers/CommonHelper');
 const RedisHelper = require('../../helpers/RedisHelper');
-const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackage, AssetDistributionPackageBonuses, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackage, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetEarnPackageBonuses, AssetDailyReleasePackage, AssetDailyReleasePackageHistory, AssetDailyReleasePackageBonuses, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackage, SCOInterbankPackageHistory, SCOInterbankPackageBonuses, SCOInterbankPackageEarn, ApprovalFundPackage, ApprovalFundPackageHistory, ApprovalFundPackageBonuses, AllocationAuthPackage, AllocationAuthPackageHistory, AllocationAuthPackageBonuses, AllocationAuthBankInfo, PriorityQueueingPackage, PriorityQueueingPackageHistory, PriorityQueueingPackageBonuses, SharingPlanPackage, SharingPlanPackageHistory, SharingPlanPackageBonuses, SharingPlanPackageEarn, NewChapterPackage, NewChapterPackageHistory, NewChapterPackageBonuses, NewChapterPackageEarn, SharedHomePackage, SharedHomePackageHistory, SharedHomePackageBonuses, SharedHomePackageEarn, ConnectivityThemePackage, ConnectivityThemePackageHistory, ConnectivityThemePackageBonuses, ConnectivityThemePackageEarn } = require('../../models');
+const { AuthorizeLetter, AuthorizeLetterHistory, Notification, News, UserCertificate, Certificate, Information, ReadNotification, SpecificUserNotification, Config, User, RewardType, RewardRecord, db, Rank, Allowance, Ticket, TicketRecord, InheritOwner, Interest, Transfer, MasonicFundHistory, MasonicFund, UserKYC, GoldPrice, UserGoldPrice, Banner, NewsLikes, GoldInterest, RedemptCode, UserRankPoint, GoldPackageHistory, GoldPackageBonuses, GoldPackageRepurchase, GoldPackageReturn, ReservePackageHistory, MasonicPackageHistory, FederalReserveGoldPackage, FederalReserveGoldPackageHistory, FederalReserveGoldPackageBonuses, FederalReserveGoldPackageEarn, Withdraw, AdminLog, BalanceTransfer, PolicyPackage, PolicyPackageHistory, PolicyPackageBonuses, PolicyPackageEarn, CashFlow, Meeting, AttendedMeeting, ShanghaiCooperation, ShanghaiCooperationHistory, ShanghaiCooperationBonuses, ShanghaiCooperationEarn, GoldAppreciationPackage, GoldAppreciationPackageHistory, GoldAppreciationPackageBonuses, GoldAppreciationPackageEarn, GoldAppreciationPackageFragment, PersonalReservePackage, PersonalReservePackageHistory, PersonalReservePackageBonuses, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackage, AssetDistributionPackageBonuses, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackage, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetEarnPackageBonuses, AssetDailyReleasePackage, AssetDailyReleasePackageHistory, AssetDailyReleasePackageBonuses, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackage, SCOInterbankPackageHistory, SCOInterbankPackageBonuses, SCOInterbankPackageEarn, ApprovalFundPackage, ApprovalFundPackageHistory, ApprovalFundPackageBonuses, AllocationAuthPackage, AllocationAuthPackageHistory, AllocationAuthPackageBonuses, AllocationAuthBankInfo, PriorityQueueingPackage, PriorityQueueingPackageHistory, PriorityQueueingPackageBonuses, SharingPlanPackage, SharingPlanPackageHistory, SharingPlanPackageBonuses, SharingPlanPackageEarn, NewChapterPackage, NewChapterPackageHistory, NewChapterPackageBonuses, NewChapterPackageEarn, SharedHomePackage, SharedHomePackageHistory, SharedHomePackageBonuses, SharedHomePackageEarn, ConnectivityThemePackage, ConnectivityThemePackageHistory, ConnectivityThemePackageBonuses, ConnectivityThemePackageEarn, StrategyContributionPackage, StrategyContributionPackageHistory, StrategyContributionPackageBonuses, StrategyContributionPackageEarn } = require('../../models');
 const { Op, literal, Sequelize, QueryTypes, where, col, fn } = require('sequelize');
 const { errLogger, commonLogger } = require('../../helpers/Logger');
 let { validationResult } = require('express-validator');
@@ -17049,6 +17049,688 @@ class Controller {
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
         } catch (error) {
             errLogger(`[CONNECTIVITY_THEME_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    STRATEGY_CONTRIBUTION_PACKAGE = async (req, res) => {
+        try {
+            let packages = await this.redisHelper.getValue('strategy_contribution_packages');
+            if (packages) {
+                packages = JSON.parse(packages);
+            } else {
+                packages = await StrategyContributionPackage.findAll({
+                    where: {
+                        status: {
+                            [Op.ne]: 2
+                        }
+                    },
+                    useMaster: true
+                });
+                await this.redisHelper.setValue('strategy_contribution_packages', JSON.stringify(packages));
+            }
+
+            let package_description = await this.redisHelper.getValue('strategy_contribution_package_description');
+            if (!package_description) {
+                const conf = await Config.findOne({ where: { type: 'strategy_contribution_package_description' } });
+                package_description = conf ? conf.val : '';
+                await this.redisHelper.setValue('strategy_contribution_package_description', package_description);
+            }
+            let package_period = await this.redisHelper.getValue('strategy_contribution_package_period');
+            if (!package_period) {
+                const conf = await Config.findOne({ where: { type: 'strategy_contribution_package_period' } });
+                package_period = conf ? conf.val : '';
+                await this.redisHelper.setValue('strategy_contribution_package_period', package_period);
+            }
+            let release_qty = await this.redisHelper.getValue('strategy_contribution_package_daily_release_qty');
+            if (!release_qty) {
+                const conf = await Config.findOne({ where: { type: 'strategy_contribution_package_daily_release_qty' } });
+                release_qty = conf ? conf.val : '';
+                await this.redisHelper.setValue('strategy_contribution_package_daily_release_qty', release_qty);
+            }
+
+            let packageERewardCount = await SharedHomePackageHistory.count({
+                where: {
+                    user_id: req.user_id,
+                    remark: 'STRATEGY_CONTRIBUTION_PACKAGE_REWARD'
+                },
+                useMaster: true
+            });
+
+            const data = {
+                package_description: package_description,
+                package_period: package_period,
+                release_qty: release_qty,
+                packages: packages,
+                packageERewardCount: packageERewardCount
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
+        } catch (error) {
+            errLogger(`[STRATEGY_CONTRIBUTION_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    BUY_STRATEGY_CONTRIBUTION_PACKAGE = async (req, res) => {
+
+        const lockKey = `lock:buy-strategy-contribution-package:${req.ip}`;
+        let redisLocked = false;
+        const PROCESSING_KEY = `strategy_contribution_package_processing_${req.user_id}`
+        try {
+            let buyOnOff = await this.redisHelper.getValue('buy_product_on_off');
+            if (!buyOnOff) {
+                const conf = await Config.findOne({ where: { type: 'buy_product_on_off' }, attributes: ['val'] });
+                buyOnOff = conf ? Number(conf.val) : 0;
+            }
+            if (Number(buyOnOff) === 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂不可用', {});
+            }
+            
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
+            // processing status
+            const isProcessing = await this.redisHelper.getValue(PROCESSING_KEY);
+            if (isProcessing) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '系统繁忙，请稍后再试', {});
+            }
+            await this.redisHelper.setValue(PROCESSING_KEY, 1, 120); // 2 minutes
+
+            const err = validationResult(req);
+            const errors = this.commonHelper.validateForm(err);
+            if (!err.isEmpty()) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, errors);
+            }
+
+            let openPeriod = await this.redisHelper.getValue('strategy_contribution_package_period');
+            if (!openPeriod) {
+                const conf = await Config.findOne({ where: { type: 'strategy_contribution_package_period' } });
+                if (conf) {
+                    openPeriod = conf.val;
+                    await this.redisHelper.setValue('strategy_contribution_package_period', openPeriod);
+                }
+            }
+            if (openPeriod) {
+                const [start, end] = openPeriod.split('|');
+                const now = moment();
+                if (now.isBefore(moment(start, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合发展战略贡献计划购买时间未到，预计在${moment(start, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}开放`, {});
+                }                 
+                if (now.isAfter(moment(end, 'YYYY/MM/DD HH:mm:ss'))) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `上合发展战略贡献计划购买时间已结束，结束时间为${moment(end, 'YYYY/MM/DD HH:mm:ss').format('YYYY年MM月DD日HH时mm分ss秒')}`, {});
+                }
+            }
+            
+            const gPackage = await StrategyContributionPackage.findByPk(req.params.id, { useMaster: true });
+            if (!gPackage) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.NOT_FOUND.code, false, '方案不存在', {});
+            }
+
+            if (gPackage.status === 2) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '方案已下架', {});
+            }
+
+            if (gPackage.status === 3) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '方案已售罄', {});
+            }
+
+            if (gPackage.purchase_limit === 'DAILY' && gPackage.quantity_limit > 0) {
+                const historyCount = await StrategyContributionPackageHistory.count({
+                    where: {
+                        user_id: req.user_id,
+                        createdAt: {
+                            [Op.between]: [moment().startOf('day').toDate(), moment().endOf('day').toDate()]
+                        },
+                        price: { [Op.gt]: 0 },
+                    },
+                    useMaster: true
+                });
+                if (historyCount >= gPackage.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '今日已购买过该方案', {});
+                }
+            }
+
+            if (gPackage.purchase_limit === 'TOTAL' && gPackage.quantity_limit > 0) {
+                const historyCount = await StrategyContributionPackageHistory.count({
+                    where: {
+                        user_id: req.user_id,
+                        package_id: gPackage.id,
+                        price: { [Op.gt]: 0 },
+                    },
+                    useMaster: true
+                });
+                console.log(historyCount, gPackage.quantity_limit);
+                if (historyCount >= gPackage.quantity_limit) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已经购买了该方案', {});
+                }
+            }
+
+            const userId = req.user_id;
+            const payment_password = req.body.payment_password;
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: UserKYC,
+                    as: 'kyc',
+                    attributes: ['id', 'status']
+                },
+                attributes: ['id', 'relation', 'reserve_fund', 'balance', 'payment_password', 'initial_buy_product_date', 'total_assets', 'daily_product_earn'],
+                useMaster: true
+            });
+            if (!user.kyc) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '请验证实名', {});
+            }
+            if (user.kyc.status === 'DENIED') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证已被拒绝', {});
+            }
+            if (user.kyc.status === 'PENDING') {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '实名认证审核中，请稍后再试', {});
+            }
+            const encryptedPaymentPassword = encrypt(PASS_PREFIX + payment_password + PASS_SUFFIX, PASS_KEY, PASS_IV);
+            if (encryptedPaymentPassword !== user.payment_password) {
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
+            }
+
+            let reserveAmount = Number(gPackage.price);
+            let balanceAmount = 0;
+            if (Number(user.reserve_fund) < Number(gPackage.price)) {
+                // balanceAmount = Number(gPackage.price) - Number(user.reserve_fund);
+                // reserveAmount = Number(user.reserve_fund);
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+            // if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
+            //     await this.redisHelper.deleteKey(PROCESSING_KEY);
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
+            // }
+
+            let boughtPackageIds = await this.redisHelper.getValue('buy_strategy_contribution_packages_give_shared_home_package');
+            if (!boughtPackageIds) {
+                const conf = await Config.findOne({ where: { type: 'buy_strategy_contribution_packages_give_shared_home_package' } });
+                if (conf) {
+                    boughtPackageIds = conf.val;
+                    await this.redisHelper.setValue('buy_strategy_contribution_packages_give_shared_home_package', boughtPackageIds);
+                }
+            }
+
+            const t = await db.transaction();
+            try {
+                if (reserveAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 1,
+                        model: 'StrategyContributionPackageHistory',
+                        type: `购买上合发展战略贡献计划`,
+                        amount: reserveAmount,
+                        before_amount: Number(user.reserve_fund),
+                        after_amount: Number(user.reserve_fund) - reserveAmount,
+                        flow_status: 'OUT',
+                        description: `${gPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
+                    }, { transaction: t });
+                }
+
+                if (balanceAmount > 0) {
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: userId,
+                        wallet_type: 2,
+                        model: 'StrategyContributionPackageHistory',
+                        type: `购买上合发展战略贡献计划`,
+                        amount: balanceAmount,
+                        before_amount: Number(user.balance),
+                        after_amount: Number(user.balance) - balanceAmount,
+                        flow_status: 'OUT',
+                        description: `${gPackage.product_name} - 合并支付`,
+                    }, { transaction: t });
+                }
+
+                const userUpdates = {
+                    reserve_fund: Number(user.reserve_fund) - reserveAmount,
+                    balance: Number(user.balance) - balanceAmount
+                };
+                if (!user.initial_buy_product_date) {
+                    userUpdates.initial_buy_product_date = new Date();
+                }
+                await User.update(userUpdates, { where: { id: userId }, transaction: t });
+
+                const pkgHistory = [];
+                if (gPackage.buy_one_get_quantity > 0) {
+                    const randomNumber = this.commonHelper.randomNumber(6);
+
+                    for (let index = 0; index <= gPackage.buy_one_get_quantity; index++) {
+                        const obj = {
+                            relation: user.relation,
+                            user_id: user.id,
+                            price: index === 0 ? gPackage.price : 0,
+                            period: gPackage.period,
+                            payment_per_period: gPackage.payment_per_period,
+                            contribute_amount: gPackage.connectivity_amount,
+                            package_id: gPackage.id,
+                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                        }
+
+                        const pkgHistoryItem = await StrategyContributionPackageHistory.create(obj, { transaction: t });
+                        pkgHistory.push(pkgHistoryItem);
+                    }
+                } else {
+                    const obj = {
+                        relation: user.relation,
+                        user_id: user.id,
+                        price: gPackage.price,
+                        period: gPackage.period,
+                        payment_per_period: gPackage.payment_per_period,
+                        contribute_amount: gPackage.connectivity_amount,
+                        package_id: gPackage.id,
+                    }
+
+                    const pkgHistoryItem = await StrategyContributionPackageHistory.create(obj, { transaction: t });
+                    pkgHistory.push(pkgHistoryItem);
+                }
+
+                await gPackage.increment({ total_quantity: -1 }, { transaction: t });
+                if (gPackage.total_quantity - 1 <= 0) {
+                    await gPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+
+                // Give shared home package if applicable
+                const contributePackageIds = boughtPackageIds ? boughtPackageIds.split('|')[0].split(',').filter(Boolean) : [];
+                // check history if these packages are bought (distinct package_id)
+                const boughtHistory = await StrategyContributionPackageHistory.findAll({
+                    where: {
+                        package_id: { [Op.in]: contributePackageIds },
+                        user_id: user.id,
+                        is_gave_shared_home_package: false
+                    },
+                    attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('package_id')), 'package_id']],
+                    transaction: t
+                });
+
+                if (contributePackageIds.length > 0 && boughtHistory.length === new Set(contributePackageIds).size) {
+
+                    const sharedHomePackageId = boughtPackageIds ? boughtPackageIds.split('|')[1] : null;
+
+                    if (sharedHomePackageId) {
+
+                        const sharedHomePackage = await SharedHomePackage.findByPk(sharedHomePackageId, { transaction: t });
+                        if (sharedHomePackage) {
+                            // Grant shared home package to the user
+                            await SharedHomePackageHistory.create({
+                                relation: user.relation,
+                                user_id: user.id,
+                                price: 0,
+                                package_id: sharedHomePackageId,
+                                total_month: sharedHomePackage.total_month,
+                                earn_count_per_month: sharedHomePackage.earn_count_per_month,
+                                earn_amount_per_count: sharedHomePackage.earn_amount_per_count,
+                                share_amount: sharedHomePackage.share_amount,
+                                release_earn_count_at: sharedHomePackage.release_earn_count_at,
+                                month: 1,
+                                start_release_at: moment().add(6, 'days').toDate(),
+                                description: `Reward from strategy contribution package`,
+                                remark: `STRATEGY_CONTRIBUTION_PACKAGE_REWARD`
+                            }, { transaction: t });
+
+                            for (const item of boughtHistory) {
+                                const oldest = await StrategyContributionPackageHistory.findOne({
+                                    where: {
+                                        package_id: item.package_id,
+                                        user_id: user.id,
+                                        is_gave_shared_home_package: false
+                                    },
+                                    order: [['createdAt', 'ASC'], ['id', 'ASC']],
+                                    transaction: t
+                                });
+                                if (oldest) {
+                                    await oldest.update(
+                                        { is_gave_shared_home_package: true },
+                                        { transaction: t }
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const bonusArr = [15, 7, 3];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
+                commonLogger(`[BUY_STRATEGY_CONTRIBUTION_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_STRATEGY_CONTRIBUTION_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type', 'balance'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                const cashFlows = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(gPackage.price)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[BUY_STRATEGY_CONTRIBUTION_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+
+                    cashFlows.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        wallet_type: 2,
+                        model: 'StrategyContributionPackageBonuses',
+                        type: `下级购买上合发展战略贡献计划奖励`,
+                        amount: bonus,
+                        before_amount: Number(upLevelUser.balance),
+                        after_amount: Number(upLevelUser.balance) + Number(bonus),
+                        flow_status: 'IN',
+                        description: `${gPackage.product_name}`
+                    });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: pkgHistory[0].id
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await StrategyContributionPackageBonuses.bulkCreate(bonuses, { transaction: t });
+                    await CashFlow.bulkCreate(cashFlows, { transaction: t });
+                }
+
+                await t.commit();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '购买成功', {});
+
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                await this.redisHelper.deleteKey(PROCESSING_KEY);
+                return MyResponse(res, this.ResCode.DB_ERROR.code, false, '购买上合互联互通计划失败', {}); 
+            }
+        } catch (error) {
+            errLogger(`[BUY_STRATEGY_CONTRIBUTION_PACKAGE][${req.user_id}]: ${error.stack}`);
+            await this.redisHelper.deleteKey(PROCESSING_KEY);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {}); 
+        }
+    }
+
+    STRATEGY_CONTRIBUTION_PACKAGE_HISTORY = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+
+            const { rows, count } = await StrategyContributionPackageHistory.findAndCountAll({
+                include: {
+                    model: StrategyContributionPackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
+                where: { 
+                    user_id: userId,
+                },
+                attributes: ['id', 'price', 'period', 'payment_per_period', 'contribute_amount', 'next_payment_date', 'description', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                history: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[STRATEGY_CONTRIBUTION_PACKAGE_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    STRATEGY_CONTRIBUTION_PACKAGE_EARN_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await StrategyContributionPackageEarn.findAndCountAll({
+                include: [
+                    {
+                        model: StrategyContributionPackageHistory,
+                        as: 'package_history',
+                        attributes: ['id', 'price']
+                    }
+                ],
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                earns: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[STRATEGY_CONTRIBUTION_PACKAGE_EARN_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    STRATEGY_CONTRIBUTION_PACKAGE_BONUS_HISTORY = async (req, res) => {
+        try {
+            const page = parseInt(req.query.page || 1);
+            const perPage = parseInt(req.query.perPage || 10);
+            const offset = this.getOffset(page, perPage);
+            const userId = req.user_id;
+
+            const { rows, count } = await StrategyContributionPackageBonuses.findAndCountAll({
+                include: {
+                    model: User,
+                    as: 'from_user',
+                    attributes: ['id', 'name', 'phone_number']
+                },
+                where: { user_id: userId },
+                attributes: ['id', 'amount', 'type', 'createdAt'],
+                order: [['id', 'DESC']],
+                limit: perPage,
+                offset: offset,
+            });
+
+            const data = {
+                bonuses: rows,
+                meta: {
+                    page: page,
+                    perPage: perPage,
+                    totalPage: count > 0 ? Math.ceil(count / perPage) : count,
+                    total: count
+                }
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '获取历史成功', data);
+        } catch (error) {
+            errLogger(`[STRATEGY_CONTRIBUTION_PACKAGE_BONUS_HISTORY][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    STRATEGY_CONTRIBUTION_CHECK_NEXT_PAYMENT_DATE = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const today = moment().format('YYYY-MM-DD');
+
+            const history = await StrategyContributionPackageHistory.findOne({
+                include: {
+                    model: StrategyContributionPackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name', 'period']
+                },
+                where: { 
+                    user_id: userId, 
+                    is_finished: false,
+                    next_payment_date: {
+                        [Op.lte]: today + ' 23:59:59'
+                    }
+                }
+            });
+            let showDialog = false;
+            let message = '';
+            let historyId = null;
+            if (history) {
+                const totalPayAmount = Number(history.total_paid_amount || 0);
+                const remainToPay = Number(history.payment_per_period) * 10 - totalPayAmount; 
+                if (remainToPay > 0) {
+                    showDialog = true;
+                    message = `您的本期分期费用 ￥${remainToPay} 待缴纳，请立即处理。`;
+                    historyId = history.id;
+                }
+            }
+            
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { showDialog, message, historyId });
+        } catch (error) {
+            errLogger(`[STRATEGY_CONTRIBUTION_CHECK_NEXT_PAYMENT_DATE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    STRATEGY_CONTRIBUTION_PAYMENT = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const { payment_amount, payment_type } = req.body;
+            const historyId = req.params.id;
+
+            const history = await StrategyContributionPackageHistory.findOne({
+                include: {
+                    model: StrategyContributionPackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name', 'period']
+                },
+                where: { id: historyId, user_id: userId }
+            });
+            if (!history) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '记录不存在', {});
+            }
+
+            if (history.is_finished) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该记录已完成缴纳', {});
+            }
+
+            const dueDate = moment(history.next_payment_date).toDate();
+            if (dueDate > new Date()) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '本期缴纳尚未到期', {});
+            }
+
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund'] });
+            if (Number(user.reserve_fund) < Number(payment_amount)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+
+            let paidAmount = Number(history.paid_amount || 0);
+            let totalPaidCount = Number(history.total_paid_count || 0);
+            let nextPaymentDate = moment(history.next_payment_date).toDate();
+
+            // 1-分期付款, 2-一次性付款
+            if (payment_type == 1) {
+                // 分期付款逻辑
+                if (Number(payment_amount) !== Number(history.payment_per_period)) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '分期付款金额不正确', {});
+                }
+                
+                paidAmount += Number(payment_amount);
+                totalPaidCount += 1;
+                nextPaymentDate = moment(nextPaymentDate).add(history.package.period, 'days').toDate();
+
+            } else if (payment_type == 2) {
+                // 一次性付款逻辑
+                const remainToPay = Number(history.payment_per_period) * 10 - paidAmount;
+                if (Number(payment_amount) !== remainToPay) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '一次性付款金额不正确', {});
+                }
+
+                paidAmount += Number(payment_amount);
+                totalPaidCount += 1;
+            }
+
+            const t = await db.transaction();
+            try {
+                await CashFlow.create({
+                    user_id: user.id,
+                    relation: user.relation,
+                    wallet_type: 1, // 储备金
+                    model: 'StrategyContributionPackageHistory',
+                    type: '上合发展战略贡献',
+                    amount: payment_amount,
+                    before_amount: user.reserve_fund,
+                    after_amount: Number(user.reserve_fund) - payment_amount,
+                    flow_status: 'OUT',
+                    description: `缴纳 ${payment_amount} 元 |【订单：${historyId}】| ${history.package ? history.package.product_name : ''}`,
+                }, { transaction: t });
+
+                await history.update({
+                    paid_amount: paidAmount,
+                    total_paid_count: totalPaidCount,
+                    next_payment_date: nextPaymentDate,
+                    is_finished: paidAmount >= (Number(history.payment_per_period) * 10)
+                }, { transaction: t });
+
+                await user.increment({ reserve_fund: -payment_amount }, { transaction: t });
+
+                await t.commit();
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '缴纳成功', {});
+            } catch (error) {
+                await t.rollback();
+                errLogger(`[STRATEGY_CONTRIBUTION_PAYMENT][${req.user_id}]: ${error.stack}`);
+                return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+            }
+
+        } catch (error) {
+            errLogger(`[STRATEGY_CONTRIBUTION_PAYMENT][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }

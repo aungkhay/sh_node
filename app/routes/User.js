@@ -201,6 +201,14 @@ class UserRoute extends express.Router {
         this.get('/connectivity-theme-packages/history', middleware.isLoggedIn, HomeCtrl.CONNECTIVITY_THEME_PACKAGE_HISTORY);
         this.get('/connectivity-theme-packages/earn-history', middleware.isLoggedIn, HomeCtrl.CONNECTIVITY_THEME_PACKAGE_EARN_HISTORY);
         this.get('/connectivity-theme-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.CONNECTIVITY_THEME_PACKAGE_BONUS_HISTORY);
+        // Strategy Contribution Package Routes
+        this.get('/strategy-contribution-packages', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PACKAGE);
+        this.post('/strategy-contribution-packages/:id/buy', FormValidator.buy_strategy_contribution_package(), middleware.isLoggedIn, HomeCtrl.BUY_STRATEGY_CONTRIBUTION_PACKAGE);
+        this.get('/strategy-contribution-packages/history', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PACKAGE_HISTORY);
+        this.get('/strategy-contribution-packages/earn-history', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PACKAGE_EARN_HISTORY);
+        this.get('/strategy-contribution-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PACKAGE_BONUS_HISTORY);
+        this.get('/strategy-contribution-packages/check-next-payment-date', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_CHECK_NEXT_PAYMENT_DATE);
+        this.post('/strategy-contribution-packages/:id/payment', FormValidator.strategy_contribution_payment(), middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PAYMENT);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

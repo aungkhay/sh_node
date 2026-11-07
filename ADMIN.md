@@ -2698,3 +2698,68 @@ const params = {
     endTime: ''
 }
 ```
+
+### 上合发展战略贡献
+``` js
+// [GET] Package List
+const url = `${baseURL}/strategy-contribution-packages`;
+
+// [POST] CREATE | UPDATE
+const url = `${baseURL}/strategy-contribution-packages/create`;
+const url = `${baseURL}/strategy-contribution-packages/${pkgID}/update`;
+const data = {
+    product_name: '',
+    price: 0, // 申购费
+    period: 3, // 缴纳周期(天)
+    payment_per_period: 100, // 每期缴纳金额
+    contribute_amount: 600, // 战略贡献金
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    description: '备注：申购完成，每月10日发放互联互通金。',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+    tag: [], // optional (no need to add key if empty)
+}
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/strategy-contribution-packages/${packageId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [GET] Package History
+const url = `${baseURL}/strategy-contribution-packages/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: '',
+    is_internal_account: 0,
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/strategy-contribution-packages/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/strategy-contribution-packages/earn-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+```

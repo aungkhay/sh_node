@@ -223,6 +223,13 @@
     { "model": "上合互联互通计划", "title": "推荐奖励记录", "name": "connectivity-theme-package-bonus-history-list" },
     { "model": "上合互联互通计划", "title": "收益记录", "name": "connectivity-theme-package-earn-history-list" },
 
+    { "model": "上合发展战略贡献", "title": "产品列表", "name": "strategy-contribution-package-list" },
+    { "model": "上合发展战略贡献", "title": "创建", "name": "strategy-contribution-package-create" },
+    { "model": "上合发展战略贡献", "title": "编辑", "name": "strategy-contribution-package-update" },
+    { "model": "上合发展战略贡献", "title": "购买记录", "name": "strategy-contribution-package-history-list" },
+    { "model": "上合发展战略贡献", "title": "推荐奖励记录", "name": "strategy-contribution-package-bonus-history-list" },
+    { "model": "上合发展战略贡献", "title": "收益记录", "name": "strategy-contribution-package-earn-history-list" },
+
     { "model": "弹劾管理", "title": "列表", "name": "impeachment-list" },
     { "model": "弹劾管理", "title": "更新", "name": "impeachment-update" },
 

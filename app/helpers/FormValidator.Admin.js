@@ -1662,3 +1662,51 @@ exports.create_connectivity_theme_package = () => {
             .withMessage('标签必须是数组')
     ]
 }
+
+exports.create_strategy_contribution_package = () => {
+    return [
+        check('product_name', { msg: '产品名称不能为空' }).not().isEmpty(),
+        check('price').not().isEmpty().withMessage('申购费不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('申购费必须是数字'),
+        check('period').not().isEmpty().withMessage('缴纳周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('缴纳周期必须是正整数'),
+        check('payment_per_period').not().isEmpty().withMessage('每期缴纳金额不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('每期缴纳金额必须是数字'),
+        check('contribute_amount').not().isEmpty().withMessage('战略贡献金不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('战略贡献金必须是正整数'),
+        // perchase_limit 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+        check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
+            .bail()
+            .isIn(['NONE', 'DAILY', 'TOTAL'])
+            .withMessage('购买限制无效'),
+        // quantity_limit 限购数量
+        check('quantity_limit').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('限购数量必须是数字'),
+        // total_quantity
+        check('total_quantity').not().isEmpty().withMessage('总数量不能为空')
+            .bail()
+            .isNumeric()
+            .withMessage('总数量必须是数字'),
+        // buy_one_get_quantity 
+        check('buy_one_get_quantity').optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('买一赠一数量必须是数字'),
+        // status 1-在售, 2-下架, 3-售罄
+        check('status').not().isEmpty().withMessage('状态不能为空')
+            .bail()
+            .isIn([1, 2, 3])
+            .withMessage('状态无效'),
+        // tag optional => array ['NEW', 'HOT', 'RECOMMENDED']
+        check('tag')
+            .optional({ checkFalsy: true })
+            .isArray({ min: 1 })
+            .withMessage('标签必须是数组')
+    ]
+}
