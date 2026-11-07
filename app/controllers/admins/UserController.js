@@ -2090,7 +2090,7 @@ class Controller {
                     type: isAddedDepositRecord ? '人工充值' : '调整储备金',
                     amount: updateAmount,
                     before_amount: user.reserve_fund,
-                    after_amount: addOrSubstract == 1 ? Number(user.reserve_fund) + Number(updateAmount) : Number(user.reserve_fund) - Number(updateAmount),
+                    after_amount: Number(user.reserve_fund) + Number(updateAmount),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
                     description: desc || (addOrSubstract == 1 ? '系统增加储备金' : '系统扣除储备金')
                 });
