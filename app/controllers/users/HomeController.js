@@ -17540,7 +17540,7 @@ class Controller {
                     }
                 ],
                 where: { user_id: userId },
-                attributes: ['id', 'amount', 'createdAt'],
+                attributes: ['id', 'amount', 'type', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
@@ -17577,7 +17577,7 @@ class Controller {
                     attributes: ['id', 'name', 'phone_number']
                 },
                 where: { user_id: userId },
-                attributes: ['id', 'amount', 'type', 'createdAt'],
+                attributes: ['id', 'amount', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
