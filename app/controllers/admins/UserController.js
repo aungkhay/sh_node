@@ -2088,9 +2088,9 @@ class Controller {
                     wallet_type: 1,
                     model: 'User',
                     type: isAddedDepositRecord ? '人工充值' : '调整储备金',
-                    amount: updateAmount,
+                    amount: amount,
                     before_amount: user.reserve_fund,
-                    after_amount: Number(user.reserve_fund) + Number(updateAmount),
+                    after_amount: addOrSubstract == 1 ? Number(user.reserve_fund) + Number(amount) : Number(user.reserve_fund) - Number(amount),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
                     description: desc || (addOrSubstract == 1 ? '系统增加储备金' : '系统扣除储备金')
                 });
@@ -2120,9 +2120,9 @@ class Controller {
                     wallet_type: 2,
                     model: 'User',
                     type: '调整余额',
-                    amount: updateAmount,
+                    amount: amount,
                     before_amount: user.balance,
-                    after_amount: Number(user.balance) + Number(updateAmount),
+                    after_amount: addOrSubstract == 1 ? Number(user.balance) + Number(updateAmount) : Number(user.balance) - Number(amount),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT',
                     description: desc || (addOrSubstract == 1 ? '系统增加余额' : '系统扣除余额')
                 });
@@ -2142,9 +2142,9 @@ class Controller {
                     wallet_type: 3, // 资产宝
                     model: 'User',
                     type: '赠送资产宝资产',
-                    amount: updateAmount,
+                    amount: amount,
                     before_amount: Number(user.total_assets),
-                    after_amount: Number(user.total_assets) + Number(updateAmount),
+                    after_amount: addOrSubstract == 1 ? Number(user.total_assets) + Number(updateAmount) : Number(user.total_assets) - Number(amount),
                     description: desc || (addOrSubstract == 1 ? '系统赠送资产宝资产' : '系统扣除资产宝资产'),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT'
                 });
@@ -2163,7 +2163,7 @@ class Controller {
                     type: '赠送分发释放资产',
                     amount: updateAmount,
                     before_amount: Number(user.distributed_assets),
-                    after_amount: Number(user.distributed_assets) + Number(updateAmount),
+                    after_amount: addOrSubstract == 1 ? Number(user.distributed_assets) + Number(updateAmount) : Number(user.distributed_assets) - Number(amount),
                     description: desc || (addOrSubstract == 1 ? '系统赠送分发释放资产' : '系统扣除分发释放资产'),
                     flow_status: addOrSubstract == 1 ? 'IN' : 'OUT'
                 });
