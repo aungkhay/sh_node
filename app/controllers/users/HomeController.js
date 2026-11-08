@@ -17612,7 +17612,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
 
-            let paidAmount = Number(history.paid_amount || 0);
+            let paidAmount = Number(history.total_paid_amount || 0);
             let totalPaidCount = Number(history.total_paid_count || 0);
             let nextPaymentDate = moment(history.next_payment_date).toDate();
 
