@@ -17556,10 +17556,10 @@ class Controller {
             let showDialog = false;
             let message = '';
             let historyId = null;
-            let oneTimeAmount = 0;
             let installmentAmount = 0;
+            let oneTimeAmount = 0;
             if (history) {
-                oneTimeAmount = Number(history.payment_per_period);
+                installmentAmount = Number(history.payment_per_period);
 
                 const totalPayAmount = Number(history.total_paid_amount || 0);
                 const remainToPay = Number(history.payment_per_period) * 10 - totalPayAmount; 
@@ -17567,7 +17567,7 @@ class Controller {
                     showDialog = true;
                     message = `您的本期分期费用 ￥${remainToPay} 待缴纳，请立即处理。`;
                     historyId = history.id;
-                    installmentAmount = remainToPay;
+                    oneTimeAmount = remainToPay;
                 }
             }
             
