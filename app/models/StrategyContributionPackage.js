@@ -35,7 +35,7 @@ StrategyContributionPackage.init({
     period: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 60,
+        defaultValue: 0,
         comment: '缴纳周期',
     },
     payment_per_period: {

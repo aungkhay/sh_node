@@ -53,7 +53,7 @@ StrategyContributionPackageHistory.init({
     period: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 60,
+        defaultValue: 0,
         comment: '缴纳周期',
     },
     payment_per_period: {
@@ -143,7 +143,12 @@ StrategyContributionPackageHistory.init({
             using: 'BTREE'
         },
         {
-            name: 'idx_is_finished_is_returned_contribute_amount',
+            name: 'idx_check_installment',
+            fields: ['user_id', 'is_finished', 'next_payment_date', 'payment_type'],
+            using: 'BTREE'
+        },
+        {
+            name: 'idx_is_contribute_amount_returned',
             fields: ['is_finished', 'is_returned_contribute_amount'],
             using: 'BTREE'
         }

@@ -1241,7 +1241,8 @@ const url = `${baseURL}/strategy-contribution-packages`;
 // [POST] Buy Package
 const url = `${baseURL}/strategy-contribution-packages/${pkgID}/buy`;
 const data = {
-    payment_password: ''
+    payment_password: '',
+    payment_type: 1, // 1-分期付款, 2-一次性付款
 }
 
 // [GET] Package History
@@ -1258,10 +1259,6 @@ const url = `${baseURL}/strategy-contribution-packages/check-next-payment-date`;
 
 // [POST] Payment
 const url = `${baseURL}/strategy-contribution-packages/${historyId}/payment`;
-const data = {
-    payment_type: 1, // 1-分期付款, 2-一次性付款
-    payment_amount: 100
-}
 ```
 
 ### 多边经贸合作措施计划

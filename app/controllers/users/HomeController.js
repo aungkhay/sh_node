@@ -17227,6 +17227,7 @@ class Controller {
 
             const userId = req.user_id;
             const payment_password = req.body.payment_password;
+            const payment_type = req.body.payment_type;
             const user = await User.findByPk(userId, {
                 include: {
                     model: UserKYC,
@@ -17254,54 +17255,29 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
-            let reserveAmount = Number(gPackage.price);
-            let balanceAmount = 0;
-            if (Number(user.reserve_fund) < Number(gPackage.price)) {
-                // balanceAmount = Number(gPackage.price) - Number(user.reserve_fund);
-                // reserveAmount = Number(user.reserve_fund);
+            let reserveAmount = payment_type == 2 ? Number(gPackage.price) : Number(history.payment_per_period);
+            if (Number(user.reserve_fund) < reserveAmount) {
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
-            // if (balanceAmount > 0 && Number(user.balance) < balanceAmount) {
-            //     await this.redisHelper.deleteKey(PROCESSING_KEY);
-            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
-            // }
 
             const t = await db.transaction();
             try {
-                if (reserveAmount > 0) {
-                    await CashFlow.create({
-                        relation: user.relation,
-                        user_id: userId,
-                        wallet_type: 1,
-                        model: 'StrategyContributionPackageHistory',
-                        type: `购买上合发展战略贡献计划`,
-                        amount: reserveAmount,
-                        before_amount: Number(user.reserve_fund),
-                        after_amount: Number(user.reserve_fund) - reserveAmount,
-                        flow_status: 'OUT',
-                        description: `${gPackage.product_name}${balanceAmount > 0 ? ' - 合并支付' : ''}`,
-                    }, { transaction: t });
-                }
-
-                if (balanceAmount > 0) {
-                    await CashFlow.create({
-                        relation: user.relation,
-                        user_id: userId,
-                        wallet_type: 2,
-                        model: 'StrategyContributionPackageHistory',
-                        type: `购买上合发展战略贡献计划`,
-                        amount: balanceAmount,
-                        before_amount: Number(user.balance),
-                        after_amount: Number(user.balance) - balanceAmount,
-                        flow_status: 'OUT',
-                        description: `${gPackage.product_name} - 合并支付`,
-                    }, { transaction: t });
-                }
-
+                await CashFlow.create({
+                    relation: user.relation,
+                    user_id: userId,
+                    wallet_type: 1,
+                    model: 'StrategyContributionPackageHistory',
+                    type: `购买上合发展战略贡献计划`,
+                    amount: reserveAmount,
+                    before_amount: Number(user.reserve_fund),
+                    after_amount: Number(user.reserve_fund) - reserveAmount,
+                    flow_status: 'OUT',
+                    description: `${gPackage.product_name}`,
+                }, { transaction: t });
+                
                 const userUpdates = {
                     reserve_fund: Number(user.reserve_fund) - reserveAmount,
-                    balance: Number(user.balance) - balanceAmount
                 };
                 if (!user.initial_buy_product_date) {
                     userUpdates.initial_buy_product_date = new Date();
@@ -17319,6 +17295,9 @@ class Controller {
                             price: index === 0 ? gPackage.price : 0,
                             period: gPackage.period,
                             payment_per_period: gPackage.payment_per_period,
+                            payment_type: payment_type,
+                            total_paid_count: 1,
+                            total_paid_amount: index === 0 ? reserveAmount : 0,
                             contribute_amount: gPackage.contribute_amount,
                             next_payment_date: moment().add(gPackage.period, 'days').toDate(),
                             package_id: gPackage.id,
@@ -17335,6 +17314,9 @@ class Controller {
                         price: gPackage.price,
                         period: gPackage.period,
                         payment_per_period: gPackage.payment_per_period,
+                        payment_type: payment_type,
+                        total_paid_count: 1,
+                        total_paid_amount: reserveAmount,
                         contribute_amount: gPackage.contribute_amount,
                         next_payment_date: moment().add(gPackage.period, 'days').toDate(),
                         package_id: gPackage.id,
@@ -17556,28 +17538,22 @@ class Controller {
                     is_finished: false,
                     next_payment_date: {
                         [Op.lte]: today + ' 23:59:59'
-                    }
+                    },
+                    payment_type: 1
                 }
             });
             let showDialog = false;
             let message = '';
             let historyId = null;
             let installmentAmount = 0;
-            let oneTimeAmount = 0;
             if (history) {
                 installmentAmount = Number(history.payment_per_period);
-
-                const totalPayAmount = Number(history.total_paid_amount || 0);
-                const remainToPay = Number(history.payment_per_period) * 10 - totalPayAmount; 
-                if (remainToPay > 0) {
-                    showDialog = true;
-                    message = `您的本期分期费用 ￥${remainToPay} 待缴纳，请立即处理。`;
-                    historyId = history.id;
-                    oneTimeAmount = remainToPay;
-                }
+                showDialog = true;
+                message = `您的本期分期费用 ￥${installmentAmount} 待缴纳，请立即处理。`;
+                historyId = history.id;
             }
-            let data = { showDialog, message, historyId, oneTimeAmount, installmentAmount }
-            console.log(data);
+            let data = { showDialog, message, historyId, installmentAmount }
+            console.log(userId, JSON.stringify(data));
             
             return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
@@ -17589,7 +17565,6 @@ class Controller {
     STRATEGY_CONTRIBUTION_PAYMENT = async (req, res) => {
         try {
             const userId = req.user_id;
-            const { payment_amount, payment_type } = req.body;
             const historyId = req.params.id;
 
             const history = await StrategyContributionPackageHistory.findOne({
@@ -17618,31 +17593,10 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
 
-            let paidAmount = Number(history.total_paid_amount || 0);
-            let totalPaidCount = Number(history.total_paid_count || 0);
-            let nextPaymentDate = moment(history.next_payment_date).toDate();
-
-            // 1-分期付款, 2-一次性付款
-            if (payment_type == 1) {
-                // 分期付款逻辑
-                if (Number(payment_amount) !== Number(history.payment_per_period)) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '分期付款金额不正确', {});
-                }
-                
-                paidAmount += Number(payment_amount);
-                totalPaidCount += 1;
-                nextPaymentDate = moment(nextPaymentDate).add(history.package.period, 'days').toDate();
-
-            } else if (payment_type == 2) {
-                // 一次性付款逻辑
-                const remainToPay = Number(history.payment_per_period) * 10 - paidAmount;
-                if (Number(payment_amount) !== remainToPay) {
-                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '一次性付款金额不正确', {});
-                }
-
-                paidAmount += Number(payment_amount);
-                totalPaidCount += 1;
-            }
+            let payment_amount = Number(history.payment_per_period);
+            let paidAmount = Number(history.total_paid_amount || 0) + payment_amount;
+            let totalPaidCount = Number(history.total_paid_count || 0) + 1;
+            let nextPaymentDate = moment(history.next_payment_date).add(history.period, 'days').toDate();
 
             const t = await db.transaction();
             try {
@@ -17659,12 +17613,11 @@ class Controller {
                     description: `缴纳 ${payment_amount} 元 |【订单：${historyId}】| ${history.package ? history.package.product_name : ''}`,
                 }, { transaction: t });
 
-                const isFinished = paidAmount >= (Number(history.payment_per_period) * 10); 
+                const isFinished = paidAmount >= Number(history.price); 
                 await history.update({
-                    paid_amount: paidAmount,
                     total_paid_count: totalPaidCount,
                     total_paid_amount: paidAmount,
-                    next_payment_date: nextPaymentDate,
+                    next_payment_date: isFinished ? history.next_payment_date : nextPaymentDate,
                     is_finished: isFinished
                 }, { transaction: t });
 

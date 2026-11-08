@@ -465,24 +465,18 @@ exports.buy_connectivity_theme_package = () => {
 
 exports.buy_strategy_contribution_package = () => {
     return [
-        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty(),
+        // 1-分期付款, 2-一次性付款
+        check('payment_type', { msg: '缴纳类型不能为空' }).not().isEmpty()
+            .bail()
+            .isIn([1, 2])
+            .withMessage('缴纳类型无效'),
     ]
 }
 
 exports.buy_economic_trade_package = () => {
     return [
         check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
-    ]
-}
-
-exports.strategy_contribution_payment = () => {
-    return [
-        check('payment_amount', { msg: '缴纳金额不能为空' }).not().isEmpty(),
-        // 1-分期付款, 2-一次性付款
-        check('payment_type', { msg: '缴纳类型不能为空' }).not().isEmpty()
-            .bail()
-            .isIn([1, 2])
-            .withMessage('缴纳类型无效'),
     ]
 }
 
