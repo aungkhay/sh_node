@@ -17757,7 +17757,7 @@ class Controller {
                         user_id: upLevelUser.id,
                         from_user_id: user.id,
                         amount: bonus,
-                        package_history_id: pkgHistory[0].id
+                        package_history_id: history.id
                     });
                 }
                 if (bonuses.length > 0) {
