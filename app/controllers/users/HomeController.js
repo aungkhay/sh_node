@@ -17322,7 +17322,7 @@ class Controller {
                             price: index === 0 ? gPackage.price : 0,
                             period: gPackage.period,
                             payment_per_period: gPackage.payment_per_period,
-                            contribute_amount: gPackage.connectivity_amount,
+                            contribute_amount: gPackage.contribute_amount,
                             package_id: gPackage.id,
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
@@ -17337,7 +17337,7 @@ class Controller {
                         price: gPackage.price,
                         period: gPackage.period,
                         payment_per_period: gPackage.payment_per_period,
-                        contribute_amount: gPackage.connectivity_amount,
+                        contribute_amount: gPackage.contribute_amount,
                         package_id: gPackage.id,
                     }
 
