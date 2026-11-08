@@ -17301,6 +17301,7 @@ class Controller {
                             contribute_amount: gPackage.contribute_amount,
                             next_payment_date: moment().add(gPackage.period, 'days').toDate(),
                             package_id: gPackage.id,
+                            is_finished: payment_type == 2 ? true : false,
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
 
@@ -17320,6 +17321,7 @@ class Controller {
                         contribute_amount: gPackage.contribute_amount,
                         next_payment_date: moment().add(gPackage.period, 'days').toDate(),
                         package_id: gPackage.id,
+                        is_finished: payment_type == 2 ? true : false,
                     }
 
                     const pkgHistoryItem = await StrategyContributionPackageHistory.create(obj, { transaction: t });
@@ -17329,6 +17331,88 @@ class Controller {
                 await gPackage.increment({ total_quantity: -1 }, { transaction: t });
                 if (gPackage.total_quantity - 1 <= 0) {
                     await gPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+
+                // Give shared home package if applicable
+                let boughtPackageIds = await this.redisHelper.getValue('buy_strategy_contribution_packages_give_shared_home_package');
+                if (!boughtPackageIds) {
+                    const conf = await Config.findOne({ where: { type: 'buy_strategy_contribution_packages_give_shared_home_package' } });
+                    if (conf) {
+                        boughtPackageIds = conf.val;
+                        await this.redisHelper.setValue('buy_strategy_contribution_packages_give_shared_home_package', boughtPackageIds);
+                    }
+                }
+                const contributePackageIds = boughtPackageIds ? boughtPackageIds.split('|')[0].split('-') : [];
+                const paymentCompletedCount = await StrategyContributionPackageHistory.count({
+                    distinct: true,
+                    col: 'package_id',
+                    where: {
+                        package_id: { [Op.in]: contributePackageIds },
+                        user_id: user.id,
+                        is_finished: true,
+                        is_gave_shared_home_package: false
+                    },
+                    transaction: t
+                });
+
+                if (paymentCompletedCount === contributePackageIds.length) {
+                    
+                    // check history if these packages are bought (distinct package_id)
+                    const boughtHistory = await StrategyContributionPackageHistory.findAll({
+                        where: {
+                            package_id: { [Op.in]: contributePackageIds },
+                            user_id: user.id,
+                            is_gave_shared_home_package: false
+                        },
+                        attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('package_id')), 'package_id']],
+                        transaction: t
+                    });
+
+                    if (boughtHistory.length === contributePackageIds.length) {
+
+                        const sharedHomePackageId = boughtPackageIds ? boughtPackageIds.split('|')[1] : null;
+
+                        if (sharedHomePackageId) {
+
+                            const sharedHomePackage = await SharedHomePackage.findByPk(sharedHomePackageId, { transaction: t });
+                            if (sharedHomePackage) {
+                                // Grant shared home package to the user
+                                await SharedHomePackageHistory.create({
+                                    relation: user.relation,
+                                    user_id: user.id,
+                                    price: 0,
+                                    package_id: sharedHomePackageId,
+                                    total_month: sharedHomePackage.total_month,
+                                    earn_count_per_month: sharedHomePackage.earn_count_per_month,
+                                    earn_amount_per_count: sharedHomePackage.earn_amount_per_count,
+                                    share_amount: sharedHomePackage.share_amount,
+                                    release_earn_count_at: sharedHomePackage.release_earn_count_at,
+                                    month: 1,
+                                    start_release_at: moment().add(6, 'days').toDate(),
+                                    description: `Reward from strategy contribution package`,
+                                    remark: `STRATEGY_CONTRIBUTION_PACKAGE_REWARD`
+                                }, { transaction: t });
+
+                                for (const item of boughtHistory) {
+                                    const oldest = await StrategyContributionPackageHistory.findOne({
+                                        where: {
+                                            package_id: item.package_id,
+                                            user_id: user.id,
+                                            is_gave_shared_home_package: false
+                                        },
+                                        order: [['createdAt', 'ASC'], ['id', 'ASC']],
+                                        transaction: t
+                                    });
+                                    if (oldest) {
+                                        await oldest.update(
+                                            { is_gave_shared_home_package: true },
+                                            { transaction: t }
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 const bonusArr = [15, 7, 3];
