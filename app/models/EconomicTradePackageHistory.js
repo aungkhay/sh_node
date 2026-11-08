@@ -48,7 +48,7 @@ EconomicTradePackageHistory.init({
         allowNull: false,
         defaultValue: 0.00
     },
-    released_count: {
+    release_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0,
