@@ -7026,6 +7026,62 @@ class CronJob {
         }
     }
 
+    RETURN_ECONOMIC_TRADE_PACKAGE_ANNUAL_EARN = async () => {
+        try {
+            const histories = await EconomicTradePackageHistory.findAll({
+                where: {
+                    is_returned_annual_allowance: false
+                }
+            });
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+
+                    const beforeBalance = user.balance;
+                    const afterBalance = beforeBalance + Number(history.annual_allowance);
+
+                    await CashFlow.create({
+                        relation: user.relation,
+                        user_id: user.id,
+                        wallet_type: 2,
+                        model: 'EconomicTradePackageHistory',
+                        type: `多边经贸合作措施计划`,
+                        amount: history.annual_allowance,
+                        before_amount: beforeBalance,
+                        after_amount: afterBalance,
+                        flow_status: 'IN',
+                        description: `发放年度补助金`
+                    }, { transaction: t });
+
+                    await EconomicTradePackageEarn.create({
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: history.annual_allowance,
+                        type: 3, // '年度补助金'
+                    }, { transaction: t });
+
+                    await user.update({ balance: afterBalance }, { transaction: t });
+                    await history.update({ is_returned_annual_allowance: true }, { transaction: t });
+
+                    commonLogger(`Processed economic trade package annual earn for user ${user.id}, history ${history.id}, beforeBalance ${beforeBalance}, afterBalance ${afterBalance}`);
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[RETURN_ECONOMIC_TRADE_PACKAGE_ANNUAL_EARN]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[RETURN_ECONOMIC_TRADE_PACKAGE_ANNUAL_EARN]: ${error.stack}`);
+        }
+    }
+
     RETURN_CONNECTIVITY_INVESTMENT_AMOUNT = async () => {
         try {
             const histories = await ConnectivityThemePackageHistory.findAll({

@@ -83,6 +83,12 @@ EconomicTradePackageHistory.init({
         defaultValue: false,
         comment: '是否已返还申购费',
     },
+    is_returned_annual_allowance: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已返还年度补助金',
+    },
     is_finished: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
