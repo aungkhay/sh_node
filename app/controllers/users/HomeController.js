@@ -17661,18 +17661,30 @@ class Controller {
 
                 await user.increment({ reserve_fund: -payment_amount }, { transaction: t });
 
-                if (isFinished) {
-                    let boughtPackageIds = await this.redisHelper.getValue('buy_strategy_contribution_packages_give_shared_home_package');
-                    if (!boughtPackageIds) {
-                        const conf = await Config.findOne({ where: { type: 'buy_strategy_contribution_packages_give_shared_home_package' } });
-                        if (conf) {
-                            boughtPackageIds = conf.val;
-                            await this.redisHelper.setValue('buy_strategy_contribution_packages_give_shared_home_package', boughtPackageIds);
-                        }
+                // Give shared home package if applicable
+                let boughtPackageIds = await this.redisHelper.getValue('buy_strategy_contribution_packages_give_shared_home_package');
+                if (!boughtPackageIds) {
+                    const conf = await Config.findOne({ where: { type: 'buy_strategy_contribution_packages_give_shared_home_package' } });
+                    if (conf) {
+                        boughtPackageIds = conf.val;
+                        await this.redisHelper.setValue('buy_strategy_contribution_packages_give_shared_home_package', boughtPackageIds);
                     }
+                }
+                const contributePackageIds = boughtPackageIds ? boughtPackageIds.split('|')[0].split('-') : [];
+                const paymentCompletedCount = await StrategyContributionPackageHistory.count({
+                    distinct: true,
+                    col: 'package_id',
+                    where: {
+                        package_id: { [Op.in]: contributePackageIds },
+                        user_id: user.id,
+                        is_finished: true,
+                        is_gave_shared_home_package: false
+                    },
+                    transaction: t
+                });
 
-                    // Give shared home package if applicable
-                    const contributePackageIds = boughtPackageIds ? boughtPackageIds.split('|')[0].split('-') : [];
+                if (paymentCompletedCount === contributePackageIds.length) {
+                    
                     // check history if these packages are bought (distinct package_id)
                     const boughtHistory = await StrategyContributionPackageHistory.findAll({
                         where: {
@@ -18269,7 +18281,7 @@ class Controller {
                 where: { 
                     user_id: userId,
                 },
-                attributes: ['id', 'price', 'period', 'payment_per_period', 'contribute_amount', 'next_payment_date', 'description', 'createdAt'],
+                attributes: ['id', 'price', 'period', 'released_count', 'trade_allowance', 'annual_allowance', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
