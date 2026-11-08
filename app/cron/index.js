@@ -6953,7 +6953,7 @@ class CronJob {
                             user_id: user.id,
                             wallet_type: 2,
                             model: 'EconomicTradePackageHistory',
-                            type: `购买多边经贸合作措施计划`,
+                            type: `多边经贸合作措施计划`,
                             amount: history.trade_allowance,
                             before_amount: beforeBalance,
                             after_amount: afterBalance,
