@@ -17817,9 +17817,9 @@ class Controller {
             const userId = req.user_id;
 
             const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'createdAt'] });
-            if (new Date(user.createdAt) < new Date('2026-11-10')) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '注册时间不符合领取条件', {});
-            }
+            // if (new Date(user.createdAt) < new Date('2026-11-10')) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '注册时间不符合领取条件', {});
+            // }
 
             // Rule:
             // 推荐两名新用户激活可以免费领取，现在共建产品方案A200元，
@@ -17838,8 +17838,8 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '推荐用户数量不符合领取条件', {});
             }
 
-            if (childCount < historyCount * 2) {
-                const requiredChildCount = historyCount * 2 + 2;
+            const requiredChildCount = historyCount * 2 + 2;
+            if (childCount < requiredChildCount) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount - childCount}名新用户。`, {});
             }
 
