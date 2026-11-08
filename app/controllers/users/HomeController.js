@@ -17570,8 +17570,10 @@ class Controller {
                     oneTimeAmount = remainToPay;
                 }
             }
+            let data = { showDialog, message, historyId, oneTimeAmount, installmentAmount }
+            console.log(data);
             
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { showDialog, message, historyId, oneTimeAmount, installmentAmount });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', data);
         } catch (error) {
             errLogger(`[STRATEGY_CONTRIBUTION_CHECK_NEXT_PAYMENT_DATE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
