@@ -6911,6 +6911,7 @@ class CronJob {
                     await StrategyContributionPackageEarn.bulkCreate(earns, { transaction: t });
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await user.update({ balance: afterBalance }, { transaction: t });
+                    await history.update({ is_returned_contribute_amount: true }, { transaction: t });
 
                     await t.commit();
 
