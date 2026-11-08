@@ -2763,3 +2763,68 @@ const params = {
     endTime: ''
 }
 ```
+
+###  多边经贸合作措施计划
+``` js
+// [GET] Package List
+const url = `${baseURL}/economic-trade-packages`;
+
+// [POST] CREATE | UPDATE
+const url = `${baseURL}/economic-trade-packages/create`;
+const url = `${baseURL}/economic-trade-packages/${pkgID}/update`;
+const data = {
+    product_name: '',
+    price: 0, // 申购费
+    release_count: 180, // 发放次数
+    trade_allowance: 2000, // 多边经贸金
+    trade_allowance: 20000, // 年度补助金
+    purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
+    quantity_limit: 0, // optional 限购数量
+    total_quantity: 100, // 总发售数量
+    buy_one_get_quantity: 0, // default 0 | 0表示不赠送
+    description: '备注：申购完成，每月10日发放互联互通金。',
+    status: 1, // 1-在售, 2-下架, 3-售罄
+    tag: [] // optional (no need to add key if empty)
+}
+
+// [POST] Upload Product Cover Image
+const url = `${baseURL}/economic-trade-packages/${packageId}/upload`;
+const formData = new FormData();
+formData.append('image', file, file.name.toLocaleLowerCase());
+const config = {
+    method: 'POST',
+    maxBodyLength: Infinity,
+    url: url,
+    headers: {
+        'Content-Type': 'multipart/form-data'
+    },
+    data: formData
+}
+await axios(config);
+
+// [GET] Package History
+const url = `${baseURL}/economic-trade-packages/history`;
+const params = {
+    phone: '',
+    packageId: '',
+    startTime: '',
+    endTime: '',
+    is_internal_account: 0,
+}
+
+// [GET] 推荐奖励记录
+const url = `${baseURL}/economic-trade-packages/bonus-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+
+// [GET] 收益记录
+const url = `${baseURL}/economic-trade-packages/earn-history`;
+const params = {
+    phone: '',
+    startTime: '',
+    endTime: ''
+}
+```

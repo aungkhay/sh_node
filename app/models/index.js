@@ -134,6 +134,10 @@ const StrategyContributionPackage = require('./StrategyContributionPackage');
 const StrategyContributionPackageHistory = require('./StrategyContributionPackageHistory');
 const StrategyContributionPackageEarn = require('./StrategyContributionPackageEarn');
 const StrategyContributionPackageBonuses = require('./StrategyContributionPackageBonuses');
+const EconomicTradePackage = require('./EconomicTradePackage');
+const EconomicTradePackageHistory = require('./EconomicTradePackageHistory');
+const EconomicTradePackageEarn = require('./EconomicTradePackageEarn');
+const EconomicTradePackageBonuses = require('./EconomicTradePackageBonuses');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -835,7 +839,6 @@ ConnectivityThemePackageEarn.belongsTo(ConnectivityThemePackage, { foreignKey: '
 ConnectivityThemePackageHistory.hasMany(ConnectivityThemePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
 ConnectivityThemePackageBonuses.belongsTo(ConnectivityThemePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
-// -----------------------
 // ========== STRATEGY_CONTRIBUTION_PACKAGE ↔️ STRATEGY_CONTRIBUTION_PACKAGE_HISTORY (1:N) ==========
 StrategyContributionPackage.hasMany(StrategyContributionPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
 StrategyContributionPackageHistory.belongsTo(StrategyContributionPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
@@ -864,6 +867,35 @@ StrategyContributionPackageEarn.belongsTo(StrategyContributionPackage, { foreign
 // ========== STRATEGY_CONTRIBUTION_PACKAGE_HISTORY ↔️ STRATEGY_CONTRIBUTION_PACKAGE_BONUSES (1:N) ==========
 StrategyContributionPackageHistory.hasMany(StrategyContributionPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
 StrategyContributionPackageBonuses.belongsTo(StrategyContributionPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ECONOMIC_TRADE_PACKAGE ↔️ ECONOMIC_TRADE_PACKAGE_HISTORY (1:N) ==========
+EconomicTradePackage.hasMany(EconomicTradePackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+EconomicTradePackageHistory.belongsTo(EconomicTradePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ECONOMIC_TRADE_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(EconomicTradePackageHistory, { foreignKey: 'user_id', as: 'economic_trade_package_histories', onDelete: 'CASCADE' });
+EconomicTradePackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ECONOMIC_TRADE_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(EconomicTradePackageBonuses, { foreignKey: 'user_id', as: 'economic_trade_package_bonuses', onDelete: 'CASCADE' });
+EconomicTradePackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+EconomicTradePackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ ECONOMIC_TRADE_PACKAGE_EARN (1:N) ==========
+User.hasMany(EconomicTradePackageEarn, { foreignKey: 'user_id', as: 'economic_trade_package_earn', onDelete: 'CASCADE' });
+EconomicTradePackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== ECONOMIC_TRADE_PACKAGE_HISTORY ↔️ ECONOMIC_TRADE_PACKAGE_EARN (1:N) ==========
+EconomicTradePackageHistory.hasMany(EconomicTradePackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+EconomicTradePackageEarn.belongsTo(EconomicTradePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== ECONOMIC_TRADE_PACKAGE ↔️ ECONOMIC_TRADE_PACKAGE_EARN (1:N) ==========
+EconomicTradePackage.hasMany(EconomicTradePackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+EconomicTradePackageEarn.belongsTo(EconomicTradePackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== ECONOMIC_TRADE_PACKAGE_HISTORY ↔️ ECONOMIC_TRADE_PACKAGE_BONUSES (1:N) ==========
+EconomicTradePackageHistory.hasMany(EconomicTradePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+EconomicTradePackageBonuses.belongsTo(EconomicTradePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
 const models = {
     Role,
@@ -996,6 +1028,10 @@ const models = {
     StrategyContributionPackageHistory,
     StrategyContributionPackageBonuses,
     StrategyContributionPackageEarn,
+    EconomicTradePackage,
+    EconomicTradePackageHistory,
+    EconomicTradePackageBonuses,
+    EconomicTradePackageEarn,
 };
 
 // Export models + db connection

@@ -577,6 +577,27 @@ module.exports = async () => {
             description: '格式：上合发展战略贡献ID(1-2-3-4)|共建共同家园计划ID(16)',
             data_type: 'string'
         },
+        {
+            type: 'economic_trade_package_description',
+            title: '多边经贸合作措施计划 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
+        {
+            type: 'economic_trade_package_period',
+            title: '多边经贸合作措施计划 - 申购时间',
+            val: '2026-11-10 00:00:00|2026-11-14 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'economic_trade_package_daily_release_qty',
+            title: '多边经贸合作措施计划 - 每日发放数量',
+            val: '200000',
+            description: '-',
+            data_type: 'integer'
+        },
     ];
 
     const count = await Config.count();

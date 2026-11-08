@@ -493,6 +493,17 @@ class AdminRoute extends express.Router {
         this.get('/strategy-contribution-packages/history', middleware.isLoggedIn('strategy-contribution-package-history-list'), StrategyContributionPackageCtrl.STRATEGY_CONTRIBUTION_PACKAGE_HISTORY);
         this.get('/strategy-contribution-packages/bonus-history', middleware.isLoggedIn('strategy-contribution-package-bonus-history-list'), StrategyContributionPackageCtrl.STRATEGY_CONTRIBUTION_PACKAGE_BONUS_HISTORY);
         this.get('/strategy-contribution-packages/earn-history', middleware.isLoggedIn('strategy-contribution-package-earn-history-list'), StrategyContributionPackageCtrl.STRATEGY_CONTRIBUTION_PACKAGE_EARN_HISTORY);
+
+        // Economic Trade Package
+        let EconomicTradePackageController = require('../controllers/admins/EconomicTradePackageController');
+        let EconomicTradePackageCtrl = new EconomicTradePackageController(app);
+        this.get('/economic-trade-packages', middleware.isLoggedIn('economic-trade-package-list'), EconomicTradePackageCtrl.INDEX);
+        this.post('/economic-trade-packages/create', FormValidator.create_economic_trade_package(), middleware.isLoggedIn('economic-trade-package-create'), EconomicTradePackageCtrl.CREATE);
+        this.post('/economic-trade-packages/:id/update', FormValidator.create_economic_trade_package(), middleware.isLoggedIn('economic-trade-package-update'), EconomicTradePackageCtrl.UPDATE);
+        this.post('/economic-trade-packages/:id/upload', middleware.isLoggedIn('economic-trade-package-create,economic-trade-package-update'), EconomicTradePackageCtrl.UPLOAD);
+        this.get('/economic-trade-packages/history', middleware.isLoggedIn('economic-trade-package-history-list'), EconomicTradePackageCtrl.ECONOMIC_TRADE_PACKAGE_HISTORY);
+        this.get('/economic-trade-packages/bonus-history', middleware.isLoggedIn('economic-trade-package-bonus-history-list'), EconomicTradePackageCtrl.ECONOMIC_TRADE_PACKAGE_BONUS_HISTORY);
+        this.get('/economic-trade-packages/earn-history', middleware.isLoggedIn('economic-trade-package-earn-history-list'), EconomicTradePackageCtrl.ECONOMIC_TRADE_PACKAGE_EARN_HISTORY);
     }
 }
 
