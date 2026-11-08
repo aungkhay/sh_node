@@ -90,12 +90,6 @@ StrategyContributionPackageHistory.init({
         defaultValue: 0,
         comment: '已缴纳总金额',
     },
-    is_returned_price: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: false,
-        comment: '是否已退还申报费',
-    },
     is_returned_contribute_amount: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -149,8 +143,8 @@ StrategyContributionPackageHistory.init({
             using: 'BTREE'
         },
         {
-            name: 'idx_is_returned_price_is_returned_contribute_amount',
-            fields: ['is_returned_price', 'is_returned_contribute_amount'],
+            name: 'idx_is_finished_is_returned_contribute_amount',
+            fields: ['is_finished', 'is_returned_contribute_amount'],
             using: 'BTREE'
         }
     ]

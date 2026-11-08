@@ -6868,25 +6868,21 @@ class CronJob {
                             description: `发放战略贡献金`,
                         }
                     ];
+                    beforeBalance = afterBalance;
+                    afterBalance = afterBalance + Number(history.price);
+                    cashflows.push({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2, // 余额
+                        model: 'StrategyContributionPackageHistory',
+                        type: '上合发展战略贡献',
+                        amount: Number(history.price),
+                        before_amount: beforeBalance,
+                        after_amount: afterBalance,
+                        flow_status: 'IN',
+                        description: `返还申报费`,
+                    });
                     
-                    if (!history.is_returned_price) {
-                        beforeBalance = afterBalance;
-                        afterBalance = afterBalance + Number(history.price);
-                        cashflows.push({
-                            user_id: user.id,
-                            relation: user.relation,
-                            wallet_type: 2, // 余额
-                            model: 'StrategyContributionPackageHistory',
-                            type: '上合发展战略贡献',
-                            amount: Number(history.price),
-                            before_amount: beforeBalance,
-                            after_amount: afterBalance,
-                            flow_status: 'IN',
-                            description: `返还申报费`,
-                        });
-                        await history.update({ is_returned_price: true }, { transaction: t });
-                    }
-
                     const earns = [
                         {
                             relation: user.relation,
@@ -6895,18 +6891,16 @@ class CronJob {
                             package_history_id: history.id,
                             amount: Number(history.contribute_amount),
                             type: 2 // 发放战略贡献金
-                        }
-                    ];
-                    if (!history.is_returned_price) {
-                        earns.push({
+                        },
+                        {
                             relation: user.relation,
                             user_id: user.id,
                             package_id: history.package_id,
                             package_history_id: history.id,
                             amount: Number(history.price),
                             type: 1 // 返还申报费
-                        });
-                    }
+                        }
+                    ];
 
                     await StrategyContributionPackageEarn.bulkCreate(earns, { transaction: t });
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
@@ -6931,11 +6925,11 @@ class CronJob {
             const today = moment().format('YYYY-MM-DD');
             const histories = await EconomicTradePackageHistory.findAll({
                 where: {
+                    is_finished: false,
                     next_release_trade_allowance_date: {
                         [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
                     }
                 },
-                attributes: ['id', 'user_id', 'package_id', 'trade_allowance', 'price', 'next_release_trade_allowance_date'],
             });
 
             for (const history of histories) {
@@ -6962,20 +6956,8 @@ class CronJob {
                             after_amount: afterBalance,
                             flow_status: 'IN',
                             description: `发放多边经贸金`
-                        },
-                        {
-                            relation: user.relation,
-                            user_id: user.id,
-                            wallet_type: 2,
-                            model: 'EconomicTradePackageHistory',
-                            type: `购买多边经贸合作措施计划`,
-                            amount: history.price,
-                            before_amount: afterBalance,
-                            after_amount: afterBalance + Number(history.price),
-                            flow_status: 'IN',
-                            description: `发放申购费`
                         }
-                    ];
+                    ]
                     const earns = [
                         {
                             relation: user.relation,
@@ -6984,20 +6966,45 @@ class CronJob {
                             package_history_id: history.id,
                             amount: history.trade_allowance,
                             type: '多边经贸金'
-                        },
-                        {
+                        }
+                    ]
+
+                    if (!history.is_returned_price) {
+                        beforeBalance = afterBalance;
+                        afterBalance = beforeBalance + Number(history.price);
+                        cashflows.push({
+                            relation: user.relation,
+                            user_id: user.id,
+                            wallet_type: 2,
+                            model: 'EconomicTradePackageHistory',
+                            type: `购买多边经贸合作措施计划`,
+                            amount: history.price,
+                            before_amount: beforeBalance,
+                            after_amount: afterBalance,
+                            flow_status: 'IN',
+                            description: `发放申购费`
+                        });
+                        earns.push({
                             relation: user.relation,
                             user_id: user.id,
                             package_id: history.package_id,
                             package_history_id: history.id,
                             amount: history.price,
                             type: '申购费'
-                        }
-                    ];
+                        });
+                    }
+                    
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
                     await EconomicTradePackageEarn.bulkCreate(earns, { transaction: t });
-                    await user.increment({ balance: Number(history.trade_allowance) + Number(history.price) }, { transaction: t });
-                    await history.update({ next_release_trade_allowance_date: moment().add(30, 'days').toDate() }, { transaction: t });
+                    await user.update({ balance: afterBalance }, { transaction: t });
+
+                    const updateData = {
+                        next_release_trade_allowance_date: moment().add(30, 'days').toDate()
+                    }
+                    if (history.total_released_count === history.release_count) {
+                        updateData.is_finished = true;
+                    }
+                    await history.update(updateData, { transaction: t });
 
                     await t.commit();
 

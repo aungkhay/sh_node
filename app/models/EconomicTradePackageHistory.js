@@ -77,6 +77,12 @@ EconomicTradePackageHistory.init({
         allowNull: true,
         comment: '下次发放多边经贸金日期',
     },
+    is_returned_price: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已返还申购费',
+    },
     is_finished: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
