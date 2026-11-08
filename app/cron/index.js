@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn, ConnectivityThemePackageHistory, ConnectivityThemePackage, ConnectivityThemePackageEarn } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn, ConnectivityThemePackageHistory, ConnectivityThemePackage, ConnectivityThemePackageEarn, StrategyContributionPackageHistory, StrategyContributionPackageEarn } = require('../models');
 const { Op, fn, col, literal, or, where } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -101,7 +101,7 @@ class CronJob {
         // cron.schedule('30 3 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
         // cron.schedule('0 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
         cron.schedule('20 1 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start();
-        cron.schedule('0 2 * * *', this.TRANSFER_APPROVAL_FUND_BALANCE).start();
+        cron.schedule('0 2 * * *', this.TRANSFER_APPROVAL_FUND_BALANCE).start(); // all completed
         cron.schedule('*/5 * * * *', this.ADD_PRIORITY_QUEUEING_NUMBER).start();
 
         // Run every 30 minutes
@@ -116,6 +116,8 @@ class CronJob {
         cron.schedule('0 5 * * *', this.SHARED_HOME_PACKAGE_EARN).start();
         // Run 1:20 AM Every 10th of the month
         cron.schedule('20 1 10 * *', this.CONNECTIVITY_THEME_PACKAGE_EARN).start();
+        // Run at 2 AM Every day
+        cron.schedule('0 2 * * *', this.RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6817,6 +6819,96 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[CONNECTIVITY_THEME_PACKAGE_EARN]: ${error.stack}`);
+        }
+    }
+
+    RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN = async () => {
+        try {
+            const histories = await StrategyContributionPackageHistory.findAll({
+                where: {
+                    is_finished: 1
+                },
+                attributes: ['id', 'user_id', 'package_id', 'contribute_amount', 'price', 'createdAt'],
+                order: [['id', 'ASC']]
+            });
+
+            for (const history of histories) {
+
+                // 购买30天后发战略贡献金并返还申报费
+                const dateReached = moment(history.createdAt).add(30, 'days');
+                if (moment().isBefore(dateReached)) {
+                    continue;
+                }
+
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+
+                    let beforeBalance = Number(user.balance); 
+                    let afterBalance = Number(user.balance) + Number(history.contribute_amount);
+
+                    const cashflows = [];
+                    cashflows.push({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2, // 余额
+                        model: 'StrategyContributionPackageHistory',
+                        type: '上合发展战略贡献',
+                        amount: Number(history.contribute_amount),
+                        before_amount: beforeBalance,
+                        after_amount: afterBalance,
+                        flow_status: 'IN',
+                        description: `发放战略贡献金`,
+                    });
+                    cashflows.push({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2, // 余额
+                        model: 'StrategyContributionPackageHistory',
+                        type: '上合发展战略贡献',
+                        amount: Number(history.price),
+                        before_amount: afterBalance,
+                        after_amount: afterBalance + Number(history.price),
+                        flow_status: 'IN',
+                        description: `返还申报费`,
+                    });
+
+                    const earns = [];
+                    earns.push({
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: Number(history.contribute_amount),
+                        type: 2 // 发放战略贡献金
+                    });
+                    earns.push({
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: Number(history.price),
+                        type: 1 // 返还申报费
+                    });
+
+                    await StrategyContributionPackageEarn.bulkCreate(earns, { transaction: t });
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+                    await user.increment({ balance: Number(history.contribute_amount) + Number(history.price) }, { transaction: t })
+
+                    await t.commit();
+
+                    commonLogger(`Processed user ${user.id} with contribute amount ${history.contribute_amount} and price ${history.price}`);
+                } catch (error) {
+                    errLogger(`[RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN]: ${error.stack}`);
         }
     }
 

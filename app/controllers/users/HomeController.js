@@ -17699,7 +17699,6 @@ class Controller {
 
             const t = await db.transaction();
             try {
-                const cashflows = [];
                 await CashFlow.create({
                     user_id: user.id,
                     relation: user.relation,
@@ -17721,43 +17720,7 @@ class Controller {
                     is_finished: isFinished
                 }, { transaction: t });
 
-                const userUpdate = {
-                    reserve_fund: Number(user.reserve_fund) - payment_amount
-                }
-
-                if (isFinished) {
-                    let beforeBalance = Number(user.balance); 
-                    let afterBalance = Number(user.balance) + Number(history.contribute_amount);
-
-                    cashflows.push({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 2, // 余额
-                        model: 'StrategyContributionPackageHistory',
-                        type: '上合发展战略贡献',
-                        amount: Number(history.contribute_amount),
-                        before_amount: beforeBalance,
-                        after_amount: afterBalance,
-                        flow_status: 'IN',
-                        description: `发放战略贡献金`,
-                    });
-                    cashflows.push({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 2, // 余额
-                        model: 'StrategyContributionPackageHistory',
-                        type: '上合发展战略贡献',
-                        amount: Number(history.price),
-                        before_amount: afterBalance,
-                        after_amount: afterBalance + Number(history.price),
-                        flow_status: 'IN',
-                        description: `返还申报费`,
-                    });
-                    await CashFlow.bulkCreate(cashflows, { transaction: t });
-                    userUpdate.balance = afterBalance + Number(history.price);
-                }
-
-                await user.update(userUpdate, { transaction: t });
+                await user.increment({ reserve_fund: -payment_amount }, { transaction: t });
 
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '缴纳成功', {});
