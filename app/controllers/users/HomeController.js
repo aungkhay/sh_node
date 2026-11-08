@@ -17821,20 +17821,26 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '注册时间不符合领取条件', {});
             }
 
-            const childCount = await User.count({ where: { parent_id: userId } });
-            if (childCount < 2) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '推荐用户数量不符合领取条件', {});
-            }
+            // Rule:
+            // 推荐两名新用户激活可以免费领取，现在共建产品方案A200元，
+            // 每推荐两个新用户激活赠送一个方案A ，推荐4个赠送2个，以此类推
 
             const desc = '推荐两名新用户免费领取共建共同家园方案';
-            const alreadyReceived = await SharedHomePackageHistory.findOne({
+            const childCount = await User.count({ where: { parent_id: userId } });
+            const historyCount = await SharedHomePackageHistory.count({
                 where: {
                     user_id: userId,
                     description: desc
                 }
             });
-            if (alreadyReceived) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '您已领取过该方案', {});
+
+            if (childCount < 2 || childCount % 2 !== 0) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '推荐用户数量不符合领取条件', {});
+            }
+
+            if (childCount < historyCount * 2) {
+                const requiredChildCount = historyCount * 2 + 2;
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount - childCount}名新用户。`, {});
             }
 
             const pkg = await SharedHomePackage.findOne({ 
