@@ -17556,17 +17556,22 @@ class Controller {
             let showDialog = false;
             let message = '';
             let historyId = null;
+            let oneTimeAmount = 0;
+            let installmentAmount = 0;
             if (history) {
+                oneTimeAmount = Number(history.payment_per_period);
+
                 const totalPayAmount = Number(history.total_paid_amount || 0);
                 const remainToPay = Number(history.payment_per_period) * 10 - totalPayAmount; 
                 if (remainToPay > 0) {
                     showDialog = true;
                     message = `您的本期分期费用 ￥${remainToPay} 待缴纳，请立即处理。`;
                     historyId = history.id;
+                    installmentAmount = remainToPay;
                 }
             }
             
-            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { showDialog, message, historyId });
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { showDialog, message, historyId, oneTimeAmount, installmentAmount });
         } catch (error) {
             errLogger(`[STRATEGY_CONTRIBUTION_CHECK_NEXT_PAYMENT_DATE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
