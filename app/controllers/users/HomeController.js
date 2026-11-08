@@ -17655,6 +17655,7 @@ class Controller {
                 await history.update({
                     paid_amount: paidAmount,
                     total_paid_count: totalPaidCount,
+                    total_paid_amount: paidAmount,
                     next_payment_date: nextPaymentDate,
                     is_finished: isFinished
                 }, { transaction: t });
