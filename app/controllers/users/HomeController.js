@@ -17588,12 +17588,12 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '本期缴纳尚未到期', {});
             }
 
+            let payment_amount = Number(history.payment_per_period);
             const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund'] });
-            if (Number(user.reserve_fund) < Number(payment_amount)) {
+            if (Number(user.reserve_fund) < payment_amount) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
             }
 
-            let payment_amount = Number(history.payment_per_period);
             let paidAmount = Number(history.total_paid_amount || 0) + payment_amount;
             let totalPaidCount = Number(history.total_paid_count || 0) + 1;
             let nextPaymentDate = moment(history.next_payment_date).add(history.period, 'days').toDate();
