@@ -1263,3 +1263,24 @@ const data = {
     payment_amount: 100
 }
 ```
+
+### 多边经贸合作措施计划
+```js
+// [GET] Packages
+const url = `${baseURL}/economic-trade-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/economic-trade-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/economic-trade-packages/history`;
+
+// [GET] Earn History
+const url = `${baseURL}/economic-trade-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/economic-trade-packages/bonus-history`;
+```

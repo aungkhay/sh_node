@@ -211,6 +211,12 @@ class UserRoute extends express.Router {
         this.post('/strategy-contribution-packages/:id/payment', FormValidator.strategy_contribution_payment(), middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PAYMENT);
         this.post('/new-register-user/get-free-connectivity-theme-package', middleware.isLoggedIn, HomeCtrl.NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE);
         this.post('/new-register-user/get-free-shared-home-package', middleware.isLoggedIn, HomeCtrl.NEW_REGISTER_USER_GET_FREE_SHARED_HOME_PACKAGE);
+        // Economic Trade Package Routes
+        this.get('/economic-trade-packages', middleware.isLoggedIn, HomeCtrl.ECONOMIC_TRADE_PACKAGE);
+        this.post('/economic-trade-packages/:id/buy', FormValidator.buy_economic_trade_package(), middleware.isLoggedIn, HomeCtrl.BUY_ECONOMIC_TRADE_PACKAGE);
+        this.get('/economic-trade-packages/history', middleware.isLoggedIn, HomeCtrl.ECONOMIC_TRADE_PACKAGE_HISTORY);
+        this.get('/economic-trade-packages/earn-history', middleware.isLoggedIn, HomeCtrl.ECONOMIC_TRADE_PACKAGE_EARN_HISTORY);
+        this.get('/economic-trade-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.ECONOMIC_TRADE_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);

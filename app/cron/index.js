@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn, ConnectivityThemePackageHistory, ConnectivityThemePackage, ConnectivityThemePackageEarn, StrategyContributionPackageHistory, StrategyContributionPackageEarn } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn, ConnectivityThemePackageHistory, ConnectivityThemePackage, ConnectivityThemePackageEarn, StrategyContributionPackageHistory, StrategyContributionPackageEarn, EconomicTradePackageEarn } = require('../models');
 const { Op, fn, col, literal, or, where } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -100,7 +100,7 @@ class CronJob {
         // cron.schedule('0 3 * * *', this.ASSET_DAILY_RELEASE_ORIGINAL_PRICE).start();
         // cron.schedule('30 3 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
         // cron.schedule('0 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
-        cron.schedule('20 1 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start();
+        cron.schedule('20 1 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start(); // all completed
         cron.schedule('0 2 * * *', this.TRANSFER_APPROVAL_FUND_BALANCE).start(); // all completed
         cron.schedule('*/5 * * * *', this.ADD_PRIORITY_QUEUEING_NUMBER).start();
 
@@ -118,6 +118,8 @@ class CronJob {
         cron.schedule('20 1 10 * *', this.CONNECTIVITY_THEME_PACKAGE_EARN).start();
         // Run at 2 AM Every day
         cron.schedule('0 2 * * *', this.RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN).start();
+        // Run at 6:00 AM Every day
+        cron.schedule('0 6 * * *', this.RETURN_ECONOMIC_TRADE_PACKAGE_EARN).start();
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6909,6 +6911,92 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN]: ${error.stack}`);
+        }
+    }
+
+    RETURN_ECONOMIC_TRADE_PACKAGE_EARN = async () => {
+        try {
+            const today = moment().format('YYYY-MM-DD');
+            const histories = await EconomicTradePackageHistory.findAll({
+                where: {
+                    next_release_trade_allowance_date: {
+                        [Op.between]: [today + ' 00:00:00', today + ' 23:59:59']
+                    }
+                },
+                attributes: ['id', 'user_id', 'package_id', 'trade_allowance', 'price', 'next_release_trade_allowance_date'],
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+
+                    let beforeBalance = Number(user.balance);
+                    let afterBalance = beforeBalance + Number(history.trade_allowance);
+
+                    const cashflows = [
+                        {
+                            relation: user.relation,
+                            user_id: user.id,
+                            wallet_type: 2,
+                            model: 'EconomicTradePackageHistory',
+                            type: `购买多边经贸合作措施计划`,
+                            amount: history.trade_allowance,
+                            before_amount: beforeBalance,
+                            after_amount: afterBalance,
+                            flow_status: 'IN',
+                            description: `发放多边经贸金`
+                        },
+                        {
+                            relation: user.relation,
+                            user_id: user.id,
+                            wallet_type: 2,
+                            model: 'EconomicTradePackageHistory',
+                            type: `购买多边经贸合作措施计划`,
+                            amount: history.price,
+                            before_amount: afterBalance,
+                            after_amount: afterBalance + Number(history.price),
+                            flow_status: 'IN',
+                            description: `发放申购费`
+                        }
+                    ];
+                    const earns = [
+                        {
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            amount: history.trade_allowance,
+                            type: '多边经贸金'
+                        },
+                        {
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            amount: history.price,
+                            type: '申购费'
+                        }
+                    ];
+                    await CashFlow.bulkCreate(cashflows, { transaction: t });
+                    await EconomicTradePackageEarn.bulkCreate(earns, { transaction: t });
+                    await user.increment({ balance: Number(history.trade_allowance) + Number(history.price) }, { transaction: t });
+                    await history.update({ next_release_trade_allowance_date: moment().add(30, 'days').toDate() }, { transaction: t });
+
+                    await t.commit();
+
+                    commonLogger(`Processed economic trade package history for user ${user.id}, history ${history.id}, beforeBalance ${beforeBalance}, afterBalance ${afterBalance}`);
+                } catch (error) {
+                    errLogger(`[RETURN_ECONOMIC_TRADE_PACKAGE_EARN]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[RETURN_ECONOMIC_TRADE_PACKAGE_EARN]: ${error.stack}`);
         }
     }
 

@@ -469,6 +469,12 @@ exports.buy_strategy_contribution_package = () => {
     ]
 }
 
+exports.buy_economic_trade_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
 exports.strategy_contribution_payment = () => {
     return [
         check('payment_amount', { msg: '缴纳金额不能为空' }).not().isEmpty(),
