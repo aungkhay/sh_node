@@ -117,6 +117,11 @@ EconomicTradePackageHistory.init({
             name: 'idx_is_finished',
             fields: ['is_finished'],
             using: 'BTREE'
+        },
+        {
+            name: 'idx_is_finished_next_release_trade_allowance_date',
+            fields: ['is_finished', 'next_release_trade_allowance_date'],
+            using: 'BTREE'
         }
     ]
 })
