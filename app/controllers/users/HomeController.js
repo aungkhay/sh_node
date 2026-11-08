@@ -17351,7 +17351,7 @@ class Controller {
                 }
 
                 // Give shared home package if applicable
-                const contributePackageIds = boughtPackageIds ? boughtPackageIds.split('|')[0].split(',').filter(Boolean) : [];
+                const contributePackageIds = boughtPackageIds ? boughtPackageIds.split('|')[0].split('-') : [];
                 // check history if these packages are bought (distinct package_id)
                 const boughtHistory = await StrategyContributionPackageHistory.findAll({
                     where: {
@@ -17363,7 +17363,7 @@ class Controller {
                     transaction: t
                 });
 
-                if (contributePackageIds.length > 0 && boughtHistory.length === new Set(contributePackageIds).size) {
+                if (boughtHistory.length === contributePackageIds.length) {
 
                     const sharedHomePackageId = boughtPackageIds ? boughtPackageIds.split('|')[1] : null;
 
