@@ -7002,6 +7002,7 @@ class CronJob {
                     await user.update({ balance: afterBalance }, { transaction: t });
 
                     const updateData = {
+                        total_released_count: history.total_released_count + 1,
                         next_release_trade_allowance_date: moment().add(30, 'days').toDate()
                     }
                     if (history.total_released_count === history.release_count) {

@@ -18243,7 +18243,7 @@ class Controller {
                 where: { 
                     user_id: userId,
                 },
-                attributes: ['id', 'price', 'released_count', 'trade_allowance', 'annual_allowance', 'description', 'createdAt'],
+                attributes: ['id', 'price', 'total_released_count', 'trade_allowance', 'annual_allowance', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
