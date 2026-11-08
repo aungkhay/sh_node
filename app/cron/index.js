@@ -6828,7 +6828,8 @@ class CronJob {
         try {
             const histories = await StrategyContributionPackageHistory.findAll({
                 where: {
-                    is_finished: 1
+                    is_finished: 1,
+                    is_returned_contribute_amount: 0
                 },
                 attributes: ['id', 'user_id', 'package_id', 'contribute_amount', 'price', 'createdAt'],
                 order: [['id', 'ASC']]
@@ -6853,53 +6854,63 @@ class CronJob {
                     let beforeBalance = Number(user.balance); 
                     let afterBalance = Number(user.balance) + Number(history.contribute_amount);
 
-                    const cashflows = [];
-                    cashflows.push({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 2, // 余额
-                        model: 'StrategyContributionPackageHistory',
-                        type: '上合发展战略贡献',
-                        amount: Number(history.contribute_amount),
-                        before_amount: beforeBalance,
-                        after_amount: afterBalance,
-                        flow_status: 'IN',
-                        description: `发放战略贡献金`,
-                    });
-                    cashflows.push({
-                        user_id: user.id,
-                        relation: user.relation,
-                        wallet_type: 2, // 余额
-                        model: 'StrategyContributionPackageHistory',
-                        type: '上合发展战略贡献',
-                        amount: Number(history.price),
-                        before_amount: afterBalance,
-                        after_amount: afterBalance + Number(history.price),
-                        flow_status: 'IN',
-                        description: `返还申报费`,
-                    });
+                    const cashflows = [
+                        {
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 余额
+                            model: 'StrategyContributionPackageHistory',
+                            type: '上合发展战略贡献',
+                            amount: Number(history.contribute_amount),
+                            before_amount: beforeBalance,
+                            after_amount: afterBalance,
+                            flow_status: 'IN',
+                            description: `发放战略贡献金`,
+                        }
+                    ];
+                    
+                    if (!history.is_returned_price) {
+                        beforeBalance = afterBalance;
+                        afterBalance = afterBalance + Number(history.price);
+                        cashflows.push({
+                            user_id: user.id,
+                            relation: user.relation,
+                            wallet_type: 2, // 余额
+                            model: 'StrategyContributionPackageHistory',
+                            type: '上合发展战略贡献',
+                            amount: Number(history.price),
+                            before_amount: beforeBalance,
+                            after_amount: afterBalance,
+                            flow_status: 'IN',
+                            description: `返还申报费`,
+                        });
+                        await history.update({ is_returned_price: true }, { transaction: t });
+                    }
 
-                    const earns = [];
-                    earns.push({
-                        relation: user.relation,
-                        user_id: user.id,
-                        package_id: history.package_id,
-                        package_history_id: history.id,
-                        amount: Number(history.contribute_amount),
-                        type: 2 // 发放战略贡献金
-                    });
-                    earns.push({
-                        relation: user.relation,
-                        user_id: user.id,
-                        package_id: history.package_id,
-                        package_history_id: history.id,
-                        amount: Number(history.price),
-                        type: 1 // 返还申报费
-                    });
+                    const earns = [
+                        {
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            amount: Number(history.contribute_amount),
+                            type: 2 // 发放战略贡献金
+                        }
+                    ];
+                    if (!history.is_returned_price) {
+                        earns.push({
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            amount: Number(history.price),
+                            type: 1 // 返还申报费
+                        });
+                    }
 
                     await StrategyContributionPackageEarn.bulkCreate(earns, { transaction: t });
                     await CashFlow.bulkCreate(cashflows, { transaction: t });
-                    await user.increment({ balance: Number(history.contribute_amount) + Number(history.price) }, { transaction: t })
+                    await user.update({ balance: afterBalance }, { transaction: t });
 
                     await t.commit();
 

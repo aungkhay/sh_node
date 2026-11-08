@@ -90,11 +90,23 @@ StrategyContributionPackageHistory.init({
         defaultValue: 0,
         comment: '已缴纳总金额',
     },
+    is_returned_price: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已退还申报费',
+    },
+    is_returned_contribute_amount: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已退还战略贡献金',
+    },
     is_finished: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
-        comment: '是否完成',
+        comment: '是否缴纳完成',
     },
     is_gave_shared_home_package: {
         type: DataTypes.BOOLEAN,
@@ -134,6 +146,11 @@ StrategyContributionPackageHistory.init({
         {
             name: 'idx_package_id_user_id_is_gave_shared_home_package',
             fields: ['package_id', 'user_id', 'is_gave_shared_home_package'],
+            using: 'BTREE'
+        },
+        {
+            name: 'idx_is_returned_price_is_returned_contribute_amount',
+            fields: ['is_returned_price', 'is_returned_contribute_amount'],
             using: 'BTREE'
         }
     ]
