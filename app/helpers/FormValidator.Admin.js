@@ -1632,6 +1632,12 @@ exports.create_connectivity_theme_package = () => {
         check('connectivity_amount').not().isEmpty().withMessage('互联互通金不能为空')
             .bail()
             .isInt({ min: 1 }).withMessage('互联互通金必须是正整数'),
+        check('request_investment_period').not().isEmpty().withMessage('审核周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('审核周期必须是正整数'),
+        check('investment_amount').not().isEmpty().withMessage('优质投资金不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('优质投资金必须是正整数'),
         // perchase_limit 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
         check('purchase_limit').not().isEmpty().withMessage('购买限制不能为空')
             .bail()

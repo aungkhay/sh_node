@@ -2648,6 +2648,8 @@ const data = {
     price: 0, // 申购费
     period: 120, // 发放周期
     connectivity_amount: 600, // 互联互通金
+    request_investment_period: 10, // 审核周期(天)
+    investment_amount: 1200, // 优质投资金
     purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购
     quantity_limit: 0, // optional 限购数量
     total_quantity: 100, // 总发售数量

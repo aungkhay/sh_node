@@ -116,10 +116,12 @@ class CronJob {
         cron.schedule('0 5 * * *', this.SHARED_HOME_PACKAGE_EARN).start();
         // Run 1:20 AM Every 10th of the month
         cron.schedule('20 1 10 * *', this.CONNECTIVITY_THEME_PACKAGE_EARN).start();
-        // Run at 2 AM Every day
-        cron.schedule('0 2 * * *', this.RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN).start();
-        // Run at 6:00 AM Every day
-        cron.schedule('0 6 * * *', this.RETURN_ECONOMIC_TRADE_PACKAGE_EARN).start();
+        // Run at 6 AM Every day
+        cron.schedule('0 6 * * *', this.RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN).start();
+        // Run at 7:00 AM Every day
+        cron.schedule('0 7 * * *', this.RETURN_ECONOMIC_TRADE_PACKAGE_EARN).start(); // once/30 days
+        // Run at 8:00 AM Every day
+        cron.schedule('0 8 * * *', this.RETURN_CONNECTIVITY_INVESTMENT_AMOUNT).start(); // once/10 days
     }
 
     PAY_ALLOWANCE = async () => {
@@ -6790,6 +6792,7 @@ class CronJob {
                         package_id: history.package_id,
                         package_history_id: history.id,
                         amount: amount,
+                        type: 1, // 互联互通金
                     }, { transaction: t });
 
                     await CashFlow.create({
@@ -6802,7 +6805,7 @@ class CronJob {
                         before_amount: user.balance,
                         after_amount: Number(user.balance) + amount,
                         flow_status: 'IN',
-                        description: `${history.package ? history.package.product_name : ''}`,
+                        description: `互联互通金: ${history.package ? history.package.product_name : ''}`,
                     }, { transaction: t });
 
                     await user.increment({ balance: amount }, { transaction: t });
@@ -7016,6 +7019,73 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RETURN_ECONOMIC_TRADE_PACKAGE_EARN]: ${error.stack}`);
+        }
+    }
+
+    RETURN_CONNECTIVITY_INVESTMENT_AMOUNT = async () => {
+        try {
+            const histories = await ConnectivityThemePackageHistory.findAll({
+                include: [{
+                    model: ConnectivityThemePackage,
+                    as: 'package',
+                    attributes: ['product_name']
+                }],
+                where: {
+                    is_returned_investment_amount: false,
+                    returned_investment_amount_date: {
+                        [Op.lt]: moment().format('YYYY-MM-DD')
+                    }
+                }
+            });
+
+            for (const history of histories) {
+                if (!history.investment_amount || Number(history.investment_amount) <= 0 || !history.returned_investment_amount_date) {
+                    continue;
+                }
+
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+
+                    const beforeBalance = user.balance;
+                    const afterBalance = beforeBalance + Number(history.investment_amount);
+                    await ConnectivityThemePackageEarn.create({
+                        relation: user.relation,
+                        user_id: user.id,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: history.investment_amount,
+                        type: 2, // 优质投资金
+                    }, { transaction: t });
+
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 2, // 余额
+                        model: 'ConnectivityThemePackageHistory',
+                        type: '上合互联互通计划收益',
+                        amount: history.investment_amount,
+                        before_amount: beforeBalance,
+                        after_amount: afterBalance,
+                        flow_status: 'IN',
+                        description: `优质投资金: ${history.package ? history.package.product_name : ''}`,
+                    }, { transaction: t });
+
+                    await user.update({ balance: afterBalance }, { transaction: t });
+                    await history.update({ is_returned_investment_amount: true }, { transaction: t });
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[RETURN_CONNECTIVITY_INVESTMENT_AMOUNT]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[RETURN_CONNECTIVITY_INVESTMENT_AMOUNT]: ${error.stack}`);
         }
     }
 

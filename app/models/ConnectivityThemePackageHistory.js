@@ -58,6 +58,29 @@ ConnectivityThemePackageHistory.init({
         defaultValue: 0,
         comment: '互联互通金',
     },
+    request_investment_period: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '审核周期(天)',
+    },
+    investment_amount: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '优质投资金',
+    },
+    returned_investment_amount_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: '归还优质投资金日期',
+    },
+    is_returned_investment_amount: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已归还优质投资金',
+    },
     total_released_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -97,6 +120,11 @@ ConnectivityThemePackageHistory.init({
         {
             name: 'idx_is_finished',
             fields: ['is_finished'],
+            using: 'BTREE'
+        },
+        {
+            name: 'idx_is_returned_investment_amount_returned_investment_amount_date',
+            fields: ['is_returned_investment_amount', 'returned_investment_amount_date'],
             using: 'BTREE'
         }
     ]

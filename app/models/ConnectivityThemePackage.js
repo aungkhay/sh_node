@@ -44,6 +44,18 @@ ConnectivityThemePackage.init({
         defaultValue: 0,
         comment: '互联互通金',
     },
+    request_investment_period: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: '审核周期(天)',
+    },
+    investment_amount: {
+        type: DataTypes.DECIMAL(20, 8),
+        allowNull: false,
+        defaultValue: 0,
+        comment: '优质投资金',
+    },
     purchase_limit: {
         type: DataTypes.ENUM('NONE', 'DAILY', 'TOTAL'),
         allowNull: false,

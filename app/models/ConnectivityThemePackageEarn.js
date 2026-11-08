@@ -52,6 +52,11 @@ ConnectivityThemePackageEarn.init({
         allowNull: false,
         defaultValue: 0,
     },
+    type: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: '类型: 1-互联互通金 | 2-优质投资金',
+    },
     description: {
         type: DataTypes.STRING,
         allowNull: true,

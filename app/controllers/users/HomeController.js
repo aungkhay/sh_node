@@ -16836,6 +16836,9 @@ class Controller {
                             price: index === 0 ? gPackage.price : 0,
                             period: gPackage.period,
                             connectivity_amount: gPackage.connectivity_amount,
+                            request_investment_period: gPackage.request_investment_period,
+                            investment_amount: gPackage.investment_amount,
+                            returned_investment_amount_date: gPackage.request_investment_period > 0 ? moment().add(gPackage.request_investment_period + 1, 'days').toDate() : null,
                             package_id: gPackage.id,
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
@@ -16850,6 +16853,9 @@ class Controller {
                         price: gPackage.price,
                         period: gPackage.period,
                         connectivity_amount: gPackage.connectivity_amount,
+                        request_investment_period: gPackage.request_investment_period,
+                        investment_amount: gPackage.investment_amount,
+                        returned_investment_amount_date: gPackage.request_investment_period > 0 ? moment().add(gPackage.request_investment_period + 1, 'days').toDate() : null,
                         package_id: gPackage.id,
                     }
 
