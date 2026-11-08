@@ -6968,7 +6968,7 @@ class CronJob {
                             package_id: history.package_id,
                             package_history_id: history.id,
                             amount: history.trade_allowance,
-                            type: '多边经贸金'
+                            type: 2, // '多边经贸金'
                         }
                     ]
 
@@ -6993,7 +6993,7 @@ class CronJob {
                             package_id: history.package_id,
                             package_history_id: history.id,
                             amount: history.price,
-                            type: '申购费'
+                            type: 1, // '申购费'
                         });
                     }
                     
@@ -7004,6 +7004,9 @@ class CronJob {
                     const updateData = {
                         total_released_count: history.total_released_count + 1,
                         next_release_trade_allowance_date: moment().add(30, 'days').toDate()
+                    }
+                    if (!history.is_returned_price) {
+                        updateData.is_returned_price = true;
                     }
                     if (history.total_released_count === history.release_count) {
                         updateData.is_finished = true;
