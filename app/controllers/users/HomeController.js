@@ -17348,7 +17348,7 @@ class Controller {
                 const bonuses = [];
                 const cashFlows = [];
                 for (let index = 0; index < upLevelIds.length; index++) {
-                    const bonus = new Decimal(gPackage.price)
+                    const bonus = new Decimal(payment_type == 2 ? gPackage.price : gPackage.payment_per_period)
                         .times(Number(bonusArr[index]))
                         .times(0.01)
                         .toNumber();
@@ -17424,7 +17424,7 @@ class Controller {
                 where: { 
                     user_id: userId,
                 },
-                attributes: ['id', 'price', 'total_paid_amount', 'period', 'payment_per_period', 'contribute_amount', 'next_payment_date', 'description', 'createdAt'],
+                attributes: ['id', 'price', 'total_paid_amount', 'period', 'payment_type', 'payment_per_period', 'contribute_amount', 'next_payment_date', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
@@ -17703,6 +17703,66 @@ class Controller {
                             }
                         }
                     }
+                }
+
+                const bonusArr = [15, 7, 3];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
+                commonLogger(`[STRATEGY_CONTRIBUTION_PAYMENT] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[STRATEGY_CONTRIBUTION_PAYMENT] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type', 'balance'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                const cashFlows = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(payment_amount)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[STRATEGY_CONTRIBUTION_PAYMENT] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+
+                    cashFlows.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        wallet_type: 2,
+                        model: 'StrategyContributionPackageBonuses',
+                        type: `下级缴纳上合发展战略贡献计划奖励`,
+                        amount: bonus,
+                        before_amount: Number(upLevelUser.balance),
+                        after_amount: Number(upLevelUser.balance) + Number(bonus),
+                        flow_status: 'IN',
+                        description: `${history.package.product_name}`
+                    });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: pkgHistory[0].id
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await StrategyContributionPackageBonuses.bulkCreate(bonuses, { transaction: t });
+                    await CashFlow.bulkCreate(cashFlows, { transaction: t });
                 }
 
                 await t.commit();
