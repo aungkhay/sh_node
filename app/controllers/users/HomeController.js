@@ -17255,7 +17255,7 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '支付密码错误', {});
             }
 
-            let reserveAmount = payment_type == 2 ? Number(gPackage.price) : Number(history.payment_per_period);
+            let reserveAmount = payment_type == 2 ? Number(gPackage.price) : Number(gPackage.payment_per_period);
             if (Number(user.reserve_fund) < reserveAmount) {
                 await this.redisHelper.deleteKey(PROCESSING_KEY);
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
