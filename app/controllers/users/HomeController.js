@@ -17424,7 +17424,7 @@ class Controller {
                 where: { 
                     user_id: userId,
                 },
-                attributes: ['id', 'price', 'period', 'payment_per_period', 'contribute_amount', 'next_payment_date', 'description', 'createdAt'],
+                attributes: ['id', 'price', 'total_paid_amount', 'period', 'payment_per_period', 'contribute_amount', 'next_payment_date', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
