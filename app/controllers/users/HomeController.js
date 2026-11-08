@@ -17323,6 +17323,7 @@ class Controller {
                             period: gPackage.period,
                             payment_per_period: gPackage.payment_per_period,
                             contribute_amount: gPackage.contribute_amount,
+                            next_payment_date: moment().add(gPackage.period, 'days').toDate(),
                             package_id: gPackage.id,
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
@@ -17338,6 +17339,7 @@ class Controller {
                         period: gPackage.period,
                         payment_per_period: gPackage.payment_per_period,
                         contribute_amount: gPackage.contribute_amount,
+                        next_payment_date: moment().add(gPackage.period, 'days').toDate(),
                         package_id: gPackage.id,
                     }
 
