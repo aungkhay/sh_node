@@ -123,7 +123,7 @@ ConnectivityThemePackageHistory.init({
             using: 'BTREE'
         },
         {
-            name: 'idx_is_returned_investment_amount_returned_investment_amount_date',
+            name: 'idx_is_returned_investment',
             fields: ['is_returned_investment_amount', 'returned_investment_amount_date'],
             using: 'BTREE'
         }
