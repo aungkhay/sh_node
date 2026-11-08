@@ -550,6 +550,13 @@ module.exports = async () => {
             data_type: 'integer'
         },
         {
+            type: 'connectivity_theme_get_shared_home_id',
+            title: '上合互联互通计划 - 获取共建共同家园计划ID',
+            val: '1',
+            description: '-',
+            data_type: 'integer'
+        },
+        {
             type: 'strategy_contribution_package_description',
             title: '上合发展战略贡献 - 描述',
             val: '<p></p>',

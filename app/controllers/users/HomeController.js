@@ -17826,7 +17826,7 @@ class Controller {
             // 每推荐两个新用户激活赠送一个方案A ，推荐4个赠送2个，以此类推
 
             const desc = '推荐两名新用户免费领取共建共同家园方案';
-            const childCount = await User.count({ where: { parent_id: userId } });
+            const childCount = await User.count({ where: { parent_id: userId, initial_buy_product_date: { [Op.ne]: null } } });
             const historyCount = await SharedHomePackageHistory.count({
                 where: {
                     user_id: userId,
@@ -17843,12 +17843,15 @@ class Controller {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount - childCount}名新用户。`, {});
             }
 
-            const pkg = await SharedHomePackage.findOne({ 
-                where: {
-                    status: 1
-                },
-                order: [['id', 'ASC']]
-            });
+            let pkg = null;
+            let pkgId = await this.redisHelper.getValue('connectivity_theme_get_shared_home_id');
+            if (pkgId) {
+                pkg = await SharedHomePackage.findOne({ 
+                    where: {
+                        id: Number(pkgId)
+                    }
+                });
+            }
             if (!pkg) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无可领取共建共同家园方案', {});
             }
