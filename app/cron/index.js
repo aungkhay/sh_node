@@ -7092,6 +7092,7 @@ class CronJob {
                 }],
                 where: {
                     is_returned_investment_amount: false,
+                    investment_amount: { [Op.gt]: 0 },
                     returned_investment_amount_date: {
                         [Op.lt]: moment().format('YYYY-MM-DD')
                     }
@@ -7111,7 +7112,7 @@ class CronJob {
                         continue;
                     }
 
-                    const beforeBalance = user.balance;
+                    const beforeBalance = Number(user.balance);
                     const afterBalance = beforeBalance + Number(history.investment_amount);
                     await ConnectivityThemePackageEarn.create({
                         relation: user.relation,

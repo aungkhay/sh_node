@@ -18130,6 +18130,9 @@ class Controller {
                     period: pkg.period,
                     connectivity_amount: pkg.connectivity_amount,
                     package_id: pkg.id,
+                    request_investment_period: pkg.request_investment_period,
+                    investment_amount: pkg.investment_amount,
+                    returned_investment_amount_date: pkg.returned_investment_amount_date,
                     description: desc
                 }, { transaction: t });
 
@@ -18151,6 +18154,7 @@ class Controller {
                 await t.commit();
                 return MyResponse(res, this.ResCode.SUCCESS.code, true, '领取成功', {});
             } catch (error) {
+                console.log(error);
                 await t.rollback();
                 errLogger(`[NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE][${req.user_id}]: ${error.stack}`);
                 return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
