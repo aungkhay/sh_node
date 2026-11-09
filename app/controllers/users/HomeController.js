@@ -17299,7 +17299,7 @@ class Controller {
                             total_paid_count: 1,
                             total_paid_amount: index === 0 ? reserveAmount : 0,
                             contribute_amount: gPackage.contribute_amount,
-                            next_payment_date: moment().add(gPackage.period, 'days').toDate(),
+                            next_payment_date: payment_type == 2 ? new Date() : moment().add(gPackage.period, 'days').toDate(),
                             package_id: gPackage.id,
                             is_finished: payment_type == 2 ? true : false,
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
@@ -17319,7 +17319,7 @@ class Controller {
                         total_paid_count: 1,
                         total_paid_amount: reserveAmount,
                         contribute_amount: gPackage.contribute_amount,
-                        next_payment_date: moment().add(gPackage.period, 'days').toDate(),
+                        next_payment_date: payment_type == 2 ? new Date() : moment().add(gPackage.period, 'days').toDate(),
                         package_id: gPackage.id,
                         is_finished: payment_type == 2 ? true : false,
                     }
@@ -17701,7 +17701,7 @@ class Controller {
                 await history.update({
                     total_paid_count: totalPaidCount,
                     total_paid_amount: paidAmount,
-                    next_payment_date: isFinished ? history.next_payment_date : nextPaymentDate,
+                    next_payment_date: isFinished ? new Date() : nextPaymentDate,
                     is_finished: isFinished
                 }, { transaction: t });
 
@@ -17909,7 +17909,7 @@ class Controller {
                 await history.update({
                     total_paid_count: Number(history.total_paid_count) + 1,
                     total_paid_amount: Number(history.price),
-                    next_payment_date: null,
+                    next_payment_date: new Date(),
                     is_finished: true
                 }, { transaction: t });
 
