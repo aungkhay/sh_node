@@ -1259,6 +1259,9 @@ const url = `${baseURL}/strategy-contribution-packages/check-next-payment-date`;
 
 // [POST] Payment
 const url = `${baseURL}/strategy-contribution-packages/${historyId}/payment`;
+
+// [POST] Pay All
+const url = `${baseURL}/strategy-contribution-packages/history/${historyId}/pay-all`;
 ```
 
 ### 多边经贸合作措施计划

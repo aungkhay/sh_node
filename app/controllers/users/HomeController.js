@@ -17508,7 +17508,7 @@ class Controller {
                 where: { 
                     user_id: userId,
                 },
-                attributes: ['id', 'price', 'total_paid_amount', 'period', 'payment_type', 'payment_per_period', 'contribute_amount', 'next_payment_date', 'description', 'createdAt'],
+                attributes: ['id', 'price', 'total_paid_amount', 'period', 'payment_type', 'payment_per_period', 'contribute_amount', 'next_payment_date', 'description', 'is_finished', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
                 offset: offset,
@@ -17860,6 +17860,212 @@ class Controller {
 
         } catch (error) {
             errLogger(`[STRATEGY_CONTRIBUTION_PAYMENT][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    STRATEGY_CONTRIBUTION_PAY_ALL = async (req, res) => {
+        try {
+            const userId = req.user_id;
+            const historyId = req.params.id;
+
+            const history = await StrategyContributionPackageHistory.findOne({
+                include: {
+                    model: StrategyContributionPackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name', 'period']
+                },
+                where: { id: historyId, user_id: userId }
+            });
+            if (!history) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '记录不存在', {});
+            }
+
+            if (history.is_finished) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '该记录已完成缴纳', {});
+            }
+
+            let payment_amount = Number(history.price) - Number(history.total_paid_amount);
+            const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'reserve_fund'] });
+            if (Number(user.reserve_fund) < payment_amount) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '储备金不足', {});
+            }
+
+            const t = await db.transaction();
+            try {
+                await CashFlow.create({
+                    user_id: user.id,
+                    relation: user.relation,
+                    wallet_type: 1, // 储备金
+                    model: 'StrategyContributionPackageHistory',
+                    type: '上合发展战略贡献',
+                    amount: payment_amount,
+                    before_amount: user.reserve_fund,
+                    after_amount: Number(user.reserve_fund) - payment_amount,
+                    flow_status: 'OUT',
+                    description: `缴纳 ${payment_amount} 元 |【订单：${historyId}】| ${history.package ? history.package.product_name : ''}`,
+                }, { transaction: t });
+
+                await history.update({
+                    total_paid_count: Number(history.total_paid_count) + 1,
+                    total_paid_amount: Number(history.price),
+                    next_payment_date: null,
+                    is_finished: true
+                }, { transaction: t });
+
+                await user.increment({ reserve_fund: -payment_amount }, { transaction: t });
+
+                // Give shared home package if applicable
+                let boughtPackageIds = await this.redisHelper.getValue('buy_strategy_contribution_packages_give_shared_home_package');
+                if (!boughtPackageIds) {
+                    const conf = await Config.findOne({ where: { type: 'buy_strategy_contribution_packages_give_shared_home_package' } });
+                    if (conf) {
+                        boughtPackageIds = conf.val;
+                        await this.redisHelper.setValue('buy_strategy_contribution_packages_give_shared_home_package', boughtPackageIds);
+                    }
+                }
+                const contributePackageIds = boughtPackageIds ? boughtPackageIds.split('|')[0].split('-') : [];
+                const paymentCompletedCount = await StrategyContributionPackageHistory.count({
+                    distinct: true,
+                    col: 'package_id',
+                    where: {
+                        package_id: { [Op.in]: contributePackageIds },
+                        user_id: user.id,
+                        is_finished: true,
+                        is_gave_shared_home_package: false
+                    },
+                    transaction: t
+                });
+
+                if (paymentCompletedCount === contributePackageIds.length) {
+                    
+                    // check history if these packages are bought (distinct package_id)
+                    const boughtHistory = await StrategyContributionPackageHistory.findAll({
+                        where: {
+                            package_id: { [Op.in]: contributePackageIds },
+                            user_id: user.id,
+                            is_gave_shared_home_package: false
+                        },
+                        attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('package_id')), 'package_id']],
+                        transaction: t
+                    });
+
+                    if (boughtHistory.length === contributePackageIds.length) {
+
+                        const sharedHomePackageId = boughtPackageIds ? boughtPackageIds.split('|')[1] : null;
+
+                        if (sharedHomePackageId) {
+
+                            const sharedHomePackage = await SharedHomePackage.findByPk(sharedHomePackageId, { transaction: t });
+                            if (sharedHomePackage) {
+                                // Grant shared home package to the user
+                                await SharedHomePackageHistory.create({
+                                    relation: user.relation,
+                                    user_id: user.id,
+                                    price: 0,
+                                    package_id: sharedHomePackageId,
+                                    total_month: sharedHomePackage.total_month,
+                                    earn_count_per_month: sharedHomePackage.earn_count_per_month,
+                                    earn_amount_per_count: sharedHomePackage.earn_amount_per_count,
+                                    share_amount: sharedHomePackage.share_amount,
+                                    release_earn_count_at: sharedHomePackage.release_earn_count_at,
+                                    month: 1,
+                                    start_release_at: moment().add(6, 'days').toDate(),
+                                    description: `Reward from strategy contribution package`,
+                                    remark: `STRATEGY_CONTRIBUTION_PACKAGE_REWARD`
+                                }, { transaction: t });
+
+                                for (const item of boughtHistory) {
+                                    const oldest = await StrategyContributionPackageHistory.findOne({
+                                        where: {
+                                            package_id: item.package_id,
+                                            user_id: user.id,
+                                            is_gave_shared_home_package: false
+                                        },
+                                        order: [['createdAt', 'ASC'], ['id', 'ASC']],
+                                        transaction: t
+                                    });
+                                    if (oldest) {
+                                        await oldest.update(
+                                            { is_gave_shared_home_package: true },
+                                            { transaction: t }
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const bonusArr = [15, 7, 3];
+                const relationArr = user.relation.split('/');
+                const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
+                commonLogger(`[STRATEGY_CONTRIBUTION_PAY_ALL] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[STRATEGY_CONTRIBUTION_PAY_ALL] Uplines: ${upLevelIds.join(',')}`);
+
+                const upLevelUsers = await User.findAll({
+                    where: {
+                        id: { [Op.in]: upLevelIds }
+                    },
+                    attributes: ['id', 'relation', 'type', 'balance'],
+                    transaction: t,
+                });
+
+                const bonuses = [];
+                const cashFlows = [];
+                for (let index = 0; index < upLevelIds.length; index++) {
+                    const bonus = new Decimal(payment_amount)
+                        .times(Number(bonusArr[index]))
+                        .times(0.01)
+                        .toNumber();
+
+                    if (bonus <= 0) {
+                        continue;
+                    }
+
+                    const upLevelUser = upLevelUsers.find(u => u.id == upLevelIds[index]);
+                    if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
+                        continue;
+                    }
+                    commonLogger(`[STRATEGY_CONTRIBUTION_PAY_ALL] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+
+                    cashFlows.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        wallet_type: 2,
+                        model: 'StrategyContributionPackageBonuses',
+                        type: `下级缴纳上合发展战略贡献计划奖励`,
+                        amount: bonus,
+                        before_amount: Number(upLevelUser.balance),
+                        after_amount: Number(upLevelUser.balance) + Number(bonus),
+                        flow_status: 'IN',
+                        description: `${history.package.product_name}`
+                    });
+
+                    await upLevelUser.increment({ balance: bonus }, { transaction: t });
+
+                    bonuses.push({
+                        relation: upLevelUser.relation,
+                        user_id: upLevelUser.id,
+                        from_user_id: user.id,
+                        amount: bonus,
+                        package_history_id: history.id
+                    });
+                }
+                if (bonuses.length > 0) {
+                    await StrategyContributionPackageBonuses.bulkCreate(bonuses, { transaction: t });
+                    await CashFlow.bulkCreate(cashFlows, { transaction: t });
+                }
+
+                await t.commit();
+            } catch (error) {
+                console.log(error);
+                await t.rollback();
+                errLogger(`[STRATEGY_CONTRIBUTION_PAY_ALL][${req.user_id}]: ${error.stack}`);
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '缴纳失败', {});
+            }
+        } catch (error) {
+            errLogger(`[STRATEGY_CONTRIBUTION_PAY_ALL][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
