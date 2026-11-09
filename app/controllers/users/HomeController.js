@@ -18058,6 +18058,8 @@ class Controller {
                 }
 
                 await t.commit();
+
+                return MyResponse(res, this.ResCode.SUCCESS.code, true, '缴纳成功', {});
             } catch (error) {
                 console.log(error);
                 await t.rollback();
