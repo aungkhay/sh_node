@@ -6765,6 +6765,9 @@ class CronJob {
 
     CONNECTIVITY_THEME_PACKAGE_EARN = async () => {
         try {
+            const today = moment().startOf('day');
+            const startOfDay = moment().startOf('day');
+
             const histories = await ConnectivityThemePackageHistory.findAll({
                 include: {
                     model: ConnectivityThemePackage,
@@ -6772,7 +6775,10 @@ class CronJob {
                     attributes: ['id', 'product_name']
                 },
                 where: {
-                    is_finished: 0
+                    is_finished: 0,
+                    createdAt: {
+                        [Op.lt]: startOfDay
+                    }
                 }
             });
 
