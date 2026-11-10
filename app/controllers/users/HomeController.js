@@ -18117,9 +18117,9 @@ class Controller {
                 pkg = JSON.parse(pkg);
             }
             
-            if (Number(pkg.status) === 2) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '免费方案已下架', {});
-            }
+            // if (Number(pkg.status) === 2) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '免费方案已下架', {});
+            // }
 
             const t = await db.transaction();
             try {
