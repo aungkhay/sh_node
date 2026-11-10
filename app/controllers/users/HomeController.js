@@ -17647,7 +17647,19 @@ class Controller {
     }
 
     STRATEGY_CONTRIBUTION_PAYMENT = async (req, res) => {
+        const lockKey = `lock:strategy-contribution-payment:${req.ip}`;
+        let redisLocked = false;
+
         try {
+
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const userId = req.user_id;
             const historyId = req.params.id;
 
@@ -17865,7 +17877,19 @@ class Controller {
     }
 
     STRATEGY_CONTRIBUTION_PAY_ALL = async (req, res) => {
+        const lockKey = `lock:strategy-contribution-pay-all:${req.ip}`;
+        let redisLocked = false;
+
         try {
+
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+            
             const userId = req.user_id;
             const historyId = req.params.id;
 
@@ -18073,7 +18097,19 @@ class Controller {
     }
 
     NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE = async (req, res) => {
+        const lockKey = `lock:free-connectivity-theme-package:${req.ip}`;
+        let redisLocked = false;
+
         try {
+            
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const userId = req.user_id;
             const startTime = '2026-11-10 01:30:00';
             const now = new Date();
@@ -18169,7 +18205,19 @@ class Controller {
     }
 
     NEW_REGISTER_USER_GET_FREE_SHARED_HOME_PACKAGE = async (req, res) => {
+        const lockKey = `lock:free-shared-home-package:${req.ip}`;
+        let redisLocked = false;
+
         try {
+
+            /* ===============================
+            * REDIS LOCK (ANTI FAST-CLICK)
+            * =============================== */
+            redisLocked = await this.redisHelper.setLock(lockKey, 1, 10);
+            if (redisLocked !== 'OK') {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '操作过快，请稍后再试', {});
+            }
+
             const userId = req.user_id;
 
             const user = await User.findByPk(userId, { attributes: ['id', 'relation', 'createdAt'] });
