@@ -8176,6 +8176,77 @@ class CronJob {
             throw error;
         }
     };
+
+    // NOT CRON
+    REVOKE_SHARED_HOME_PACKAGE = async (req, res) => {
+        try {
+            // distinct user_id
+            const histories = await SharedHomePackageHistory.findAll({
+                attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('user_id')), 'user_id']],
+                where: {
+                    price: 0,
+                    package_id: 11,
+                    createdAt: { [Op.gt]: '2026-11-10' },
+                    description: '推荐两名新用户免费领取共建共同家园方案'
+                }
+            });
+
+            for (const history of histories) {
+                const userId = history.user_id;
+                const childCount = await User.count({
+                    where: {
+                        parent_id: userId,
+                        initial_buy_product_date: { [Op.ne]: null },
+                        createdAt: { [Op.gt]: '2026-11-10' }
+                    }
+                });
+                if (childCount < 2) {
+                    await SharedHomePackageHistory.destroy({
+                        where: {
+                            user_id: userId,
+                            price: 0,
+                            package_id: 11,
+                            createdAt: { [Op.gt]: '2026-11-10' },
+                            description: '推荐两名新用户免费领取共建共同家园方案'
+                        }
+                    });
+
+                    console.log(`[REVOKE_SHARED_HOME_PACKAGE] Revoked for user_id: ${userId}`);
+                } else {
+                    const historyCount = await SharedHomePackageHistory.count({
+                        where: {
+                            user_id: userId,
+                            price: 0,
+                            package_id: 11,
+                            createdAt: { [Op.gt]: '2026-11-10' },
+                            description: '推荐两名新用户免费领取共建共同家园方案'
+                        }
+                    });
+                    
+                    // 2 children equal 1 history
+                    const mustHaveHistoryCount = Math.floor(childCount / 2);
+                    // keep mustHaveHistoryCount and revoke the rest
+                    if (historyCount > mustHaveHistoryCount) {
+                        await SharedHomePackageHistory.destroy({
+                            where: {
+                                user_id: userId,
+                                price: 0,
+                                package_id: 11,
+                                createdAt: { [Op.gt]: '2026-11-10' },
+                                description: '推荐两名新用户免费领取共建共同家园方案'
+                            },
+                            limit: historyCount - mustHaveHistoryCount
+                        });
+                        console.log(`[REVOKE_SHARED_HOME_PACKAGE] Revoked excess histories for user_id: ${userId}`);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('[REVOKE_SHARED_HOME_PACKAGE] Failed:', error);
+            errLogger(`[REVOKE_SHARED_HOME_PACKAGE]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
 }
 
 module.exports = CronJob;
