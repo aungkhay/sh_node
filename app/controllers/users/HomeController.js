@@ -18230,7 +18230,11 @@ class Controller {
             // 每推荐两个新用户激活赠送一个方案A ，推荐4个赠送2个，以此类推
 
             const desc = '推荐两名新用户免费领取共建共同家园方案';
-            const childCount = await User.count({ where: { parent_id: userId, initial_buy_product_date: { [Op.ne]: null } } });
+            const childCount = await User.count({ where: { 
+                parent_id: userId, 
+                initial_buy_product_date: { [Op.ne]: null },
+                createdAt: { [Op.gt]: '2026-11-10' }
+            }});
             const historyCount = await SharedHomePackageHistory.count({
                 where: {
                     user_id: userId,
