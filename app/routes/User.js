@@ -209,7 +209,9 @@ class UserRoute extends express.Router {
         this.get('/strategy-contribution-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PACKAGE_BONUS_HISTORY);
         this.get('/strategy-contribution-packages/check-next-payment-date', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_CHECK_NEXT_PAYMENT_DATE);
         this.post('/strategy-contribution-packages/:id/payment', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PAYMENT);
+        this.get('/free-connectivity-theme-package', middleware.isLoggedIn, HomeCtrl.FREE_CONNECTIVITY_THEME_PACKAGE);
         this.post('/new-register-user/get-free-connectivity-theme-package', middleware.isLoggedIn, HomeCtrl.NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE);
+        this.get('/free-shared-home-package', middleware.isLoggedIn, HomeCtrl.FREE_SHARED_HOME_PACKAGE);
         this.post('/new-register-user/get-free-shared-home-package', middleware.isLoggedIn, HomeCtrl.NEW_REGISTER_USER_GET_FREE_SHARED_HOME_PACKAGE);
         this.post('/strategy-contribution-packages/history/:id/pay-all', middleware.isLoggedIn, HomeCtrl.STRATEGY_CONTRIBUTION_PAY_ALL);
         // Economic Trade Package Routes

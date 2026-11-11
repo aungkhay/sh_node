@@ -16472,6 +16472,7 @@ class Controller {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
+            const isFree = parseInt(req.query.isFree || 0);
 
             const { rows, count } = await SharedHomePackageHistory.findAndCountAll({
                 include: {
@@ -16481,6 +16482,7 @@ class Controller {
                 },
                 where: { 
                     user_id: userId,
+                    price: isFree ? 0 : { [Op.gt]: 0 }
                 },
                 attributes: ['id', 'price', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
@@ -16951,6 +16953,7 @@ class Controller {
             const page = parseInt(req.query.page || 1);
             const perPage = parseInt(req.query.perPage || 10);
             const offset = this.getOffset(page, perPage);
+            const isFree = parseInt(req.query.isFree || 0);
 
             const { rows, count } = await ConnectivityThemePackageHistory.findAndCountAll({
                 include: {
@@ -16960,6 +16963,7 @@ class Controller {
                 },
                 where: { 
                     user_id: userId,
+                    price: isFree ? 0 : { [Op.gt]: 0 }
                 },
                 attributes: ['id', 'price', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
@@ -18096,6 +18100,27 @@ class Controller {
         }
     }
 
+    FREE_CONNECTIVITY_THEME_PACKAGE = async (req, res) => {
+        try {
+            let pkg = await this.redisHelper.getValue('free_connectivity_theme_package');
+            if (!pkg) {
+                const connectivityPackage = await ConnectivityThemePackage.findByPk(1);
+                if (!connectivityPackage) {
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '免费方案不存在', {});
+                }
+                await this.redisHelper.setValue('free_connectivity_theme_package', JSON.stringify(connectivityPackage));
+                pkg = connectivityPackage;
+            } else {
+                pkg = JSON.parse(pkg);
+            }
+
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { package: pkg });
+        } catch (error) {
+            errLogger(`[FREE_CONNECTIVITY_THEME_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
     NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE = async (req, res) => {
         const lockKey = `lock:free-connectivity-theme-package:${req.ip}`;
         let redisLocked = false;
@@ -18200,6 +18225,27 @@ class Controller {
 
         } catch (error) {
             errLogger(`[NEW_REGISTER_USER_GET_FREE_CONNECTIVITY_THEME_PACKAGE][${req.user_id}]: ${error.stack}`);
+            return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
+        }
+    }
+
+    FREE_SHARED_HOME_PACKAGE = async (req, res) => {
+        try {
+            let pkg = null;
+            let pkgId = await this.redisHelper.getValue('connectivity_theme_get_shared_home_id');
+            if (pkgId) {
+                pkg = await SharedHomePackage.findOne({ 
+                    where: {
+                        id: Number(pkgId)
+                    }
+                });
+            }
+            if (!pkg) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '暂无可领取共建共同家园方案', {});
+            }
+            return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { package: pkg });
+        } catch (error) {
+            errLogger(`[FREE_SHARED_HOME_PACKAGE][${req.user_id}]: ${error.stack}`);
             return MyResponse(res, this.ResCode.SERVER_ERROR.code, false, this.ResCode.SERVER_ERROR.msg, {});
         }
     }
