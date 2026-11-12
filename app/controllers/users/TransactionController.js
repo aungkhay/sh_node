@@ -1702,6 +1702,10 @@ class Controller {
                     useMaster: true
                 });
 
+                if (amount < 0) {
+                    throw new Error('转账金额必须是大于0');
+                }
+
                 if (amount > user.balance) {
                     throw new Error('余额不足');
                 }
@@ -2399,6 +2403,10 @@ class Controller {
         let redisLocked = false;
 
         try {
+
+            // disabled
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂时不可用', {});
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */

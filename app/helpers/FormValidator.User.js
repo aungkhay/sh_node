@@ -274,8 +274,8 @@ exports.transfer = () => {
     return [
         check('amount').not().isEmpty().withMessage('转账金额不能为空')
             .bail()
-            .isNumeric()
-            .withMessage('转账金额必须是数字')
+            .isFloat({ gt: 0 })
+            .withMessage('转账金额必须是大于0的数字')
     ]
 }
 
