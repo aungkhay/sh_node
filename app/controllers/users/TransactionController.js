@@ -1702,6 +1702,10 @@ class Controller {
                     useMaster: true
                 });
 
+                if (amount < 0) {
+                    throw new Error('转账金额必须是大于0');
+                }
+
                 if (amount > user.balance) {
                     throw new Error('余额不足');
                 }
