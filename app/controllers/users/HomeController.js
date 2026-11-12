@@ -16474,16 +16474,17 @@ class Controller {
             const offset = this.getOffset(page, perPage);
             const isFree = parseInt(req.query.isFree || 0);
 
+            const where = { user_id: userId };
+            if (isFree) {
+                where.price = 0;
+            }
             const { rows, count } = await SharedHomePackageHistory.findAndCountAll({
                 include: {
                     model: SharedHomePackage,
                     as: 'package',
                     attributes: ['id', 'product_name']
                 },
-                where: { 
-                    user_id: userId,
-                    price: isFree ? 0 : { [Op.gt]: 0 }
-                },
+                where: where,
                 attributes: ['id', 'price', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
@@ -16955,16 +16956,17 @@ class Controller {
             const offset = this.getOffset(page, perPage);
             const isFree = parseInt(req.query.isFree || 0);
 
+            const where = { user_id: userId };
+            if (isFree) {
+                where.price = 0;
+            }
             const { rows, count } = await ConnectivityThemePackageHistory.findAndCountAll({
                 include: {
                     model: ConnectivityThemePackage,
                     as: 'package',
                     attributes: ['id', 'product_name']
                 },
-                where: { 
-                    user_id: userId,
-                    price: isFree ? 0 : { [Op.gt]: 0 }
-                },
+                where: where,
                 attributes: ['id', 'price', 'description', 'createdAt'],
                 order: [['id', 'DESC']],
                 limit: perPage,
@@ -18193,9 +18195,6 @@ class Controller {
                     period: pkg.period,
                     connectivity_amount: pkg.connectivity_amount,
                     package_id: pkg.id,
-                    request_investment_period: pkg.request_investment_period,
-                    investment_amount: pkg.investment_amount,
-                    returned_investment_amount_date: pkg.returned_investment_amount_date,
                     description: desc
                 }, { transaction: t });
 
