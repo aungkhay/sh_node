@@ -18287,7 +18287,7 @@ class Controller {
                 }
             });
 
-            if (childCount < 2 || childCount % 2 !== 0) {
+            if (childCount < 2) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '推荐用户数量不符合领取条件', {});
             }
 
