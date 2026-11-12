@@ -2399,6 +2399,10 @@ class Controller {
         let redisLocked = false;
 
         try {
+
+            // disabled
+            return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '功能暂时不可用', {});
+
             /* ===============================
             * REDIS LOCK (ANTI FAST-CLICK)
             * =============================== */
