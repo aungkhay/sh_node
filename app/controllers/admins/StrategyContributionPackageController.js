@@ -214,12 +214,25 @@ class Controller {
             }) || 0;
             const externalUserBought = totalBought - internalUserBought;
 
+            const totalPaidAmount = await StrategyContributionPackageHistory.sum('total_paid_amount', {
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: [],
+                        where: userCondition
+                    }
+                ],
+                where: { ...condition, price: { [Op.gt]: 0 } } 
+            }) || 0;
+
             const data = {
                 total_bought: totalBought,
                 bought_count: boughtCount,
                 user_bought_count: userBoughtCount,
                 internal_user_bought: internalUserBought,
                 external_user_bought: externalUserBought,
+                total_paid_amount: totalPaidAmount,
                 packages: rows,
                 meta: {
                     page: page,
