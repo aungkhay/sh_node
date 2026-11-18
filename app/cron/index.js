@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn, ConnectivityThemePackageHistory, ConnectivityThemePackage, ConnectivityThemePackageEarn, StrategyContributionPackageHistory, StrategyContributionPackageEarn, EconomicTradePackageEarn, EconomicTradePackageHistory } = require('../models');
-const { Op, fn, col, literal, or, where } = require('sequelize');
+const { Op, fn, col, literal, or, where, QueryTypes  } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
 const axios = require('axios');
@@ -7757,6 +7757,169 @@ class CronJob {
             errLogger(`[PAY_ALLOWANCE_TO_TOTAL_ASSETS]: ${error.stack}`);
         }
     }
+
+    // NOT CRON
+    PAY_FREEZE_ALLOWANCE_TOTAL_ASSETS = async () => {
+        try {
+            const users = await User.findAll({
+                where: {
+                    freeze_allowance: {
+                        [Op.gt]: 0
+                    }
+                },
+                attributes: ['id', 'relation', 'total_assets', 'freeze_allowance']
+            });
+
+            for (const user of users) {
+                const t = await db.transaction();
+                try {
+                    await CashFlow.create({
+                        user_id: user.id,
+                        relation: user.relation,
+                        wallet_type: 3, // 资产宝
+                        model: 'Allowance',
+                        type: '津贴发放',
+                        amount: Number(user.freeze_allowance),
+                        before_amount: Number(user.total_assets),
+                        after_amount: Number(user.total_assets) + Number(user.freeze_allowance),
+                        flow_status: 'IN',
+                    }, { transaction: t });
+
+                    await user.update({
+                        total_assets: Number(user.total_assets) + Number(user.freeze_allowance),
+                        freeze_allowance: 0 
+                    }, { transaction: t });
+
+                    await t.commit();
+                    console.log(`[PAY_FREEZE_ALLOWANCE_TOTAL_ASSETS][USER_ID: ${user.id}]: Paid freeze allowance of ${Number(user.freeze_allowance)} to total assets`);
+                } catch (error) {
+                    await t.rollback();
+                    errLogger(`[PAY_FREEZE_ALLOWANCE_TOTAL_ASSETS][USER_ID: ${user.id}]: ${error.stack}`);
+                }
+            }
+        } catch (error) {
+            errLogger(`[PAY_FREEZE_ALLOWANCE_TOTAL_ASSETS]: ${error.stack}`);
+        }
+    }
+
+    // NOT CRON
+    FIX_TOTAL_ASSETS_FROM_CASHFLOW = async () => {
+        const BATCH_SIZE = 500;
+        let lastId = 0;
+        let fixedCount = 0;
+
+        const cutoff = '2026-11-15 23:00:34';
+        const refundStart = '2026-11-15 00:00:00';
+        const earningStart = '2026-11-16 00:00:00';
+
+        try {
+            console.log('---------------- Start ----------------');
+
+            while (true) {
+                const users = await User.findAll({
+                    where: {
+                        id: { [Op.gt]: lastId }
+                    },
+                    attributes: ['id'],
+                    order: [['id', 'ASC']],
+                    limit: BATCH_SIZE,
+                    raw: true
+                });
+
+                if (!users.length) break;
+
+                for (const user of users) {
+                    try {
+                        const lastCashFlow = await CashFlow.findOne({
+                            where: {
+                                user_id: user.id,
+                                wallet_type: 3,
+                                createdAt: { [Op.lt]: cutoff }
+                            },
+                            order: [['id', 'DESC']],
+                            attributes: ['after_amount'],
+                            raw: true
+                        });
+
+                        if (!lastCashFlow) continue;
+
+                        const [result] = await db.query(`
+                            SELECT
+                                COALESCE(SUM(
+                                    CASE
+                                        WHEN type = '黄金增值金返还'
+                                        AND createdAt > :refundStart
+                                        THEN amount ELSE 0
+                                    END
+                                ), 0) AS refund,
+
+                                COALESCE(SUM(
+                                    CASE
+                                        WHEN type IN (
+                                            '资产宝每日收益',
+                                            '上合终身授权计划收益',
+                                            '津贴发放'
+                                        )
+                                        AND createdAt > :earningStart
+                                        THEN amount ELSE 0
+                                    END
+                                ), 0) AS earnings
+
+                            FROM cashflows
+                            WHERE user_id = :userId
+                            AND wallet_type = 3
+                            AND createdAt > :refundStart
+                            AND type IN (
+                                '黄金增值金返还',
+                                '资产宝每日收益',
+                                '上合终身授权计划收益',
+                                '津贴发放'
+                            )
+                        `, {
+                            replacements: {
+                                userId: user.id,
+                                refundStart,
+                                earningStart
+                            },
+                            type: QueryTypes.SELECT
+                        });
+
+                        const updateAmount =
+                            Number(lastCashFlow.after_amount) +
+                            Number(result.refund) +
+                            Number(result.earnings);
+
+                        await User.update(
+                            { total_assets: updateAmount },
+                            { where: { id: user.id } }
+                        );
+
+                        fixedCount++;
+
+                    } catch (error) {
+                        errLogger(
+                            `[FIX_TOTAL_ASSETS_FROM_CASHFLOW] ` +
+                            `[USER_ID: ${user.id}]: ${error.stack}`
+                        );
+                    }
+                }
+
+                lastId = users[users.length - 1].id;
+
+                console.log(
+                    `[FIX_TOTAL_ASSETS_FROM_CASHFLOW] ` +
+                    `Last ID: ${lastId}, Fixed: ${fixedCount}`
+                );
+            }
+
+            console.log(`Completed. Fixed ${fixedCount} users.`);
+
+        } catch (error) {
+            errLogger(
+                `[FIX_TOTAL_ASSETS_FROM_CASHFLOW]: ${error.stack}`
+            );
+        }
+    };
 
     // NOT CRON
     EXPORT_CASH_FLOWS = async () => {

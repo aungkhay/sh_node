@@ -18273,12 +18273,13 @@ class Controller {
             // Rule:
             // 推荐两名新用户激活可以免费领取，现在共建产品方案A200元，
             // 每推荐两个新用户激活赠送一个方案A ，推荐4个赠送2个，以此类推
+            // 推荐一位即可赠送一份 (2026-11-19 and later update)
 
             const desc = '推荐两名新用户免费领取共建共同家园方案';
             const childCount = await User.count({ where: { 
                 parent_id: userId, 
                 initial_buy_product_date: { [Op.ne]: null },
-                createdAt: { [Op.gt]: '2026-11-10' }
+                createdAt: { [Op.gt]: '2026-11-19' }
             }});
             const historyCount = await SharedHomePackageHistory.count({
                 where: {
@@ -18287,11 +18288,12 @@ class Controller {
                 }
             });
 
-            if (childCount < 2) {
+            if (childCount < 1) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '推荐用户数量不符合领取条件', {});
             }
 
-            const requiredChildCount = historyCount * 2 + 2;
+            // const requiredChildCount = historyCount * 2 + 2;
+            const requiredChildCount = historyCount + 1;
             if (childCount < requiredChildCount) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount - childCount}名新用户。`, {});
             }
