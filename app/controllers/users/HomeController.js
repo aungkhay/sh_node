@@ -18284,7 +18284,8 @@ class Controller {
             const historyCount = await SharedHomePackageHistory.count({
                 where: {
                     user_id: userId,
-                    description: desc
+                    description: desc,
+                    createdAt: { [Op.gt]: '2026-11-19' }
                 }
             });
 
