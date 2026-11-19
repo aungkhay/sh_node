@@ -18276,7 +18276,12 @@ class Controller {
             // 推荐一位即可赠送一份 (2026-11-19 and later update)
 
             const desc = '推荐两名新用户免费领取共建共同家园方案';
-            const childCount = await User.count({ where: { 
+            const childCount10 = await User.count({ where: { 
+                parent_id: userId, 
+                initial_buy_product_date: { [Op.ne]: null },
+                createdAt: { [Op.between]: ['2026-11-10', '2026-11-19'] }
+            }});
+            const childCount19 = await User.count({ where: { 
                 parent_id: userId, 
                 initial_buy_product_date: { [Op.ne]: null },
                 createdAt: { [Op.gt]: '2026-11-19' }
@@ -18285,18 +18290,13 @@ class Controller {
                 where: {
                     user_id: userId,
                     description: desc,
-                    createdAt: { [Op.gt]: '2026-11-19' }
                 }
             });
 
-            if (childCount < 1) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '推荐用户数量不符合领取条件', {});
-            }
-
-            // const requiredChildCount = historyCount * 2 + 2;
-            const requiredChildCount = historyCount + 1;
-            if (childCount < requiredChildCount) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount - childCount}名新用户。`, {});
+            const requiredChildCount10 = historyCount * 2 + 2;
+            const requiredChildCount19 = historyCount + 1;
+            if ((childCount10 >= 2 && childCount10 < requiredChildCount10 && childCount19 < requiredChildCount19) || (childCount19 < requiredChildCount19)) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount19 - childCount19}名新用户。`, {});
             }
 
             let pkg = null;
