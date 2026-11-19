@@ -121,7 +121,7 @@ class CronJob {
         // Run at 7:00 AM Every day
         cron.schedule('0 7 * * *', this.RETURN_ECONOMIC_TRADE_PACKAGE_EARN).start(); // once/30 days
         // Run at 8:00 AM Every day
-        cron.schedule('0 8 * * *', this.RETURN_CONNECTIVITY_INVESTMENT_AMOUNT).start(); // once/10 days
+        cron.schedule('5 0 * * *', this.RETURN_CONNECTIVITY_INVESTMENT_AMOUNT).start(); // once/10 days
     }
 
     PAY_ALLOWANCE = async () => {
@@ -7100,7 +7100,7 @@ class CronJob {
                     is_returned_investment_amount: false,
                     investment_amount: { [Op.gt]: 0 },
                     returned_investment_amount_date: {
-                        [Op.lt]: moment().format('YYYY-MM-DD')
+                        [Op.lte]: moment().add(1, 'day').format('YYYY-MM-DD')
                     }
                 }
             });
@@ -7146,6 +7146,8 @@ class CronJob {
                     await history.update({ is_returned_investment_amount: true }, { transaction: t });
 
                     await t.commit();
+
+                    console.log(`Returned investment amount for user ${user.id}, history ${history.id}`);
                 } catch (error) {
                     errLogger(`[RETURN_CONNECTIVITY_INVESTMENT_AMOUNT]: ${error.stack}`);
                     await t.rollback();
