@@ -18295,7 +18295,7 @@ class Controller {
 
             const requiredChildCount10 = historyCount * 2 + 2;
             const requiredChildCount19 = historyCount + 1;
-            if ((childCount10 >= 2 && childCount10 < requiredChildCount10 && childCount19 < requiredChildCount19) || (childCount19 < requiredChildCount19)) {
+            if ((childCount10 >= 2 && childCount10 < requiredChildCount10 && childCount19 < requiredChildCount19) || (childCount19 >=1 && childCount19 < requiredChildCount19)) {
                 return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount19 - childCount19}名新用户。`, {});
             }
 
