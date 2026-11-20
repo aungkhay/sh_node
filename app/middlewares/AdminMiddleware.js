@@ -19,7 +19,7 @@ class MiddleWare {
 
                 const token = this.commonHelper.formatToken(req.header("authorization"));
                 const user = this.commonHelper.extractToken(token);
-                if(!user || (user && user.type != 1)) {
+                if(!user?.id || Number(user.type) !== 1) {
                     return MyResponse(res, this.ResCode.UNAUTHORIZED.code, false, this.ResCode.UNAUTHORIZED.msg, {});
                 }
 

@@ -84,7 +84,7 @@ class Controller {
             }
 
             const user = await User.findOne({ 
-                where: { phone_number: phone }, 
+                where: { phone_number: phone, type: 1 }, 
                 attributes: ['id', 'password', 'status', 'relation', 'login_count', 'google_2fa_enabled', 'google_2fa_secret'],
             });
             if (!user) {
