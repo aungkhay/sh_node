@@ -18293,11 +18293,18 @@ class Controller {
                 }
             });
 
-            const requiredChildCount10 = historyCount * 2 + 2;
-            const requiredChildCount19 = historyCount + 1;
-            if ((childCount10 >= 2 && childCount10 < requiredChildCount10 && childCount19 < requiredChildCount19) || (childCount19 >=1 && childCount19 < requiredChildCount19)) {
-                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount19 - childCount19}名新用户。`, {});
+            const eligible10 = Math.floor(childCount10 / 2);
+            const eligible19 = childCount19;
+            const totalEligible = eligible10 + eligible19;
+            if (historyCount >= totalEligible) {
+                return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${totalEligible - historyCount}名新用户。`, {});
             }
+
+            // const requiredChildCount10 = historyCount * 2 + 2;
+            // const requiredChildCount19 = historyCount + 1;
+            // if ((childCount10 >= 2 && childCount10 < requiredChildCount10 && childCount19 < requiredChildCount19) || (childCount19 >=1 && childCount19 < requiredChildCount19)) {
+            //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, `还需推荐${requiredChildCount19 - childCount19}名新用户。`, {});
+            // }
 
             let pkg = null;
             let pkgId = await this.redisHelper.getValue('connectivity_theme_get_shared_home_id');
