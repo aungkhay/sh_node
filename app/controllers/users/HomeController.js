@@ -18547,7 +18547,8 @@ class Controller {
                     await this.redisHelper.deleteKey(PROCESSING_KEY);
                     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未配置多边经贸合作措施计划获赠规则', {});
                 }
-                await this.redisHelper.setValue('economic_trade_package_gift', giftConfig.val);
+                giftConfig = giftConfig.val;
+                await this.redisHelper.setValue('economic_trade_package_gift', giftConfig);
             }
 
             const t = await db.transaction();
