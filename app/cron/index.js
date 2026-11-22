@@ -7009,7 +7009,7 @@ class CronJob {
 
                     const updateData = {
                         total_released_count: history.total_released_count + 1,
-                        next_release_trade_allowance_date: moment().add(30, 'days').toDate()
+                        next_release_trade_allowance_date: moment().add(Number(history.release_period || 30), 'days').toDate()
                     }
                     if (!history.is_returned_price) {
                         updateData.is_returned_price = true;

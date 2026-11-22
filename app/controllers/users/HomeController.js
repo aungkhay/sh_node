@@ -1023,6 +1023,7 @@ class Controller {
     }
 
     GET_NEWS = async (req, res) => {
+        return MyResponse(res, this.ResCode.SUCCESS.code, true, '成功', { news: [], meta: {} });
         try {
             const page = Math.max(Number(req.query.page) || 1, 1);
             const perPage = Math.min(
