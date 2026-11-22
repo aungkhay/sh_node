@@ -605,6 +605,13 @@ module.exports = async () => {
             description: '-',
             data_type: 'integer'
         },
+        {
+            type: 'economic_trade_package_gift',
+            title: '多边经贸合作措施计划 - 获赠计划',
+            val: '1-2=4|2-3=5',
+            description: '完成1、2 赠送4，完成2、3 赠送5',
+            data_type: 'string'
+        },
     ];
 
     const count = await Config.count();

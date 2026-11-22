@@ -2778,6 +2778,7 @@ const data = {
     product_name: '',
     price: 0, // 申购费
     release_count: 180, // 发放次数
+    release_period: 20, // 发放周期(天)/次
     trade_allowance: 2000, // 多边经贸金
     trade_allowance: 20000, // 年度补助金
     purchase_limit: 'NONE', // 限购方式: NONE-不限购, DAILY-每日限购, TOTAL-累计限购

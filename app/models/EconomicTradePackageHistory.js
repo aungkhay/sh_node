@@ -54,6 +54,12 @@ EconomicTradePackageHistory.init({
         defaultValue: 0,
         comment: '发放次数',
     },
+    release_period: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 30,
+        comment: '发放周期(天)/次',
+    },
     trade_allowance: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,
@@ -102,6 +108,12 @@ EconomicTradePackageHistory.init({
     remark: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    is_applied: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已应用',
     }
 }, {
     sequelize,

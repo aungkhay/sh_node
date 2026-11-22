@@ -102,6 +102,12 @@ class Controller {
                 const valError = [{ field: 'val', msg: '值无效，必须是1、2或3' }];
                 return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, valError);
             }
+            if (config.type === 'economic_trade_package_gift') {
+                if (!/^\d+-\d+=\d+(\|\d+-\d+=\d+)*$/.test(val)) {
+                    const valError = [{ field: 'val', msg: '格式无效，必须是形如 1-2=4|2-3=5' }];
+                    return MyResponse(res, this.ResCode.VALIDATE_FAIL.code, false, this.ResCode.VALIDATE_FAIL.msg, {}, valError);
+                }
+            }
 
             let newVal = val;
             if (Array.isArray(val) || typeof val === 'object') {

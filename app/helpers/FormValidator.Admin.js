@@ -1728,6 +1728,9 @@ exports.create_economic_trade_package = () => {
         check('release_count').not().isEmpty().withMessage('发放次数不能为空')
             .bail()
             .isInt({ min: 1 }).withMessage('发放次数必须是正整数'),
+        check('release_period').not().isEmpty().withMessage('发放周期不能为空')
+            .bail()
+            .isInt({ min: 1 }).withMessage('发放周期必须是正整数'),
         // trade_allowance 多边经贸金
         check('trade_allowance').not().isEmpty().withMessage('多边经贸金不能为空')
             .bail()

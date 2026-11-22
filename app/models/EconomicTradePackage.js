@@ -40,6 +40,12 @@ EconomicTradePackage.init({
         defaultValue: 0,
         comment: '发放次数',
     },
+    release_period: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 30,
+        comment: '发放周期(天)/次',
+    },
     trade_allowance: {
         type: DataTypes.DECIMAL(20, 8),
         allowNull: false,

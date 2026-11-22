@@ -18540,6 +18540,16 @@ class Controller {
             //     return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '合并支付-余额不足!', {});
             // }
 
+            let giftConfig = await this.redisHelper.getValue('economic_trade_package_gift');
+            if (!giftConfig) {
+                giftConfig = await Config.findOne({ where: { type: 'economic_trade_package_gift' } });
+                if (!giftConfig) {
+                    await this.redisHelper.deleteKey(PROCESSING_KEY);
+                    return MyResponse(res, this.ResCode.BAD_REQUEST.code, false, '未配置多边经贸合作措施计划获赠规则', {});
+                }
+                await this.redisHelper.setValue('economic_trade_package_gift', giftConfig.val);
+            }
+
             const t = await db.transaction();
             try {
                 if (reserveAmount > 0) {
@@ -18594,7 +18604,8 @@ class Controller {
                             release_count: gPackage.release_count,
                             trade_allowance: gPackage.trade_allowance,
                             annual_allowance: gPackage.annual_allowance,
-                            next_release_trade_allowance_date: moment().add(30, 'days').toDate(),
+                            release_period: gPackage.release_period,
+                            next_release_trade_allowance_date: moment().add(Number(gPackage.release_period || 30), 'days').toDate(),
                             description: `Group[${userId}-${randomNumber}]: ${index + 1}`
                         }
 
@@ -18610,7 +18621,8 @@ class Controller {
                         release_count: gPackage.release_count,
                         trade_allowance: gPackage.trade_allowance,
                         annual_allowance: gPackage.annual_allowance,
-                        next_release_trade_allowance_date: moment().add(30, 'days').toDate(),
+                        release_period: gPackage.release_period,
+                        next_release_trade_allowance_date: moment().add(Number(gPackage.release_period || 30), 'days').toDate(),
                     }
 
                     const pkgHistoryItem = await EconomicTradePackageHistory.create(obj, { transaction: t });
@@ -18620,6 +18632,46 @@ class Controller {
                 await gPackage.increment({ total_quantity: -1 }, { transaction: t });
                 if (gPackage.total_quantity - 1 <= 0) {
                     await gPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
+                }
+
+                // Rules
+                // 1. Buy Completed Economic Trade Package 1 and 2, get Package 4
+                // 2. Buy Completed Economic Trade Package 2 and 3, get Package 5
+                const giftRules = giftConfig.split('|').map(rule => {
+                    const [required, reward] = rule.split('=');
+                    return {
+                        required: required.split('-').map(Number),
+                        reward: Number(reward)
+                    };
+                });
+
+                for (const rule of giftRules) {
+                    const giftHistory = await EconomicTradePackageHistory.findAll({
+                        where: {
+                            user_id: user.id,
+                            package_id: { [Op.in]: rule.required },
+                            is_applied: false
+                        },
+                        transaction: t
+                    });
+                    if (giftHistory.length === rule.required.length) {
+                        const giftPackage = await EconomicTradePackage.findByPk(rule.reward, { transaction: t });
+                        await EconomicTradePackageHistory.create({
+                            relation: user.relation,
+                            user_id: user.id,
+                            package_id: giftPackage.id,
+                            price: 0,
+                            release_count: giftPackage.release_count,
+                            trade_allowance: giftPackage.trade_allowance,
+                            annual_allowance: giftPackage.annual_allowance,
+                            release_period: giftPackage.release_period,
+                            next_release_trade_allowance_date: moment().add(Number(giftPackage.release_period || 30), 'days').toDate(),
+                        }, { transaction: t });
+
+                        for (const history of giftHistory) {
+                            await history.update({ is_applied: true }, { transaction: t });
+                        }
+                    }
                 }
 
                 const bonusArr = [15, 7, 3];
