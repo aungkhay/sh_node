@@ -105,11 +105,6 @@ PovertyReductionPackageHistory.init({
             fields: ['is_finished'],
             using: 'BTREE'
         },
-        {
-            name: 'idx_is_finished_next_release_reduction_amount_date',
-            fields: ['is_finished', 'next_release_reduction_amount_date'],
-            using: 'BTREE'
-        }
     ]
 })
 
