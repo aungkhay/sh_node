@@ -1284,3 +1284,25 @@ const url = `${baseURL}/economic-trade-packages/earn-history`;
 // [GET] Bonuses History
 const url = `${baseURL}/economic-trade-packages/bonus-history`;
 ```
+
+### 上合组织减贫问题
+```js
+// [GET] Packages
+const url = `${baseURL}/poverty-reduction-packages`;
+
+// [POST] Buy Package
+const url = `${baseURL}/poverty-reduction-packages/${pkgID}/buy`;
+const data = {
+    payment_password: ''
+}
+
+// [GET] Package History
+const url = `${baseURL}/poverty-reduction-packages/history`;
+
+// [GET] Earn History
+// type => 1: 申报费, 2: 上合减贫金
+const url = `${baseURL}/poverty-reduction-packages/earn-history`;
+
+// [GET] Bonuses History
+const url = `${baseURL}/poverty-reduction-packages/bonus-history`;
+```

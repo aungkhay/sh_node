@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn, ConnectivityThemePackageHistory, ConnectivityThemePackage, ConnectivityThemePackageEarn, StrategyContributionPackageHistory, StrategyContributionPackageEarn, EconomicTradePackageEarn, EconomicTradePackageHistory } = require('../models');
+const { AuthorizeLetterHistory, User, Rank, UserKYC, db, Allowance, Config, Transfer, Interest, GoldPrice, RewardType, RewardRecord, GoldInterest, TempMasonicFundHistory, MasonicFundHistory, MasonicFund, UserSpringFestivalCheckInLog, UserSpringFestivalCheckIn, SpringWhiteList, Deposit, GoldPackageHistory, UserRankPoint, Withdraw, GoldPackageReturn, GoldPackageBonuses, GoldCouponTemp, AdminLog, BalanceTransfer, MasonicPackageBonuses, FederalReserveGoldPackageHistory, FederalReserveGoldPackageEarn, PolicyPackageHistory, PolicyPackageEarn, CashFlow, PolicyPackage, UserLog, PaymentMethod, WithdrawMerchant, WithdrawMerchantChannel, ShanghaiCooperationHistory, ShanghaiCooperationEarn, Meeting, AttendedMeeting, GoldAppreciationPackageHistory, GoldAppreciationPackageEarn, GoldAppreciationPackageBonuses, ShanghaiCooperationBonuses, PolicyPackageBonuses, FederalReserveGoldPackage, ShanghaiCooperation, GoldAppreciationPackage, PersonalReservePackageHistory, PersonalReservePackageEarn, AssetEarnHistory, AssetDistributionPackageHistory, AssetDistributionPackageEarn, AssetEarnPackageHistory, AssetEarnPackageEarn, AssetDailyReleasePackageHistory, AssetDailyReleasePackageEarn, AssetDistributionGroupHistory, SCOInterbankPackageHistory, ApprovalFundPackage, ApprovalFundPackageHistory, AllocationAuthPackageHistory, SharingPlanPackageHistory, SharingPlanPackage, SharingPlanPackageEarn, NewChapterPackageHistory, NewChapterPackage, NewChapterPackageEarn, SharedHomePackageHistory, SharedHomePackage, SharedHomePackageEarn, ConnectivityThemePackageHistory, ConnectivityThemePackage, ConnectivityThemePackageEarn, StrategyContributionPackageHistory, StrategyContributionPackageEarn, EconomicTradePackageEarn, EconomicTradePackageHistory, PovertyReductionPackageHistory, PovertyReductionPackage, PovertyReductionPackageEarn } = require('../models');
 const { Op, fn, col, literal, or, where, QueryTypes  } = require('sequelize');
 const { commonLogger, errLogger, moneyTrackLogger } = require('../helpers/Logger');
 const Decimal = require('decimal.js');
@@ -100,27 +100,29 @@ class CronJob {
         // cron.schedule('0 3 * * *', this.ASSET_DAILY_RELEASE_ORIGINAL_PRICE).start();
         // cron.schedule('30 3 * * *', this.RELEASE_EXTRA_DISTRIBUTION).start();
         // cron.schedule('0 4 * * *', this.ASSET_DAILY_RELEASE_EXTRA_PACKAGE).start();
-        cron.schedule('20 1 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start(); // all completed
-        cron.schedule('0 2 * * *', this.TRANSFER_APPROVAL_FUND_BALANCE).start(); // all completed
+        // cron.schedule('20 1 * * *', this.RELEASE_SCO_VERIFIED_ASSETS).start(); // all completed
+        // cron.schedule('0 2 * * *', this.TRANSFER_APPROVAL_FUND_BALANCE).start(); // all completed
         cron.schedule('*/5 * * * *', this.ADD_PRIORITY_QUEUEING_NUMBER).start();
 
         // Run every 30 minutes
-        cron.schedule('*/30 * * * *', this.FINISH_ALLOCATION_AUTH_HISTORY).start();
+        // cron.schedule('*/30 * * * *', this.FINISH_ALLOCATION_AUTH_HISTORY).start(); // all completed
         // Run at 2:20 AM Every day
-        cron.schedule('20 2 * * *', this.SHARING_PLAN_DAILY_EARN).start();
+        cron.schedule('0 1 * * *', this.SHARING_PLAN_DAILY_EARN).start();
         // Run at 3:00 AM Every day
-        cron.schedule('0 3 * * *', this.RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT).start();
+        cron.schedule('30 1 * * *', this.RETURN_SHARING_PLAN_PRICE_AND_SHARE_AMOUNT).start();
         // Run at 4:00 AM Every day
-        cron.schedule('0 4 * * *', this.RETURN_NEW_CHAPTER_EARN).start();
+        cron.schedule('0 2 * * *', this.RETURN_NEW_CHAPTER_EARN).start(); // 2026-12-29 latest
         // Run at 5:00 AM Every day
-        cron.schedule('0 5 * * *', this.SHARED_HOME_PACKAGE_EARN).start();
-        // Run 1:20 AM Every 10th of the month
-        cron.schedule('20 1 10 * *', this.CONNECTIVITY_THEME_PACKAGE_EARN).start();
+        cron.schedule('30 2 * * *', this.SHARED_HOME_PACKAGE_EARN).start();
         // Run at 6 AM Every day
-        cron.schedule('0 6 * * *', this.RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN).start();
+        cron.schedule('0 3 * * *', this.RETURN_STRATEGY_CONTRIBUTION_PACKAGE_EARN).start();
         // Run at 7:00 AM Every day
-        cron.schedule('0 7 * * *', this.RETURN_ECONOMIC_TRADE_PACKAGE_EARN).start(); // once/30 days
-        // Run at 8:00 AM Every day
+        cron.schedule('30 3 * * *', this.RETURN_ECONOMIC_TRADE_PACKAGE_EARN).start(); // once/30 days
+        // Run at 10th day of every month at 4:00 AM
+        cron.schedule('0 4 10 * *', this.CONNECTIVITY_THEME_PACKAGE_EARN).start();
+        // Run at 1st day of every month at 4:00 AM
+        cron.schedule('0 4 1 * *', this.RETURN_POVERTY_REDUCTION_PACKAGE_EARN).start();
+
         cron.schedule('5 0 * * *', this.RETURN_CONNECTIVITY_INVESTMENT_AMOUNT).start(); // once/10 days
     }
 
@@ -6371,7 +6373,8 @@ class CronJob {
                     return_date: {
                         [Op.gt]: startOfDay
                     }
-                }
+                },
+                order: [['user_id', 'ASC']]
             });
 
             for (const history of histories) {
@@ -6431,14 +6434,18 @@ class CronJob {
                     return_date: {
                         [Op.between]: [startOfDay, endOfDay]
                     }
-                }
+                },
+                order: [['user_id', 'ASC']]
             });
 
             for (const history of histories) {
                 const t = await db.transaction();
                 try {
                     const user = await User.findByPk(history.user_id, { attributes: ['id', 'relation', 'balance', 'sharing_amount'], transaction: t });
-                    if (!user) continue;
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
 
                     const cashflows = [];
                     const originPrice = Number(history.price); 
@@ -6514,7 +6521,8 @@ class CronJob {
                     return_date: {
                         [Op.between]: [startOfDay, endOfDay]
                     }
-                }
+                },
+                order: [['user_id', 'ASC']]
             });
 
             for (const history of histories) {
@@ -6649,7 +6657,8 @@ class CronJob {
                     start_release_at: { 
                         [Op.between]: [startOfDay.toDate(), endOfDay.toDate()]
                     }
-                }
+                },
+                order: [['user_id', 'ASC']]
             });
 
             for (const history of histories) {
@@ -6779,7 +6788,8 @@ class CronJob {
                     createdAt: {
                         [Op.lt]: startOfDay
                     }
-                }
+                },
+                order: [['user_id', 'ASC']]
             });
 
             for (const history of histories) {
@@ -6841,7 +6851,7 @@ class CronJob {
                     is_returned_contribute_amount: 0
                 },
                 attributes: ['id', 'user_id', 'package_id', 'contribute_amount', 'price', 'createdAt'],
-                order: [['id', 'ASC']]
+                order: [['user_id', 'ASC']]
             });
 
             for (const history of histories) {
@@ -7102,7 +7112,8 @@ class CronJob {
                     returned_investment_amount_date: {
                         [Op.lte]: moment().add(1, 'day').format('YYYY-MM-DD')
                     }
-                }
+                },
+                order: [['user_id', 'ASC']]
             });
 
             for (const history of histories) {
@@ -7155,6 +7166,104 @@ class CronJob {
             }
         } catch (error) {
             errLogger(`[RETURN_CONNECTIVITY_INVESTMENT_AMOUNT]: ${error.stack}`);
+        }
+    }
+
+    RETURN_POVERTY_REDUCTION_PACKAGE_EARN = async () => {
+        try {
+            const histories = await PovertyReductionPackageHistory.findAll({
+                include: {
+                    model: PovertyReductionPackage,
+                    as: 'package',
+                    attributes: ['id', 'product_name']
+                },
+                where: {
+                    is_finished: 0
+                },
+                order: [['user_id', 'ASC']]
+            });
+
+            for (const history of histories) {
+                const t = await db.transaction();
+                try {
+                    const user = await User.findByPk(history.user_id, { attributes: ['id', 'balance'], transaction: t });
+                    if (!user) {
+                        await t.rollback();
+                        continue;
+                    }
+
+                    const reductionAmount = Number(history.reduction_amount);
+                    const originPrice = Number(history.price);
+                    let beforeBalance = Number(user.balance);
+                    let afterBalance = 0;
+
+                    const cashflows = [];
+                    const earns = [];
+                    const historyUpdate = {};
+                    if (!history.is_returned_price) {
+                        afterBalance = beforeBalance + originPrice;
+                        cashflows.push({
+                            relation: history.relation,
+                            user_id: user.id,
+                            model: 'PovertyReductionPackageHistory',
+                            type: '上合组织减贫问题',
+                            amount: originPrice,
+                            before_amount: beforeBalance,
+                            after_amount: afterBalance,
+                            flow_status: 'IN',
+                            description: `返还申报费 . ${history?.package?.product_name}`,
+                        });
+                        earns.push({
+                            relation: history.relation,
+                            user_id: user.id,
+                            package_id: history.package_id,
+                            package_history_id: history.id,
+                            amount: originPrice,
+                            type: 1
+                        });
+                        beforeBalance = afterBalance;
+                        historyUpdate.is_returned_price = 1;
+                    }
+
+                    afterBalance = beforeBalance + reductionAmount;
+                    cashflows.push({
+                        relation: history.relation,
+                        user_id: user.id,
+                        model: 'PovertyReductionPackageHistory',
+                        type: '上合组织减贫问题',
+                        amount: reductionAmount,
+                        before_amount: beforeBalance,
+                        after_amount: afterBalance,
+                        flow_status: 'IN',
+                        description: `发放上合减贫金 . ${history?.package?.product_name}`,
+                    });
+                    earns.push({
+                        relation: history.relation,
+                        user_id: user.id,
+                        package_id: history.package_id,
+                        package_history_id: history.id,
+                        amount: reductionAmount,
+                        type: 2
+                    });
+                    const totalReleaseCount = Number(history.total_release_count) + 1;
+                    if (totalReleaseCount >= history.total_release_count) {
+                        historyUpdate.is_finished = 1;
+                    }
+                    historyUpdate.total_release_count = totalReleaseCount;
+
+                    await PovertyReductionPackageEarn.bulkCreate(earns, {transaction: t});
+                    await CashFlow.bulkCreate(cashflows, {transaction: t});
+                    await history.update(historyUpdate, {transaction: t});
+                    await user.update({ balance: afterBalance }, {transaction: t});
+
+                    await t.commit();
+                } catch (error) {
+                    errLogger(`[RETURN_POVERTY_REDUCTION_PACKAGE_EARN]: ${error.stack}`);
+                    await t.rollback();
+                }
+            }
+        } catch (error) {
+            errLogger(`[RETURN_POVERTY_REDUCTION_PACKAGE_EARN]: ${error.stack}`);
         }
     }
 

@@ -504,6 +504,17 @@ class AdminRoute extends express.Router {
         this.get('/economic-trade-packages/history', middleware.isLoggedIn('economic-trade-package-history-list'), EconomicTradePackageCtrl.ECONOMIC_TRADE_PACKAGE_HISTORY);
         this.get('/economic-trade-packages/bonus-history', middleware.isLoggedIn('economic-trade-package-bonus-history-list'), EconomicTradePackageCtrl.ECONOMIC_TRADE_PACKAGE_BONUS_HISTORY);
         this.get('/economic-trade-packages/earn-history', middleware.isLoggedIn('economic-trade-package-earn-history-list'), EconomicTradePackageCtrl.ECONOMIC_TRADE_PACKAGE_EARN_HISTORY);
+
+        // Poverty Reduction Package
+        let PovertyReductionPackageController = require('../controllers/admins/PovertyReductionPackageController');
+        let PovertyReductionPackageCtrl = new PovertyReductionPackageController(app);
+        this.get('/poverty-reduction-packages', middleware.isLoggedIn('poverty-reduction-package-list'), PovertyReductionPackageCtrl.INDEX);
+        this.post('/poverty-reduction-packages/create', FormValidator.create_poverty_reduction_package(), middleware.isLoggedIn('poverty-reduction-package-create'), PovertyReductionPackageCtrl.CREATE);
+        this.post('/poverty-reduction-packages/:id/update', FormValidator.create_poverty_reduction_package(), middleware.isLoggedIn('poverty-reduction-package-update'), PovertyReductionPackageCtrl.UPDATE);
+        this.post('/poverty-reduction-packages/:id/upload', middleware.isLoggedIn('poverty-reduction-package-create,poverty-reduction-package-update'), PovertyReductionPackageCtrl.UPLOAD);
+        this.get('/poverty-reduction-packages/history', middleware.isLoggedIn('poverty-reduction-package-history-list'), PovertyReductionPackageCtrl.POVERTY_REDUCTION_PACKAGE_HISTORY);
+        this.get('/poverty-reduction-packages/bonus-history', middleware.isLoggedIn('poverty-reduction-package-bonus-history-list'), PovertyReductionPackageCtrl.POVERTY_REDUCTION_PACKAGE_BONUS_HISTORY);
+        this.get('/poverty-reduction-packages/earn-history', middleware.isLoggedIn('poverty-reduction-package-earn-history-list'), PovertyReductionPackageCtrl.POVERTY_REDUCTION_PACKAGE_EARN_HISTORY);
     }
 }
 

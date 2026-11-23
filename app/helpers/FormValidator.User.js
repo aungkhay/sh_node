@@ -480,6 +480,12 @@ exports.buy_economic_trade_package = () => {
     ]
 }
 
+exports.buy_poverty_reduction_package = () => {
+    return [
+        check('payment_password', { msg: '支付密码不能为空' }).not().isEmpty()
+    ]
+}
+
 exports.bind_allocation_auth_bank = () => {
     return [
         // card_name, card_number, bank_name

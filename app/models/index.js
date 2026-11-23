@@ -138,6 +138,10 @@ const EconomicTradePackage = require('./EconomicTradePackage');
 const EconomicTradePackageHistory = require('./EconomicTradePackageHistory');
 const EconomicTradePackageEarn = require('./EconomicTradePackageEarn');
 const EconomicTradePackageBonuses = require('./EconomicTradePackageBonuses');
+const PovertyReductionPackage = require('./PovertyReductionPackage');
+const PovertyReductionPackageHistory = require('./PovertyReductionPackageHistory');
+const PovertyReductionPackageEarn = require('./PovertyReductionPackageEarn');
+const PovertyReductionPackageBonuses = require('./PovertyReductionPackageBonuses');
 
 // ========== Role ↔️ Permission ========== 
 Role.belongsToMany(Permission, { as: 'permissions', through: 'role_has_permissions', foreignKey: 'RoleId' });
@@ -897,6 +901,35 @@ EconomicTradePackageEarn.belongsTo(EconomicTradePackage, { foreignKey: 'package_
 EconomicTradePackageHistory.hasMany(EconomicTradePackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
 EconomicTradePackageBonuses.belongsTo(EconomicTradePackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
 
+// ========== POVERTY_REDUCTION_PACKAGE ↔️ POVERTY_REDUCTION_PACKAGE_HISTORY (1:N) ==========
+PovertyReductionPackage.hasMany(PovertyReductionPackageHistory, { foreignKey: 'package_id', as: 'histories', onDelete: 'CASCADE' });
+PovertyReductionPackageHistory.belongsTo(PovertyReductionPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ POVERTY_REDUCTION_PACKAGE_HISTORY (1:N) ==========
+User.hasMany(PovertyReductionPackageHistory, { foreignKey: 'user_id', as: 'poverty_reduction_package_histories', onDelete: 'CASCADE' });
+PovertyReductionPackageHistory.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ POVERTY_REDUCTION_PACKAGE_BONUSES (1:N) ==========
+User.hasMany(PovertyReductionPackageBonuses, { foreignKey: 'user_id', as: 'poverty_reduction_package_bonuses', onDelete: 'CASCADE' });
+PovertyReductionPackageBonuses.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+PovertyReductionPackageBonuses.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user', onDelete: 'CASCADE' });
+
+// ========== USER ↔️ POVERTY_REDUCTION_PACKAGE_EARN (1:N) ==========
+User.hasMany(PovertyReductionPackageEarn, { foreignKey: 'user_id', as: 'poverty_reduction_package_earn', onDelete: 'CASCADE' });
+PovertyReductionPackageEarn.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'CASCADE' });
+
+// ========== POVERTY_REDUCTION_PACKAGE_HISTORY ↔️ POVERTY_REDUCTION_PACKAGE_EARN (1:N) ==========
+PovertyReductionPackageHistory.hasMany(PovertyReductionPackageEarn, { foreignKey: 'package_history_id', as: 'earns', onDelete: 'CASCADE' });
+PovertyReductionPackageEarn.belongsTo(PovertyReductionPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
+// ========== POVERTY_REDUCTION_PACKAGE ↔️ POVERTY_REDUCTION_PACKAGE_EARN (1:N) ==========
+PovertyReductionPackage.hasMany(PovertyReductionPackageEarn, { foreignKey: 'package_id', as: 'earns', onDelete: 'CASCADE' });
+PovertyReductionPackageEarn.belongsTo(PovertyReductionPackage, { foreignKey: 'package_id', as: 'package', onDelete: 'CASCADE' });
+
+// ========== POVERTY_REDUCTION_PACKAGE_HISTORY ↔️ POVERTY_REDUCTION_PACKAGE_BONUSES (1:N) ==========
+PovertyReductionPackageHistory.hasMany(PovertyReductionPackageBonuses, { foreignKey: 'package_history_id', as: 'bonuses', onDelete: 'CASCADE' });
+PovertyReductionPackageBonuses.belongsTo(PovertyReductionPackageHistory, { foreignKey: 'package_history_id', as: 'package_history', onDelete: 'CASCADE' });
+
 const models = {
     Role,
     Permission,
@@ -1032,6 +1065,10 @@ const models = {
     EconomicTradePackageHistory,
     EconomicTradePackageBonuses,
     EconomicTradePackageEarn,
+    PovertyReductionPackage,
+    PovertyReductionPackageHistory,
+    PovertyReductionPackageBonuses,
+    PovertyReductionPackageEarn,
 };
 
 // Export models + db connection

@@ -612,6 +612,27 @@ module.exports = async () => {
             description: '完成1、2 赠送4，完成2、3 赠送5',
             data_type: 'string'
         },
+        {
+            type: 'poverty_reduction_package_description',
+            title: '上合组织减贫问题 - 描述',
+            val: '<p></p>',
+            description: '-',
+            data_type: 'html'
+        },
+        {
+            type: 'poverty_reduction_package_period',
+            title: '上合组织减贫问题 - 申购时间',
+            val: '2026-11-26 00:00:00|2026-11-30 23:59:59',
+            description: '-',
+            data_type: 'string'
+        },
+        {
+            type: 'poverty_reduction_package_daily_release_qty',
+            title: '上合组织减贫问题 - 每日发放数量',
+            val: '200000',
+            description: '-',
+            data_type: 'integer'
+        },
     ];
 
     const count = await Config.count();

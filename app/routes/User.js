@@ -220,6 +220,12 @@ class UserRoute extends express.Router {
         this.get('/economic-trade-packages/history', middleware.isLoggedIn, HomeCtrl.ECONOMIC_TRADE_PACKAGE_HISTORY);
         this.get('/economic-trade-packages/earn-history', middleware.isLoggedIn, HomeCtrl.ECONOMIC_TRADE_PACKAGE_EARN_HISTORY);
         this.get('/economic-trade-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.ECONOMIC_TRADE_PACKAGE_BONUS_HISTORY);
+        // Poverty Reduction Package Routes
+        this.get('/poverty-reduction-packages', middleware.isLoggedIn, HomeCtrl.POVERTY_REDUCTION_PACKAGE);
+        this.post('/poverty-reduction-packages/:id/buy', FormValidator.buy_poverty_reduction_package(), middleware.isLoggedIn, HomeCtrl.BUY_POVERTY_REDUCTION_PACKAGE);
+        this.get('/poverty-reduction-packages/history', middleware.isLoggedIn, HomeCtrl.POVERTY_REDUCTION_PACKAGE_HISTORY);
+        this.get('/poverty-reduction-packages/earn-history', middleware.isLoggedIn, HomeCtrl.POVERTY_REDUCTION_PACKAGE_EARN_HISTORY);
+        this.get('/poverty-reduction-packages/bonus-history', middleware.isLoggedIn, HomeCtrl.POVERTY_REDUCTION_PACKAGE_BONUS_HISTORY);
         // Meeting Routes
         this.get('/meetings/active', middleware.isLoggedIn, HomeCtrl.ACTIVE_MEETING);
         this.post('/meetings/:id/check-code/:code', middleware.isLoggedIn, HomeCtrl.CHECK_MEETING_CODE);
