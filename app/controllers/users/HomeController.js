@@ -16937,7 +16937,7 @@ class Controller {
                     where: {
                         user_id: user.id,
                         price: { [Op.gt]: 0 },
-                        package_id: gPackage.id,
+                        // package_id: gPackage.id,
                         is_applied: false
                     },
                     transaction: t
