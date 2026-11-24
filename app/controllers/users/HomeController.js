@@ -16938,7 +16938,10 @@ class Controller {
                         user_id: user.id,
                         price: { [Op.gt]: 0 },
                         // package_id: gPackage.id,
-                        is_applied: false
+                        is_applied: false,
+                        createdAt: {
+                            [Op.gte]: `2026-11-25 00:00:00`
+                        }
                     },
                     transaction: t
                 });
