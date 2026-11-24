@@ -16909,7 +16909,10 @@ class Controller {
                     transaction: t
                 });
 
-                if (giftHistory.length === requiredIdsArr.length) {
+                const purchasedIds = new Set(giftHistory.map(item => Number(item.package_id)));
+                const isEligible = requiredIdsArr.every(id => purchasedIds.has(id));
+
+                if (isEligible) {
                     const giftPackage = await ConnectivityThemePackage.findByPk(rewardId, { transaction: t });
                     await ConnectivityThemePackageHistory.create({
                         relation: user.relation,

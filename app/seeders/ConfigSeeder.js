@@ -559,15 +559,15 @@ module.exports = async () => {
         {
             type: 'connectivity_theme_package_gift_1',
             title: '上合互联互通计划 - 完成计划一、二、三',
-            val: '12-13-14=15',
-            description: '完成12、13、14 赠送15',
+            val: '12-13-14=16',
+            description: '完成12、13、14 赠送16',
             data_type: 'string'
         },
         {
             type: 'connectivity_theme_package_gift_2',
             title: '上合互联互通计划 - 完成任意3份计划',
-            val: '3=14',
-            description: '完成任意3份计划 赠送14',
+            val: '3=15',
+            description: '完成任意3份计划 赠送15',
             data_type: 'string'
         },
         {
