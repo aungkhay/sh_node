@@ -557,6 +557,20 @@ module.exports = async () => {
             data_type: 'integer'
         },
         {
+            type: 'connectivity_theme_package_gift_1',
+            title: '上合互联互通计划 - 完成计划一、二、三',
+            val: '12-13-14=15',
+            description: '完成12、13、14 赠送15',
+            data_type: 'string'
+        },
+        {
+            type: 'connectivity_theme_package_gift_2',
+            title: '上合互联互通计划 - 完成任意3份计划',
+            val: '3=14',
+            description: '完成任意3份计划 赠送14',
+            data_type: 'string'
+        },
+        {
             type: 'strategy_contribution_package_description',
             title: '上合发展战略贡献 - 描述',
             val: '<p></p>',

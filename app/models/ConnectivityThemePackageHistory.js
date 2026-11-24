@@ -100,6 +100,12 @@ ConnectivityThemePackageHistory.init({
     remark: {
         type: DataTypes.STRING,
         allowNull: true,
+    },
+    is_applied: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已应用',
     }
 }, {
     sequelize,
@@ -125,6 +131,11 @@ ConnectivityThemePackageHistory.init({
         {
             name: 'idx_is_returned_investment',
             fields: ['is_returned_investment_amount', 'investment_amount', 'returned_investment_amount_date'],
+            using: 'BTREE'
+        },
+        {
+            name: 'idx_user_id_price_package_id_is_applied',
+            fields: ['user_id', 'price', 'package_id', 'is_applied'],
             using: 'BTREE'
         }
     ]
