@@ -1621,7 +1621,8 @@ class CronJob {
                     createdAt: {
                         [Op.lt]: `${today} 00:00:00`
                     }
-                }
+                },
+                order: [['user_id', 'ASC']]
             });
 
             const isAssetActive = await this.is_asset_treasure_active();

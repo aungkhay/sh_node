@@ -18746,7 +18746,10 @@ class Controller {
                         },
                         transaction: t
                     });
-                    if (giftHistory.length === rule.required.length) {
+                    const purchasedIds = new Set(giftHistory.map(item => Number(item.package_id)));
+                    const isEligible = rule.required.every(id => purchasedIds.has(id));
+
+                    if (isEligible) {
                         const giftPackage = await EconomicTradePackage.findByPk(rule.reward, { transaction: t });
                         await EconomicTradePackageHistory.create({
                             relation: user.relation,
