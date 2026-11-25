@@ -18749,7 +18749,10 @@ class Controller {
                             user_id: user.id,
                             package_id: { [Op.in]: rule.required },
                             is_applied: false,
-                            description: { [Op.like]: '%Group%' }
+                            description: { [Op.like]: '%Group%' },
+                            createdAt: {
+                                [Op.gt]: '2026-11-26'
+                            }
                         },
                         transaction: t
                     });
