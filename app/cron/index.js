@@ -7260,6 +7260,8 @@ class CronJob {
                     await user.update({ balance: afterBalance }, {transaction: t});
 
                     await t.commit();
+
+                    console.log(`[RETURN_POVERTY_REDUCTION_PACKAGE_EARN] Processed history ID: ${history.id}`);
                 } catch (error) {
                     errLogger(`[RETURN_POVERTY_REDUCTION_PACKAGE_EARN]: ${error.stack}`);
                     await t.rollback();
