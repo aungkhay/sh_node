@@ -17816,6 +17816,10 @@ class Controller {
                     is_finished: isFinished
                 }, { transaction: t });
 
+                if (payment_amount < 0) {
+                    throw new Error('Payment amount cannot be negative');
+                }
+
                 await user.increment({ reserve_fund: -payment_amount }, { transaction: t });
 
                 // Give shared home package if applicable
