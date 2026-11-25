@@ -18704,7 +18704,8 @@ class Controller {
                             annual_allowance: gPackage.annual_allowance,
                             release_period: gPackage.release_period,
                             next_release_trade_allowance_date: moment().add(Number(gPackage.release_period || 30), 'days').toDate(),
-                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`,
+                            remark: 'BUY_ONE_GET'
                         }
 
                         const pkgHistoryItem = await EconomicTradePackageHistory.create(obj, { transaction: t });
@@ -18749,7 +18750,7 @@ class Controller {
                             user_id: user.id,
                             package_id: { [Op.in]: rule.required },
                             is_applied: false,
-                            description: { [Op.like]: '%Group%' },
+                            remark: 'BUY_ONE_GET',
                             createdAt: {
                                 [Op.gt]: '2026-11-26'
                             }
@@ -18782,8 +18783,8 @@ class Controller {
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
                 const upLevelIds = (relationArr.slice(1, relationArr.length - 1)).reverse().slice(0, 3);
-                commonLogger(`[BUY_STRATEGY_CONTRIBUTION_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
-                commonLogger(`[BUY_STRATEGY_CONTRIBUTION_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
+                commonLogger(`[BUY_ECONOMIC_TRADE_PACKAGE] Bonus Settings: LV1=${15}%, LV2=${7}%, LV3=${3}%`);
+                commonLogger(`[BUY_ECONOMIC_TRADE_PACKAGE] Uplines: ${upLevelIds.join(',')}`);
 
                 const upLevelUsers = await User.findAll({
                     where: {
@@ -18809,7 +18810,7 @@ class Controller {
                     if (!upLevelUser || upLevelUser.type !== 2) { // only User type can get bonus
                         continue;
                     }
-                    commonLogger(`[BUY_STRATEGY_CONTRIBUTION_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
+                    commonLogger(`[BUY_ECONOMIC_TRADE_PACKAGE] Granting bonus ${bonus} to UserID: ${upLevelUser.id}`);
 
                     cashFlows.push({
                         relation: upLevelUser.relation,
