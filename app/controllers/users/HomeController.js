@@ -18753,8 +18753,10 @@ class Controller {
                             remark: 'BUY_ONE_GET',
                             createdAt: { [Op.gt]: '2026-11-26' }
                         },
+                        order: [['id', 'ASC']],
                         transaction: t
                     });
+
                     const available = new Map();
                     for (const history of giftHistory) {
                         const packageId = Number(history.package_id);
@@ -18768,13 +18770,17 @@ class Controller {
                     for (const packageId of rule.required) {
                         requiredCounts.set(packageId, (requiredCounts.get(packageId) || 0) + 1);
                     }
-                    // const purchasedIds = new Set(giftHistory.map(item => Number(item.package_id)));
-                    // const isEligible = rule.required.every(id => purchasedIds.has(id));
 
                     while ([...requiredCounts].every(
                         ([id, count]) => (available.get(id)?.length || 0) >= count
                     )) {
-                        const giftPackage = await EconomicTradePackage.findByPk(rule.reward, { transaction: t });
+                        const giftPackage = await EconomicTradePackage.findByPk(rule.reward, {
+                            transaction: t
+                        });
+                        if (!giftPackage) {
+                            throw new Error(`Gift package ${rule.reward} not found`);
+                        }
+
                         await EconomicTradePackageHistory.create({
                             relation: user.relation,
                             user_id: user.id,
@@ -18784,10 +18790,13 @@ class Controller {
                             trade_allowance: giftPackage.trade_allowance,
                             annual_allowance: giftPackage.annual_allowance,
                             release_period: giftPackage.release_period,
-                            next_release_trade_allowance_date: moment().add(Number(giftPackage.release_period || 30), 'days').toDate(),
+                            next_release_trade_allowance_date: moment()
+                                .add(Number(giftPackage.release_period || 30), 'days')
+                                .toDate()
                         }, { transaction: t });
 
-                        for (const history of giftHistory) {
+                        for (const packageId of rule.required) {
+                            const history = available.get(packageId).shift();
                             await history.update({ is_applied: true }, { transaction: t });
                         }
                     }
