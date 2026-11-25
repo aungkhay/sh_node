@@ -7206,6 +7206,7 @@ class CronJob {
                         cashflows.push({
                             relation: history.relation,
                             user_id: user.id,
+                            wallet_type: 2, // 余额
                             model: 'PovertyReductionPackageHistory',
                             type: '上合组织减贫问题',
                             amount: originPrice,
@@ -7230,6 +7231,7 @@ class CronJob {
                     cashflows.push({
                         relation: history.relation,
                         user_id: user.id,
+                        wallet_type: 2, // 余额
                         model: 'PovertyReductionPackageHistory',
                         type: '上合组织减贫问题',
                         amount: reductionAmount,
@@ -7244,7 +7246,7 @@ class CronJob {
                         package_id: history.package_id,
                         package_history_id: history.id,
                         amount: reductionAmount,
-                        type: 2
+                        type: 2,
                     });
                     const totalReleaseCount = Number(history.total_release_count) + 1;
                     if (totalReleaseCount >= history.total_release_count) {
