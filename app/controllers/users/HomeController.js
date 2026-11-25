@@ -18747,12 +18747,9 @@ class Controller {
                     const giftHistory = await EconomicTradePackageHistory.findAll({
                         where: {
                             user_id: user.id,
-                            [Op.or]: [
-                                { price: { [Op.gt]: 0 } },
-                                { description: { [Op.not]: '%Group%' } }
-                            ],
                             package_id: { [Op.in]: rule.required },
                             is_applied: false,
+                            description: { [Op.like]: '%Group%' }
                         },
                         transaction: t
                     });
