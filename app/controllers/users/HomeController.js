@@ -18751,16 +18751,29 @@ class Controller {
                             package_id: { [Op.in]: rule.required },
                             is_applied: false,
                             remark: 'BUY_ONE_GET',
-                            createdAt: {
-                                [Op.gt]: '2026-11-26'
-                            }
+                            createdAt: { [Op.gt]: '2026-11-26' }
                         },
                         transaction: t
                     });
-                    const purchasedIds = new Set(giftHistory.map(item => Number(item.package_id)));
-                    const isEligible = rule.required.every(id => purchasedIds.has(id));
+                    const available = new Map();
+                    for (const history of giftHistory) {
+                        const packageId = Number(history.package_id);
+                        if (!available.has(packageId)) {
+                            available.set(packageId, []);
+                        }
+                        available.get(packageId).push(history);
+                    }
 
-                    if (isEligible) {
+                    const requiredCounts = new Map();
+                    for (const packageId of rule.required) {
+                        requiredCounts.set(packageId, (requiredCounts.get(packageId) || 0) + 1);
+                    }
+                    // const purchasedIds = new Set(giftHistory.map(item => Number(item.package_id)));
+                    // const isEligible = rule.required.every(id => purchasedIds.has(id));
+
+                    while ([...requiredCounts].every(
+                        ([id, count]) => (available.get(id)?.length || 0) >= count
+                    )) {
                         const giftPackage = await EconomicTradePackage.findByPk(rule.reward, { transaction: t });
                         await EconomicTradePackageHistory.create({
                             relation: user.relation,
