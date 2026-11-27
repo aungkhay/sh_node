@@ -16868,7 +16868,8 @@ class Controller {
                             investment_amount: gPackage.investment_amount,
                             returned_investment_amount_date: gPackage.request_investment_period > 0 ? moment().add(gPackage.request_investment_period + 1, 'days').toDate() : null,
                             package_id: gPackage.id,
-                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`
+                            description: `Group[${userId}-${randomNumber}]: ${index + 1}`,
+                            remark: 'BUY_ONE_GET'
                         }
 
                         const pkgHistoryItem = await ConnectivityThemePackageHistory.create(obj, { transaction: t });
@@ -16896,24 +16897,14 @@ class Controller {
                     await gPackage.update({ status: 3, total_quantity: 0 }, { transaction: t }); // sold out
                 }
 
-                // Rule1: 完成计划一，计划二，计划三，立即获赠计划五一份。
-                const [requiredIds, rewardId] = giftConfig1.split('=');
-                const requiredIdsArr = requiredIds.split('-').map(Number);
-                const giftHistory = await ConnectivityThemePackageHistory.findAll({
-                    where: {
-                        user_id: user.id,
-                        price: { [Op.gt]: 0 },
-                        package_id: { [Op.in]: requiredIdsArr },
-                        is_applied: false
-                    },
-                    transaction: t
-                });
-
-                const purchasedIds = new Set(giftHistory.map(item => Number(item.package_id)));
-                const isEligible = requiredIdsArr.every(id => purchasedIds.has(id));
-
-                if (isEligible) {
-                    const giftPackage = await ConnectivityThemePackage.findByPk(rewardId, { transaction: t });
+                const eligiblePurchase = {
+                    [Op.or]: [
+                        { price: { [Op.gt]: 0 } },
+                        { remark: 'BUY_ONE_GET' }
+                    ]
+                };
+                const grantGift = async (giftId) => {
+                    const giftPackage = await ConnectivityThemePackage.findByPk(giftId, { transaction: t });
                     await ConnectivityThemePackageHistory.create({
                         relation: user.relation,
                         user_id: user.id,
@@ -16925,44 +16916,103 @@ class Controller {
                         returned_investment_amount_date: giftPackage.request_investment_period > 0 ? moment().add(giftPackage.request_investment_period + 1, 'days').toDate() : null,
                         package_id: giftPackage.id,
                     }, { transaction: t });
+                }
 
-                    for (const history of giftHistory) {
-                        await history.update({ is_applied: true }, { transaction: t });
+                // Rule1: 完成计划一，计划二，计划三，立即获赠计划五一份。
+                const [requiredIds, rewardId] = giftConfig1.split('=');
+                const requiredIdsArr = requiredIds.split('-').map(Number);
+                const giftHistory = await ConnectivityThemePackageHistory.findAll({
+                    where: {
+                        user_id: user.id,
+                        ...eligiblePurchase,
+                        package_id: { [Op.in]: requiredIdsArr },
+                        is_applied: false,
+                        createdAt: { [Op.gte]: `2026-11-25 00:00:00` },
+                    },
+                    order: [['id', 'ASC']],
+                    transaction: t
+                });
+                const available = new Map();
+                for (const history of giftHistory) {
+                    const id = Number(history.package_id);
+                    if (!available.has(id)) available.set(id, []);
+                    available.get(id).push(history);
+                }
+
+                const requiredCounts = new Map();
+                for (const id of requiredIdsArr) {
+                    requiredCounts.set(id, (requiredCounts.get(id) || 0) + 1);
+                }
+
+                while ([...requiredCounts].every(
+                    ([id, count]) => (available.get(id)?.length || 0) >= count
+                )) {
+                    await grantGift(rewardId);
+
+                    for (const id of requiredIdsArr) {
+                        await available.get(id).shift().update({ is_applied: true }, { transaction: t });
                     }
                 }
+
+                // const purchasedIds = new Set(giftHistory.map(item => Number(item.package_id)));
+                // const isEligible = requiredIdsArr.every(id => purchasedIds.has(id));
+
+                // if (isEligible) {
+                //     const giftPackage = await ConnectivityThemePackage.findByPk(rewardId, { transaction: t });
+                //     await ConnectivityThemePackageHistory.create({
+                //         relation: user.relation,
+                //         user_id: user.id,
+                //         price: 0,
+                //         period: giftPackage.period,
+                //         connectivity_amount: giftPackage.connectivity_amount,
+                //         request_investment_period: giftPackage.request_investment_period,
+                //         investment_amount: giftPackage.investment_amount,
+                //         returned_investment_amount_date: giftPackage.request_investment_period > 0 ? moment().add(giftPackage.request_investment_period + 1, 'days').toDate() : null,
+                //         package_id: giftPackage.id,
+                //     }, { transaction: t });
+
+                //     for (const history of giftHistory) {
+                //         await history.update({ is_applied: true }, { transaction: t });
+                //     }
+                // }
 
                 // Rule2: 完成任意3份计划，立即获赠计划四一份。
                 const [countRequired, rewardId2] = giftConfig2.split('=');
                 const currentPackagesHistory = await ConnectivityThemePackageHistory.findAll({
                     where: {
                         user_id: user.id,
-                        price: { [Op.gt]: 0 },
-                        // package_id: gPackage.id,
+                        ...eligiblePurchase,
                         is_applied: false,
-                        createdAt: {
-                            [Op.gte]: `2026-11-25 00:00:00`
-                        }
+                        createdAt: { [Op.gte]: `2026-11-25 00:00:00` },
                     },
+                    order: [['id', 'ASC']],
                     transaction: t
                 });
-                if (currentPackagesHistory.length >= Number(countRequired)) {
-                    const giftPackage2 = await ConnectivityThemePackage.findByPk(rewardId2, { transaction: t });
-                    await ConnectivityThemePackageHistory.create({
-                        relation: user.relation,
-                        user_id: user.id,
-                        price: 0,
-                        period: giftPackage2.period,
-                        connectivity_amount: giftPackage2.connectivity_amount,
-                        request_investment_period: giftPackage2.request_investment_period,
-                        investment_amount: giftPackage2.investment_amount,
-                        returned_investment_amount_date: giftPackage2.request_investment_period > 0 ? moment().add(giftPackage2.request_investment_period + 1, 'days').toDate() : null,
-                        package_id: giftPackage2.id,
-                    }, { transaction: t });
+                for (let i = 0; i + Number(countRequired) <= currentPackagesHistory.length; i += Number(countRequired)) {
+                    await grantGift(rewardId2);
 
-                    for (const history of currentPackagesHistory) {
+                    for (const history of currentPackagesHistory.slice(i, i + Number(countRequired))) {
                         await history.update({ is_applied: true }, { transaction: t });
                     }
                 }
+                // if (currentPackagesHistory.length >= Number(countRequired)) {
+                //     const giftPackage2 = await ConnectivityThemePackage.findByPk(rewardId2, { transaction: t });
+                //     await ConnectivityThemePackageHistory.create({
+                //         relation: user.relation,
+                //         user_id: user.id,
+                //         price: 0,
+                //         period: giftPackage2.period,
+                //         connectivity_amount: giftPackage2.connectivity_amount,
+                //         request_investment_period: giftPackage2.request_investment_period,
+                //         investment_amount: giftPackage2.investment_amount,
+                //         returned_investment_amount_date: giftPackage2.request_investment_period > 0 ? moment().add(giftPackage2.request_investment_period + 1, 'days').toDate() : null,
+                //         package_id: giftPackage2.id,
+                //     }, { transaction: t });
+
+                //     for (const history of currentPackagesHistory) {
+                //         await history.update({ is_applied: true }, { transaction: t });
+                //     }
+                // }
 
                 const bonusArr = [15, 7, 3];
                 const relationArr = user.relation.split('/');
