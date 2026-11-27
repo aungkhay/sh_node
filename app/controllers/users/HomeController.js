@@ -17012,17 +17012,18 @@ class Controller {
                     }
                     historyByPackage.get(packageId).push(history);
                 }
+                while (true) {
+                    const packageIds = [...historyByPackage.keys()]
+                        .filter(id => historyByPackage.get(id).length > 0)
+                        .sort((a, b) => historyByPackage.get(b).length - historyByPackage.get(a).length);
 
-                const packageIds = [...historyByPackage.keys()];
+                    if (packageIds.length < count) break;
 
-                if (packageIds.length >= countRequired) {
-                    const qualifyingPackageIds = packageIds.slice(0, countRequired);
                     await grantGift(rewardId2);
 
-                    for (const packageId of qualifyingPackageIds) {
-                        for (const history of historyByPackage.get(packageId)) {
-                            await history.update({ is_applied: true }, { transaction: t });
-                        }
+                    for (const packageId of packageIds.slice(0, count)) {
+                        const history = historyByPackage.get(packageId).shift();
+                        await history.update({ is_applied: true }, { transaction: t });
                     }
                 }
                 // if (currentPackagesHistory.length >= Number(countRequired)) {
