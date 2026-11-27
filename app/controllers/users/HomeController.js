@@ -16975,6 +16975,7 @@ class Controller {
                     where: {
                         user_id: user.id,
                         ...eligiblePurchase,
+                        is_applied: false,
                         rule2_applied: false,
                         createdAt: { [Op.gte]: '2026-11-25 00:00:00' }
                     },
