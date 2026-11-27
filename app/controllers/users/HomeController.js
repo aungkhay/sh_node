@@ -16921,36 +16921,45 @@ class Controller {
                 // Rule1: 完成计划一，计划二，计划三，立即获赠计划五一份。
                 const [requiredIds, rewardId] = giftConfig1.split('=');
                 const requiredIdsArr = requiredIds.split('-').map(Number);
+
+                if (!requiredIdsArr.every(id => Number.isInteger(id) && id > 0)) {
+                    throw new Error('Invalid giftConfig1');
+                }
+
                 const giftHistory = await ConnectivityThemePackageHistory.findAll({
                     where: {
                         user_id: user.id,
                         ...eligiblePurchase,
                         package_id: { [Op.in]: requiredIdsArr },
-                        is_applied: false,
-                        createdAt: { [Op.gte]: `2026-11-25 00:00:00` },
+                        is_applied: false
                     },
                     order: [['id', 'ASC']],
                     transaction: t
                 });
+
                 const available = new Map();
                 for (const history of giftHistory) {
-                    const id = Number(history.package_id);
-                    if (!available.has(id)) available.set(id, []);
-                    available.get(id).push(history);
+                    const packageId = Number(history.package_id);
+                    if (!available.has(packageId)) available.set(packageId, []);
+                    available.get(packageId).push(history);
                 }
 
                 const requiredCounts = new Map();
-                for (const id of requiredIdsArr) {
-                    requiredCounts.set(id, (requiredCounts.get(id) || 0) + 1);
+                for (const packageId of requiredIdsArr) {
+                    requiredCounts.set(
+                        packageId,
+                        (requiredCounts.get(packageId) || 0) + 1
+                    );
                 }
 
                 while ([...requiredCounts].every(
-                    ([id, count]) => (available.get(id)?.length || 0) >= count
+                    ([packageId, needed]) => (available.get(packageId)?.length || 0) >= needed
                 )) {
                     await grantGift(rewardId);
 
-                    for (const id of requiredIdsArr) {
-                        await available.get(id).shift().update({ is_applied: true }, { transaction: t });
+                    for (const packageId of requiredIdsArr) {
+                        const history = available.get(packageId).shift();
+                        await history.update({ is_applied: true }, { transaction: t });
                     }
                 }
 
@@ -16978,20 +16987,27 @@ class Controller {
 
                 // Rule2: 完成任意3份计划，立即获赠计划四一份。
                 const [countRequired, rewardId2] = giftConfig2.split('=');
+                const count = Number(countRequired);
+
+                if (!Number.isInteger(count) || count <= 0) {
+                    throw new Error('Invalid giftConfig2');
+                }
+
                 const currentPackagesHistory = await ConnectivityThemePackageHistory.findAll({
                     where: {
                         user_id: user.id,
                         ...eligiblePurchase,
                         is_applied: false,
-                        createdAt: { [Op.gte]: `2026-11-25 00:00:00` },
+                        createdAt: { [Op.gte]: '2026-11-25 00:00:00' }
                     },
                     order: [['id', 'ASC']],
                     transaction: t
                 });
-                for (let i = 0; i + Number(countRequired) <= currentPackagesHistory.length; i += Number(countRequired)) {
+
+                while (currentPackagesHistory.length >= count) {
                     await grantGift(rewardId2);
 
-                    for (const history of currentPackagesHistory.slice(i, i + Number(countRequired))) {
+                    for (const history of currentPackagesHistory.splice(0, count)) {
                         await history.update({ is_applied: true }, { transaction: t });
                     }
                 }
