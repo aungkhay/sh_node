@@ -106,6 +106,12 @@ ConnectivityThemePackageHistory.init({
         allowNull: false,
         defaultValue: false,
         comment: '是否已应用',
+    },
+    rule2_applied: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: '是否已应用规则2',
     }
 }, {
     sequelize,
