@@ -16962,7 +16962,7 @@ class Controller {
                         await history.update({ is_applied: true }, { transaction: t });
                     }
                 }
-
+                
                 // Rule2: 完成任意3份计划，立即获赠计划四一份。
                 const [countRequired, rewardId2] = giftConfig2.split('=');
                 const count = Number(countRequired);
@@ -16971,23 +16971,68 @@ class Controller {
                     throw new Error('Invalid giftConfig2');
                 }
 
-                const currentPackagesHistory = await ConnectivityThemePackageHistory.findAll({
+                const histories = await ConnectivityThemePackageHistory.findAll({
                     where: {
                         user_id: user.id,
                         ...eligiblePurchase,
                         is_applied: false,
-                        rule2_applied: false,
                         createdAt: { [Op.gte]: '2026-11-25 00:00:00' }
                     },
                     order: [['id', 'ASC']],
-                    transaction: t
+                    transaction: t,
+                    lock: t.LOCK.UPDATE
                 });
 
-                while (currentPackagesHistory.length >= count) {
-                    await grantGift(rewardId2);
+                const groups = new Map();
 
-                    for (const history of currentPackagesHistory.splice(0, count)) {
-                        await history.update({ rule2_applied: true }, { transaction: t });
+                for (const history of histories) {
+                    let key;
+
+                    if (history.remark === 'BUY_ONE_GET') {
+                        const match = history.description?.match(/^(Group\[[^\]]+\]): \d+$/);
+                        if (!match) {
+                            throw new Error(`Invalid BOGO group for history ${history.id}`);
+                        }
+                        key = match[1];
+                    } else {
+                        key = `purchase:${history.id}`;
+                    }
+
+                    if (!groups.has(key)) {
+                        groups.set(key, { paid: null, records: [] });
+                    }
+
+                    const group = groups.get(key);
+                    group.records.push(history);
+
+                    if (Number(history.price) > 0) {
+                        if (group.paid) {
+                            throw new Error(`Duplicate paid purchase in group ${key}`);
+                        }
+                        group.paid = history;
+                    }
+                }
+
+                // Ignore free records whose paid purchase was already consumed by Rule 1.
+                const purchases = [...groups.values()].filter(group => group.paid);
+
+                while (purchases.length >= count) {
+                    const set = purchases.splice(0, count);
+                    const hasBogo = set.some(group =>
+                        group.records.some(history =>
+                            Number(history.price) === 0 && history.remark === 'BUY_ONE_GET'
+                        )
+                    );
+
+                    await grantGift(rewardId2);
+                    if (hasBogo) {
+                        await grantGift(rewardId2);
+                    }
+
+                    for (const group of set) {
+                        for (const history of group.records) {
+                            await history.update({ is_applied: true }, { transaction: t });
+                        }
                     }
                 }
 
