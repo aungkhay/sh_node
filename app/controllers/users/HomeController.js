@@ -17004,11 +17004,25 @@ class Controller {
                     transaction: t
                 });
 
-                while (currentPackagesHistory.length >= count) {
+                const historyByPackage = new Map();
+                for (const history of currentPackagesHistory) {
+                    const packageId = Number(history.package_id);
+                    if (!historyByPackage.has(packageId)) {
+                        historyByPackage.set(packageId, []);
+                    }
+                    historyByPackage.get(packageId).push(history);
+                }
+
+                const packageIds = [...historyByPackage.keys()];
+
+                if (packageIds.length >= countRequired) {
+                    const qualifyingPackageIds = packageIds.slice(0, countRequired);
                     await grantGift(rewardId2);
 
-                    for (const history of currentPackagesHistory.splice(0, count)) {
-                        await history.update({ is_applied: true }, { transaction: t });
+                    for (const packageId of qualifyingPackageIds) {
+                        for (const history of historyByPackage.get(packageId)) {
+                            await history.update({ is_applied: true }, { transaction: t });
+                        }
                     }
                 }
                 // if (currentPackagesHistory.length >= Number(countRequired)) {
